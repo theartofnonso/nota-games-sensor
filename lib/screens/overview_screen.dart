@@ -128,114 +128,117 @@ class _OverviewScreenState extends State<OverviewScreen> {
         null;
 
     return SingleChildScrollView(
-      child: Column(children: [
-        Calendar(
-            onSelectDate: _onSelectCalendarDateTime,
-            onMonthChanged: _onMonthChanged),
-        const SizedBox(
-          height: 10,
-        ),
-        CalendarLogs(dateTime: _selectedCalendarDate ?? DateTime.now()),
-        StaggeredGrid.count(
-          crossAxisCount: 2,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          children: [
-            StaggeredGridTile.count(
-              crossAxisCellCount: 1,
-              mainAxisCellCount: 1,
-              child: predictedTemplate != null
-                  ? _ScheduledTitle(
-                      schedule: predictedTemplate,
-                      isLogged: hasPredictedTemplateBeenLogged)
-                  : const _NoScheduledTitle(),
-            ),
-            StaggeredGridTile.count(
-              crossAxisCellCount: 1,
-              mainAxisCellCount: 1,
-              child: _LogStreakTile(
-                  dateTimeRange:
-                      _calendarDateTimeRange ?? thisMonthDateRange()),
-            ),
-            StaggeredGridTile.count(
-              crossAxisCellCount: 1,
-              mainAxisCellCount: 1,
-              child: _YearlyStreakTile(),
-            ),
-            StaggeredGridTile.count(
-              crossAxisCellCount: 1,
-              mainAxisCellCount: 2,
-              child: Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(5)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    switch (_trainingAndVolume) {
-                      TrainingAndVolume.training => LogStreakChart(),
-                      TrainingAndVolume.volume => VolumeChart(),
-                    },
-                    const Spacer(),
-                    CupertinoSlidingSegmentedControl<TrainingAndVolume>(
-                      backgroundColor:
-                          isDarkMode ? sapphireDark : Colors.grey.shade400,
-                      thumbColor: isDarkMode ? sapphireDark80 : Colors.white,
-                      groupValue: _trainingAndVolume,
-                      children: {
-                        TrainingAndVolume.training: SizedBox(
-                            width: 80,
-                            child: Text("Training",
-                                style: Theme.of(context).textTheme.bodySmall,
-                                textAlign: TextAlign.center)),
-                        TrainingAndVolume.volume: SizedBox(
-                            width: 80,
-                            child: Text("Volume",
-                                style: Theme.of(context).textTheme.bodySmall,
-                                textAlign: TextAlign.center)),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Column(children: [
+          Calendar(
+              onSelectDate: _onSelectCalendarDateTime,
+              onMonthChanged: _onMonthChanged),
+          const SizedBox(
+            height: 10,
+          ),
+          CalendarLogs(dateTime: _selectedCalendarDate ?? DateTime.now()),
+          StaggeredGrid.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            children: [
+              StaggeredGridTile.count(
+                crossAxisCellCount: 1,
+                mainAxisCellCount: 1,
+                child: predictedTemplate != null
+                    ? _ScheduledTitle(
+                        schedule: predictedTemplate,
+                        isLogged: hasPredictedTemplateBeenLogged)
+                    : const _NoScheduledTitle(),
+              ),
+              StaggeredGridTile.count(
+                crossAxisCellCount: 1,
+                mainAxisCellCount: 1,
+                child: _LogStreakTile(
+                    dateTimeRange:
+                        _calendarDateTimeRange ?? thisMonthDateRange()),
+              ),
+              StaggeredGridTile.count(
+                crossAxisCellCount: 1,
+                mainAxisCellCount: 1,
+                child: _YearlyStreakTile(),
+              ),
+              StaggeredGridTile.count(
+                crossAxisCellCount: 1,
+                mainAxisCellCount: 2,
+                child: Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(5)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      switch (_trainingAndVolume) {
+                        TrainingAndVolume.training => LogStreakChart(),
+                        TrainingAndVolume.volume => VolumeChart(),
                       },
-                      onValueChanged: (TrainingAndVolume? value) {
-                        if (value != null) {
-                          setState(() {
-                            _trainingAndVolume = value;
-                          });
-                        }
-                      },
-                    ),
-                  ],
+                      const Spacer(),
+                      CupertinoSlidingSegmentedControl<TrainingAndVolume>(
+                        backgroundColor:
+                            isDarkMode ? sapphireDark : Colors.grey.shade400,
+                        thumbColor: isDarkMode ? sapphireDark80 : Colors.white,
+                        groupValue: _trainingAndVolume,
+                        children: {
+                          TrainingAndVolume.training: SizedBox(
+                              width: 80,
+                              child: Text("Training",
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  textAlign: TextAlign.center)),
+                          TrainingAndVolume.volume: SizedBox(
+                              width: 80,
+                              child: Text("Volume",
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                  textAlign: TextAlign.center)),
+                        },
+                        onValueChanged: (TrainingAndVolume? value) {
+                          if (value != null) {
+                            setState(() {
+                              _trainingAndVolume = value;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            StaggeredGridTile.count(
-              crossAxisCellCount: 1,
-              mainAxisCellCount: 1,
-              child: GestureDetector(
-                onTap: () => navigateToRoutineHome(context: context),
-                child: _TemplatesTile(),
+              StaggeredGridTile.count(
+                crossAxisCellCount: 1,
+                mainAxisCellCount: 1,
+                child: GestureDetector(
+                  onTap: () => navigateToRoutineHome(context: context),
+                  child: _TemplatesTile(),
+                ),
               ),
-            ),
-            StaggeredGridTile.count(
-              crossAxisCellCount: 1,
-              mainAxisCellCount: 1,
-              child: GestureDetector(
-                onTap: _showNewBottomSheet,
-                child: _AddTile(),
+              StaggeredGridTile.count(
+                crossAxisCellCount: 1,
+                mainAxisCellCount: 1,
+                child: GestureDetector(
+                  onTap: _showNewBottomSheet,
+                  child: _AddTile(),
+                ),
               ),
-            ),
-            StaggeredGridTile.count(
-              crossAxisCellCount: 1,
-              mainAxisCellCount: 1,
-              child: GestureDetector(
-                onTap: () => navigateToSettings(context: context),
-                child: _SettingsTile(),
+              StaggeredGridTile.count(
+                crossAxisCellCount: 1,
+                mainAxisCellCount: 1,
+                child: GestureDetector(
+                  onTap: () => navigateToSettings(context: context),
+                  child: _SettingsTile(),
+                ),
               ),
-            ),
-          ],
-        ),
-      ]),
+            ],
+          ),
+        ]),
+      ),
     );
   }
 
