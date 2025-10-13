@@ -11,24 +11,22 @@ class WeightAndRepsSetDto extends SetDto {
     required this.weight,
     required this.reps,
     super.checked = false,
-    super.rpeRating = 4,
     super.isWorkingSet = false,
     required super.dateTime,
   });
 
-  factory WeightAndRepsSetDto.defaultSet() =>
-      WeightAndRepsSetDto(
+  factory WeightAndRepsSetDto.defaultSet() => WeightAndRepsSetDto(
         weight: 0,
         reps: 0,
         dateTime: DateTime.now(),
       );
 
-  factory WeightAndRepsSetDto.fromJson(Map<String, dynamic> json, {required DateTime dateTime}) {
+  factory WeightAndRepsSetDto.fromJson(Map<String, dynamic> json,
+      {required DateTime dateTime}) {
     return WeightAndRepsSetDto(
       weight: (json['weight'] as num).toDouble(),
       reps: (json['reps'] as num).toInt(),
       checked: json['isChecked'] as bool,
-      rpeRating: json['rpeRating'] as int,
       isWorkingSet: json['isWorkingSet'] as bool,
       dateTime: dateTime,
     );
@@ -46,7 +44,6 @@ class WeightAndRepsSetDto extends SetDto {
   @override
   WeightAndRepsSetDto copyWith({
     bool? checked,
-    int? rpeRating,
     bool? isWorkingSet,
     DateTime? dateTime,
     double? weight,
@@ -56,7 +53,6 @@ class WeightAndRepsSetDto extends SetDto {
       weight: weight ?? this.weight,
       reps: reps ?? this.reps,
       checked: checked ?? this.checked,
-      rpeRating: rpeRating ?? this.rpeRating,
       isWorkingSet: isWorkingSet ?? this.isWorkingSet,
       dateTime: dateTime ?? this.dateTime,
     );

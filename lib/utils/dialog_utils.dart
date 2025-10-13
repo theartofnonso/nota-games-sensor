@@ -5,7 +5,6 @@ import 'package:tracker_app/widgets/timers/datetime_picker.dart';
 import 'package:tracker_app/widgets/timers/datetime_range_picker.dart';
 
 import '../colors.dart';
-import '../widgets/ai_widgets/trkr_coach_widget.dart';
 import '../widgets/buttons/opacity_button_widget.dart';
 import '../widgets/timers/time_picker.dart';
 
@@ -18,14 +17,11 @@ void showSnackbar({required BuildContext context, required String message}) {
       behavior: SnackBarBehavior.fixed,
       content: Row(
         children: [
-          TRKRCoachWidget(),
-          const SizedBox(
-            width: 10,
-          ),
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+              style:
+                  Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
             ),
           ),
         ],
@@ -64,7 +60,8 @@ Future<void> displayBottomSheet(
                       borderRadius: const BorderRadius.all(
                         Radius.circular(20),
                       ),
-                      gradient: isDarkMode ? themeGradient(context: context) : null),
+                      gradient:
+                          isDarkMode ? themeGradient(context: context) : null),
                   child: SafeArea(child: child),
                 ),
               ],
@@ -81,7 +78,10 @@ void displayTimePicker(
   displayBottomSheet(
       height: 240,
       context: context,
-      child: TimePicker(mode: mode, initialDuration: initialDuration, onDurationChanged: onChangedDuration));
+      child: TimePicker(
+          mode: mode,
+          initialDuration: initialDuration,
+          onDurationChanged: onChangedDuration));
 }
 
 void showDateTimePicker(
@@ -93,13 +93,17 @@ void showDateTimePicker(
   displayBottomSheet(
       height: 240,
       context: context,
-      child: DatetimePicker(onSelect: onChangedDateTime, initialDateTime: initialDateTime, mode: mode));
+      child: DatetimePicker(
+          onSelect: onChangedDateTime,
+          initialDateTime: initialDateTime,
+          mode: mode));
 }
 
 void showDatetimeRangePicker(
     {required BuildContext context,
     DateTimeRange? initialDateTimeRange,
-    required void Function(DateTimeRange datetimeRange) onChangedDateTimeRange}) {
+    required void Function(DateTimeRange datetimeRange)
+        onChangedDateTimeRange}) {
   FocusScope.of(context).unfocus();
   displayBottomSheet(
       context: context,
@@ -110,15 +114,23 @@ void showDatetimeRangePicker(
       isScrollControlled: true);
 }
 
-void showBottomSheetWithNoAction({required BuildContext context, required String title, required String description, TextStyle? textStyle}) {
+void showBottomSheetWithNoAction(
+    {required BuildContext context,
+    required String title,
+    required String description,
+    TextStyle? textStyle}) {
   displayBottomSheet(
       context: context,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.start),
+        Text(title,
+            style: Theme.of(context).textTheme.titleMedium,
+            textAlign: TextAlign.start),
         const SizedBox(
           height: 4,
         ),
-        Text(description, style: textStyle ?? Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.start)
+        Text(description,
+            style: textStyle ?? Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.start)
       ]));
 }
 
@@ -139,19 +151,25 @@ void showBottomSheetWithMultiActions(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.start),
-          Text(description, style: Theme.of(context).textTheme.titleSmall, textAlign: TextAlign.start),
+          Text(title,
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.start),
+          Text(description,
+              style: Theme.of(context).textTheme.titleSmall,
+              textAlign: TextAlign.start),
           const SizedBox(height: 16),
           Row(mainAxisAlignment: MainAxisAlignment.start, children: [
             OpacityButtonWidget(
                 onPressed: leftAction,
                 label: leftActionLabel,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
             const SizedBox(width: 10),
             OpacityButtonWidget(
                 onPressed: rightAction,
                 label: rightActionLabel,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 buttonColor: vibrantGreen)
           ])
         ],

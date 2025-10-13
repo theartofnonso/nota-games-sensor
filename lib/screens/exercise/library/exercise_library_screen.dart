@@ -23,7 +23,11 @@ class ExerciseLibraryScreen extends StatefulWidget {
   final List<ExerciseDto> excludeExercises;
   final ExerciseType? type;
 
-  const ExerciseLibraryScreen({super.key, this.readOnly = false, this.excludeExercises = const [], this.type});
+  const ExerciseLibraryScreen(
+      {super.key,
+      this.readOnly = false,
+      this.excludeExercises = const [],
+      this.type});
 
   @override
   State<ExerciseLibraryScreen> createState() => _ExerciseLibraryScreenState();
@@ -45,7 +49,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   /// Search through the list of exercises
   ///
   /// Calculates a 'relevance' score for an ExerciseDto based on the query parts.
-  double _calculateRelevanceScore(ExerciseDto exercise, List<String> queryParts) {
+  double _calculateRelevanceScore(
+      ExerciseDto exercise, List<String> queryParts) {
     // Convert exercise name to lowercase for case-insensitive matching
     final exerciseName = exercise.name.toLowerCase();
 
@@ -76,31 +81,36 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     final exerciseType = widget.type;
 
     // Split on whitespace or hyphens to handle multiple words/phrases
-    final queryParts = query.split(RegExp(r'[\s-]+')).where((q) => q.isNotEmpty).toList();
+    final queryParts =
+        query.split(RegExp(r'[\s-]+')).where((q) => q.isNotEmpty).toList();
 
     // Get the list of all exercises (excluding any you want to filter out by default)
-    final allExercises = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .exercises
-        .where((exercise) => !widget.excludeExercises.contains(exercise))
-        .toList();
+    final allExercises =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .exercises
+            .where((exercise) => !widget.excludeExercises.contains(exercise))
+            .toList();
 
     // Filter by exercise type if provided
     List<ExerciseDto> filteredExercises;
     if (exerciseType != null) {
-      filteredExercises = allExercises.where((ex) => ex.type == exerciseType).toList();
+      filteredExercises =
+          allExercises.where((ex) => ex.type == exerciseType).toList();
     } else {
       filteredExercises = allExercises;
     }
 
     // Filter by muscle groups if any are selected
     if (_selectedMuscleGroups.isNotEmpty) {
-      filteredExercises =
-          filteredExercises.where((ex) => _selectedMuscleGroups.contains(ex.primaryMuscleGroup)).toList();
+      filteredExercises = filteredExercises
+          .where((ex) => _selectedMuscleGroups.contains(ex.primaryMuscleGroup))
+          .toList();
     }
 
     // Filter to owner exercises if needed
     if (_shouldShowOwnerExercises) {
-      filteredExercises = filteredExercises.where((ex) => ex.owner.isNotEmpty).toList();
+      filteredExercises =
+          filteredExercises.where((ex) => ex.owner.isNotEmpty).toList();
     }
 
     // If the user typed nothing, you can simply show the entire filtered list
@@ -119,7 +129,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
           final score = _calculateRelevanceScore(ex, queryParts);
           return (exercise: ex, score: score);
         })
-        .where((tuple) => tuple.score > 0) // optional: only keep those with some match
+        .where((tuple) =>
+            tuple.score > 0) // optional: only keep those with some match
         .toList();
 
     rankedList.sort((a, b) => b.score.compareTo(a.score));
@@ -147,7 +158,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   }
 
   void _navigateToExerciseEditor() async {
-    await navigateWithSlideTransition(context: context, child: ExerciseEditorScreen());
+    await navigateWithSlideTransition(
+        context: context, child: ExerciseEditorScreen());
     setState(() {
       _loadOrSyncExercises();
     });
@@ -170,8 +182,11 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         .map((muscleGroup) => Padding(
               padding: const EdgeInsets.only(right: 6.0),
               child: OpacityButtonWidget(
-                  onPressed: () => _onSelectMuscleGroup(newMuscleGroup: muscleGroup),
-                  buttonColor: _getMuscleGroup(muscleGroup: muscleGroup) != null ? vibrantGreen : null,
+                  onPressed: () =>
+                      _onSelectMuscleGroup(newMuscleGroup: muscleGroup),
+                  buttonColor: _getMuscleGroup(muscleGroup: muscleGroup) != null
+                      ? vibrantGreen
+                      : null,
                   label: muscleGroup.displayName.toUpperCase()),
             ))
         .toList();
@@ -189,7 +204,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         ..addAll(recents.map((e) => ExerciseWidget(
               exerciseDto: e,
               onNavigateToExercise: _navigateToExerciseHistory,
-              onSelect: widget.readOnly ? null : _navigateBackWithSelectedExercise,
+              onSelect:
+                  widget.readOnly ? null : _navigateBackWithSelectedExercise,
             )));
     }
     if (others.isNotEmpty) {
@@ -198,7 +214,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         ..addAll(others.map((e) => ExerciseWidget(
               exerciseDto: e,
               onNavigateToExercise: _navigateToExerciseHistory,
-              onSelect: widget.readOnly ? null : _navigateBackWithSelectedExercise,
+              onSelect:
+                  widget.readOnly ? null : _navigateBackWithSelectedExercise,
             )));
     }
 
@@ -211,7 +228,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         title: Text("Exercise Library".toUpperCase()),
         centerTitle: true,
         actions: [
-          IconButton(onPressed: _navigateToExerciseEditor, icon: const FaIcon(FontAwesomeIcons.solidSquarePlus)),
+          IconButton(
+              onPressed: _navigateToExerciseEditor,
+              icon: const FaIcon(FontAwesomeIcons.solidSquarePlus)),
         ],
       ),
       body: Container(
@@ -239,7 +258,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                   child: Row(children: [
                     OpacityButtonWidget(
                         onPressed: _toggleOwnerExercises,
-                        buttonColor: _shouldShowOwnerExercises ? vibrantGreen : null,
+                        buttonColor:
+                            _shouldShowOwnerExercises ? vibrantGreen : null,
                         label: "Your Exercises".toUpperCase()),
                     const SizedBox(width: 6),
                     ...muscleGroups.sublist(0, muscleGroupScrollViewHalf),
@@ -257,17 +277,22 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                         padding: EdgeInsets.symmetric(horizontal: 10.0),
                         child: ListView.separated(
                             padding: const EdgeInsets.only(bottom: 250),
-                            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
                             itemBuilder: (ctx, idx) => listChildren[idx],
-                            separatorBuilder: (ctx, idx) => (listChildren[idx] is ExerciseWidget)
-                                ? Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 14.0),
-                                    child: Divider(
-                                      height: 0.5,
-                                      color: isDarkMode ? sapphireLighter : Colors.grey.shade200,
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
+                            separatorBuilder: (ctx, idx) =>
+                                (listChildren[idx] is ExerciseWidget)
+                                    ? Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 14.0),
+                                        child: Divider(
+                                          height: 0.5,
+                                          color: isDarkMode
+                                              ? sapphireLighter
+                                              : Colors.grey.shade200,
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
                             // no separator after headers
                             itemCount: listChildren.length),
                       ),
@@ -276,7 +301,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: const NoListEmptyState(
-                            message: "It might feel quiet now, but exercises including yours will soon appear here."),
+                            message:
+                                "It might feel quiet now, but exercises including yours will soon appear here."),
                       ),
                     ),
             ],
@@ -308,7 +334,11 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         padding: const EdgeInsets.only(bottom: 20.0),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16).copyWith(
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(fontSize: 16)
+              .copyWith(
                 color: isDarkMode ? Colors.white70 : Colors.blueGrey,
               ),
         ),
@@ -317,11 +347,13 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   void _loadOrSyncExercises() {
     final exerciseType = widget.type;
 
-    _filteredExercises = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .exercises
-        .where((exercise) => !widget.excludeExercises.contains(exercise))
-        .where((exercise) => exerciseType != null ? exercise.type == widget.type : true)
-        .toList();
+    _filteredExercises =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .exercises
+            .where((exercise) => !widget.excludeExercises.contains(exercise))
+            .where((exercise) =>
+                exerciseType != null ? exercise.type == widget.type : true)
+            .toList();
 
     _runSearch();
   }
@@ -334,8 +366,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   }
 
   void _onSelectMuscleGroup({required MuscleGroup newMuscleGroup}) {
-    final oldMuscleGroup =
-        _selectedMuscleGroups.firstWhereOrNull((previousMuscleGroup) => previousMuscleGroup == newMuscleGroup);
+    final oldMuscleGroup = _selectedMuscleGroups.firstWhereOrNull(
+        (previousMuscleGroup) => previousMuscleGroup == newMuscleGroup);
     setState(() {
       if (oldMuscleGroup != null) {
         _selectedMuscleGroups.remove(oldMuscleGroup);
@@ -347,7 +379,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   }
 
   MuscleGroup? _getMuscleGroup({required MuscleGroup muscleGroup}) =>
-      _selectedMuscleGroups.firstWhereOrNull((previousMuscleGroup) => previousMuscleGroup == muscleGroup);
+      _selectedMuscleGroups.firstWhereOrNull(
+          (previousMuscleGroup) => previousMuscleGroup == muscleGroup);
 
   @override
   void initState() {
@@ -357,10 +390,16 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
     final dateRange = lastQuarterDateTimeRange();
 
-    _recentExercises = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .whereLogsIsWithinRange(range: dateRange)
-        .expand((log) => log.exerciseLogs)
-        .map((exerciseLog) => exerciseLog.exercise)
+    final allRecentExercises =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .whereLogsIsWithinRange(range: dateRange)
+            .expand((log) => log.exerciseLogs)
+            .map((exerciseLog) => exerciseLog.exercise);
+
+    // Remove duplicates by converting to Set and back to List based on exercise ID
+    final seenIds = <String>{};
+    _recentExercises = allRecentExercises
+        .where((exercise) => seenIds.add(exercise.id))
         .toList();
   }
 

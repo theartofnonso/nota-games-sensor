@@ -1,11 +1,10 @@
-
 /// TRNR
-const trackrWebUrl = 'https://trkr.fit';
-const instagramUrl = 'https://www.instagram.com/trnr.coach';
-const whatsappUrl = 'https://chat.whatsapp.com/FfsmvpeTrRnERipI2gDK1U';
+const trackrWebUrl = 'https://ware.health/trainer';
+const instagramUrl = 'https://www.instagram.com/ware.trainer';
 
 /// Pexels
-const pexelsImageUrl = 'https://www.pexels.com/photo/man-and-woman-doing-push-up-face-to-face-6740308/';
+const pexelsImageUrl =
+    'https://www.pexels.com/photo/man-and-woman-doing-push-up-face-to-face-6740308/';
 
 /// Amplify API Endpoints
 const routineLogs = '/routine-logs';

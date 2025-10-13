@@ -41,17 +41,11 @@ class WeightsAndRepsSetRow extends StatelessWidget {
     return Table(
       border:
           TableBorder.all(color: isDarkMode ? Colors.white10 : Colors.black38, borderRadius: BorderRadius.circular(5)),
-      columnWidths: editorType == RoutineEditorMode.edit
-          ? <int, TableColumnWidth>{
-        0: const FixedColumnWidth(50),
-        1: const FlexColumnWidth(1),
-        2: const FlexColumnWidth(1),
-      }
-          : <int, TableColumnWidth>{
-        0: const FixedColumnWidth(50),
-        1: const FlexColumnWidth(1),
-        2: const FlexColumnWidth(1),
-        3: const FixedColumnWidth(60),
+      columnWidths: const <int, TableColumnWidth>{
+        0: FixedColumnWidth(50),
+        1: FlexColumnWidth(1),
+        2: FlexColumnWidth(1),
+        3: FixedColumnWidth(60),
       },
       children: [
         TableRow(children: [
@@ -77,10 +71,9 @@ class WeightsAndRepsSetRow extends StatelessWidget {
               maxLength: 2,
             ),
           ),
-          if (editorType == RoutineEditorMode.log)
-            TableCell(
-                verticalAlignment: TableCellVerticalAlignment.middle,
-                child: SetCheckButton(setDto: setDto, onCheck: onCheck))
+          TableCell(
+              verticalAlignment: TableCellVerticalAlignment.middle,
+              child: SetCheckButton(setDto: setDto, onCheck: onCheck))
         ])
       ],
     );

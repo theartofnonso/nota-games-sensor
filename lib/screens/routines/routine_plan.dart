@@ -25,7 +25,6 @@ import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
-import '../AI/trkr_coach_chat_screen.dart';
 
 class RoutinePlanScreen extends StatefulWidget {
   static const routeName = '/routine_plan_screen';
@@ -129,13 +128,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                       logs: logs,
                     ),
                     CalendarLogs(dateTime: _selectedCalendarDate ?? DateTime.now()),
-                    InformationContainerWithBackgroundImage(
-                      image: 'images/man_pushup.PNG',
-                      color: Colors.black,
-                      subtitle: "Need a head start on what to train? We’ve got you covered. Tap to describe your workout.",
-                      onTap: _switchToAIContext,
-                      alignmentGeometry: Alignment.center,
-                    ),
                   ],
                 ),
                 routineTemplates.isNotEmpty
@@ -282,22 +274,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
               },
             )
         ]));
-  }
-
-  void _switchToAIContext() async {
-    final result =
-        await navigateWithSlideTransition(context: context, child: const TRKRCoachChatScreen()) as RoutineTemplateDto?;
-    if (result != null) {
-      if (mounted) {
-        _saveTemplate(context: context, template: result);
-      }
-    }
-  }
-
-  void _saveTemplate({required BuildContext context, required RoutineTemplateDto template}) async {
-    final routineTemplate = template;
-    final templateController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
-    await templateController.saveTemplate(templateDto: routineTemplate);
   }
 
   void _loadData() {

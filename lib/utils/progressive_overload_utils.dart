@@ -8,13 +8,11 @@ enum TrainingProgression { increase, decrease, maintain }
 
 class TrainingData {
   final int reps;
-  final int rpe;
   final double weight;
   final DateTime date;
 
   TrainingData({
     required this.reps,
-    required this.rpe,
     required this.weight,
     required this.date,
   });
@@ -26,7 +24,6 @@ class TrainingIntensityReport {
   final double increaseCount;
   final double decreaseCount;
   final double maintainCount;
-  final double averageRPE;
   final String explanation;
   final double confidence;
 
@@ -36,14 +33,15 @@ class TrainingIntensityReport {
     required this.increaseCount,
     required this.decreaseCount,
     required this.maintainCount,
-    required this.averageRPE,
     required this.explanation,
     required this.confidence,
   });
 }
 
 TrainingIntensityReport getTrainingProgressionReport(
-    {required List<TrainingData> data, required int targetMinReps, required int targetMaxReps}) {
+    {required List<TrainingData> data,
+    required int targetMinReps,
+    required int targetMaxReps}) {
   if (data.isEmpty) {
     return TrainingIntensityReport(
       progression: TrainingProgression.maintain,
@@ -51,14 +49,14 @@ TrainingIntensityReport getTrainingProgressionReport(
       increaseCount: 0,
       decreaseCount: 0,
       maintainCount: 0,
-      averageRPE: 0,
       explanation: 'No training data available',
       confidence: 0,
     );
   }
 
   final currentWeight = data.last.weight;
-  final currentWeightSessions = data.where((session) => session.weight == currentWeight).toList();
+  final currentWeightSessions =
+      data.where((session) => session.weight == currentWeight).toList();
 
   if (currentWeightSessions.isEmpty) {
     return TrainingIntensityReport(
@@ -67,16 +65,14 @@ TrainingIntensityReport getTrainingProgressionReport(
       increaseCount: 0,
       decreaseCount: 0,
       maintainCount: 0,
-      averageRPE: 0,
       explanation: 'No sessions with current weight',
       confidence: 0,
     );
   }
 
-  double increaseCount = 0; // Changed to double
-  double decreaseCount = 0; // Changed to double
-  double maintainCount = 0; // Changed to double
-  double totalRPE = 0;
+  double increaseCount = 0;
+  double decreaseCount = 0;
+  double maintainCount = 0;
   final now = DateTime.now();
 
   for (final session in currentWeightSessions) {
@@ -100,8 +96,6 @@ TrainingIntensityReport getTrainingProgressionReport(
         maintainCount += recencyWeight;
         break;
     }
-
-    totalRPE += session.rpe;
   }
 
   final totalWeight = increaseCount + decreaseCount + maintainCount;
@@ -124,11 +118,9 @@ TrainingIntensityReport getTrainingProgressionReport(
     increaseCount: increaseCount,
     decreaseCount: decreaseCount,
     maintainCount: maintainCount,
-    averageRPE: totalRPE / currentWeightSessions.length,
     explanation: _generateExplanation(
       progression: progression,
       confidence: confidence,
-      averageRPE: totalRPE / currentWeightSessions.length,
       targetMin: targetMinReps,
       targetMax: targetMaxReps,
     ),
@@ -145,19 +137,11 @@ TrainingProgression _getSessionSuggestion({
   required int targetMin,
   required int targetMax,
 }) {
-  const int rpeIncreaseThreshold = 7;
-  const int rpeDecreaseThreshold = 8;
-
   if (session.reps >= targetMax) {
-    return session.rpe < rpeIncreaseThreshold ? TrainingProgression.increase : TrainingProgression.maintain;
+    return TrainingProgression.increase;
   } else if (session.reps < targetMin) {
     return TrainingProgression.decrease;
   } else {
-    if (session.rpe <= rpeIncreaseThreshold) {
-      return TrainingProgression.increase;
-    } else if (session.rpe >= rpeDecreaseThreshold) {
-      return TrainingProgression.decrease;
-    }
     return TrainingProgression.maintain;
   }
 }
@@ -193,11 +177,9 @@ double _calculateConfidence({
 String _generateExplanation({
   required TrainingProgression progression,
   required double confidence,
-  required double averageRPE,
   required int targetMin,
   required int targetMax,
 }) {
-
   switch (progression) {
     case TrainingProgression.increase:
       return 'Increase your working weight, current load may be too light. '
@@ -243,8 +225,11 @@ List<Color> progressionToGradient({required TrainingIntensityReport report}) {
   };
 
   return [
-    Color.lerp(baseColors[0].withValues(alpha: 0.7), baseColors[0], report.confidence)!,
-    Color.lerp(baseColors[1].withValues(alpha: 0.7), baseColors[1], report.confidence)!,
-    Color.lerp(baseColors[2].withValues(alpha: 0.7), baseColors[2], report.confidence)!,
+    Color.lerp(baseColors[0].withValues(alpha: 0.7), baseColors[0],
+        report.confidence)!,
+    Color.lerp(baseColors[1].withValues(alpha: 0.7), baseColors[1],
+        report.confidence)!,
+    Color.lerp(baseColors[2].withValues(alpha: 0.7), baseColors[2],
+        report.confidence)!,
   ];
 }

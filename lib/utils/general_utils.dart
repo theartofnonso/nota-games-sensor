@@ -85,7 +85,8 @@ String timeOfDay({DateTime? datetime}) {
   return 'Evening';
 }
 
-Future<bool> batchDeleteUserData({required String document, required String documentKey}) async {
+Future<bool> batchDeleteUserData(
+    {required String document, required String documentKey}) async {
   final operation = Amplify.API.mutate(
     request: GraphQLRequest<dynamic>(document: document),
   );
@@ -98,7 +99,8 @@ Future<NotificationsEnabledOptions> checkIosNotificationPermission() async {
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   return await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
           ?.checkPermissions() ??
       const NotificationsEnabledOptions(
           isEnabled: false,
@@ -110,13 +112,16 @@ Future<NotificationsEnabledOptions> checkIosNotificationPermission() async {
 }
 
 Future<bool> requestNotificationPermission() async {
-  return Platform.isIOS ? _requestIosNotificationPermission() : _requestAndroidNotificationPermission();
+  return Platform.isIOS
+      ? _requestIosNotificationPermission()
+      : _requestAndroidNotificationPermission();
 }
 
 Future<bool> _requestIosNotificationPermission() async {
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   return await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
           ?.requestPermissions(
             alert: true,
             badge: true,
@@ -128,7 +133,8 @@ Future<bool> _requestIosNotificationPermission() async {
 Future<bool> _requestAndroidNotificationPermission() async {
   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   return await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission() ??
       false;
 }
@@ -225,7 +231,8 @@ Color highToLowIntensityColor(double score) {
   }
 }
 
-String recoveryMuscleIllustration({required double recoveryPercentage, required MuscleGroup muscleGroup}) {
+String recoveryMuscleIllustration(
+    {required double recoveryPercentage, required MuscleGroup muscleGroup}) {
   if (recoveryPercentage < 0.3) {
     // Severe DOMS (0–29%)
     return 'red_muscles_illustration/${muscleGroup.illustration()}.png';
@@ -272,19 +279,6 @@ Color repsTrendColor({required int reps}) {
     return Colors.deepOrangeAccent;
   }
 }
-
-final Map<int, Color> rpeIntensityToColor = {
-  1: vibrantGreen, // Bright green - very light
-  2: Color(0xFF66FF66), // Light green
-  3: Color(0xFF99FF99), // Soft green
-  4: Color(0xFFFFFF66), // Yellow-green transition
-  5: Color(0xFFFFFF33), // Yellow - moderate intensity
-  6: Color(0xFFFFCC33), // Amber - challenging intensity
-  7: Color(0xFFFF9933), // Orange - very hard
-  8: Color(0xFFFF6633), // Deep orange - near maximal
-  9: Color(0xFFFF3333), // Bright red - maximal effort
-  10: Color(0xFFFF0000), // Red - absolute limit
-};
 
 LinearGradient themeGradient({required BuildContext context}) {
   Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
@@ -333,7 +327,6 @@ Widget getTrendIcon({required Trend trend}) {
 }
 
 void logEmptyRoutine({required BuildContext context, String? workoutVideoUrl}) {
-
   final log = RoutineLogDto(
       id: "",
       templateId: "",
@@ -346,7 +339,8 @@ void logEmptyRoutine({required BuildContext context, String? workoutVideoUrl}) {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now());
 
-  final arguments = RoutineLogArguments(log: log, editorMode: RoutineEditorMode.log);
+  final arguments =
+      RoutineLogArguments(log: log, editorMode: RoutineEditorMode.log);
   navigateToRoutineLogEditor(context: context, arguments: arguments);
 }
 
@@ -361,8 +355,8 @@ bool isOutsideReasonableRange(List<num> numbers, num newNumber,
   final currentMax = sorted.last;
 
   // Magnitude jump check (for decimal errors)
-  final isMagnitudeJump =
-      newNumber >= currentMax * magnitudeThreshold || (currentMin > 0 && newNumber <= currentMin / magnitudeThreshold);
+  final isMagnitudeJump = newNumber >= currentMax * magnitudeThreshold ||
+      (currentMin > 0 && newNumber <= currentMin / magnitudeThreshold);
 
   // IQR-based outlier check
   final q1 = _quantile(sorted, 0.25);
@@ -413,25 +407,6 @@ List<int> generateNumbers({required int start, required int end}) {
   return numbers;
 }
 
-String getReadinessSummary({required int readinessScore}) {
-  final score = readinessScore / 100;
-
-  // Ensure the score is within 0–100.
-  if (readinessScore <= 0) {
-    return "Your daily readiness score gives us insight into how rested you feel, so we can suggest workouts that match your energy levels.";
-  }
-
-  if (score < 0.3) {
-    return "🛑 Very poor readiness. High pain, fatigue, or soreness likely. Consider rest, gentle mobility work, or seek medical advice.";
-  } else if (score < 0.5) {
-    return "⚠️ Low readiness. Notable issues like pain, fatigue, or heavy soreness. Reduce intensity and focus on recovery activities.";
-  } else if (score < 0.7) {
-    return "👍 Generally solid readiness. Minor aches or tiredness possible. Proceed with your planned workout but remain mindful of any overstress.";
-  } else {
-    return "💯 Optimal readiness. Minimal pain or fatigue. Suitable for higher intensity or advanced training, if desired.";
-  }
-}
-
 /// Returns a short, human-readable summary of how weights changed.
 ///
 /// Examples:
@@ -458,7 +433,9 @@ Widget _weight(num value, String unit, BuildContext context) {
 }
 
 Widget summarizeProgression(
-    {required BuildContext context, required List<num> values, TextAlign textAlign = TextAlign.start}) {
+    {required BuildContext context,
+    required List<num> values,
+    TextAlign textAlign = TextAlign.start}) {
   if (values.isEmpty) return Text("No weight data available");
 
   final startWeight = values.first;
@@ -485,9 +462,13 @@ Widget summarizeProgression(
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 2),
         children: [
           const TextSpan(text: 'Starting at '),
-          WidgetSpan(child: _weight(startWeight, weightUnit(), context), alignment: PlaceholderAlignment.middle),
+          WidgetSpan(
+              child: _weight(startWeight, weightUnit(), context),
+              alignment: PlaceholderAlignment.middle),
           const TextSpan(text: ', currently at '),
-          WidgetSpan(child: _weight(endWeight, weightUnit(), context), alignment: PlaceholderAlignment.middle),
+          WidgetSpan(
+              child: _weight(endWeight, weightUnit(), context),
+              alignment: PlaceholderAlignment.middle),
           const TextSpan(text: ' . '),
           TextSpan(
               text: difference > 0
@@ -497,8 +478,10 @@ Widget summarizeProgression(
                       : "No change at"),
           TextSpan(text: " "),
           WidgetSpan(
-              child: CustomWordMarkIcon('${difference.abs().toStringAsFixed(1)} ${weightUnit()}',
-                  color: _deltaColor(difference), padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2)),
+              child: CustomWordMarkIcon(
+                  '${difference.abs().toStringAsFixed(1)} ${weightUnit()}',
+                  color: _deltaColor(difference),
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2)),
               alignment: PlaceholderAlignment.middle),
         ],
       ),

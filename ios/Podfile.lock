@@ -7,20 +7,16 @@ PODS:
     - amplify_datastore/AWSDataStorePlugin (= 0.0.1)
     - amplify_datastore/AWSPluginsCore (= 0.0.1)
     - Flutter
-    - Starscream (= 4.0.4)
   - amplify_datastore/Amplify (0.0.1):
     - Flutter
-    - Starscream (= 4.0.4)
   - amplify_datastore/AWSDataStorePlugin (0.0.1):
     - amplify_datastore/Amplify
     - amplify_datastore/AWSPluginsCore
     - Flutter
     - SQLite.swift (= 0.13.2)
-    - Starscream (= 4.0.4)
   - amplify_datastore/AWSPluginsCore (0.0.1):
     - amplify_datastore/Amplify
     - Flutter
-    - Starscream (= 4.0.4)
   - amplify_secure_storage (0.0.1):
     - Flutter
   - connectivity_plus (0.0.1):
@@ -34,35 +30,23 @@ PODS:
     - Flutter
   - in_app_review (2.0.0):
     - Flutter
+  - objective_c (0.0.1):
+    - Flutter
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - PostHog (3.25.1)
+  - PostHog (3.33.0)
   - posthog_flutter (0.0.1):
     - Flutter
     - FlutterMacOS
-    - PostHog (~> 3.22)
-  - purchases_flutter (8.8.0):
-    - Flutter
-    - PurchasesHybridCommon (= 13.29.1)
-  - purchases_ui_flutter (8.8.0):
-    - Flutter
-    - PurchasesHybridCommonUI (= 13.29.1)
-  - PurchasesHybridCommon (13.29.1):
-    - RevenueCat (= 5.22.2)
-  - PurchasesHybridCommonUI (13.29.1):
-    - PurchasesHybridCommon (= 13.29.1)
-    - RevenueCatUI (= 5.22.2)
-  - RevenueCat (5.22.2)
-  - RevenueCatUI (5.22.2):
-    - RevenueCat (= 5.22.2)
-  - Sentry/HybridSDK (8.46.0)
-  - sentry_flutter (8.14.2):
+    - PostHog (< 4.0.0, >= 3.32.0)
+  - Sentry/HybridSDK (8.56.2)
+  - sentry_flutter (9.7.0):
     - Flutter
     - FlutterMacOS
-    - Sentry/HybridSDK (= 8.46.0)
+    - Sentry/HybridSDK (= 8.56.2)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -71,7 +55,6 @@ PODS:
   - SQLite.swift (0.13.2):
     - SQLite.swift/standard (= 0.13.2)
   - SQLite.swift/standard (0.13.2)
-  - Starscream (4.0.4)
   - url_launcher_ios (0.0.1):
     - Flutter
   - video_player_avfoundation (0.0.1):
@@ -88,11 +71,10 @@ DEPENDENCIES:
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - in_app_review (from `.symlinks/plugins/in_app_review/ios`)
+  - objective_c (from `.symlinks/plugins/objective_c/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - posthog_flutter (from `.symlinks/plugins/posthog_flutter/ios`)
-  - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
-  - purchases_ui_flutter (from `.symlinks/plugins/purchases_ui_flutter/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -102,13 +84,8 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - PostHog
-    - PurchasesHybridCommon
-    - PurchasesHybridCommonUI
-    - RevenueCat
-    - RevenueCatUI
     - Sentry
     - SQLite.swift
-    - Starscream
 
 EXTERNAL SOURCES:
   amplify_auth_cognito:
@@ -129,16 +106,14 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   in_app_review:
     :path: ".symlinks/plugins/in_app_review/ios"
+  objective_c:
+    :path: ".symlinks/plugins/objective_c/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   posthog_flutter:
     :path: ".symlinks/plugins/posthog_flutter/ios"
-  purchases_flutter:
-    :path: ".symlinks/plugins/purchases_flutter/ios"
-  purchases_ui_flutter:
-    :path: ".symlinks/plugins/purchases_ui_flutter/ios"
   sentry_flutter:
     :path: ".symlinks/plugins/sentry_flutter/ios"
   share_plus:
@@ -152,30 +127,24 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   amplify_auth_cognito: a5d9cb77abfbe05e3501ad0c45dddc81503e7074
-  amplify_datastore: 76d1c44680ca218f604e846c9bf5dac2901ddf9d
+  amplify_datastore: f22d9ef0aeffd42cbcd3fc455f2269cd86cc66e1
   amplify_secure_storage: 3edc30177ffefbcee786c408a21c02f8ab9f168e
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
-  device_info_plus: 71ffc6ab7634ade6267c7a93088ed7e4f74e5896
-  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
-  in_app_review: 5596fe56fab799e8edb3561c03d053363ab13457
+  in_app_review: 7dd1ea365263f834b8464673f9df72c80c17c937
+  objective_c: 89e720c30d716b036faf9c9684022048eee1eee2
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
-  PostHog: 3e08dcbe2612b90ca4a546bbc8e9a401dd04bb17
-  posthog_flutter: 631ab870f7daf1ed190deeb2414eb3e347445f37
-  purchases_flutter: 437a2d875b16ea37f1847b2f88604fc13a18646b
-  purchases_ui_flutter: 0e63afa7c5a6088088ac1fcd06f653c2260cdc9e
-  PurchasesHybridCommon: 1728ff834821ecfc85e987a565d51eda36213958
-  PurchasesHybridCommonUI: 1541272f8adcb7d809f7178cecced3eafd6f5fc8
-  RevenueCat: 234d2361e453ce1282cee7e18449d01aba45ebbf
-  RevenueCatUI: 24f46287ce3185fc9816f0128c09342ab1c76d66
-  Sentry: da60d980b197a46db0b35ea12cb8f39af48d8854
-  sentry_flutter: 27892878729f42701297c628eb90e7c6529f3684
+  PostHog: f96074e7cdc6873e1eb805be0a2b0d6e4ff6742f
+  posthog_flutter: 9535ac2d4ab65ccb9ace3886dcc0b3105198bad5
+  Sentry: b53951377b78e21a734f5dc8318e333dbfc682d7
+  sentry_flutter: 7f88e12d1882ec6e648644a7c0ff5b1466f07f99
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
   SQLite.swift: 4fc2be46c36392e3b87afe6fe7f1801c1daa07ef
-  Starscream: 5178aed56b316f13fa3bc55694e583d35dd414d9
   url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
   video_player_avfoundation: 2cef49524dd1f16c5300b9cd6efd9611ce03639b
 

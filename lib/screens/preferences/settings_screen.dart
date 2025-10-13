@@ -15,7 +15,6 @@ import 'package:tracker_app/graphQL/queries.dart';
 import 'package:tracker_app/screens/request_screens/notifications_request.dart';
 import 'package:tracker_app/shared_prefs.dart';
 import 'package:tracker_app/urls.dart';
-import 'package:tracker_app/utils/revenuecat_utils.dart';
 
 import '../../controllers/exercise_and_routine_controller.dart';
 import '../../utils/dialog_utils.dart';
@@ -62,7 +61,8 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
+class _SettingsScreenState extends State<SettingsScreen>
+    with WidgetsBindingObserver {
   bool _loading = false;
 
   late WeightUnit _weightUnit;
@@ -78,7 +78,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    final userEmail = SharedPrefs().userEmail.isNotEmpty ? SharedPrefs().userEmail : "Apple Sign in";
+    final userEmail = SharedPrefs().userEmail.isNotEmpty
+        ? SharedPrefs().userEmail
+        : "Apple Sign in";
 
     return Scaffold(
       appBar: AppBar(
@@ -99,7 +101,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
               children: [
                 InformationContainerWithBackgroundImage(
                   image: 'images/recovery_girl.PNG',
-                  subtitle: "Loving TRNR? Your feedback helps us grow and improve.",
+                  subtitle:
+                      "Loving TRNR? Your feedback helps us grow and improve.",
                   color: Colors.black,
                   onTap: _openStoreListing,
                   alignmentGeometry: Alignment.center,
@@ -113,31 +116,48 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          LabelDivider(
-                            label: "Notifications",
-                            labelColor: isDarkMode ? Colors.white : Colors.black,
-                            dividerColor: sapphireLighter,
-                            fontSize: 14,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                              "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
-                              textAlign: TextAlign.start,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white70 : Colors.black)),
-                        ]),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LabelDivider(
+                                label: "Notifications",
+                                labelColor:
+                                    isDarkMode ? Colors.white : Colors.black,
+                                dividerColor: sapphireLighter,
+                                fontSize: 14,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                  "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
+                                  textAlign: TextAlign.start,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                          fontWeight: FontWeight.w400,
+                                          color: isDarkMode
+                                              ? Colors.white70
+                                              : Colors.black)),
+                            ]),
                       ),
                       ListTile(
                         onTap: _turnOnNotification,
                         dense: true,
                         horizontalTitleGap: 0,
-                        leading: Text(_notificationEnabled ? "Notification is on" : "Turn on notifications",
+                        leading: Text(
+                            _notificationEnabled
+                                ? "Notification is on"
+                                : "Turn on notifications",
                             textAlign: TextAlign.start,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                color: isDarkMode ? Colors.white : Colors.black)),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: isDarkMode
+                                        ? Colors.white
+                                        : Colors.black)),
                         trailing: FaIcon(
                           FontAwesomeIcons.solidBell,
                           size: 14,
@@ -147,21 +167,25 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   ),
                 ListTile(
                   tileColor: Colors.transparent,
-                  title: Text("Weight", style: Theme.of(context).textTheme.titleMedium),
+                  title: Text("Weight",
+                      style: Theme.of(context).textTheme.titleMedium),
                   subtitle: Text("Choose kg or lbs"),
                   trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
-                    backgroundColor: isDarkMode ? sapphireDark : Colors.grey.shade400,
+                    backgroundColor:
+                        isDarkMode ? sapphireDark : Colors.grey.shade400,
                     thumbColor: isDarkMode ? sapphireDark80 : Colors.white,
                     groupValue: _weightUnit,
                     children: {
                       WeightUnit.kg: SizedBox(
                           width: 30,
                           child: Text(WeightUnit.kg.display,
-                              style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)),
+                              style: Theme.of(context).textTheme.bodySmall,
+                              textAlign: TextAlign.center)),
                       WeightUnit.lbs: SizedBox(
                           width: 30,
                           child: Text(WeightUnit.lbs.display,
-                              style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)),
+                              style: Theme.of(context).textTheme.bodySmall,
+                              textAlign: TextAlign.center)),
                     },
                     onValueChanged: (WeightUnit? value) {
                       if (value != null) {
@@ -175,34 +199,43 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 ),
                 ListTile(
                   onTap: _navigateToExerciseLibrary,
-                  leading: FaIcon(FontAwesomeIcons.personWalking, color: isDarkMode ? Colors.white70 : Colors.black38),
-                  title: Text("Exercises", style: Theme.of(context).textTheme.titleMedium),
+                  leading: FaIcon(FontAwesomeIcons.personWalking,
+                      color: isDarkMode ? Colors.white70 : Colors.black38),
+                  title: Text("Exercises",
+                      style: Theme.of(context).textTheme.titleMedium),
                   subtitle: Text("manage exercises"),
                 ),
                 ListTile(
                     onTap: _sendFeedback,
-                    leading:
-                        FaIcon(FontAwesomeIcons.solidPaperPlane, color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("Feedback", style: Theme.of(context).textTheme.titleMedium),
+                    leading: FaIcon(FontAwesomeIcons.solidPaperPlane,
+                        color: isDarkMode ? Colors.white70 : Colors.black38),
+                    title: Text("Feedback",
+                        style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text("help us improve")),
                 ListTile(
                     onTap: _visitTRKR,
-                    leading: FaIcon(FontAwesomeIcons.instagram, color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("TRNR in the wild", style: Theme.of(context).textTheme.titleMedium),
+                    leading: FaIcon(FontAwesomeIcons.instagram,
+                        color: isDarkMode ? Colors.white70 : Colors.black38),
+                    title: Text("TRNR in the wild",
+                        style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text("follow us on socials")),
                 ListTile(
                     onTap: _logout,
                     leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
                         color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("Logout", style: Theme.of(context).textTheme.titleMedium),
+                    title: Text("Logout",
+                        style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text(userEmail)),
                 ListTile(
                     onTap: _delete,
-                    leading: FaIcon(FontAwesomeIcons.xmark, color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("Delete Account", style: Theme.of(context).textTheme.titleMedium),
+                    leading: FaIcon(FontAwesomeIcons.xmark,
+                        color: isDarkMode ? Colors.white70 : Colors.black38),
+                    title: Text("Delete Account",
+                        style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text(userEmail)),
                 Center(
-                  child: Text(_appVersion, style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(_appVersion,
+                      style: Theme.of(context).textTheme.bodySmall),
                 ),
               ],
             ),
@@ -245,7 +278,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   }
 
   void _navigateToExerciseLibrary() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ExerciseLibraryScreen(readOnly: true)));
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => const ExerciseLibraryScreen(readOnly: true)));
   }
 
   void _clearAppData() async {
@@ -266,7 +300,8 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.globe, size: 18),
             horizontalTitleGap: 6,
-            title: Text("On the web", style: Theme.of(context).textTheme.bodyLarge),
+            title: Text("On the web",
+                style: Theme.of(context).textTheme.bodyLarge),
             onTap: () {
               Navigator.of(context).pop();
               openUrl(url: trackrWebUrl, context: context);
@@ -276,20 +311,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.instagram, size: 20),
             horizontalTitleGap: 6,
-            title: Text("On Instagram", style: Theme.of(context).textTheme.bodyLarge),
+            title: Text("On Instagram",
+                style: Theme.of(context).textTheme.bodyLarge),
             onTap: () {
               Navigator.of(context).pop();
               openUrl(url: instagramUrl, context: context);
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.whatsapp, size: 20),
-            horizontalTitleGap: 6,
-            title: Text("Join our Whatsapp community", style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              openUrl(url: whatsappUrl, context: context);
             },
           )
         ]));
@@ -329,7 +355,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           Navigator.of(context).pop();
           _showLoadingScreen();
           _clearAppData();
-          logOutUserForAppPurchases();
           await Amplify.Auth.signOut();
           if (mounted) {
             context.go('/'); // Replace '/welcome' with your initial route
@@ -344,22 +369,27 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     showBottomSheetWithMultiActions(
         context: context,
         title: "Delete account?",
-        description: "Are you sure you want to delete your account? This action cannot be undone.",
+        description:
+            "Are you sure you want to delete your account? This action cannot be undone.",
         leftAction: Navigator.of(context).pop,
         rightAction: () async {
           Navigator.of(context).pop();
           _showLoadingScreen();
 
-          final deletedExercises =
-              await batchDeleteUserData(document: deleteUserExerciseData, documentKey: "deleteUserExerciseData");
+          final deletedExercises = await batchDeleteUserData(
+              document: deleteUserExerciseData,
+              documentKey: "deleteUserExerciseData");
           final deletedRoutineTemplates = await batchDeleteUserData(
-              document: deleteUserRoutineTemplateData, documentKey: "deleteUserRoutineTemplateData");
-          final deletedRoutineLogs =
-              await batchDeleteUserData(document: deleteUserRoutineLogData, documentKey: "deleteUserRoutineLogData");
-          if (deletedExercises && deletedRoutineTemplates && deletedRoutineLogs) {
+              document: deleteUserRoutineTemplateData,
+              documentKey: "deleteUserRoutineTemplateData");
+          final deletedRoutineLogs = await batchDeleteUserData(
+              document: deleteUserRoutineLogData,
+              documentKey: "deleteUserRoutineLogData");
+          if (deletedExercises &&
+              deletedRoutineTemplates &&
+              deletedRoutineLogs) {
             _hideLoadingScreen();
             _clearAppData();
-            logOutUserForAppPurchases();
             await Amplify.Auth.deleteUser();
             if (mounted) {
               context.go('/'); // Replace '/welcome' with your initial route
@@ -367,7 +397,9 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           } else {
             _hideLoadingScreen();
             if (mounted) {
-              showSnackbar(context: context, message: "Something went wrong. Please try again.");
+              showSnackbar(
+                  context: context,
+                  message: "Something went wrong. Please try again.");
             }
           }
         },

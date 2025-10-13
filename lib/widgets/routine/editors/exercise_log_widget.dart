@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:purchases_ui_flutter/paywall_result.dart';
 import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
 import 'package:tracker_app/controllers/exercise_log_controller.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
@@ -12,7 +11,6 @@ import 'package:tracker_app/enums/exercise_type_enums.dart';
 import 'package:tracker_app/extensions/set_dtos_extensions.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/utils/exercise_logs_utils.dart';
-import 'package:tracker_app/utils/progressive_overload_utils.dart';
 import 'package:tracker_app/utils/sets_utils.dart';
 import 'package:tracker_app/utils/string_utils.dart';
 import 'package:tracker_app/widgets/icons/custom_icon.dart';
@@ -32,16 +30,12 @@ import '../../../enums/routine_editor_type_enums.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/one_rep_max_calculator.dart';
-import '../../../utils/revenuecat_utils.dart';
 import '../../buttons/opacity_button_widget_two.dart';
 import '../../depth_stack.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../information_containers/transparent_information_container_lite.dart';
-import '../../monitors/progression_half_animated_gauge.dart';
+import '../../timers/duration_stopwatch_widget.dart';
 import '../../weight_plate_calculator.dart';
-import '../preview/set_headers/double_set_header.dart';
-import '../preview/set_headers/single_set_header.dart';
-import '../preview/sets_listview.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
@@ -50,7 +44,10 @@ class ExerciseLogWidget extends StatefulWidget {
   final ExerciseLogDto? superSet;
 
   const ExerciseLogWidget(
-      {super.key, this.editorType = RoutineEditorMode.edit, required this.exerciseLogId, this.superSet});
+      {super.key,
+      this.editorType = RoutineEditorMode.edit,
+      required this.exerciseLogId,
+      this.superSet});
 
   @override
   State<ExerciseLogWidget> createState() => _ExerciseLogWidgetState();
@@ -59,7 +56,8 @@ class ExerciseLogWidget extends StatefulWidget {
 class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   late ExerciseLogDto _exerciseLog;
 
-  List<(TextEditingController, TextEditingController)> _weightAndRepsControllers = [];
+  List<(TextEditingController, TextEditingController)>
+      _weightAndRepsControllers = [];
   List<TextEditingController> _repsControllers = [];
   List<DateTime> _durationControllers = [];
 
@@ -67,24 +65,35 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   SetDto? _selectedSetDto;
 
+  final GlobalKey<DurationStopwatchWidgetState> _durationStopwatchKey =
+      GlobalKey();
+
   final _selectedSetIndex = ValueNotifier<int>(0);
 
   final _errors = <int, String>{};
 
   void _show1RMRecommendations() {
     final pastExerciseLogs =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false).exerciseLogsByExerciseId[_exerciseLog.id] ??
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+                .exerciseLogsByExerciseId[_exerciseLog.id] ??
             [];
-    final completedPastExerciseLogs = loggedExercises(exerciseLogs: pastExerciseLogs);
+    final completedPastExerciseLogs =
+        loggedExercises(exerciseLogs: pastExerciseLogs);
     if (completedPastExerciseLogs.isNotEmpty) {
       final previousLog = completedPastExerciseLogs.last;
-      final heaviestSetWeight = heaviestWeightInSetForExerciseLog(exerciseLog: previousLog);
-      final oneRepMax = average1RM(weight: (heaviestSetWeight).weight, reps: (heaviestSetWeight).reps);
+      final heaviestSetWeight =
+          heaviestWeightInSetForExerciseLog(exerciseLog: previousLog);
+      final oneRepMax = average1RM(
+          weight: (heaviestSetWeight).weight, reps: (heaviestSetWeight).reps);
       displayBottomSheet(
-          context: context, child: _OneRepMaxSlider(exercise: _exerciseLog.exercise.name, oneRepMax: oneRepMax));
+          context: context,
+          child: _OneRepMaxSlider(
+              exercise: _exerciseLog.exercise.name, oneRepMax: oneRepMax));
     } else {
       showBottomSheetWithNoAction(
-          context: context, title: _exerciseLog.exercise.name, description: "Keep logging to see recommendations.");
+          context: context,
+          title: _exerciseLog.exercise.name,
+          description: "Keep logging to see recommendations.");
     }
   }
 
@@ -96,8 +105,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   void _loadControllers() {
     _clearControllers();
 
-    final exerciseLog = Provider.of<ExerciseLogController>(context, listen: false)
-        .whereExerciseLog(exerciseId: _exerciseLog.exercise.id);
+    final exerciseLog =
+        Provider.of<ExerciseLogController>(context, listen: false)
+            .whereExerciseLog(exerciseId: _exerciseLog.exercise.id);
 
     final sets = exerciseLog.sets;
 
@@ -148,8 +158,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _addSet() {
-    final pastSets = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .whereRecentSetsForExercise(exercise: _exerciseLog.exercise);
+    final pastSets =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .whereRecentSetsForExercise(exercise: _exerciseLog.exercise);
     Provider.of<ExerciseLogController>(context, listen: false)
         .addSet(exerciseLogId: _exerciseLog.id, pastSets: pastSets);
     _loadControllers();
@@ -161,11 +172,14 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     _loadControllers();
   }
 
-  void _updateWeight({required int index, required double weight, required SetDto setDto}) {
-    final previousSets = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+  void _updateWeight(
+      {required int index, required double weight, required SetDto setDto}) {
+    final previousSets =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
-    final previousWeights = previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
+    final previousWeights =
+        previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
 
     final isOutSideOfRange = isOutsideReasonableRange(previousWeights, weight);
     if (isOutSideOfRange) {
@@ -178,13 +192,15 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     _checkWeightRange(weight: weight, index: index);
 
     final updatedSet = (setDto as WeightAndRepsSetDto).copyWith(weight: weight);
-    Provider.of<ExerciseLogController>(context, listen: false)
-        .updateWeight(exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
+    Provider.of<ExerciseLogController>(context, listen: false).updateWeight(
+        exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
   }
 
-  void _updateReps({required int index, required int reps, required SetDto setDto}) {
-    final previousSets = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+  void _updateReps(
+      {required int index, required int reps, required SetDto setDto}) {
+    final previousSets =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousReps = previousSets
         .map((set) => switch (_exerciseLog.exercise.type) {
@@ -205,63 +221,87 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     _checkRepsRange(reps: reps, index: index);
 
-    final updatedSet =
-        setDto is WeightAndRepsSetDto ? setDto.copyWith(reps: reps) : (setDto as RepsSetDto).copyWith(reps: reps);
-    Provider.of<ExerciseLogController>(context, listen: false)
-        .updateReps(exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
+    final updatedSet = setDto is WeightAndRepsSetDto
+        ? setDto.copyWith(reps: reps)
+        : (setDto as RepsSetDto).copyWith(reps: reps);
+    Provider.of<ExerciseLogController>(context, listen: false).updateReps(
+        exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
   }
 
   void _updateDuration(
-      {required int index, required Duration duration, required SetDto setDto, required bool shouldCheck}) {
-    SetDto updatedSet = (setDto as DurationSetDto).copyWith(duration: duration, checked: shouldCheck);
-    Provider.of<ExerciseLogController>(context, listen: false)
-        .updateDuration(exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet, notify: true);
+      {required int index,
+      required Duration duration,
+      required SetDto setDto,
+      required bool shouldCheck}) {
+    SetDto updatedSet = (setDto as DurationSetDto)
+        .copyWith(duration: duration, checked: shouldCheck);
+    Provider.of<ExerciseLogController>(context, listen: false).updateDuration(
+        exerciseLogId: _exerciseLog.id,
+        index: index,
+        setDto: updatedSet,
+        notify: true);
   }
 
   void _updateSetCheck({required int index}) async {
-    PaywallResult? payWallResult = await showPaywallIfNeeded();
+    // 1. Pull the current version from provider, not from the parameter
+    final currentSet =
+        Provider.of<ExerciseLogController>(context, listen: false)
+            .whereExerciseLog(exerciseId: _exerciseLog.id)
+            .sets[index];
 
-    if (!mounted) return;
+    if (currentSet.isEmpty()) {
+      showSnackbar(
+          context: context,
+          message:
+              "Mind taking a look at the set values and confirming they’re correct?");
+      return;
+    }
 
-    payWallResult ??= PaywallResult.notPresented;
+    final checked = !currentSet.checked;
+    final updatedSet = currentSet.copyWith(checked: checked);
+    Provider.of<ExerciseLogController>(context, listen: false).updateSetCheck(
+        exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
 
-    if (payWallResult == PaywallResult.notPresented) {
-      // 1. Pull the current version from provider, not from the parameter
-      final currentSet = Provider.of<ExerciseLogController>(context, listen: false)
-          .whereExerciseLog(exerciseId: _exerciseLog.id)
-          .sets[index];
+    _loadControllers();
+  }
 
-      if (currentSet.isEmpty()) {
-        showSnackbar(context: context, message: "Mind taking a look at the set values and confirming they’re correct?");
-        return;
-      }
+  void _onLogDurationSet() {
+    final stopwatchState = _durationStopwatchKey.currentState;
+    if (stopwatchState != null &&
+        stopwatchState.currentDuration.inSeconds > 0) {
+      // Store the duration before resetting
+      final duration = stopwatchState.currentDuration;
 
-      final checked = !currentSet.checked;
-      final updatedSet = currentSet.copyWith(checked: checked);
-      Provider.of<ExerciseLogController>(context, listen: false)
-          .updateSetCheck(exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
+      // Add a new set
+      _addSet();
 
-      _loadControllers();
+      // Wait for the widget to rebuild with the new set, then update it
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final exerciseLog =
+              Provider.of<ExerciseLogController>(context, listen: false)
+                  .whereExerciseLog(exerciseId: _exerciseLog.exercise.id);
+          final sets = exerciseLog.sets;
 
-      final maxReps = switch (currentSet.type) {
-        ExerciseType.weights => (currentSet as WeightAndRepsSetDto).reps,
-        ExerciseType.bodyWeight => (currentSet as RepsSetDto).reps,
-        ExerciseType.duration => 0,
-      };
+          if (sets.isNotEmpty) {
+            // Get the newly added set index (last one)
+            final newSetIndex = sets.length - 1;
+            final setDto = sets[newSetIndex] as DurationSetDto;
 
-      if (checked) {
-        displayBottomSheet(
-            context: context,
-            child: _RPERatingSlider(
-              maxReps: maxReps,
-              rpeRating: currentSet.rpeRating.toDouble(),
-              onSelectRating: (int rpeRating) {
-                final updatedSetWithRpeRating = updatedSet.copyWith(rpeRating: rpeRating);
-                Provider.of<ExerciseLogController>(context, listen: false)
-                    .updateRpeRating(exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSetWithRpeRating);
-              },
-            ));
-      }
+            // Update its duration and auto-check it
+            final updatedSet =
+                setDto.copyWith(duration: duration, checked: true);
+            Provider.of<ExerciseLogController>(context, listen: false)
+                .updateSetCheck(
+                    exerciseLogId: _exerciseLog.id,
+                    index: newSetIndex,
+                    setDto: updatedSet);
+          }
+        }
+      });
+
+      // Reset the stopwatch
+      stopwatchState.resetStopwatch();
     }
   }
 
@@ -287,17 +327,20 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _loadWeightAndRepsControllers({required List<SetDto> sets}) {
-    final previousSets = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+    final previousSets =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
-    final previousWeights = previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
+    final previousWeights =
+        previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
 
     List<(TextEditingController, TextEditingController)> controllers = [];
     for (final (index, set) in sets.indexed) {
       final weight = (set as WeightAndRepsSetDto).weight;
       final reps = set.reps;
 
-      final isOutSideOfRange = isOutsideReasonableRange(previousWeights, weight);
+      final isOutSideOfRange =
+          isOutsideReasonableRange(previousWeights, weight);
       if (isOutSideOfRange) {
         final message = _getWeightErrorMessage(weight: weight);
         _setError(idx: index, msg: message);
@@ -319,8 +362,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _loadRepsControllers({required List<SetDto> sets}) {
-    final previousSets = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+    final previousSets =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousReps = previousSets
         .map((set) => switch (_exerciseLog.exercise.type) {
@@ -394,9 +438,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         final isDarkMode = brightness == Brightness.dark;
 
         // 1. Pull the current version from provider, not from the parameter
-        final currentNotes = Provider.of<ExerciseLogController>(context, listen: false)
-            .whereExerciseLog(exerciseId: _exerciseLog.id)
-            .notes;
+        final currentNotes =
+            Provider.of<ExerciseLogController>(context, listen: false)
+                .whereExerciseLog(exerciseId: _exerciseLog.id)
+                .notes;
 
         return Padding(
           padding: EdgeInsets.only(
@@ -426,8 +471,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   @override
   void initState() {
     super.initState();
-    _exerciseLog =
-        Provider.of<ExerciseLogController>(context, listen: false).whereExerciseLog(exerciseId: widget.exerciseLogId);
+    _exerciseLog = Provider.of<ExerciseLogController>(context, listen: false)
+        .whereExerciseLog(exerciseId: widget.exerciseLogId);
     _loadControllers();
   }
 
@@ -445,7 +490,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   void _showWeightCalculator() {
     displayBottomSheet(
         context: context,
-        child: WeightPlateCalculator(target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0),
+        child: WeightPlateCalculator(
+            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0),
         padding: EdgeInsets.zero);
   }
 
@@ -461,64 +507,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     });
   }
 
-  void _showDeloadSets() {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    final exerciseLog = _exerciseLog;
-    final exercise = exerciseLog.exercise;
-    final type = exercise.type;
-
-    final readinessScore = 0;
-
-    final deloadSets = calculateDeload(original: exerciseLog, recoveryScore: readinessScore);
-
-    displayBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        child: Column(spacing: 2, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text("Training Load", style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 20)),
-          Text(
-              "Based on your readiness score of $readinessScore, we recommend this load to keep you active, while giving your body time to fully recharge.",
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white70 : Colors.grey.shade800)),
-          const SizedBox(
-            height: 16,
-          ),
-          Column(
-            spacing: 20,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              switch (type) {
-                ExerciseType.weights => DoubleSetHeader(
-                    firstLabel: "PREVIOUS ${weightUnit().toUpperCase()}".toUpperCase(),
-                    secondLabel: 'PREVIOUS REPS'.toUpperCase(),
-                  ),
-                ExerciseType.bodyWeight => SingleSetHeader(label: 'PREVIOUS REPS'.toUpperCase()),
-                ExerciseType.duration => SingleSetHeader(label: 'PREVIOUS TIME'.toUpperCase())
-              },
-              SetsListview(type: type, sets: deloadSets),
-            ],
-          ),
-          const SizedBox(
-            height: 16,
-          ),
-          SizedBox(
-              width: double.infinity,
-              child: OpacityButtonWidgetTwo(
-                  label: "Switch to this load".toUpperCase(),
-                  buttonColor: vibrantGreen,
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Provider.of<ExerciseLogController>(context, listen: false)
-                        .overwriteSets(exerciseLogId: _exerciseLog.id, newSets: deloadSets);
-                    _loadControllers();
-                  }))
-        ]));
-  }
-
   @override
   Widget build(BuildContext context) {
     Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
@@ -526,34 +514,43 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom != 0;
 
-    final exerciseAndRoutineController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
 
-    final exerciseLog = context
-        .select<ExerciseLogController, ExerciseLogDto>((c) => c.whereExerciseLog(exerciseId: _exerciseLog.exercise.id));
+    final exerciseLog = context.select<ExerciseLogController, ExerciseLogDto>(
+        (c) => c.whereExerciseLog(exerciseId: _exerciseLog.exercise.id));
 
     final exerciseType = exerciseLog.exercise.type;
 
     final currentSets = exerciseLog.sets;
 
-    final previousSets = exerciseAndRoutineController.wherePrevSetsForExercise(exercise: exerciseLog.exercise);
+    final previousSets = exerciseAndRoutineController.wherePrevSetsForExercise(
+        exercise: exerciseLog.exercise);
 
-    final currentWorkingSets = currentSets.workingSets(exerciseType).where((s) => s.isWorkingSet).toList();
+    final currentWorkingSets = currentSets
+        .workingSets(exerciseType)
+        .where((s) => s.isWorkingSet)
+        .toList();
 
-    final previousWorkingSets = previousSets.workingSets(exerciseType).where((s) => s.isWorkingSet).toList();
-
-    TrainingIntensityReport? trainingIntensityReport;
+    final previousWorkingSets = previousSets
+        .workingSets(exerciseType)
+        .where((s) => s.isWorkingSet)
+        .toList();
 
     bool isAllSameWeight = false;
 
     if (exerciseType == ExerciseType.weights) {
-      final weights = currentWorkingSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
+      final weights = currentWorkingSets
+          .map((set) => (set as WeightAndRepsSetDto).weight)
+          .toList();
       isAllSameWeight = allNumbersAreSame(numbers: weights);
     }
 
     /// Determine working set for weight
     final currentWorkingSet = switch (exerciseType) {
-      ExerciseType.weights =>
-        isAllSameWeight ? getHeaviestVolume(currentWorkingSets) : getHighestWeight(currentWorkingSets),
+      ExerciseType.weights => isAllSameWeight
+          ? getHeaviestVolume(currentWorkingSets)
+          : getHighestWeight(currentWorkingSets),
       ExerciseType.bodyWeight => getHighestReps(currentWorkingSets),
       ExerciseType.duration => getLongestDuration(currentWorkingSets),
     };
@@ -573,20 +570,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
       };
     }).toList();
 
-    final typicalRepRange = determineTypicalRepRange(reps: reps);
-
-    /// Determine progression for working sets where [ExerciseType] is [ExerciseType.weights]
-    final trainingData = exerciseType == ExerciseType.weights
-        ? currentWorkingSets.map((set) {
-            return TrainingData(
-                reps: (set as WeightAndRepsSetDto).reps, weight: set.weight, rpe: set.rpeRating, date: set.dateTime);
-          }).toList()
-        : <TrainingData>[];
-
-    trainingIntensityReport = getTrainingProgressionReport(
-        data: trainingData, targetMinReps: typicalRepRange.minReps, targetMaxReps: typicalRepRange.maxReps);
-
-    final isEmptySets = hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
+    hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
 
     final errorWidgets = _errors.entries
         .map((error) => InformationContainerLite(
@@ -594,12 +578,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             color: Colors.yellow,
             useOpacity: false,
             onTap: () => setState(() => _errors.remove(error.key)),
-            trailing: FaIcon(FontAwesomeIcons.squareXmark, color: Colors.black)))
+            trailing:
+                FaIcon(FontAwesomeIcons.squareXmark, color: Colors.black)))
         .toList();
-
-    final readinessScore = 0;
-    final readinessTier = tierForScore(score: readinessScore / 100);
-    final isLowReadiness = readinessScore > 0 && readinessTier != RecoveryTier.optimal;
 
     return Scaffold(
       appBar: AppBar(
@@ -609,8 +590,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         ),
         title: GestureDetector(
             onTap: () {
-              Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (context) => ExerciseHomeScreen(exercise: exerciseLog.exercise)));
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) =>
+                      ExerciseHomeScreen(exercise: exerciseLog.exercise)));
             },
             child: Text(exerciseLog.exercise.name)),
         actions: [
@@ -625,15 +607,17 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
               icon: const FaIcon(FontAwesomeIcons.solidLightbulb, size: 18),
               tooltip: 'Weights and Reps Recommendations',
             ),
-          IconButton(
-            onPressed: _addSet,
-            icon: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 22),
-            tooltip: 'Add new set',
-          ),
+          // Hide "Add Set" button for duration exercises in log mode (sets are added via stopwatch)
+          if (!(exerciseType == ExerciseType.duration &&
+              widget.editorType == RoutineEditorMode.log))
+            IconButton(
+              onPressed: _addSet,
+              icon: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 22),
+              tooltip: 'Add new set',
+            ),
         ],
       ),
-      floatingActionButtonLocation:
-          !isKeyboardOpen && isLowReadiness ? null : FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: isKeyboardOpen
           ? Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -675,111 +659,87 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             padding: EdgeInsets.only(bottom: 30),
             child: Column(
               spacing: 20,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (exerciseType == ExerciseType.weights && widget.editorType == RoutineEditorMode.log && !isEmptySets)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (withReps(type: exerciseType))
-                        ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: 180,
-                            minHeight: 130,
-                          ),
-                          child: ClipRect(
-                            clipBehavior: Clip.none, // A
-                            child: ProgressionHalfAnimatedGauge(
-                              value: trainingIntensityReport.averageRPE.roundToDouble(),
-                              min: 0,
-                              max: 10,
-                              label: "AVG RPE",
-                              report: trainingIntensityReport,
-                            ),
-                          ),
+                // Stopwatch UI for duration exercises in log mode
+                if (exerciseType == ExerciseType.duration &&
+                    widget.editorType == RoutineEditorMode.log)
+                  DurationStopwatchWidget(
+                    key: _durationStopwatchKey,
+                    onLogSet: _onLogDurationSet,
+                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    switch (exerciseType) {
+                      ExerciseType.weights => WeightAndRepsSetHeader(
+                          editorType: widget.editorType,
+                          firstLabel: weightUnit().toUpperCase(),
+                          secondLabel: 'REPS',
                         ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        child: Text(
-                          trainingIntensityReport.explanation,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(fontWeight: FontWeight.w600, fontSize: 15, height: 1.8),
+                      ExerciseType.bodyWeight => RepsSetHeader(
+                          editorType: widget.editorType,
                         ),
+                      ExerciseType.duration => DurationSetHeader(
+                          editorType: widget.editorType,
+                        )
+                    },
+                    if (currentSets.isEmpty && withReps(type: exerciseType))
+                      Column(
+                        children: [
+                          const SizedBox(height: 10),
+                          NoListEmptyState(
+                              showIcon: false,
+                              message:
+                                  "Tap the + button to start adding sets to your exercise"),
+                        ],
                       ),
-                    ],
-                  ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 6.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      switch (exerciseType) {
-                        ExerciseType.weights => WeightAndRepsSetHeader(
-                            editorType: widget.editorType,
-                            firstLabel: weightUnit().toUpperCase(),
-                            secondLabel: 'REPS',
-                          ),
-                        ExerciseType.bodyWeight => RepsSetHeader(
-                            editorType: widget.editorType,
-                          ),
-                        ExerciseType.duration => DurationSetHeader(
-                            editorType: widget.editorType,
-                          )
-                      },
-                      if (currentSets.isEmpty)
-                        Column(
-                          children: [
-                            const SizedBox(height: 10),
-                            NoListEmptyState(
-                                showIcon: false, message: "Tap the + button to start adding sets to your exercise"),
-                          ],
+                    const SizedBox(height: 20),
+                    switch (exerciseType) {
+                      ExerciseType.weights => _WeightAndRepsSetListView(
+                          sets: currentSets
+                              .map((set) => set as WeightAndRepsSetDto)
+                              .toList(),
+                          updateSetCheck: _updateSetCheck,
+                          removeSet: _removeSet,
+                          updateReps: _updateReps,
+                          updateWeight: _updateWeight,
+                          controllers: _weightAndRepsControllers,
+                          onTapWeightEditor: _onTapWeightEditor,
+                          onTapRepsEditor: _onTapRepsEditor,
+                          editorType: widget.editorType,
                         ),
-                      const SizedBox(height: 20),
-                      switch (exerciseType) {
-                        ExerciseType.weights => _WeightAndRepsSetListView(
-                            sets: currentSets.map((set) => set as WeightAndRepsSetDto).toList(),
-                            updateSetCheck: _updateSetCheck,
-                            removeSet: _removeSet,
-                            updateReps: _updateReps,
-                            updateWeight: _updateWeight,
-                            controllers: _weightAndRepsControllers,
-                            onTapWeightEditor: _onTapWeightEditor,
-                            onTapRepsEditor: _onTapRepsEditor,
-                            editorType: widget.editorType,
-                          ),
-                        ExerciseType.bodyWeight => _RepsSetListView(
-                            sets: currentSets.map((set) => set as RepsSetDto).toList(),
-                            updateSetCheck: _updateSetCheck,
-                            removeSet: _removeSet,
-                            updateReps: _updateReps,
-                            controllers: _repsControllers,
-                            onTapRepsEditor: _onTapRepsEditor,
-                            editorType: widget.editorType,
-                          ),
-                        ExerciseType.duration => _DurationSetListView(
-                            sets: currentSets.map((set) => set as DurationSetDto).toList(),
-                            updateSetCheck: _updateSetCheck,
-                            removeSet: _removeSet,
-                            updateDuration: _updateDuration,
-                            controllers: _durationControllers,
-                            editorType: widget.editorType,
-                          ),
-                      }
-                    ],
-                  ),
+                      ExerciseType.bodyWeight => _RepsSetListView(
+                          sets: currentSets
+                              .map((set) => set as RepsSetDto)
+                              .toList(),
+                          updateSetCheck: _updateSetCheck,
+                          removeSet: _removeSet,
+                          updateReps: _updateReps,
+                          controllers: _repsControllers,
+                          onTapRepsEditor: _onTapRepsEditor,
+                          editorType: widget.editorType,
+                        ),
+                      ExerciseType.duration => _DurationSetListView(
+                          sets: currentSets
+                              .map((set) => set as DurationSetDto)
+                              .toList(),
+                          updateSetCheck: _updateSetCheck,
+                          removeSet: _removeSet,
+                          updateDuration: _updateDuration,
+                          controllers: _durationControllers,
+                          editorType: widget.editorType,
+                        ),
+                    }
+                  ],
                 ),
                 if (_errors.isNotEmpty) DepthStack(children: errorWidgets),
-                if (isLowReadiness && widget.editorType == RoutineEditorMode.log)
+                if (currentWorkingSet != null &&
+                    currentWorkingSet.isNotEmpty() &&
+                    exerciseType == ExerciseType.weights)
                   TransparentInformationContainerLite(
-                      content: "Tap for training recommendations tailored to your readiness.",
-                      useOpacity: true,
-                      onTap: _showDeloadSets,
-                      trailing: CustomIcon(Icons.chevron_right_rounded, color: Colors.white)),
-                if (currentWorkingSet != null && currentWorkingSet.isNotEmpty() && exerciseType == ExerciseType.weights)
-                  TransparentInformationContainerLite(
-                      content: "${currentWorkingSet.summary()} is your working set.",
+                      content:
+                          "${currentWorkingSet.summary()} is your working set.",
                       useOpacity: true,
                       onTap: () {
                         showBottomSheetWithNoAction(
@@ -788,13 +748,19 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                             description:
                                 "Working sets are the primary, challenging sets performed after any warm-up sets. They provide the main training stimulus needed for muscle growth, strength gains, or endurance improvements.");
                       },
-                      trailing: CustomIcon(Icons.chevron_right_rounded, color: Colors.white)),
-                Text("RPE (Rate of Perceived Exertion) measures how hard your set feels based on effort, fatigue, and how close you are to failure. Your rating of ${trainingIntensityReport.averageRPE.roundToDouble()} helps us understand how challenging the set was, so we can make smarter weight suggestions.",
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w400, fontSize: 12, height: 1.8, color: isDarkMode ? Colors.white70 : Colors.grey.shade800),
-                )
+                      trailing: CustomIcon(Icons.chevron_right_rounded,
+                          color: Colors.white)),
+                if (exerciseLog.notes.isNotEmpty)
+                  Text(
+                    exerciseLog.notes,
+                    textAlign: TextAlign.start,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        height: 1.8,
+                        color:
+                            isDarkMode ? Colors.white70 : Colors.grey.shade800),
+                  )
               ],
             ),
           ),
@@ -810,8 +776,14 @@ class _WeightAndRepsSetListView extends StatelessWidget {
   final List<(TextEditingController, TextEditingController)> controllers;
   final void Function({required int index}) removeSet;
   final void Function({required int index}) updateSetCheck;
-  final void Function({required int index, required int reps, required SetDto setDto}) updateReps;
-  final void Function({required int index, required double weight, required SetDto setDto}) updateWeight;
+  final void Function(
+      {required int index,
+      required int reps,
+      required SetDto setDto}) updateReps;
+  final void Function(
+      {required int index,
+      required double weight,
+      required SetDto setDto}) updateWeight;
   final void Function({required SetDto setDto}) onTapWeightEditor;
   final void Function() onTapRepsEditor;
 
@@ -841,8 +813,10 @@ class _WeightAndRepsSetListView extends StatelessWidget {
           setDto: setDto,
           onCheck: () => updateSetCheck(index: index),
           onRemoved: () => removeSet(index: index),
-          onChangedReps: (int value) => updateReps(index: index, reps: value, setDto: setDto),
-          onChangedWeight: (double value) => updateWeight(index: index, weight: value, setDto: setDto),
+          onChangedReps: (int value) =>
+              updateReps(index: index, reps: value, setDto: setDto),
+          onChangedWeight: (double value) =>
+              updateWeight(index: index, weight: value, setDto: setDto),
           onTapWeightEditor: () => onTapWeightEditor(setDto: setDto),
           onTapRepsEditor: () => onTapRepsEditor(),
           controllers: controllers[index],
@@ -858,7 +832,10 @@ class _RepsSetListView extends StatelessWidget {
   final List<TextEditingController> controllers;
   final void Function({required int index}) removeSet;
   final void Function({required int index}) updateSetCheck;
-  final void Function({required int index, required int reps, required SetDto setDto}) updateReps;
+  final void Function(
+      {required int index,
+      required int reps,
+      required SetDto setDto}) updateReps;
   final void Function() onTapRepsEditor;
 
   const _RepsSetListView(
@@ -885,7 +862,8 @@ class _RepsSetListView extends StatelessWidget {
           setDto: setDto,
           onCheck: () => updateSetCheck(index: index),
           onRemoved: () => removeSet(index: index),
-          onChangedReps: (int value) => updateReps(index: index, reps: value, setDto: setDto),
+          onChangedReps: (int value) =>
+              updateReps(index: index, reps: value, setDto: setDto),
           onTapRepsEditor: () => onTapRepsEditor(),
           controller: controllers[index],
         );
@@ -916,24 +894,44 @@ class _DurationSetListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: EdgeInsets.zero,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: sets.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (_, index) {
-        final setDto = sets[index];
-        return DurationSetRow(
-          editorType: editorType,
-          setDto: setDto,
-          onCheck: () => updateSetCheck(index: index),
-          onRemoved: () => removeSet(index: index),
-          startTime: controllers.isNotEmpty ? controllers[index] : DateTime.now(),
-          onUpdateDuration: (Duration duration, bool shouldCheck) =>
-              updateDuration(index: index, setDto: setDto, duration: duration, shouldCheck: shouldCheck),
-        );
-      },
+    // Filter to show only completed sets in log mode
+    final displaySets = editorType == RoutineEditorMode.log
+        ? sets.where((set) => set.checked).toList()
+        : sets;
+
+    return Column(
+      spacing: 20,
+      children: [
+        // Sets List
+        if (displaySets.isNotEmpty)
+          ListView.separated(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: displaySets.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (_, index) {
+              final setDto = displaySets[index];
+              final actualIndex = sets.indexOf(setDto);
+              return DurationSetRow(
+                editorType: editorType,
+                setDto: setDto,
+                onCheck: () => updateSetCheck(index: actualIndex),
+                onRemoved: () => removeSet(index: actualIndex),
+                startTime:
+                    controllers.isNotEmpty && actualIndex < controllers.length
+                        ? controllers[actualIndex]
+                        : DateTime.now(),
+                onUpdateDuration: (Duration duration, bool shouldCheck) =>
+                    updateDuration(
+                        index: actualIndex,
+                        setDto: setDto,
+                        duration: duration,
+                        shouldCheck: shouldCheck),
+              );
+            },
+          ),
+      ],
     );
   }
 }
@@ -957,7 +955,11 @@ class _OneRepMaxSliderState extends State<_OneRepMaxSlider> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.exercise, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 20)),
+        Text(widget.exercise,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontSize: 20)),
         const SizedBox(height: 2),
         RichText(
           text: TextSpan(
@@ -969,24 +971,40 @@ class _OneRepMaxSliderState extends State<_OneRepMaxSlider> {
               ),
               TextSpan(
                 text: "$_weight${weightUnit()}",
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
               TextSpan(
                 text: " ",
               ),
               TextSpan(
                 text: "for",
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w500),
               ),
               TextSpan(text: " "),
               TextSpan(
-                text: "${_reps.toInt()} ${pluralize(word: "rep", count: _reps.toInt())}",
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                text:
+                    "${_reps.toInt()} ${pluralize(word: "rep", count: _reps.toInt())}",
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700),
               )
             ],
           ),
         ),
-        Slider(value: _reps, onChanged: onChanged, min: 1, max: 20, divisions: 19, thumbColor: vibrantGreen),
+        Slider(
+            value: _reps,
+            onChanged: onChanged,
+            min: 1,
+            max: 20,
+            divisions: 19,
+            thumbColor: vibrantGreen),
       ],
     );
   }
@@ -1029,7 +1047,8 @@ class _OneRepMaxSliderState extends State<_OneRepMaxSlider> {
   }
 
   double _weightForPercentage({required int reps}) {
-    return (widget.oneRepMax * (_percentageForReps(reps) / 100)).roundToDouble();
+    return (widget.oneRepMax * (_percentageForReps(reps) / 100))
+        .roundToDouble();
   }
 
   @override
@@ -1038,91 +1057,3 @@ class _OneRepMaxSliderState extends State<_OneRepMaxSlider> {
     _weight = _weightForPercentage(reps: 10);
   }
 }
-
-class _RPERatingSlider extends StatefulWidget {
-  final double rpeRating;
-  final void Function(int rpeRating) onSelectRating;
-  final int maxReps;
-
-  const _RPERatingSlider({this.rpeRating = 5, required this.onSelectRating, required this.maxReps});
-
-  @override
-  State<_RPERatingSlider> createState() => _RPERatingSliderState();
-}
-
-class _RPERatingSliderState extends State<_RPERatingSlider> {
-  double _rpeRating = 5;
-
-  String _lastTwoReps({required int maxReps}) => maxReps <= 1 ? "$maxReps" : "${maxReps - 1} & $maxReps";
-
-  @override
-  Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-            "How hard was it to complete ${pluralize(word: "rep", count: widget.maxReps)} ${_lastTwoReps(maxReps: widget.maxReps)}?",
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white70 : Colors.black)),
-        const SizedBox(height: 12),
-        Text(
-          _ratingDescription(_rpeRating),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        Slider(value: _rpeRating, onChanged: onChanged, min: 5, max: 10, divisions: 5, thumbColor: vibrantGreen),
-        const SizedBox(height: 10),
-        SizedBox(
-            width: double.infinity,
-            child: OpacityButtonWidgetTwo(
-                label: "save rating".toUpperCase(), buttonColor: vibrantGreen, onPressed: onSelectRepRange)),
-      ],
-    );
-  }
-
-  void onChanged(double value) {
-    HapticFeedback.heavyImpact();
-
-    setState(() {
-      _rpeRating = value;
-    });
-  }
-
-  void onSelectRepRange() {
-    Navigator.of(context).pop();
-    final absoluteRating = _rpeRating.floor();
-    widget.onSelectRating(absoluteRating);
-  }
-
-  String _ratingDescription(double rating) {
-    final absoluteRating = rating.floor();
-
-    final rpeDescription = _repToRPE[absoluteRating] ?? _repToRPE[5]!;
-
-    return "$rpeDescription ${pluralize(word: "rep", count: widget.maxReps)} ${_lastTwoReps(maxReps: widget.maxReps)}";
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _rpeRating = widget.rpeRating < 5 ? 5 : widget.rpeRating;
-  }
-}
-
-Map<int, String> _repToRPE = {
-  1: "😌 Effortless — pure warm-up",
-  2: "🙂 Very easy — lots left in the tank",
-  3: "😊 Easy — could do more",
-  4: "😅 Comfortable — moving well",
-  5: "😮‍💨 Not Challenging at all for",
-  6: "🔥 Challenging to complete",
-  7: "😣 Pushed myself hard for",
-  8: "🥵 Pushed myself harder for",
-  9: "🤯 Struggling to complete",
-  10: "💀 Struggled to complete",
-};

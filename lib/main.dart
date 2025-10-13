@@ -41,7 +41,6 @@ import 'package:tracker_app/screens/routines/routine_plans_screen.dart';
 import 'package:tracker_app/screens/routines/routine_template_screen.dart';
 import 'package:tracker_app/shared_prefs.dart';
 import 'package:tracker_app/utils/date_utils.dart';
-import 'package:tracker_app/utils/revenuecat_utils.dart';
 import 'package:tracker_app/utils/theme/theme.dart';
 
 import 'amplifyconfiguration.dart';
@@ -272,7 +271,6 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _configureAmplify();
-    configureRevenueCat();
   }
 
   Future<void> _configureAmplify() async {
