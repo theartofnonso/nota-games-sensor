@@ -11,16 +11,22 @@ class NotificationsRequestScreen extends StatefulWidget {
   const NotificationsRequestScreen({super.key, required this.onRequest});
 
   @override
-  State<NotificationsRequestScreen> createState() => _NotificationsRequestScreenState();
+  State<NotificationsRequestScreen> createState() =>
+      _NotificationsRequestScreenState();
 }
 
-class _NotificationsRequestScreenState extends State<NotificationsRequestScreen> {
+class _NotificationsRequestScreenState
+    extends State<NotificationsRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28), onPressed: Navigator.of(context).pop),
+            icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
+            onPressed: Navigator.of(context).pop),
       ),
       body: Container(
         decoration: BoxDecoration(gradient: themeGradient(context: context)),
@@ -38,7 +44,10 @@ class _NotificationsRequestScreenState extends State<NotificationsRequestScreen>
               Text(
                 "Stay Alert",
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 20),
               Text(

@@ -10,6 +10,9 @@ class NotFound extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
           onPressed: context.pop,
@@ -22,16 +25,22 @@ class NotFound extends StatelessWidget {
         child: SafeArea(
             child: Center(
           child: RichText(
-              text: TextSpan(style: Theme.of(context).textTheme.headlineMedium, children: [
-            TextSpan(text: "Not F", style: Theme.of(context).textTheme.headlineMedium),
-            const WidgetSpan(
-                child: Padding(
-                  padding: EdgeInsets.only(left: 4.0),
-                  child: FaIcon(FontAwesomeIcons.magnifyingGlass, size: 28),
-                ),
-                alignment: PlaceholderAlignment.middle),
-            TextSpan(text: "und", style: Theme.of(context).textTheme.headlineMedium),
-          ])),
+              text: TextSpan(
+                  style: Theme.of(context).textTheme.headlineMedium,
+                  children: [
+                TextSpan(
+                    text: "Not F",
+                    style: Theme.of(context).textTheme.headlineMedium),
+                const WidgetSpan(
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 4.0),
+                      child: FaIcon(FontAwesomeIcons.magnifyingGlass, size: 28),
+                    ),
+                    alignment: PlaceholderAlignment.middle),
+                TextSpan(
+                    text: "und",
+                    style: Theme.of(context).textTheme.headlineMedium),
+              ])),
         )),
       ),
     );

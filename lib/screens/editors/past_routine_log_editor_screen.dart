@@ -31,10 +31,12 @@ class PastRoutineLogEditorScreen extends StatefulWidget {
   const PastRoutineLogEditorScreen({super.key, required this.log});
 
   @override
-  State<PastRoutineLogEditorScreen> createState() => _PastRoutineLogEditorScreenState();
+  State<PastRoutineLogEditorScreen> createState() =>
+      _PastRoutineLogEditorScreenState();
 }
 
-class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen> {
+class _PastRoutineLogEditorScreenState
+    extends State<PastRoutineLogEditorScreen> {
   late TextEditingController _templateNameController;
   late TextEditingController _templateNotesController;
 
@@ -45,32 +47,41 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
   SetDto? _selectedSetDto;
 
   void _selectExercisesInLibrary() async {
-    final controller = Provider.of<ExerciseLogController>(context, listen: false);
-    final excludeExercises = controller.exerciseLogs.map((exercise) => exercise.exercise).toList();
+    final controller =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final excludeExercises =
+        controller.exerciseLogs.map((exercise) => exercise.exercise).toList();
 
     showExercisesInLibrary(
         context: context,
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
           final onlyExercise = selectedExercises.first;
-          final pastSets = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-              .whereRecentSetsForExercise(exercise: onlyExercise);
+          final pastSets =
+              Provider.of<ExerciseAndRoutineController>(context, listen: false)
+                  .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
   }
 
   void _showSuperSetExercisePicker({required ExerciseLogDto firstExerciseLog}) {
-    final controller = Provider.of<ExerciseLogController>(context, listen: false);
-    final otherExercises = whereOtherExerciseLogsExcept(exerciseLog: firstExerciseLog, others: controller.exerciseLogs);
+    final controller =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final otherExercises = whereOtherExerciseLogsExcept(
+        exerciseLog: firstExerciseLog, others: controller.exerciseLogs);
     showSuperSetExercisePicker(
         context: context,
         firstExerciseLog: firstExerciseLog,
         otherExerciseLogs: otherExercises,
         onSelected: (secondExerciseLog) {
           _closeDialog();
-          final id = superSetId(firstExerciseLog: firstExerciseLog, secondExerciseLog: secondExerciseLog);
+          final id = superSetId(
+              firstExerciseLog: firstExerciseLog,
+              secondExerciseLog: secondExerciseLog);
           controller.superSetExerciseLogs(
-              firstExerciseLogId: firstExerciseLog.id, secondExerciseLogId: secondExerciseLog.id, superSetId: id);
+              firstExerciseLogId: firstExerciseLog.id,
+              secondExerciseLogId: secondExerciseLog.id,
+              superSetId: id);
         },
         selectExercisesInLibrary: () {
           _closeDialog();
@@ -79,22 +90,28 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
   }
 
   void _showReplaceExercisePicker({required ExerciseLogDto oldExerciseLog}) {
-    final controller = Provider.of<ExerciseLogController>(context, listen: false);
-    final excludeExercises = controller.exerciseLogs.map((exercise) => exercise.exercise).toList();
+    final controller =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final excludeExercises =
+        controller.exerciseLogs.map((exercise) => exercise.exercise).toList();
 
     showExercisesInLibrary(
         context: context,
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<ExerciseAndRoutineController>(context, listen: false)
+          final pastSets = Provider.of<ExerciseAndRoutineController>(context,
+                  listen: false)
               .whereRecentSetsForExercise(exercise: selectedExercises.first);
           controller.replaceExerciseLog(
-              oldExerciseId: oldExerciseLog.id, newExercise: selectedExercises.first, pastSets: pastSets);
+              oldExerciseId: oldExerciseLog.id,
+              newExercise: selectedExercises.first,
+              pastSets: pastSets);
         });
   }
 
   bool _validateRoutineTemplateInputs() {
-    final exerciseProviders = Provider.of<ExerciseLogController>(context, listen: false);
+    final exerciseProviders =
+        Provider.of<ExerciseLogController>(context, listen: false);
     final exercises = exerciseProviders.exerciseLogs;
 
     if (_templateNameController.text.isEmpty) {
@@ -115,32 +132,41 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
   void _createLog() async {
     if (!_validateRoutineTemplateInputs()) return;
 
-    final exerciseLogController = Provider.of<ExerciseLogController>(context, listen: false);
+    final exerciseLogController =
+        Provider.of<ExerciseLogController>(context, listen: false);
 
     final exerciseLogs = exerciseLogController.exerciseLogs.map((exerciseLog) {
-      final checkedSets = exerciseLog.sets.map((set) => set.copyWith(checked: true)).toList();
+      final checkedSets =
+          exerciseLog.sets.map((set) => set.copyWith(checked: true)).toList();
       return exerciseLog.copyWith(sets: checkedSets);
     }).toList();
 
-    final routineName =
-        _templateNameController.text.trim().isNotEmpty ? _templateNameController.text.trim() : widget.log.name;
-    final routineNotes =
-        _templateNotesController.text.trim().isNotEmpty ? _templateNotesController.text.trim() : widget.log.notes;
+    final routineName = _templateNameController.text.trim().isNotEmpty
+        ? _templateNameController.text.trim()
+        : widget.log.name;
+    final routineNotes = _templateNotesController.text.trim().isNotEmpty
+        ? _templateNotesController.text.trim()
+        : widget.log.notes;
 
-    final updatedLog = widget.log.copyWith(name: routineName, notes: routineNotes, exerciseLogs: exerciseLogs);
+    final updatedLog = widget.log.copyWith(
+        name: routineName, notes: routineNotes, exerciseLogs: exerciseLogs);
 
-    final datetime = TemporalDateTime.withOffset(updatedLog.startTime, Duration.zero);
+    final datetime =
+        TemporalDateTime.withOffset(updatedLog.startTime, Duration.zero);
 
-    final createdLog = await Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .saveLog(logDto: updatedLog, datetime: datetime);
+    final createdLog =
+        await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .saveLog(logDto: updatedLog, datetime: datetime);
     _navigateBack(log: createdLog);
   }
 
   void _checkForUnsavedChanges() {
-    final exerciseProvider = Provider.of<ExerciseLogController>(context, listen: false);
+    final exerciseProvider =
+        Provider.of<ExerciseLogController>(context, listen: false);
     final exerciseLog1 = widget.log.exerciseLogs;
     final exerciseLog2 = exerciseProvider.exerciseLogs;
-    final unsavedChangesMessage = checkForChanges(exerciseLog1: exerciseLog1, exerciseLog2: exerciseLog2);
+    final unsavedChangesMessage =
+        checkForChanges(exerciseLog1: exerciseLog1, exerciseLog2: exerciseLog2);
     if (unsavedChangesMessage.isNotEmpty) {
       showBottomSheetWithMultiActions(
           context: context,
@@ -159,13 +185,16 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
     }
   }
 
-  void _reOrderExerciseLogs({required List<ExerciseLogDto> exerciseLogs}) async {
-    final orderedList = await reOrderExerciseLogs(context: context, exerciseLogs: exerciseLogs);
+  void _reOrderExerciseLogs(
+      {required List<ExerciseLogDto> exerciseLogs}) async {
+    final orderedList =
+        await reOrderExerciseLogs(context: context, exerciseLogs: exerciseLogs);
     if (!mounted) {
       return;
     }
     if (orderedList != null) {
-      Provider.of<ExerciseLogController>(context, listen: false).reOrderExerciseLogs(reOrderedList: orderedList);
+      Provider.of<ExerciseLogController>(context, listen: false)
+          .reOrderExerciseLogs(reOrderedList: orderedList);
     }
   }
 
@@ -186,9 +215,11 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
     Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
-    final exerciseLogController = Provider.of<ExerciseLogController>(context, listen: false);
+    final exerciseLogController =
+        Provider.of<ExerciseLogController>(context, listen: false);
 
-    final routineTemplateController = Provider.of<ExerciseAndRoutineController>(context, listen: true);
+    final routineTemplateController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: true);
 
     if (routineTemplateController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -196,7 +227,8 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
       });
     }
 
-    final exerciseLogs = context.select((ExerciseLogController provider) => provider.exerciseLogs);
+    final exerciseLogs = context
+        .select((ExerciseLogController provider) => provider.exerciseLogs);
 
     bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom != 0;
 
@@ -205,15 +237,19 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
         editorType: RoutineEditorMode.edit,
         isPastRoutine: true,
         exerciseLogDto: exerciseLog,
-        superSet: whereOtherExerciseInSuperSet(firstExercise: exerciseLog, exercises: exerciseLogs),
+        superSet: whereOtherExerciseInSuperSet(
+            firstExercise: exerciseLog, exercises: exerciseLogs),
         onRemoveSuperSet: (String superSetId) {
-          exerciseLogController.removeSuperSet(superSetId: exerciseLog.superSetId);
+          exerciseLogController.removeSuperSet(
+              superSetId: exerciseLog.superSetId);
         },
         onRemoveLog: () {
           exerciseLogController.removeExerciseLog(logId: exerciseLog.id);
         },
-        onSuperSet: () => _showSuperSetExercisePicker(firstExerciseLog: exerciseLog),
-        onReplaceLog: () => _showReplaceExercisePicker(oldExerciseLog: exerciseLog),
+        onSuperSet: () =>
+            _showSuperSetExercisePicker(firstExerciseLog: exerciseLog),
+        onReplaceLog: () =>
+            _showReplaceExercisePicker(oldExerciseLog: exerciseLog),
       );
     }).toList();
 
@@ -221,12 +257,20 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
       canPop: false,
       child: Scaffold(
           appBar: AppBar(
-            leading: IconButton(icon: const FaIcon(FontAwesomeIcons.arrowLeftLong), onPressed: _checkForUnsavedChanges),
+            backgroundColor: appBarBackgroundColor(context: context),
+            surfaceTintColor: Colors.transparent,
+            scrolledUnderElevation: 0,
+            leading: IconButton(
+                icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
+                onPressed: _checkForUnsavedChanges),
             actions: [
-              IconButton(onPressed: _selectExercisesInLibrary, icon: const FaIcon(FontAwesomeIcons.solidSquarePlus)),
+              IconButton(
+                  onPressed: _selectExercisesInLibrary,
+                  icon: const FaIcon(FontAwesomeIcons.solidSquarePlus)),
               if (exerciseLogs.length > 1)
                 IconButton(
-                    onPressed: () => _reOrderExerciseLogs(exerciseLogs: exerciseLogs),
+                    onPressed: () =>
+                        _reOrderExerciseLogs(exerciseLogs: exerciseLogs),
                     icon: const FaIcon(FontAwesomeIcons.barsStaggered)),
             ],
           ),
@@ -263,7 +307,8 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
             ),
             child: SafeArea(
               bottom: false,
-              minimum: const EdgeInsets.only(right: 10.0, bottom: 10.0, left: 10.0),
+              minimum:
+                  const EdgeInsets.only(right: 10.0, bottom: 10.0, left: 10.0),
               child: GestureDetector(
                 onTap: _dismissKeyboard,
                 child: Column(
@@ -329,7 +374,8 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10.0),
                           child: const NoListEmptyState(
-                              message: "Tap the + button to start adding exercises to your past workout session"),
+                              message:
+                                  "Tap the + button to start adding exercises to your past workout session"),
                         ),
                       ),
                   ],
@@ -343,7 +389,8 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
   void _showWeightCalculator() {
     displayBottomSheet(
         context: context,
-        child: WeightPlateCalculator(target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0),
+        child: WeightPlateCalculator(
+            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0),
         padding: EdgeInsets.zero);
   }
 
@@ -354,23 +401,28 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
     _initializeProcedureData();
     _initializeTextControllers();
 
-    _onDisposeCallback = Provider.of<ExerciseLogController>(context, listen: false).onClear;
+    _onDisposeCallback =
+        Provider.of<ExerciseLogController>(context, listen: false).onClear;
   }
 
   void _initializeProcedureData() {
     final exercises = widget.log.exerciseLogs;
     if (exercises.isNotEmpty) {
       final updatedExerciseLogs = exercises.map((exerciseLog) {
-        final previousSets = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-            .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
+        final previousSets =
+            Provider.of<ExerciseAndRoutineController>(context, listen: false)
+                .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
         if (previousSets.isNotEmpty) {
-          final unCheckedSets =
-              previousSets.take(exerciseLog.sets.length).map((set) => set.copyWith(checked: false)).toList();
+          final unCheckedSets = previousSets
+              .take(exerciseLog.sets.length)
+              .map((set) => set.copyWith(checked: false))
+              .toList();
           return exerciseLog.copyWith(sets: unCheckedSets);
         }
         return exerciseLog;
       }).toList();
-      Provider.of<ExerciseLogController>(context, listen: false).loadExerciseLogs(exerciseLogs: updatedExerciseLogs);
+      Provider.of<ExerciseLogController>(context, listen: false)
+          .loadExerciseLogs(exerciseLogs: updatedExerciseLogs);
       _minimiseOrMaximiseCards();
     }
   }
@@ -382,7 +434,9 @@ class _PastRoutineLogEditorScreenState extends State<PastRoutineLogEditorScreen>
   }
 
   void _minimiseOrMaximiseCards() {
-    Provider.of<ExerciseLogController>(context, listen: false).exerciseLogs.forEach((exerciseLog) {
+    Provider.of<ExerciseLogController>(context, listen: false)
+        .exerciseLogs
+        .forEach((exerciseLog) {
       final completedSets = exerciseLog.sets.where((set) => set.checked).length;
       final isExerciseCompleted = completedSets == exerciseLog.sets.length;
       if (isExerciseCompleted) {

@@ -51,6 +51,9 @@ class _ReOrderExercisesScreenState extends State<ReOrderExercisesScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
           onPressed: context.pop,
@@ -60,7 +63,8 @@ class _ReOrderExercisesScreenState extends State<ReOrderExercisesScreen> {
         actions: [
           _hasReOrdered
               ? IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.solidSquareCheck, size: 28),
+                  icon:
+                      const FaIcon(FontAwesomeIcons.solidSquareCheck, size: 28),
                   onPressed: _saveReOrdering,
                 )
               : const SizedBox.shrink(),
@@ -77,7 +81,8 @@ class _ReOrderExercisesScreenState extends State<ReOrderExercisesScreen> {
           child: ReorderableListView(
               buildDefaultDragHandles: true,
               children: widgets,
-              onReorder: (int oldIndex, int newIndex) => _reOrderProcedures(oldIndex: oldIndex, newIndex: newIndex)),
+              onReorder: (int oldIndex, int newIndex) =>
+                  _reOrderProcedures(oldIndex: oldIndex, newIndex: newIndex)),
         ),
       ),
     );

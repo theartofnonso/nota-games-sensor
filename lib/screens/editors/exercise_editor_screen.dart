@@ -43,7 +43,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
-    final exerciseEditorController = Provider.of<ExerciseAndRoutineController>(context, listen: true);
+    final exerciseEditorController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: true);
 
     if (exerciseEditorController.errorMessage.isNotEmpty) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -57,6 +58,9 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
         canPop: false,
         child: Scaffold(
           appBar: AppBar(
+            backgroundColor: appBarBackgroundColor(context: context),
+            surfaceTintColor: Colors.transparent,
+            scrolledUnderElevation: 0,
             leading: IconButton(
               icon: const FaIcon(
                 FontAwesomeIcons.squareXmark,
@@ -82,92 +86,123 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
             ),
             child: SafeArea(
               minimum: const EdgeInsets.all(10),
-              child: Column(spacing: 20, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                TextField(
-                  controller: _exerciseNameController,
-                  decoration: InputDecoration(
-                    hintText: "Exercise Name",
-                  ),
-                  cursorColor: isDarkMode ? Colors.white : Colors.black,
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  style: GoogleFonts.ubuntu(
-                      fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white : Colors.black, fontSize: 14),
-                ),
-                Column(
+              child: Column(
+                  spacing: 20,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 8,
                   children: [
-                    LabelDivider(
-                      label: "Select muscle group to train".toUpperCase(),
-                      labelColor: isDarkMode ? Colors.white : Colors.black,
-                      dividerColor: sapphireLighter,
-                      fontSize: 14,
+                    TextField(
+                      controller: _exerciseNameController,
+                      decoration: InputDecoration(
+                        hintText: "Exercise Name",
+                      ),
+                      cursorColor: isDarkMode ? Colors.white : Colors.black,
+                      keyboardType: TextInputType.text,
+                      textCapitalization: TextCapitalization.words,
+                      style: GoogleFonts.ubuntu(
+                          fontWeight: FontWeight.w400,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontSize: 14),
                     ),
-                    Text("Choose from a list of muscle groups to train for this custom exercise.",
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white70 : Colors.black)),
-                    ThemeListTile(
-                      child: ListTile(
-                        onTap: _selectPrimaryMuscleGroup,
-                        leading: Text(_primaryMuscleGroup.name,
-                            textAlign: TextAlign.start,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                color: isDarkMode ? Colors.white : Colors.black)),
-                        trailing: FaIcon(
-                          FontAwesomeIcons.arrowRightLong,
-                          size: 14,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 8,
+                      children: [
+                        LabelDivider(
+                          label: "Select muscle group to train".toUpperCase(),
+                          labelColor: isDarkMode ? Colors.white : Colors.black,
+                          dividerColor: sapphireLighter,
+                          fontSize: 14,
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (exercise == null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 8,
-                    children: [
-                      LabelDivider(
-                        label: "Choose how to log this exercise".toUpperCase(),
-                        labelColor: isDarkMode ? Colors.white : Colors.black,
-                        dividerColor: sapphireLighter,
-                        fontSize: 14,
-                      ),
-                      Text("You can log this exercise using reps only, reps and weights or duration.",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white70 : Colors.black)),
-                      ThemeListTile(
-                        child: ListTile(
-                          onTap: _navigateToExerciseTypeScreen,
-                          leading: Text(_exerciseType.name,
-                              textAlign: TextAlign.start,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: isDarkMode ? Colors.white : Colors.black)),
-                          trailing: FaIcon(
-                            FontAwesomeIcons.arrowRightLong,
-                            size: 14,
+                        Text(
+                            "Choose from a list of muscle groups to train for this custom exercise.",
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                    fontWeight: FontWeight.w400,
+                                    color: isDarkMode
+                                        ? Colors.white70
+                                        : Colors.black)),
+                        ThemeListTile(
+                          child: ListTile(
+                            onTap: _selectPrimaryMuscleGroup,
+                            leading: Text(_primaryMuscleGroup.name,
+                                textAlign: TextAlign.start,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black)),
+                            trailing: FaIcon(
+                              FontAwesomeIcons.arrowRightLong,
+                              size: 14,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                const Spacer(),
-                if (exercise == null)
-                  SafeArea(
-                    minimum: EdgeInsets.all(10),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: OpacityButtonWidgetTwo(
-                          onPressed: _createExercise, label: "Create Exercise", buttonColor: vibrantGreen),
+                      ],
                     ),
-                  ),
-              ]),
+                    if (exercise == null)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 8,
+                        children: [
+                          LabelDivider(
+                            label:
+                                "Choose how to log this exercise".toUpperCase(),
+                            labelColor:
+                                isDarkMode ? Colors.white : Colors.black,
+                            dividerColor: sapphireLighter,
+                            fontSize: 14,
+                          ),
+                          Text(
+                              "You can log this exercise using reps only, reps and weights or duration.",
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                      fontWeight: FontWeight.w400,
+                                      color: isDarkMode
+                                          ? Colors.white70
+                                          : Colors.black)),
+                          ThemeListTile(
+                            child: ListTile(
+                              onTap: _navigateToExerciseTypeScreen,
+                              leading: Text(_exerciseType.name,
+                                  textAlign: TextAlign.start,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14,
+                                          color: isDarkMode
+                                              ? Colors.white
+                                              : Colors.black)),
+                              trailing: FaIcon(
+                                FontAwesomeIcons.arrowRightLong,
+                                size: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const Spacer(),
+                    if (exercise == null)
+                      SafeArea(
+                        minimum: EdgeInsets.all(10),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OpacityButtonWidgetTwo(
+                              onPressed: _createExercise,
+                              label: "Create Exercise",
+                              buttonColor: vibrantGreen),
+                        ),
+                      ),
+                  ]),
             ),
           ),
         ));
@@ -196,14 +231,16 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
   void _navigateToExerciseTypeScreen() async {
     if (widget.exercise != null) {
-      showSnackbar(context: context, message: "Exercise type cannot be changed after creation.");
+      showSnackbar(
+          context: context,
+          message: "Exercise type cannot be changed after creation.");
       return;
     }
 
     /// We don't want to allow editing of exercise type once created.
-    final type = await Navigator.of(context)
-            .push(MaterialPageRoute(builder: (context) => ExerciseTypeScreen(exerciseType: _exerciseType)))
-        as ExerciseType?;
+    final type = await Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) =>
+            ExerciseTypeScreen(exerciseType: _exerciseType))) as ExerciseType?;
     if (type != null) {
       setState(() {
         _exerciseType = type;
@@ -227,7 +264,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
           type: _exerciseType,
           owner: "");
 
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false).saveExercise(exerciseDto: exercise);
+      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+          .saveExercise(exerciseDto: exercise);
 
       logger.i("created exercise ${exercise.toString()}");
       if (mounted) {
@@ -247,7 +285,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
       final exercise = widget.exercise;
       if (exercise == null) return;
 
-      final exerciseToBeUpdated = exercise.copyWith(name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
+      final exerciseToBeUpdated = exercise.copyWith(
+          name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
       await Provider.of<ExerciseAndRoutineController>(context, listen: false)
           .updateExercise(exercise: exerciseToBeUpdated);
 
@@ -263,10 +302,14 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
     final previousExercise = widget.exercise;
 
-    _exerciseNameController = TextEditingController(text: previousExercise?.name);
+    _exerciseNameController =
+        TextEditingController(text: previousExercise?.name);
 
-    _primaryMuscleGroup = previousExercise != null ? previousExercise.primaryMuscleGroup : MuscleGroup.values.first;
+    _primaryMuscleGroup = previousExercise != null
+        ? previousExercise.primaryMuscleGroup
+        : MuscleGroup.values.first;
 
-    _exerciseType = previousExercise != null ? previousExercise.type : ExerciseType.weights;
+    _exerciseType =
+        previousExercise != null ? previousExercise.type : ExerciseType.weights;
   }
 }

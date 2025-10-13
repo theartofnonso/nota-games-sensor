@@ -33,7 +33,8 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   void _deleteExercise(BuildContext context) async {
     context.pop();
     try {
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false).removeExercise(exercise: widget.exercise);
+      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+          .removeExercise(exercise: widget.exercise);
       if (context.mounted) {
         context.pop();
       }
@@ -52,21 +53,29 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
 
     if (exercise == null) return const NotFound();
 
-    final exerciseAndRoutineController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
 
-    final exerciseLogs = exerciseAndRoutineController.exerciseLogsByExerciseId[exercise.id] ?? [];
+    final exerciseLogs =
+        exerciseAndRoutineController.exerciseLogsByExerciseId[exercise.id] ??
+            [];
 
     final completedExerciseLogs = loggedExercises(exerciseLogs: exerciseLogs);
 
-    final heaviestSetVolumeRecord = heaviestSetVolume(exerciseLogs: completedExerciseLogs);
+    final heaviestSetVolumeRecord =
+        heaviestSetVolume(exerciseLogs: completedExerciseLogs);
 
-    final heaviestWeightRecord = heaviestWeight(exerciseLogs: completedExerciseLogs);
+    final heaviestWeightRecord =
+        heaviestWeight(exerciseLogs: completedExerciseLogs);
 
-    final longestDurationRecord = longestDuration(exerciseLogs: completedExerciseLogs);
+    final longestDurationRecord =
+        longestDuration(exerciseLogs: completedExerciseLogs);
 
-    final mostRepsSetRecord = mostRepsInSet(exerciseLogs: completedExerciseLogs);
+    final mostRepsSetRecord =
+        mostRepsInSet(exerciseLogs: completedExerciseLogs);
 
-    final mostRepsSessionRecord = mostRepsInSession(exerciseLogs: completedExerciseLogs);
+    final mostRepsSessionRecord =
+        mostRepsInSession(exerciseLogs: completedExerciseLogs);
 
     final menuActions = [
       MenuItemButton(
@@ -95,6 +104,9 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
         length: hasVideo ? 3 : 2,
         child: Scaffold(
           appBar: AppBar(
+            backgroundColor: appBarBackgroundColor(context: context),
+            surfaceTintColor: Colors.transparent,
+            scrolledUnderElevation: 0,
             leading: IconButton(
               icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
               onPressed: context.pop,
@@ -105,20 +117,30 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
               tabs: [
                 Tab(
                     child: Text("Summary",
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600))),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(fontWeight: FontWeight.w600))),
                 Tab(
                     child: Text("History",
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600))),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(fontWeight: FontWeight.w600))),
                 if (hasVideo)
                   Tab(
                       child: Text("Video",
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600))),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(fontWeight: FontWeight.w600))),
               ],
             ),
             actions: exercise.owner == SharedPrefs().userId
                 ? [
                     MenuAnchor(
-                      builder: (BuildContext context, MenuController controller, Widget? child) {
+                      builder: (BuildContext context, MenuController controller,
+                          Widget? child) {
                         return IconButton(
                           onPressed: () {
                             if (controller.isOpen) {
@@ -168,9 +190,9 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   void _navigateToExerciseEditor() async {
     final exercise = _exercise;
     if (exercise != null) {
-      final updatedExercise =
-          await navigateWithSlideTransition(context: context, child: ExerciseEditorScreen(exercise: exercise))
-              as ExerciseDto?;
+      final updatedExercise = await navigateWithSlideTransition(
+          context: context,
+          child: ExerciseEditorScreen(exercise: exercise)) as ExerciseDto?;
       if (updatedExercise != null) {
         setState(() {
           _exercise = updatedExercise;

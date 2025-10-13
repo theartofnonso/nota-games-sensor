@@ -19,17 +19,23 @@ class RoutineLogsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final routineLogsForMonth =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true).whereLogsIsSameMonth(dateTime: dateTime);
+        Provider.of<ExerciseAndRoutineController>(context, listen: true)
+            .whereLogsIsSameMonth(dateTime: dateTime);
 
-    final logs = routineLogsForMonth.sorted((a, b) => b.createdAt.compareTo(a.createdAt));
+    final logs = routineLogsForMonth
+        .sorted((a, b) => b.createdAt.compareTo(a.createdAt));
 
     final month = dateTime.formattedFullMonth();
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         title: Text("$month Strength Training".toUpperCase()),
         leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28), onPressed: Navigator.of(context).pop),
+            icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
+            onPressed: Navigator.of(context).pop),
         centerTitle: true,
       ),
       body: Container(
@@ -48,7 +54,9 @@ class RoutineLogsScreen extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 150),
                           itemBuilder: (BuildContext context, int index) {
                             final log = logs[index];
-                            return RoutineLogWidget(log: log, trailing: log.createdAt.durationSinceOrDate());
+                            return RoutineLogWidget(
+                                log: log,
+                                trailing: log.createdAt.durationSinceOrDate());
                           },
                           separatorBuilder: (BuildContext context, int index) =>
                               Divider(color: Colors.transparent),
@@ -58,7 +66,8 @@ class RoutineLogsScreen extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: const NoListEmptyState(
-                            message: "It might feel quiet now, but your logged workouts will soon appear here."),
+                            message:
+                                "It might feel quiet now, but your logged workouts will soon appear here."),
                       ),
                     ),
             ],

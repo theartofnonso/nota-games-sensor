@@ -19,10 +19,12 @@ class RoutineTemplateLibraryScreen extends StatefulWidget {
       {super.key, this.readOnly = false, this.excludeTemplates = const []});
 
   @override
-  State<RoutineTemplateLibraryScreen> createState() => _RoutineTemplateLibraryScreenState();
+  State<RoutineTemplateLibraryScreen> createState() =>
+      _RoutineTemplateLibraryScreenState();
 }
 
-class _RoutineTemplateLibraryScreenState extends State<RoutineTemplateLibraryScreen> {
+class _RoutineTemplateLibraryScreenState
+    extends State<RoutineTemplateLibraryScreen> {
   late TextEditingController _searchController;
 
   /// Holds a list of [RoutineTemplateDto] when filtering through a search
@@ -31,7 +33,8 @@ class _RoutineTemplateLibraryScreenState extends State<RoutineTemplateLibraryScr
   /// Search through the list of exercises
   ///
   /// Calculates a 'relevance' score for an [RoutineTemplateDto] based on the query parts.
-  double _calculateRelevanceScore(RoutineTemplateDto template, List<String> queryParts) {
+  double _calculateRelevanceScore(
+      RoutineTemplateDto template, List<String> queryParts) {
     // Convert exercise name to lowercase for case-insensitive matching
     final templateName = template.name.toLowerCase();
 
@@ -61,14 +64,16 @@ class _RoutineTemplateLibraryScreenState extends State<RoutineTemplateLibraryScr
     final query = _searchController.text.trim().toLowerCase();
 
     // Split on whitespace or hyphens to handle multiple words/phrases
-    final queryParts = query.split(RegExp(r'[\s-]+')).where((q) => q.isNotEmpty).toList();
+    final queryParts =
+        query.split(RegExp(r'[\s-]+')).where((q) => q.isNotEmpty).toList();
 
     // Get the list of all templates (excluding any you want to filter out by default)
-    final filteredTemplates = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .templates
-        .where((template) => !widget.excludeTemplates.contains(template))
-        .where((template) => template.planId.isEmpty)
-        .toList();
+    final filteredTemplates =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .templates
+            .where((template) => !widget.excludeTemplates.contains(template))
+            .where((template) => template.planId.isEmpty)
+            .toList();
 
     // If the user typed nothing, you can simply show the entire filtered list
     // Or skip ranking and set directly — depends on your UI needs
@@ -86,7 +91,8 @@ class _RoutineTemplateLibraryScreenState extends State<RoutineTemplateLibraryScr
           final score = _calculateRelevanceScore(template, queryParts);
           return (template: template, score: score);
         })
-        .where((tuple) => tuple.score > 0) // optional: only keep those with some match
+        .where((tuple) =>
+            tuple.score > 0) // optional: only keep those with some match
         .toList();
 
     rankedList.sort((a, b) => b.score.compareTo(a.score));
@@ -121,6 +127,9 @@ class _RoutineTemplateLibraryScreenState extends State<RoutineTemplateLibraryScr
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
           onPressed: () => context.pop(),
@@ -158,7 +167,8 @@ class _RoutineTemplateLibraryScreenState extends State<RoutineTemplateLibraryScr
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: const NoListEmptyState(
-                            message: "It might feel quiet now, but your templates will soon appear here."),
+                            message:
+                                "It might feel quiet now, but your templates will soon appear here."),
                       ),
                     ),
             ],
@@ -169,11 +179,12 @@ class _RoutineTemplateLibraryScreenState extends State<RoutineTemplateLibraryScr
   }
 
   void _loadTemplates() {
-    _filteredTemplates = Provider.of<ExerciseAndRoutineController>(context, listen: false)
-        .templates
-        .where((template) => !widget.excludeTemplates.contains(template))
-        .where((template) => template.planId.isEmpty)
-        .toList();
+    _filteredTemplates =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .templates
+            .where((template) => !widget.excludeTemplates.contains(template))
+            .where((template) => template.planId.isEmpty)
+            .toList();
 
     _runSearch();
   }

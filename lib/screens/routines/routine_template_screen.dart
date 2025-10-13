@@ -47,8 +47,12 @@ import '../../widgets/routine/preview/plan_picker.dart';
 
 enum _OriginalNewValues {
   originalValues(
-      name: "Original Values", description: "Showing values from the last time this template was saved or updated."),
-  newValues(name: "Recent Values", description: "Showing values from your last logged session.");
+      name: "Original Values",
+      description:
+          "Showing values from the last time this template was saved or updated."),
+  newValues(
+      name: "Recent Values",
+      description: "Showing values from your last logged session.");
 
   const _OriginalNewValues({required this.name, required this.description});
 
@@ -85,11 +89,14 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    final exerciseAndRoutineController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showSnackbar(context: context, message: exerciseAndRoutineController.errorMessage);
+        showSnackbar(
+            context: context,
+            message: exerciseAndRoutineController.errorMessage);
       });
     }
 
@@ -99,21 +106,27 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     final plan = exerciseAndRoutineController.planWhere(id: template.planId);
 
-    final muscleGroupFamilyFrequencies = muscleGroupFrequency(exerciseLogs: template.exerciseTemplates);
+    final muscleGroupFamilyFrequencies =
+        muscleGroupFrequency(exerciseLogs: template.exerciseTemplates);
 
     final allLogsForTemplate = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: template.id)
         .map((log) => routineWithLoggedExercises(log: log))
         .toList();
 
-    final allLoggedVolumesForTemplate = allLogsForTemplate.map((log) => log.volume).toList();
+    final allLoggedVolumesForTemplate =
+        allLogsForTemplate.map((log) => log.volume).toList();
 
-    final avgVolume = allLoggedVolumesForTemplate.isNotEmpty ? allLoggedVolumesForTemplate.average : 0.0;
+    final avgVolume = allLoggedVolumesForTemplate.isNotEmpty
+        ? allLoggedVolumesForTemplate.average
+        : 0.0;
 
-    final volumeChartPoints =
-        allLoggedVolumesForTemplate.mapIndexed((index, volume) => ChartPointDto(index, volume)).toList();
+    final volumeChartPoints = allLoggedVolumesForTemplate
+        .mapIndexed((index, volume) => ChartPointDto(index, volume))
+        .toList();
 
-    final trendSummary = _analyzeWeeklyTrends(volumes: allLoggedVolumesForTemplate);
+    final trendSummary =
+        _analyzeWeeklyTrends(volumes: allLoggedVolumesForTemplate);
 
     final muscleGroups = template.exerciseTemplates
         .map((exerciseTemplate) => exerciseTemplate.exercise.primaryMuscleGroup)
@@ -123,12 +136,15 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     final listOfMuscleAndRecovery = muscleGroups.map((muscleGroup) {
       final pastExerciseLogs =
-          (Provider.of<ExerciseAndRoutineController>(context, listen: false).exerciseLogsByMuscleGroup[muscleGroup] ??
+          (Provider.of<ExerciseAndRoutineController>(context, listen: false)
+                  .exerciseLogsByMuscleGroup[muscleGroup] ??
               []);
-      final lastExerciseLog = pastExerciseLogs.isNotEmpty ? pastExerciseLogs.last : null;
+      final lastExerciseLog =
+          pastExerciseLogs.isNotEmpty ? pastExerciseLogs.last : null;
       final lastTrainingTime = lastExerciseLog?.createdAt;
       final recovery = lastTrainingTime != null
-          ? _calculateMuscleRecovery(lastTrainingTime: lastTrainingTime, muscleGroup: muscleGroup)
+          ? _calculateMuscleRecovery(
+              lastTrainingTime: lastTrainingTime, muscleGroup: muscleGroup)
           : RecoveryResult(
               recoveryPercentage: 0,
               muscleGroup: muscleGroup,
@@ -138,10 +154,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       return recovery;
     });
 
-    final selectedMuscleAndRecovery =
-        _selectedMuscleAndRecovery ?? (listOfMuscleAndRecovery.isNotEmpty ? listOfMuscleAndRecovery.first : null);
+    final selectedMuscleAndRecovery = _selectedMuscleAndRecovery ??
+        (listOfMuscleAndRecovery.isNotEmpty
+            ? listOfMuscleAndRecovery.first
+            : null);
 
-    final muscleGroupsIllustrations = listOfMuscleAndRecovery.map((muscleAndRecovery) {
+    final muscleGroupsIllustrations =
+        listOfMuscleAndRecovery.map((muscleAndRecovery) {
       final muscleGroup = muscleAndRecovery.muscleGroup;
       final recovery = muscleAndRecovery.recoveryPercentage;
 
@@ -165,14 +184,17 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                 child: CircularProgressIndicator(
                   value: recovery,
                   strokeWidth: 6,
-                  backgroundColor: isDarkMode ? Colors.black12 : Colors.grey.shade400,
+                  backgroundColor:
+                      isDarkMode ? Colors.black12 : Colors.grey.shade400,
                   strokeCap: StrokeCap.round,
-                  valueColor: AlwaysStoppedAnimation<Color>(lowToHighIntensityColor(recovery)),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                      lowToHighIntensityColor(recovery)),
                 ),
               ),
             ),
             Image.asset(
-              recoveryMuscleIllustration(recoveryPercentage: recovery, muscleGroup: muscleGroup),
+              recoveryMuscleIllustration(
+                  recoveryPercentage: recovery, muscleGroup: muscleGroup),
               fit: BoxFit.contain,
               height: 50, // Adjust the height as needed
             )
@@ -184,8 +206,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final exerciseTemplates = _originalNewValues == _OriginalNewValues.newValues
         ? template.exerciseTemplates.map((exerciseTemplate) {
             final pastSets =
-                exerciseAndRoutineController.whereRecentSetsForExercise(exercise: exerciseTemplate.exercise);
-            final uncheckedSets = pastSets.map((set) => set.copyWith(checked: false)).toList();
+                exerciseAndRoutineController.whereRecentSetsForExercise(
+                    exercise: exerciseTemplate.exercise);
+            final uncheckedSets =
+                pastSets.map((set) => set.copyWith(checked: false)).toList();
             return exerciseTemplate.copyWith(sets: uncheckedSets);
           }).toList()
         : template.exerciseTemplates;
@@ -200,6 +224,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                 ? const FaIcon(FontAwesomeIcons.play, size: 24)
                 : const FaIcon(FontAwesomeIcons.download)),
         appBar: AppBar(
+          backgroundColor: appBarBackgroundColor(context: context),
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
           leading: IconButton(
             icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
             onPressed: context.pop,
@@ -207,7 +234,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           actions: [
             template.owner == SharedPrefs().userId
                 ? IconButton(
-                    onPressed: () => _showMenuBottomSheet(planDto: plan), icon: FaIcon(Icons.more_vert_rounded))
+                    onPressed: () => _showMenuBottomSheet(planDto: plan),
+                    icon: FaIcon(Icons.more_vert_rounded))
                 : const SizedBox.shrink()
           ],
         ),
@@ -234,13 +262,18 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                           spacing: 2,
                           children: [
                             Text(template.name,
-                                style: GoogleFonts.ubuntu(fontSize: 20, height: 1.5, fontWeight: FontWeight.w900)),
+                                style: GoogleFonts.ubuntu(
+                                    fontSize: 20,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w900)),
                             if (plan != null)
                               Text(
                                 "In ${plan.name}",
                                 style: GoogleFonts.ubuntu(
                                     fontSize: 14,
-                                    color: isDarkMode ? Colors.white70 : Colors.black,
+                                    color: isDarkMode
+                                        ? Colors.white70
+                                        : Colors.black,
                                     fontWeight: FontWeight.w400),
                               )
                           ],
@@ -252,22 +285,30 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             ChipOne(
                                 label:
                                     "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
-                                child: CustomIcon(FontAwesomeIcons.personWalking, color: vibrantGreen)),
+                                child: CustomIcon(
+                                    FontAwesomeIcons.personWalking,
+                                    color: vibrantGreen)),
                             Text(
-                              template.notes.isNotEmpty ? "${template.notes}." : "No notes",
+                              template.notes.isNotEmpty
+                                  ? "${template.notes}."
+                                  : "No notes",
                               style: GoogleFonts.ubuntu(
                                   fontSize: 14,
-                                  color: isDarkMode ? Colors.white70 : Colors.black,
+                                  color: isDarkMode
+                                      ? Colors.white70
+                                      : Colors.black,
                                   height: 1.8,
                                   fontWeight: FontWeight.w400),
                             )
                           ],
                         ),
                         Calendar(
-                          onSelectDate: (date) => _onSelectCalendarDateTime(date: date),
+                          onSelectDate: (date) =>
+                              _onSelectCalendarDateTime(date: date),
                           logs: allLogsForTemplate,
                         ),
-                        CalendarLogs(dateTime: _selectedCalendarDate ?? DateTime.now()),
+                        CalendarLogs(
+                            dateTime: _selectedCalendarDate ?? DateTime.now()),
                         MuscleGroupSplitChart(
                             title: "Muscle Groups Split",
                             description:
@@ -295,34 +336,47 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                       ? const SizedBox.shrink()
                                       : getTrendIcon(trend: trendSummary.trend),
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       RichText(
                                         text: TextSpan(
                                           text: volumeInKOrM(avgVolume),
-                                          style: Theme.of(context).textTheme.headlineSmall,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineSmall,
                                           children: [
                                             TextSpan(
                                               text: " ",
                                             ),
                                             TextSpan(
                                               text: weightUnit().toUpperCase(),
-                                              style: Theme.of(context).textTheme.bodyMedium,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium,
                                             ),
                                           ],
                                         ),
                                       ),
                                       Text(
                                         "Session AVERAGE".toUpperCase(),
-                                        style: Theme.of(context).textTheme.bodySmall,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
                                       ),
                                     ],
                                   )
                                 ],
                               ),
                               Text(trendSummary.summary,
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white70 : Colors.black)),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                          fontWeight: FontWeight.w400,
+                                          color: isDarkMode
+                                              ? Colors.white70
+                                              : Colors.black)),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -334,24 +388,32 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                 chartPoints: volumeChartPoints,
                                 periods: [],
                                 unit: ChartUnit.weight,
-                                  aspectRation: 4.5,
-                                  lineChartSide: LineChartSide.right,
-                                  rightReservedSize: 20,
-                                  hasLeftAxisTitles: false,
-                                  belowBarData: false,
-                                  hasRightAxisTitles: false,
+                                aspectRation: 4.5,
+                                lineChartSide: LineChartSide.right,
+                                rightReservedSize: 20,
+                                hasLeftAxisTitles: false,
+                                belowBarData: false,
+                                hasRightAxisTitles: false,
                               ),
                             ],
                           ),
                           Text(
                               "Here’s a volume trend of your ${template.name} training over the last ${allLogsForTemplate.length} ${pluralize(word: "session", count: allLogsForTemplate.length)}.",
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white70 : Colors.black)),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                      fontWeight: FontWeight.w400,
+                                      color: isDarkMode
+                                          ? Colors.white70
+                                          : Colors.black)),
                           const SizedBox(height: 12),
                           InformationContainer(
                             leadingIcon: FaIcon(FontAwesomeIcons.weightHanging),
                             title: "Training Volume",
-                            color: isDarkMode ? sapphireDark80 : Colors.grey.shade200,
+                            color: isDarkMode
+                                ? sapphireDark80
+                                : Colors.grey.shade200,
                             description:
                                 "Volume is the total amount of work done, often calculated as sets × reps × weight. Higher volume increases muscle size (hypertrophy).",
                           ),
@@ -363,7 +425,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: Container(
                         decoration: BoxDecoration(
-                            color: isDarkMode ? sapphireDark80 : Colors.grey.shade200,
+                            color: isDarkMode
+                                ? sapphireDark80
+                                : Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(5)),
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Column(
@@ -371,17 +435,26 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                           spacing: 20,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text("Muscle Recovery".toUpperCase(), style: Theme.of(context).textTheme.titleMedium),
+                                  Text("Muscle Recovery".toUpperCase(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium),
                                   const SizedBox(height: 10),
                                   Text(
                                       "Delayed Onset Muscle Soreness (DOMS) refers to the muscle pain or stiffness experienced after intense physical activity. It typically develops 24 to 48 hours after exercise and can last for several days.",
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                          fontWeight: FontWeight.w400,
-                                          color: isDarkMode ? Colors.white70 : Colors.black)),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.w400,
+                                              color: isDarkMode
+                                                  ? Colors.white70
+                                                  : Colors.black)),
                                 ],
                               ),
                             ),
@@ -392,17 +465,30 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                 children: [
                                   SingleChildScrollView(
                                       scrollDirection: Axis.horizontal,
-                                      child: Row(mainAxisAlignment: MainAxisAlignment.center, spacing: 20, children: [
-                                        SizedBox(width: 2),
-                                        ...muscleGroupsIllustrations,
-                                        SizedBox(width: 2),
-                                      ])),
+                                      child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          spacing: 20,
+                                          children: [
+                                            SizedBox(width: 2),
+                                            ...muscleGroupsIllustrations,
+                                            SizedBox(width: 2),
+                                          ])),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                                    child: Text(selectedMuscleAndRecovery?.description ?? "",
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w400,
-                                            color: isDarkMode ? Colors.white : Colors.black)),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10.0),
+                                    child: Text(
+                                        selectedMuscleAndRecovery
+                                                ?.description ??
+                                            "",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w400,
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black)),
                                   ),
                                 ],
                               ),
@@ -420,19 +506,31 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           spacing: 6,
                           children: [
-                            CupertinoSlidingSegmentedControl<_OriginalNewValues>(
-                              backgroundColor: isDarkMode ? sapphireDark : Colors.grey.shade200,
-                              thumbColor: isDarkMode ? sapphireDark80 : Colors.white,
+                            CupertinoSlidingSegmentedControl<
+                                _OriginalNewValues>(
+                              backgroundColor: isDarkMode
+                                  ? sapphireDark
+                                  : Colors.grey.shade200,
+                              thumbColor:
+                                  isDarkMode ? sapphireDark80 : Colors.white,
                               groupValue: _originalNewValues,
                               children: {
                                 _OriginalNewValues.originalValues: SizedBox(
                                     width: 100,
-                                    child: Text(_OriginalNewValues.originalValues.name,
-                                        style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)),
+                                    child: Text(
+                                        _OriginalNewValues.originalValues.name,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                        textAlign: TextAlign.center)),
                                 _OriginalNewValues.newValues: SizedBox(
                                     width: 100,
-                                    child: Text(_OriginalNewValues.newValues.name,
-                                        style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)),
+                                    child: Text(
+                                        _OriginalNewValues.newValues.name,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                        textAlign: TextAlign.center)),
                               },
                               onValueChanged: (_OriginalNewValues? value) {
                                 if (value != null) {
@@ -443,12 +541,19 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                               },
                             ),
                             Text(_originalNewValues.description,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white70 : Colors.black)),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                        fontWeight: FontWeight.w400,
+                                        color: isDarkMode
+                                            ? Colors.white70
+                                            : Colors.black)),
                           ],
                         ),
                         ExerciseLogListView(
-                          exerciseLogs: exerciseLogsToViewModels(exerciseLogs: exerciseTemplates),
+                          exerciseLogs: exerciseLogsToViewModels(
+                              exerciseLogs: exerciseTemplates),
                         ),
                       ],
                     ),
@@ -482,7 +587,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
   void _deleteRoutine({required RoutineTemplateDto template}) async {
     try {
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false).removeTemplate(template: template);
+      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+          .removeTemplate(template: template);
       if (mounted) {
         context.pop();
       }
@@ -505,8 +611,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final template = _template;
     if (template != null) {
       final copyOfTemplate = template.copyWith();
-      final arguments = RoutineTemplateArguments(template: copyOfTemplate, planId: copyOfTemplate.planId);
-      final updatedTemplate = await navigateToRoutineTemplateEditor(context: context, arguments: arguments);
+      final arguments = RoutineTemplateArguments(
+          template: copyOfTemplate, planId: copyOfTemplate.planId);
+      final updatedTemplate = await navigateToRoutineTemplateEditor(
+          context: context, arguments: arguments);
       if (updatedTemplate != null) {
         setState(() {
           _template = updatedTemplate;
@@ -519,7 +627,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final template = _template;
     if (template != null) {
       final log = template.toLog();
-      final arguments = RoutineLogArguments(log: log, editorMode: RoutineEditorMode.log);
+      final arguments =
+          RoutineLogArguments(log: log, editorMode: RoutineEditorMode.log);
       navigateToRoutineLogEditor(context: context, arguments: arguments);
     }
   }
@@ -531,7 +640,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
       try {
         final exercises = template.exerciseTemplates.map((exerciseLog) {
-          final uncheckedSets = exerciseLog.sets.map((set) => set.copyWith(checked: false)).toList();
+          final uncheckedSets = exerciseLog.sets
+              .map((set) => set.copyWith(checked: false))
+              .toList();
           return exerciseLog.copyWith(sets: uncheckedSets);
         }).toList();
         final templateToBeCreated = RoutineTemplateDto(
@@ -544,16 +655,21 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             createdAt: DateTime.now(),
             updatedAt: DateTime.now());
 
-        final createdTemplate = await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        final createdTemplate = await Provider.of<ExerciseAndRoutineController>(
+                context,
+                listen: false)
             .saveTemplate(templateDto: templateToBeCreated);
         if (mounted) {
           if (createdTemplate != null) {
-            navigateToRoutineTemplatePreview(context: context, template: createdTemplate);
+            navigateToRoutineTemplatePreview(
+                context: context, template: createdTemplate);
           }
         }
       } catch (_) {
         if (mounted) {
-          showSnackbar(context: context, message: "Oops, we are unable to create your template");
+          showSnackbar(
+              context: context,
+              message: "Oops, we are unable to create your template");
         }
       } finally {
         _hideLoadingScreen();
@@ -562,7 +678,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _loadData() {
-    final exerciseAndRoutineController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
     _template = exerciseAndRoutineController.templateWhere(id: widget.id);
     if (_template == null) {
       _loading = true;
@@ -618,13 +735,16 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               ),
               subtitle: Text(workoutLink),
               onTap: () {
-                Posthog().capture(eventName: PostHogAnalyticsEvent.shareRoutineTemplateAsLink.displayName);
+                Posthog().capture(
+                    eventName: PostHogAnalyticsEvent
+                        .shareRoutineTemplateAsLink.displayName);
                 HapticFeedback.heavyImpact();
                 final data = ClipboardData(text: workoutLink);
                 Clipboard.setData(data).then((_) {
                   if (mounted) {
                     Navigator.of(context).pop();
-                    showSnackbar(context: context, message: "Workout link copied");
+                    showSnackbar(
+                        context: context, message: "Workout link copied");
                   }
                 });
               },
@@ -636,10 +756,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                 size: 18,
               ),
               horizontalTitleGap: 6,
-              title: Text("Copy as Text", style: Theme.of(context).textTheme.titleMedium),
+              title: Text("Copy as Text",
+                  style: Theme.of(context).textTheme.titleMedium),
               subtitle: Text("${template.name}..."),
               onTap: () {
-                Posthog().capture(eventName: PostHogAnalyticsEvent.shareRoutineTemplateAsText.displayName);
+                Posthog().capture(
+                    eventName: PostHogAnalyticsEvent
+                        .shareRoutineTemplateAsText.displayName);
                 HapticFeedback.heavyImpact();
                 final data = ClipboardData(text: workoutText);
                 Clipboard.setData(data).then((_) {
@@ -705,7 +828,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               size: 18,
             ),
             horizontalTitleGap: 6,
-            title: Text("Move to another plan", style: Theme.of(context).textTheme.bodyLarge),
+            title: Text("Move to another plan",
+                style: Theme.of(context).textTheme.bodyLarge),
             onTap: () {
               Navigator.of(context).pop();
               _showPlanPicker();
@@ -719,7 +843,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               color: Colors.redAccent,
             ),
             horizontalTitleGap: 6,
-            title: Text("Delete", style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.red)),
+            title: Text("Delete",
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.copyWith(color: Colors.red)),
             onTap: () {
               Navigator.of(context).pop();
 
@@ -750,7 +878,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   void _showPlanPicker() {
     final template = _template;
 
-    final exerciseAndRoutineController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
     final plans = exerciseAndRoutineController.plans;
 
     if (template != null) {
@@ -762,14 +891,20 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           onSelect: (selectedPlan) async {
             Navigator.of(context).pop();
 
-            final templateProvider = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+            final templateProvider = Provider.of<ExerciseAndRoutineController>(
+                context,
+                listen: false);
 
-            final updatedRoutineTemplate = template.copyWith(planId: selectedPlan.id);
+            final updatedRoutineTemplate =
+                template.copyWith(planId: selectedPlan.id);
 
-            await templateProvider.updateTemplate(template: updatedRoutineTemplate);
+            await templateProvider.updateTemplate(
+                template: updatedRoutineTemplate);
 
             if (mounted) {
-              showSnackbar(context: context, message: "Add ${template.name} to ${selectedPlan.name}");
+              showSnackbar(
+                  context: context,
+                  message: "Add ${template.name} to ${selectedPlan.name}");
             }
           },
         ),
@@ -789,7 +924,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       return TrendSummary(
         trend: Trend.none,
         average: 0,
-        summary: "No training data available yet. Log some sessions to start tracking your progress!",
+        summary:
+            "No training data available yet. Log some sessions to start tracking your progress!",
       );
     }
 
@@ -800,14 +936,16 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       return TrendSummary(
         trend: Trend.none,
         average: singleVolume,
-        summary: "You've logged your first session. Great job! Keep logging more data to see trends over time.",
+        summary:
+            "You've logged your first session. Great job! Keep logging more data to see trends over time.",
       );
     }
 
     // From here on, volumes has at least 2 items,
     // so sublist and reduce are safe.
     final previousVolumes = volumes.sublist(0, volumes.length - 1);
-    final averageOfPrevious = previousVolumes.reduce((a, b) => a + b) / previousVolumes.length;
+    final averageOfPrevious =
+        previousVolumes.reduce((a, b) => a + b) / previousVolumes.length;
     final lastWeekVolume = volumes.last;
 
     // If the last session’s volume is 0, treat it as a special case.
@@ -815,7 +953,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       return TrendSummary(
         trend: Trend.none,
         average: averageOfPrevious,
-        summary: "No training data available for this session. Log some workouts to continue tracking your progress!",
+        summary:
+            "No training data available for this session. Log some workouts to continue tracking your progress!",
       );
     }
 
@@ -823,7 +962,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final difference = lastWeekVolume - averageOfPrevious;
     final differenceIsZero = difference == 0;
     final bool averageIsZero = averageOfPrevious == 0;
-    final double percentageChange = averageIsZero ? 100.0 : (difference / averageOfPrevious) * 100;
+    final double percentageChange =
+        averageIsZero ? 100.0 : (difference / averageOfPrevious) * 100;
 
     // Decide the trend based on a threshold
     const threshold = 5; // e.g., ±5%
@@ -844,7 +984,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         return TrendSummary(
           trend: Trend.up,
           average: averageOfPrevious,
-          summary: "🌟🌟 Last session's volume is $variation higher than your average. "
+          summary:
+              "🌟🌟 Last session's volume is $variation higher than your average. "
               "Awesome job building momentum!",
         );
 
@@ -852,7 +993,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         return TrendSummary(
           trend: Trend.down,
           average: averageOfPrevious,
-          summary: "📉 Last session's volume is $variation lower than your average. "
+          summary:
+              "📉 Last session's volume is $variation lower than your average. "
               "Consider extra rest, checking your technique, or planning a deload.",
         );
 
@@ -902,9 +1044,11 @@ class RecoveryResult {
 /// - If more than 7 days have passed and soreness remains, we flag overtraining.
 ///
 /// You can adjust these time thresholds or percentages as needed.
-RecoveryResult _calculateMuscleRecovery({required DateTime lastTrainingTime, required MuscleGroup muscleGroup}) {
+RecoveryResult _calculateMuscleRecovery(
+    {required DateTime lastTrainingTime, required MuscleGroup muscleGroup}) {
   // Calculate hours since last training.
-  final hoursSinceTraining = DateTime.now().difference(lastTrainingTime).inHours;
+  final hoursSinceTraining =
+      DateTime.now().difference(lastTrainingTime).inHours;
 
   // A simple piecewise approach to approximate "percent recovered."
   // Tweak as needed for your app’s logic.
@@ -922,7 +1066,8 @@ RecoveryResult _calculateMuscleRecovery({required DateTime lastTrainingTime, req
     // We assume minimal recovery, e.g. up to ~30%
     final ratio = (hoursSinceTraining - 24) / 24;
     recoveryPercentage = 0.3 * ratio;
-    description = "Your $muscleGroup is only ${(recoveryPercentage * 100).floor()}% recovered. DOMS is likely high. "
+    description =
+        "Your $muscleGroup is only ${(recoveryPercentage * 100).floor()}% recovered. DOMS is likely high. "
         "It's best to rest or do very light activity today.";
   } else if (hoursSinceTraining < 72) {
     // 48–72 hours: soreness usually starts to fade
@@ -937,14 +1082,16 @@ RecoveryResult _calculateMuscleRecovery({required DateTime lastTrainingTime, req
     // Move recovery from ~70% to ~90%
     final ratio = (hoursSinceTraining - 72) / 24;
     recoveryPercentage = 0.7 + 0.2 * ratio; // ~70% -> 90%
-    description = "Your $muscleGroup is ${(recoveryPercentage * 100).floor()}% recovered. Soreness should be minimal. "
+    description =
+        "Your $muscleGroup is ${(recoveryPercentage * 100).floor()}% recovered. Soreness should be minimal. "
         "Feel free to train, but keep an eye on any lingering tightness.";
   } else if (hoursSinceTraining < 168) {
     // 4–7 days: often fully recovered or very close
     // We treat this range as ~90% -> 100% recovery
     final ratio = (hoursSinceTraining - 96) / 72;
     recoveryPercentage = 0.9 + 0.1 * ratio; // ~90% -> 100%
-    description = "Your $muscleGroup is ${(recoveryPercentage * 100).floor()}% recovered. Soreness should be minimal. "
+    description =
+        "Your $muscleGroup is ${(recoveryPercentage * 100).floor()}% recovered. Soreness should be minimal. "
         "Feel free to train, but keep an eye on any lingering tightness.";
   } else {
     // 7+ days of soreness likely indicates overtraining or incomplete recovery
@@ -952,7 +1099,8 @@ RecoveryResult _calculateMuscleRecovery({required DateTime lastTrainingTime, req
     // or set it to 0% to indicate "inconsistent with normal recovery."
     // Below, we assume 100% physically, but isOvertrained = true means possible problem.
     recoveryPercentage = 1.0;
-    description = "Your $muscleGroup is fully recovered at 100%. You're good to train!";
+    description =
+        "Your $muscleGroup is fully recovered at 100%. You're good to train!";
   }
 
   // Clamp between 0.0 and 1.0 in case of minor rounding

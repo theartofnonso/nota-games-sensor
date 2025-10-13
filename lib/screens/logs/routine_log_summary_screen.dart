@@ -36,7 +36,8 @@ class RoutineLogSummaryScreen extends StatefulWidget {
   const RoutineLogSummaryScreen({super.key, required this.log});
 
   @override
-  State<RoutineLogSummaryScreen> createState() => _RoutineLogSummaryScreenState();
+  State<RoutineLogSummaryScreen> createState() =>
+      _RoutineLogSummaryScreenState();
 }
 
 class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
@@ -54,13 +55,15 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final updatedExerciseLogs = loggedExercises(exerciseLogs: widget.log.exerciseLogs);
+    final updatedExerciseLogs =
+        loggedExercises(exerciseLogs: widget.log.exerciseLogs);
 
     final updatedLog = widget.log.copyWith(exerciseLogs: updatedExerciseLogs);
 
-    final exerciseAndRoutineController = Provider.of<ExerciseAndRoutineController>(context, listen: true);
-    List<RoutineLogDto> routineLogsForTheYear =
-        exerciseAndRoutineController.whereLogsIsSameYear(dateTime: DateTime.now().withoutTime());
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: true);
+    List<RoutineLogDto> routineLogsForTheYear = exerciseAndRoutineController
+        .whereLogsIsSameYear(dateTime: DateTime.now().withoutTime());
 
     final muscleGroupFamilyFrequencyData =
         muscleGroupFrequency(exerciseLogs: updatedLog.exerciseLogs);
@@ -69,16 +72,20 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
     final pbShareAssetsKeys = [];
 
     for (final exerciseLog in updatedLog.exerciseLogs) {
-      final pastExerciseLogs = exerciseAndRoutineController.whereExerciseLogsBefore(
-          exercise: exerciseLog.exercise, date: exerciseLog.createdAt);
+      final pastExerciseLogs =
+          exerciseAndRoutineController.whereExerciseLogsBefore(
+              exercise: exerciseLog.exercise, date: exerciseLog.createdAt);
       final pbs = calculatePBs(
-          pastExerciseLogs: pastExerciseLogs, exerciseType: exerciseLog.exercise.type, exerciseLog: exerciseLog);
+          pastExerciseLogs: pastExerciseLogs,
+          exerciseType: exerciseLog.exercise.type,
+          exerciseLog: exerciseLog);
       final setAndPBs = groupBy(pbs, (pb) => pb.set);
       for (final setAndPB in setAndPBs.entries) {
         final pbs = setAndPB.value;
         for (final pb in pbs) {
           final key = GlobalKey();
-          final shareable = PBsShareable(set: setAndPB.key, pbDto: pb, globalKey: key, image: _image);
+          final shareable = PBsShareable(
+              set: setAndPB.key, pbDto: pb, globalKey: key, image: _image);
           pbShareAssets.add(shareable);
           pbShareAssetsKeys.add(key);
         }
@@ -87,14 +94,19 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
 
     final pages = [
       if (isMultipleOfFive(routineLogsForTheYear.length))
-        SessionMilestoneShareable(label: "${routineLogsForTheYear.length}th", image: _image),
+        SessionMilestoneShareable(
+            label: "${routineLogsForTheYear.length}th", image: _image),
       ...pbShareAssets,
       RoutineLogShareableLite(
-          log: updatedLog, frequencyData: muscleGroupFamilyFrequencyData, pbs: pbShareAssets.length, image: _image),
+          log: updatedLog,
+          frequencyData: muscleGroupFamilyFrequencyData,
+          pbs: pbShareAssets.length,
+          image: _image),
     ];
 
     final pagesKeys = [
-      if (isMultipleOfFive(routineLogsForTheYear.length)) sessionMilestoneGlobalKey,
+      if (isMultipleOfFive(routineLogsForTheYear.length))
+        sessionMilestoneGlobalKey,
       ...pbShareAssetsKeys,
       routineLogGlobalKey,
     ];
@@ -110,6 +122,9 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
             },
             child: const FaIcon(FontAwesomeIcons.rocket)),
         appBar: AppBar(
+          backgroundColor: appBarBackgroundColor(context: context),
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
           leading: IconButton(
             icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
             onPressed: context.pop,
@@ -150,7 +165,8 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
                 SmoothPageIndicator(
                   controller: _pageController,
                   count: pages.length,
-                  effect: const ExpandingDotsEffect(activeDotColor: vibrantGreen),
+                  effect:
+                      const ExpandingDotsEffect(activeDotColor: vibrantGreen),
                 ),
               ],
             ),
@@ -168,10 +184,11 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
     captureImage(key: key, pixelRatio: 3.5).then((result) {
       if (context.mounted) {
         if (result.status == ShareResultStatus.success) {
-          Posthog().capture(eventName: PostHogAnalyticsEvent.shareRoutineLogSummary.displayName);
+          Posthog().capture(
+              eventName:
+                  PostHogAnalyticsEvent.shareRoutineLogSummary.displayName);
           if (mounted) {
-            showSnackbar(
-                context: context, message: "Content Shared");
+            showSnackbar(context: context, message: "Content Shared");
           }
         }
       }
@@ -179,9 +196,11 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
   }
 
   void _showCopyBottomSheet() {
-    final listOfCompletedExercises = loggedExercises(exerciseLogs: widget.log.exerciseLogs);
+    final listOfCompletedExercises =
+        loggedExercises(exerciseLogs: widget.log.exerciseLogs);
 
-    final updatedLog = widget.log.copyWith(exerciseLogs: listOfCompletedExercises);
+    final updatedLog =
+        widget.log.copyWith(exerciseLogs: listOfCompletedExercises);
 
     final workoutLogLink = "$shareableRoutineLogUrl/${updatedLog.id}";
     final workoutLogText = copyRoutineAsText(
@@ -204,21 +223,22 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
             title: Text(
               "Copy as Link",
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                overflow: TextOverflow.ellipsis,
-              ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
               maxLines: 1,
             ),
             subtitle: Text(workoutLogLink),
             onTap: () {
-              Posthog().capture(eventName: PostHogAnalyticsEvent.shareRoutineLogAsLink.displayName);
+              Posthog().capture(
+                  eventName:
+                      PostHogAnalyticsEvent.shareRoutineLogAsLink.displayName);
               HapticFeedback.heavyImpact();
               final data = ClipboardData(text: workoutLogLink);
               Clipboard.setData(data).then((_) {
                 if (mounted) {
                   Navigator.of(context).pop();
                   showSnackbar(
-                      context: context,
-                      message: "Workout log link copied");
+                      context: context, message: "Workout log link copied");
                 }
               });
             },
@@ -230,18 +250,19 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
               size: 18,
             ),
             horizontalTitleGap: 6,
-            title: Text("Copy as Text", style: Theme.of(context).textTheme.titleMedium),
+            title: Text("Copy as Text",
+                style: Theme.of(context).textTheme.titleMedium),
             subtitle: Text("${updatedLog.name}..."),
             onTap: () {
-              Posthog().capture(eventName: PostHogAnalyticsEvent.shareRoutineLogAsText.displayName);
+              Posthog().capture(
+                  eventName:
+                      PostHogAnalyticsEvent.shareRoutineLogAsText.displayName);
               HapticFeedback.heavyImpact();
               final data = ClipboardData(text: workoutLogText);
               Clipboard.setData(data).then((_) {
                 if (mounted) {
                   Navigator.of(context).pop();
-                  showSnackbar(
-                      context: context,
-                      message: "Workout log copied");
+                  showSnackbar(context: context, message: "Workout log copied");
                 }
               });
             },
@@ -283,7 +304,10 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text("Remove Image",
-                    style: GoogleFonts.ubuntu(color: Colors.red, fontWeight: FontWeight.w500, fontSize: 16)),
+                    style: GoogleFonts.ubuntu(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16)),
                 onTap: _removeImage,
               ),
             ])
@@ -293,7 +317,8 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
   void _pickFromLibrary({required bool camera}) async {
     Navigator.of(context).pop();
     final ImagePicker picker = ImagePicker();
-    final XFile? xFile = await picker.pickImage(source: camera ? ImageSource.camera : ImageSource.gallery);
+    final XFile? xFile = await picker.pickImage(
+        source: camera ? ImageSource.camera : ImageSource.gallery);
     if (xFile != null) {
       final Uint8List bytes = await xFile.readAsBytes();
       setState(() {

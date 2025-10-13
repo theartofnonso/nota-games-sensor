@@ -88,6 +88,9 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
     return Scaffold(
         appBar: AppBar(
+          backgroundColor: appBarBackgroundColor(context: context),
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
           leading: IconButton(
             icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
             onPressed: context.pop,

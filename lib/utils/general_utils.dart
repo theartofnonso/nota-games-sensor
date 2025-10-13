@@ -294,6 +294,12 @@ LinearGradient themeGradient({required BuildContext context}) {
   );
 }
 
+Color appBarBackgroundColor({required BuildContext context}) {
+  Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+  final isDarkMode = systemBrightness == Brightness.dark;
+  return isDarkMode ? sapphireDark80 : Colors.white;
+}
+
 Widget getTrendIcon({required Trend trend}) {
   return switch (trend) {
     Trend.up => FaIcon(

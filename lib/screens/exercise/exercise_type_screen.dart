@@ -12,7 +12,8 @@ class ExerciseTypeScreen extends StatelessWidget {
   const ExerciseTypeScreen({super.key, required this.exerciseType});
 
   /// Select an muscle group
-  void _selectExerciseType({required BuildContext context, required ExerciseType type}) {
+  void _selectExerciseType(
+      {required BuildContext context, required ExerciseType type}) {
     Navigator.of(context).pop(type);
   }
 
@@ -22,6 +23,9 @@ class ExerciseTypeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
           onPressed: context.pop,
@@ -41,13 +45,16 @@ class ExerciseTypeScreen extends StatelessWidget {
                     itemBuilder: (BuildContext context, int index) {
                       final type = exerciseTypes[index];
                       return ListTile(
-                          onTap: () => _selectExerciseType(type: exerciseTypes[index], context: context),
+                          onTap: () => _selectExerciseType(
+                              type: exerciseTypes[index], context: context),
                           leading: type == exerciseType
-                              ? const FaIcon(FontAwesomeIcons.solidSquareCheck, color: vibrantGreen)
+                              ? const FaIcon(FontAwesomeIcons.solidSquareCheck,
+                                  color: vibrantGreen)
                               : const FaIcon(FontAwesomeIcons.solidSquareCheck),
                           trailing: _TrailingWidget(type: exerciseTypes[index]),
                           title: Text(exerciseTypes[index].name),
-                          subtitle: Text("${exerciseTypes[index].description} . . ."),
+                          subtitle:
+                              Text("${exerciseTypes[index].description} . . ."),
                           dense: true);
                     },
                     separatorBuilder: (BuildContext context, int index) =>
@@ -75,12 +82,15 @@ class _TrailingWidget extends StatelessWidget {
       ExerciseType.duration => ["TIME"],
     };
 
-    final itemWidgets =
-        measurements.map((measurement) => Text(measurement, style: Theme.of(context).textTheme.bodySmall)).toList();
+    final itemWidgets = measurements
+        .map((measurement) =>
+            Text(measurement, style: Theme.of(context).textTheme.bodySmall))
+        .toList();
 
     return SizedBox(
       width: 70,
-      child: Row(mainAxisAlignment: MainAxisAlignment.end, children: itemWidgets),
+      child:
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: itemWidgets),
     );
   }
 }

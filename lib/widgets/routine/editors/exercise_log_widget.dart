@@ -557,6 +557,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
           onPressed: context.pop,
