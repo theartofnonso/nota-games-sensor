@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +23,7 @@ import '../../../enums/chart_unit_enum.dart';
 import '../../../enums/exercise_type_enums.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
+import '../../../utils/uri_utils.dart';
 import '../../../widgets/chart/line_chart_widget.dart';
 import '../../logs/routine_log_screen.dart';
 
@@ -73,54 +75,80 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   final PageController _controller = PageController(initialPage: 0);
 
   void _heaviestWeightPerLog() {
-    final sets = widget.exerciseLogs.map((log) => heaviestWeightInSetForExerciseLog(exerciseLog: log)).toList();
+    final sets = widget.exerciseLogs
+        .map((log) => heaviestWeightInSetForExerciseLog(exerciseLog: log))
+        .toList();
     setState(() {
-      _chartPoints = sets.mapIndexed((index, set) => ChartPointDto(index, (set).weight)).toList();
+      _chartPoints = sets
+          .mapIndexed((index, set) => ChartPointDto(index, (set).weight))
+          .toList();
       _summaryType = SummaryType.weight;
       _chartUnit = ChartUnit.weight;
     });
   }
 
   void _heaviestSetVolumePerLog() {
-    final values = widget.exerciseLogs.map((log) => heaviestVolumeForExerciseLog(exerciseLog: log)).toList();
+    final values = widget.exerciseLogs
+        .map((log) => heaviestVolumeForExerciseLog(exerciseLog: log))
+        .toList();
     setState(() {
-      _chartPoints = values.mapIndexed((index, value) => ChartPointDto(index, value)).toList();
+      _chartPoints = values
+          .mapIndexed((index, value) => ChartPointDto(index, value))
+          .toList();
       _summaryType = SummaryType.setVolume;
       _chartUnit = ChartUnit.weight;
     });
   }
 
   void _totalRepsForLog() {
-    final values = widget.exerciseLogs.map((log) => totalRepsForExerciseLog(exerciseLog: log)).toList();
+    final values = widget.exerciseLogs
+        .map((log) => totalRepsForExerciseLog(exerciseLog: log))
+        .toList();
     setState(() {
-      _chartPoints = values.mapIndexed((index, value) => ChartPointDto(index, value)).toList();
+      _chartPoints = values
+          .mapIndexed((index, value) => ChartPointDto(index, value))
+          .toList();
       _summaryType = SummaryType.sessionReps;
       _chartUnit = ChartUnit.weight;
     });
   }
 
   void _highestRepsForLog() {
-    final values = widget.exerciseLogs.map((log) => highestRepsForExerciseLog(exerciseLog: log)).toList();
+    final values = widget.exerciseLogs
+        .map((log) => highestRepsForExerciseLog(exerciseLog: log))
+        .toList();
     setState(() {
-      _chartPoints = values.mapIndexed((index, value) => ChartPointDto(index, value)).toList();
+      _chartPoints = values
+          .mapIndexed((index, value) => ChartPointDto(index, value))
+          .toList();
       _summaryType = SummaryType.mostReps;
       _chartUnit = ChartUnit.weight;
     });
   }
 
   void _longestDurationPerLog() {
-    final values = widget.exerciseLogs.map((log) => longestDurationForExerciseLog(exerciseLog: log)).toList();
+    final values = widget.exerciseLogs
+        .map((log) => longestDurationForExerciseLog(exerciseLog: log))
+        .toList();
     setState(() {
-      _chartPoints = values.mapIndexed((index, value) => ChartPointDto(index, value.inMilliseconds)).toList();
+      _chartPoints = values
+          .mapIndexed(
+              (index, value) => ChartPointDto(index, value.inMilliseconds))
+          .toList();
       _summaryType = SummaryType.bestTime;
       _chartUnit = ChartUnit.duration;
     });
   }
 
   void _totalTimePerLog() {
-    final values = widget.exerciseLogs.map((log) => totalDurationExerciseLog(exerciseLog: log)).toList();
+    final values = widget.exerciseLogs
+        .map((log) => totalDurationExerciseLog(exerciseLog: log))
+        .toList();
     setState(() {
-      _chartPoints = values.mapIndexed((index, value) => ChartPointDto(index, value.inMilliseconds)).toList();
+      _chartPoints = values
+          .mapIndexed(
+              (index, value) => ChartPointDto(index, value.inMilliseconds))
+          .toList();
       _summaryType = SummaryType.sessionTimes;
       _chartUnit = ChartUnit.duration;
     });
@@ -133,7 +161,9 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
       ExerciseType.duration => SummaryType.bestTime
     };
 
-    _dateTimes = widget.exerciseLogs.map((log) => log.createdAt.formattedDayAndMonth()).toList();
+    _dateTimes = widget.exerciseLogs
+        .map((log) => log.createdAt.formattedDayAndMonth())
+        .toList();
 
     switch (_summaryType) {
       case SummaryType.weight:
@@ -169,9 +199,15 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
 
   void _navigateTo({required String? routineLogId}) {
     if (routineLogId != null) {
-      final routineLog = Provider.of<ExerciseAndRoutineController>(context, listen: false).logWhereId(id: routineLogId);
+      final routineLog =
+          Provider.of<ExerciseAndRoutineController>(context, listen: false)
+              .logWhereId(id: routineLogId);
       if (routineLog != null) {
-        context.push(RoutineLogScreen.routeName, extra: {"log": routineLog, "showSummary": false, "isEditable": false});
+        context.push(RoutineLogScreen.routeName, extra: {
+          "log": routineLog,
+          "showSummary": false,
+          "isEditable": false
+        });
       }
     }
   }
@@ -183,7 +219,10 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
 
     final weightUnitLabel = weightUnit();
 
-    final muscleGroupsIllustrations = [widget.exercise.primaryMuscleGroup, ...widget.exercise.secondaryMuscleGroups]
+    final muscleGroupsIllustrations = [
+      widget.exercise.primaryMuscleGroup,
+      ...widget.exercise.secondaryMuscleGroups
+    ]
         .where((muscleGroup) => muscleGroup != MuscleGroup.fullBody)
         .map((muscleGroup) {
       return Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
@@ -195,7 +234,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
         const SizedBox(
           height: 6,
         ),
-        Text(muscleGroup.name.toUpperCase(), style: Theme.of(context).textTheme.bodyMedium)
+        Text(muscleGroup.name.toUpperCase(),
+            style: Theme.of(context).textTheme.bodyMedium)
       ]);
     }).toList();
 
@@ -203,16 +243,25 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
 
     return SingleChildScrollView(
         child: Padding(
-      padding: const EdgeInsets.only(top: 20, right: 10.0, bottom: 10, left: 10),
+      padding:
+          const EdgeInsets.only(top: 20, right: 10.0, bottom: 10, left: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          if (exercise.video != null)
+            _VideoWidget(
+              videoUrl: exercise.video!.toString(),
+              creditSource: exercise.creditSource?.toString(),
+              credit: exercise.credit,
+            ),
           Stack(
             children: [
               AspectRatio(
                 aspectRatio: 1.8,
                 child: PageView(
-                    scrollDirection: Axis.vertical, controller: _controller, children: muscleGroupsIllustrations),
+                    scrollDirection: Axis.vertical,
+                    controller: _controller,
+                    children: muscleGroupsIllustrations),
               ),
               Positioned.fill(
                 child: Align(
@@ -226,7 +275,9 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                             activeDotColor: vibrantGreen,
                             dotWidth: 8.0,
                             dotHeight: 8.0,
-                            dotColor: isDarkMode ? Colors.white12 : Colors.grey.shade200),
+                            dotColor: isDarkMode
+                                ? Colors.white12
+                                : Colors.grey.shade200),
                         axisDirection: Axis.vertical),
                   ),
                 ),
@@ -238,7 +289,9 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  exercise.description != null ? "${exercise.description}." : "No notes",
+                  exercise.description != null
+                      ? "${exercise.description}."
+                      : "No notes",
                   textAlign: TextAlign.center,
                   style: GoogleFonts.ubuntu(
                       fontSize: 14,
@@ -281,31 +334,36 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           onPressed: _heaviestSetVolumePerLog,
                           label: SummaryType.setVolume.label,
                           padding: const EdgeInsets.only(right: 5.0),
-                          buttonColor: _buttonColor(type: SummaryType.setVolume)),
+                          buttonColor:
+                              _buttonColor(type: SummaryType.setVolume)),
                     if (withReps(type: widget.exercise.type))
                       OpacityButtonWidget(
                           onPressed: _highestRepsForLog,
                           label: SummaryType.mostReps.label,
                           padding: const EdgeInsets.only(right: 5.0),
-                          buttonColor: _buttonColor(type: SummaryType.mostReps)),
+                          buttonColor:
+                              _buttonColor(type: SummaryType.mostReps)),
                     if (withReps(type: widget.exercise.type))
                       OpacityButtonWidget(
                           onPressed: _totalRepsForLog,
                           label: SummaryType.sessionReps.label,
                           padding: const EdgeInsets.only(right: 5.0),
-                          buttonColor: _buttonColor(type: SummaryType.sessionReps)),
+                          buttonColor:
+                              _buttonColor(type: SummaryType.sessionReps)),
                     if (withDurationOnly(type: widget.exercise.type))
                       OpacityButtonWidget(
                           onPressed: _longestDurationPerLog,
                           label: SummaryType.bestTime.label,
                           padding: const EdgeInsets.only(right: 5.0),
-                          buttonColor: _buttonColor(type: SummaryType.bestTime)),
+                          buttonColor:
+                              _buttonColor(type: SummaryType.bestTime)),
                     if (withDurationOnly(type: widget.exercise.type))
                       OpacityButtonWidget(
                           onPressed: _totalTimePerLog,
                           label: SummaryType.sessionTimes.label,
                           padding: const EdgeInsets.only(right: 5.0),
-                          buttonColor: _buttonColor(type: SummaryType.sessionTimes)),
+                          buttonColor:
+                              _buttonColor(type: SummaryType.sessionTimes)),
                   ],
                 )),
           const SizedBox(height: 10),
@@ -316,7 +374,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                 title: 'Heaviest Weight',
                 trailing: "${widget.heaviestWeight.$2}$weightUnitLabel",
                 subtitle: 'Heaviest weight in a set',
-                onTap: () => _navigateTo(routineLogId: widget.heaviestWeight.$1),
+                onTap: () =>
+                    _navigateTo(routineLogId: widget.heaviestWeight.$1),
                 enabled: widget.exerciseLogs.isNotEmpty,
               ),
             ),
@@ -338,7 +397,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                   title: 'Best Time',
                   trailing: widget.longestDuration.$2.hmsAnalog(),
                   subtitle: 'Longest time for this exercise',
-                  onTap: () => _navigateTo(routineLogId: widget.longestDuration.$1),
+                  onTap: () =>
+                      _navigateTo(routineLogId: widget.longestDuration.$1),
                   enabled: widget.exerciseLogs.isNotEmpty),
             ),
           if (withReps(type: widget.exercise.type))
@@ -358,10 +418,10 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                   title: 'Most Reps (Session)',
                   trailing: "${widget.mostRepsSession.$2} reps",
                   subtitle: 'Most reps in a session',
-                  onTap: () => _navigateTo(routineLogId: widget.mostRepsSession.$1),
+                  onTap: () =>
+                      _navigateTo(routineLogId: widget.mostRepsSession.$1),
                   enabled: widget.exerciseLogs.isNotEmpty),
             ),
-          const SizedBox(height: 10)
         ],
       ),
     ));
@@ -390,6 +450,57 @@ class _MetricListTile extends StatelessWidget {
         title: Text(title),
         subtitle: Text(subtitle),
         trailing: Text(trailing),
+      ),
+    );
+  }
+}
+
+class _VideoWidget extends StatelessWidget {
+  final String videoUrl;
+  final String? creditSource;
+  final String? credit;
+
+  const _VideoWidget({
+    required this.videoUrl,
+    this.creditSource,
+    this.credit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    final isDarkMode = systemBrightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20.0),
+      child: ListTile(
+        onTap: () => openUrl(url: videoUrl, context: context),
+        leading: FaIcon(
+          FontAwesomeIcons.youtube,
+          color: vibrantGreen,
+          size: 24,
+        ),
+        title: Text(
+          'Watch Exercise Video',
+          style: GoogleFonts.ubuntu(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: credit != null
+            ? Text(
+                'Video by $credit',
+                style: GoogleFonts.ubuntu(
+                  fontSize: 12,
+                  color: isDarkMode ? Colors.white70 : Colors.black54,
+                ),
+              )
+            : null,
+        trailing: FaIcon(
+          FontAwesomeIcons.arrowUpRightFromSquare,
+          size: 16,
+          color: isDarkMode ? Colors.white54 : Colors.black54,
+        ),
       ),
     );
   }
