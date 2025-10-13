@@ -44,33 +44,10 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final lastYearRange = yearToDateTimeRange(datetime: DateTime.now());
     final logsForTheYear =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true).whereLogsIsWithinRange(range: lastYearRange);
+        Provider.of<ExerciseAndRoutineController>(context, listen: true)
+            .whereLogsIsWithinRange(range: lastYearRange);
 
     return Scaffold(
-      appBar: AppBar(
-          title: GestureDetector(
-            onTap: () {
-              showBottomSheetWithNoAction(
-                  context: context,
-                  title: "${logsForTheYear.length} of 144 sessions in ${DateTime.now().year}",
-                  description:
-                      "Your Streak counts the days you commit to strength training each month. Hit 12 sessions a month to stay on track for 144 in a year.");
-            },
-            child: Container(
-              color: Colors.transparent,
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: IconProgressBar(
-                progress: logsForTheYear.length / 144,
-                icon: FaIcon(FontAwesomeIcons.personWalking, color: Colors.green),
-              ),
-            ),
-          ),
-          actions: [
-            IconButton(
-              onPressed: () => navigateToSettings(context: context),
-              icon: FaIcon(FontAwesomeIcons.gear),
-            )
-          ]),
       body: Container(
         height: double.infinity,
         decoration: BoxDecoration(
@@ -96,7 +73,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   }
 
   void _observeExerciseQuery() async {
-    final controller = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final controller =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
     await controller.loadLocalExercises();
     _exerciseStream = Amplify.DataStore.observeQuery(
       Exercise.classType,
@@ -114,7 +92,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       sortBy: [RoutineTemplate.CREATEDAT.descending()],
     ).listen((QuerySnapshot<RoutineTemplate> snapshot) {
       if (mounted) {
-        Provider.of<ExerciseAndRoutineController>(context, listen: false).streamTemplates(templates: snapshot.items);
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .streamTemplates(templates: snapshot.items);
       }
     });
   }
@@ -125,7 +104,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       sortBy: [RoutinePlan.CREATEDAT.descending()],
     ).listen((QuerySnapshot<RoutinePlan> snapshot) {
       if (mounted) {
-        Provider.of<ExerciseAndRoutineController>(context, listen: false).streamPlans(plans: snapshot.items);
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .streamPlans(plans: snapshot.items);
       }
     });
   }
@@ -136,7 +116,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       sortBy: [RoutineLog.CREATEDAT.ascending()],
     ).listen((QuerySnapshot<RoutineLog> snapshot) {
       if (mounted) {
-        Provider.of<ExerciseAndRoutineController>(context, listen: false).streamLogs(logs: snapshot.items);
+        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .streamLogs(logs: snapshot.items);
       }
     });
   }
@@ -146,7 +127,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       // ── 1. Get the signed-in Amplify user ────────────────────────────────
       final authUser = await Amplify.Auth.getCurrentUser();
       final userId = authUser.userId;
-      final email = authUser.signInDetails.toJson()['username']?.toString() ?? '';
+      final email =
+          authUser.signInDetails.toJson()['username']?.toString() ?? '';
 
       // ── 2. Persist to SharedPrefs & analytics ─────────────────────────────
       final prefs = SharedPrefs();
@@ -178,7 +160,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       if (cache.isNotEmpty) {
         final json = jsonDecode(cache);
         final routineLog = RoutineLogDto.fromCachedLog(json: json);
-        final arguments = RoutineLogArguments(log: routineLog, editorMode: RoutineEditorMode.log, cached: true);
+        final arguments = RoutineLogArguments(
+            log: routineLog, editorMode: RoutineEditorMode.log, cached: true);
         navigateToRoutineLogEditor(context: context, arguments: arguments);
       }
     });

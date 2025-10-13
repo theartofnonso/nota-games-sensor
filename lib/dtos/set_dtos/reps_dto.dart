@@ -7,21 +7,20 @@ class RepsSetDto extends SetDto {
   const RepsSetDto({
     required this.reps,
     super.checked = false,
-    super.rpeRating = 4,
     super.isWorkingSet = false,
     required super.dateTime,
   });
 
   factory RepsSetDto.defaultSet() => RepsSetDto(
-    reps: 0,
-    dateTime: DateTime.now(),
-  );
+        reps: 0,
+        dateTime: DateTime.now(),
+      );
 
-  factory RepsSetDto.fromJson(Map<String, dynamic> json, {required DateTime dateTime}) {
+  factory RepsSetDto.fromJson(Map<String, dynamic> json,
+      {required DateTime dateTime}) {
     return RepsSetDto(
       reps: (json['reps'] as num).toInt(),
       checked: json['checked'] as bool,
-      rpeRating: json['rpeRating'] as int,
       isWorkingSet: json['isWorkingSet'] as bool,
       dateTime: dateTime,
     );
@@ -40,14 +39,12 @@ class RepsSetDto extends SetDto {
   RepsSetDto copyWith({
     int? reps,
     bool? checked,
-    int? rpeRating,
     bool? isWorkingSet,
     DateTime? dateTime,
   }) {
     return RepsSetDto(
       reps: reps ?? this.reps,
       checked: checked ?? this.checked,
-      rpeRating: rpeRating ?? this.rpeRating,
       isWorkingSet: isWorkingSet ?? this.isWorkingSet,
       dateTime: dateTime ?? this.dateTime,
     );
@@ -68,7 +65,6 @@ class RepsSetDto extends SetDto {
   String toString() => 'RepsSetDto('
       'reps: $reps, '
       'checked: $checked, '
-      'rpeRating: $rpeRating, '
       'isWorkingSet: $isWorkingSet, '
       'dateTime: $dateTime'
       ')';

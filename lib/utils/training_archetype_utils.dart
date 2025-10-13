@@ -18,12 +18,6 @@ TrainingDurationArchetype trainingDurationArchetype({required Duration avgDurati
   return TrainingDurationArchetype.extendedSessions;
 }
 
-RpeArchetype rpeArchetype({required double highRpeRatio}) {
-  if (highRpeRatio < 0.10) return RpeArchetype.rarelyPushesToFailure;
-  if (highRpeRatio < 0.50) return RpeArchetype.occasionallyPushesToFailure;
-  return RpeArchetype.alwaysPushesToFailure;
-}
-
 MuscleFocusArchetype muscleFocusArchetype({required List<RoutineLogDto> logs}) {
   int upperSets = 0;
   int lowerSets = 0;
@@ -93,26 +87,16 @@ List<TrainingArchetype> classifyTrainingArchetypes({
   );
 
   // ---------------------------------------------------------------------------
-  // 4. RPE / effort archetype
-  // ---------------------------------------------------------------------------
-  final allSets = logs.expand((l) => l.exerciseLogs).expand((e) => e.sets);
-  final setsNearFail = allSets.where((s) => s.rpeRating >= 8).length;
-  final failureRatio = allSets.isNotEmpty ? setsNearFail / allSets.length : 0.0;
-
-  final rpeArch = rpeArchetype(highRpeRatio: failureRatio);
-
-  // ---------------------------------------------------------------------------
-  // 5. Muscle-focus archetype
+  // 4. Muscle-focus archetype
   // ---------------------------------------------------------------------------
   final muscleFocusArch = muscleFocusArchetype(logs: logs);
 
   // ---------------------------------------------------------------------------
-  // 6. Return the archetype bundle
+  // 5. Return the archetype bundle
   // ---------------------------------------------------------------------------
   return [
     trainingFrequencyArch,
     trainingDurationArch,
-    rpeArch,
     muscleFocusArch,
   ];
 }

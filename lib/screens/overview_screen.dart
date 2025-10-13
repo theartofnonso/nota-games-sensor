@@ -13,15 +13,12 @@ import 'package:tracker_app/utils/dialog_utils.dart';
 import '../controllers/exercise_and_routine_controller.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/appsync/routine_template_dto.dart';
-import '../dtos/viewmodels/routine_log_arguments.dart';
-import '../enums/routine_editor_type_enums.dart';
 import '../utils/date_utils.dart';
 import '../utils/general_utils.dart';
 import '../utils/navigation_utils.dart';
 import '../widgets/backgrounds/trkr_loading_screen.dart';
 import '../widgets/calendar/calendar.dart';
 import '../widgets/calendar/calendar_logs.dart';
-import '../widgets/dividers/label_divider.dart';
 import '../widgets/monitors/full_animated_gauge.dart';
 import '../widgets/monthly_insights/log_streak_chart.dart';
 import '../widgets/monthly_insights/volume_chart.dart';
@@ -55,7 +52,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
     }
 
     final currentWeekday = DateTime.now().weekday;
-    final sameWeekdayLogs = logs.where((log) => log.createdAt.weekday == currentWeekday).toList();
+    final sameWeekdayLogs =
+        logs.where((log) => log.createdAt.weekday == currentWeekday).toList();
 
     final logsToConsider = sameWeekdayLogs.isNotEmpty ? sameWeekdayLogs : logs;
 
@@ -72,8 +70,12 @@ class _OverviewScreenState extends State<OverviewScreen> {
       }
     }
 
-    final maxCount = counts.values.fold(0, (max, count) => count > max ? count : max);
-    final candidates = counts.entries.where((entry) => entry.value == maxCount).map((entry) => entry.key).toList();
+    final maxCount =
+        counts.values.fold(0, (max, count) => count > max ? count : max);
+    final candidates = counts.entries
+        .where((entry) => entry.value == maxCount)
+        .map((entry) => entry.key)
+        .toList();
 
     if (candidates.length == 1) {
       return candidates.first;
@@ -102,27 +104,34 @@ class _OverviewScreenState extends State<OverviewScreen> {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     /// Be notified of changes
-    final exerciseAndRoutineController = Provider.of<ExerciseAndRoutineController>(context, listen: true);
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: true);
 
-    final logsForCurrentDay =
-        exerciseAndRoutineController.whereLogsIsSameDay(dateTime: DateTime.now().withoutTime()).toList();
+    final logsForCurrentDay = exerciseAndRoutineController
+        .whereLogsIsSameDay(dateTime: DateTime.now().withoutTime())
+        .toList();
 
     final templates = exerciseAndRoutineController.templates;
 
     final lastQuarter = lastQuarterDateTimeRange();
 
-    final logsInLastQuarter = exerciseAndRoutineController.whereLogsIsWithinRange(range: lastQuarter);
+    final logsInLastQuarter =
+        exerciseAndRoutineController.whereLogsIsWithinRange(range: lastQuarter);
 
     final predictedTemplateId = _predictTemplate(logs: logsInLastQuarter);
 
-    final predictedTemplate = templates.firstWhereOrNull((template) => template.id == predictedTemplateId);
+    final predictedTemplate = templates
+        .firstWhereOrNull((template) => template.id == predictedTemplateId);
 
-    final hasPredictedTemplateBeenLogged =
-        logsForCurrentDay.firstWhereOrNull((log) => log.templateId == predictedTemplate?.id) != null;
+    final hasPredictedTemplateBeenLogged = logsForCurrentDay.firstWhereOrNull(
+            (log) => log.templateId == predictedTemplate?.id) !=
+        null;
 
     return SingleChildScrollView(
       child: Column(children: [
-        Calendar(onSelectDate: _onSelectCalendarDateTime, onMonthChanged: _onMonthChanged),
+        Calendar(
+            onSelectDate: _onSelectCalendarDateTime,
+            onMonthChanged: _onMonthChanged),
         const SizedBox(
           height: 10,
         ),
@@ -136,13 +145,22 @@ class _OverviewScreenState extends State<OverviewScreen> {
               crossAxisCellCount: 1,
               mainAxisCellCount: 1,
               child: predictedTemplate != null
-                  ? _ScheduledTitle(schedule: predictedTemplate, isLogged: hasPredictedTemplateBeenLogged)
+                  ? _ScheduledTitle(
+                      schedule: predictedTemplate,
+                      isLogged: hasPredictedTemplateBeenLogged)
                   : const _NoScheduledTitle(),
             ),
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
               mainAxisCellCount: 1,
-              child: _LogStreakTile(dateTimeRange: _calendarDateTimeRange ?? thisMonthDateRange()),
+              child: _LogStreakTile(
+                  dateTimeRange:
+                      _calendarDateTimeRange ?? thisMonthDateRange()),
+            ),
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: 1,
+              child: _YearlyStreakTile(),
             ),
             StaggeredGridTile.count(
               crossAxisCellCount: 1,
@@ -150,7 +168,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
               child: Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade200,
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.grey.shade200,
                     borderRadius: BorderRadius.circular(5)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -161,18 +181,21 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     },
                     const Spacer(),
                     CupertinoSlidingSegmentedControl<TrainingAndVolume>(
-                      backgroundColor: isDarkMode ? sapphireDark : Colors.grey.shade400,
+                      backgroundColor:
+                          isDarkMode ? sapphireDark : Colors.grey.shade400,
                       thumbColor: isDarkMode ? sapphireDark80 : Colors.white,
                       groupValue: _trainingAndVolume,
                       children: {
                         TrainingAndVolume.training: SizedBox(
                             width: 80,
                             child: Text("Training",
-                                style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)),
+                                style: Theme.of(context).textTheme.bodySmall,
+                                textAlign: TextAlign.center)),
                         TrainingAndVolume.volume: SizedBox(
                             width: 80,
                             child: Text("Volume",
-                                style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center)),
+                                style: Theme.of(context).textTheme.bodySmall,
+                                textAlign: TextAlign.center)),
                       },
                       onValueChanged: (TrainingAndVolume? value) {
                         if (value != null) {
@@ -202,6 +225,14 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 child: _AddTile(),
               ),
             ),
+            StaggeredGridTile.count(
+              crossAxisCellCount: 1,
+              mainAxisCellCount: 1,
+              child: GestureDetector(
+                onTap: () => navigateToSettings(context: context),
+                child: _SettingsTile(),
+              ),
+            ),
           ],
         ),
       ]),
@@ -217,9 +248,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
   }
 
   void _showNewBottomSheet() {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     displayBottomSheet(
         context: context,
         child: Column(children: [
@@ -227,7 +255,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.play, size: 18),
             horizontalTitleGap: 6,
-            title: Text("Log new session", style: Theme.of(context).textTheme.bodyLarge),
+            title: Text("Log new session",
+                style: Theme.of(context).textTheme.bodyLarge),
             onTap: () {
               Navigator.of(context).pop();
               logEmptyRoutine(context: context);
@@ -237,14 +266,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.clockRotateLeft, size: 18),
             horizontalTitleGap: 6,
-            title: Text("Log past session", style: Theme.of(context).textTheme.bodyLarge),
+            title: Text("Log past session",
+                style: Theme.of(context).textTheme.bodyLarge),
             onTap: () {
               Navigator.of(context).pop();
               showDatetimeRangePicker(
                   context: context,
                   onChangedDateTimeRange: (DateTimeRange datetimeRange) {
                     Navigator.of(context).pop();
-                    final logName = "${timeOfDay(datetime: datetimeRange.start)} Session";
+                    final logName =
+                        "${timeOfDay(datetime: datetimeRange.start)} Session";
                     final log = RoutineLogDto(
                         id: "",
                         templateId: '',
@@ -256,7 +287,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         owner: "",
                         createdAt: datetimeRange.start,
                         updatedAt: datetimeRange.end);
-                    navigateWithSlideTransition(context: context, child: PastRoutineLogEditorScreen(log: log));
+                    navigateWithSlideTransition(
+                        context: context,
+                        child: PastRoutineLogEditorScreen(log: log));
                   });
             },
           ),
@@ -283,11 +316,14 @@ class _LogStreakTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final exerciseAndRoutineController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
 
-    final routineLogs = exerciseAndRoutineController.whereLogsIsWithinRange(range: dateTimeRange);
+    final routineLogs = exerciseAndRoutineController.whereLogsIsWithinRange(
+        range: dateTimeRange);
 
-    final routineLogsByDay = groupBy(routineLogs, (log) => log.createdAt.withoutTime().day);
+    final routineLogsByDay =
+        groupBy(routineLogs, (log) => log.createdAt.withoutTime().day);
 
     final monthlyProgress = routineLogsByDay.length;
 
@@ -303,12 +339,53 @@ class _LogStreakTile extends StatelessWidget {
       },
       child: Container(
         padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(5)),
+        decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(5)),
         child: FullAnimatedGauge(
           value: monthlyProgress,
           min: 0,
           max: 12,
           label: "Days",
+        ),
+      ),
+    );
+  }
+}
+
+class _YearlyStreakTile extends StatelessWidget {
+  const _YearlyStreakTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+
+    final lastYearRange = yearToDateTimeRange(datetime: DateTime.now());
+    final logsForTheYear = exerciseAndRoutineController.whereLogsIsWithinRange(
+        range: lastYearRange);
+
+    final yearlyProgress = logsForTheYear.length;
+    final year = DateTime.now().year;
+
+    return GestureDetector(
+      onTap: () {
+        showBottomSheetWithNoAction(
+            context: context,
+            title: "Yearly Streak",
+            description:
+                "Your yearly streak tracks your total training sessions in $year. Hit 12 sessions a month to stay on track for 144 in a year.");
+      },
+      child: Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+            color: vibrantGreen.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(5)),
+        child: FullAnimatedGauge(
+          value: yearlyProgress,
+          min: 0,
+          max: 144,
+          label: "Sessions",
         ),
       ),
     );
@@ -326,11 +403,14 @@ class _NoScheduledTitle extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade200,
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(5)),
       child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
         Text("Keep training to see future schedules",
-            style: GoogleFonts.ubuntu(fontSize: 18, height: 1.5, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.ubuntu(
+                fontSize: 18, height: 1.5, fontWeight: FontWeight.w600)),
         const Spacer(),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -340,7 +420,9 @@ class _NoScheduledTitle extends StatelessWidget {
               height: 25,
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: isDarkMode ? Colors.black.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.4),
+                color: isDarkMode
+                    ? Colors.black.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(3),
               ),
               child: Center(
@@ -371,16 +453,23 @@ class _ScheduledTitle extends StatelessWidget {
     final isDarkMode = systemBrightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () => navigateToRoutineTemplatePreview(context: context, template: schedule),
+      onTap: () => navigateToRoutineTemplatePreview(
+          context: context, template: schedule),
       child: isLogged
           ? Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                  color: isDarkMode ? vibrantGreen.withValues(alpha: 0.1) : vibrantGreen,
+                  color: isDarkMode
+                      ? vibrantGreen.withValues(alpha: 0.1)
+                      : vibrantGreen,
                   borderRadius: BorderRadius.circular(5)),
-              child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+              child:
+                  Column(mainAxisAlignment: MainAxisAlignment.start, children: [
                 Text("${schedule.name} has been completed. Great job!",
-                    style: GoogleFonts.ubuntu(fontSize: 18, height: 1.5, fontWeight: FontWeight.w600)),
+                    style: GoogleFonts.ubuntu(
+                        fontSize: 18,
+                        height: 1.5,
+                        fontWeight: FontWeight.w600)),
                 const Spacer(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -408,11 +497,17 @@ class _ScheduledTitle extends StatelessWidget {
           : Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                  color: isDarkMode ? vibrantGreen.withValues(alpha: 0.1) : vibrantGreen,
+                  color: isDarkMode
+                      ? vibrantGreen.withValues(alpha: 0.1)
+                      : vibrantGreen,
                   borderRadius: BorderRadius.circular(5)),
-              child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+              child:
+                  Column(mainAxisAlignment: MainAxisAlignment.start, children: [
                 Text("${schedule.name} is scheduled today!",
-                    style: GoogleFonts.ubuntu(fontSize: 18, height: 1.5, fontWeight: FontWeight.w600)),
+                    style: GoogleFonts.ubuntu(
+                        fontSize: 18,
+                        height: 1.5,
+                        fontWeight: FontWeight.w600)),
                 const Spacer(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -422,7 +517,9 @@ class _ScheduledTitle extends StatelessWidget {
                       height: 25,
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: isDarkMode ? vibrantGreen.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.4),
+                        color: isDarkMode
+                            ? vibrantGreen.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(3),
                       ),
                       child: Center(
@@ -452,10 +549,12 @@ class _TemplatesTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: isDarkMode ? vibrantBlue.withValues(alpha: 0.1) : vibrantBlue, borderRadius: BorderRadius.circular(5)),
+          color: isDarkMode ? vibrantBlue.withValues(alpha: 0.1) : vibrantBlue,
+          borderRadius: BorderRadius.circular(5)),
       child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
         Text("Manage your training experience",
-            style: GoogleFonts.ubuntu(fontSize: 20, height: 1.5, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.ubuntu(
+                fontSize: 20, height: 1.5, fontWeight: FontWeight.w600)),
         const Spacer(),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -465,7 +564,9 @@ class _TemplatesTile extends StatelessWidget {
               height: 25,
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: isDarkMode ? vibrantBlue.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.4),
+                color: isDarkMode
+                    ? vibrantBlue.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(3),
               ),
               child: Center(
@@ -494,11 +595,13 @@ class _AddTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: isDarkMode ? Colors.yellow.withValues(alpha: 0.1) : Colors.yellow,
+          color:
+              isDarkMode ? Colors.yellow.withValues(alpha: 0.1) : Colors.yellow,
           borderRadius: BorderRadius.circular(5)),
       child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
         Text("Start a fresh session",
-            style: GoogleFonts.ubuntu(fontSize: 20, height: 1.5, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.ubuntu(
+                fontSize: 20, height: 1.5, fontWeight: FontWeight.w600)),
         const Spacer(),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -508,7 +611,9 @@ class _AddTile extends StatelessWidget {
                 height: 25,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.yellow.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.4),
+                  color: isDarkMode
+                      ? Colors.yellow.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(3),
                 ),
                 child: Center(
@@ -519,6 +624,54 @@ class _AddTile extends StatelessWidget {
                     color: Colors.white,
                   ),
                 )))
+          ],
+        ),
+      ]),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile();
+
+  @override
+  Widget build(BuildContext context) {
+    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    final isDarkMode = systemBrightness == Brightness.dark;
+
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+          color: isDarkMode
+              ? Colors.grey.withValues(alpha: 0.1)
+              : Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(5)),
+      child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+        Text("Settings & Preferences",
+            style: GoogleFonts.ubuntu(
+                fontSize: 20, height: 1.5, fontWeight: FontWeight.w600)),
+        const Spacer(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Container(
+              width: 25,
+              height: 25,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.grey.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Center(
+                child: FaIcon(
+                  FontAwesomeIcons.gear,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+            )
           ],
         ),
       ]),

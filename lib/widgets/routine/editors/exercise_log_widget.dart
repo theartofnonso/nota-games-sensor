@@ -11,7 +11,6 @@ import 'package:tracker_app/enums/exercise_type_enums.dart';
 import 'package:tracker_app/extensions/set_dtos_extensions.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/utils/exercise_logs_utils.dart';
-import 'package:tracker_app/utils/progressive_overload_utils.dart';
 import 'package:tracker_app/utils/sets_utils.dart';
 import 'package:tracker_app/utils/string_utils.dart';
 import 'package:tracker_app/widgets/icons/custom_icon.dart';
@@ -35,11 +34,8 @@ import '../../buttons/opacity_button_widget_two.dart';
 import '../../depth_stack.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../information_containers/transparent_information_container_lite.dart';
-import '../../monitors/progression_half_animated_gauge.dart';
+import '../../timers/duration_stopwatch_widget.dart';
 import '../../weight_plate_calculator.dart';
-import '../preview/set_headers/double_set_header.dart';
-import '../preview/set_headers/single_set_header.dart';
-import '../preview/sets_listview.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
@@ -68,6 +64,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   bool _showNotes = false;
 
   SetDto? _selectedSetDto;
+
+  final GlobalKey<DurationStopwatchWidgetState> _durationStopwatchKey =
+      GlobalKey();
 
   final _selectedSetIndex = ValueNotifier<int>(0);
 
@@ -264,29 +263,45 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
 
     _loadControllers();
+  }
 
-    final maxReps = switch (currentSet.type) {
-      ExerciseType.weights => (currentSet as WeightAndRepsSetDto).reps,
-      ExerciseType.bodyWeight => (currentSet as RepsSetDto).reps,
-      ExerciseType.duration => 0,
-    };
+  void _onLogDurationSet() {
+    final stopwatchState = _durationStopwatchKey.currentState;
+    if (stopwatchState != null &&
+        stopwatchState.currentDuration.inSeconds > 0) {
+      // Store the duration before resetting
+      final duration = stopwatchState.currentDuration;
 
-    if (checked) {
-      displayBottomSheet(
-          context: context,
-          child: _RPERatingSlider(
-            maxReps: maxReps,
-            rpeRating: currentSet.rpeRating.toDouble(),
-            onSelectRating: (int rpeRating) {
-              final updatedSetWithRpeRating =
-                  updatedSet.copyWith(rpeRating: rpeRating);
+      // Add a new set
+      _addSet();
+
+      // Wait for the widget to rebuild with the new set, then update it
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final exerciseLog =
               Provider.of<ExerciseLogController>(context, listen: false)
-                  .updateRpeRating(
-                      exerciseLogId: _exerciseLog.id,
-                      index: index,
-                      setDto: updatedSetWithRpeRating);
-            },
-          ));
+                  .whereExerciseLog(exerciseId: _exerciseLog.exercise.id);
+          final sets = exerciseLog.sets;
+
+          if (sets.isNotEmpty) {
+            // Get the newly added set index (last one)
+            final newSetIndex = sets.length - 1;
+            final setDto = sets[newSetIndex] as DurationSetDto;
+
+            // Update its duration and auto-check it
+            final updatedSet =
+                setDto.copyWith(duration: duration, checked: true);
+            Provider.of<ExerciseLogController>(context, listen: false)
+                .updateSetCheck(
+                    exerciseLogId: _exerciseLog.id,
+                    index: newSetIndex,
+                    setDto: updatedSet);
+          }
+        }
+      });
+
+      // Reset the stopwatch
+      stopwatchState.resetStopwatch();
     }
   }
 
@@ -522,8 +537,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         .where((s) => s.isWorkingSet)
         .toList();
 
-    TrainingIntensityReport? trainingIntensityReport;
-
     bool isAllSameWeight = false;
 
     if (exerciseType == ExerciseType.weights) {
@@ -557,26 +570,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
       };
     }).toList();
 
-    final typicalRepRange = determineTypicalRepRange(reps: reps);
-
-    /// Determine progression for working sets where [ExerciseType] is [ExerciseType.weights]
-    final trainingData = exerciseType == ExerciseType.weights
-        ? currentWorkingSets.map((set) {
-            return TrainingData(
-                reps: (set as WeightAndRepsSetDto).reps,
-                weight: set.weight,
-                rpe: set.rpeRating,
-                date: set.dateTime);
-          }).toList()
-        : <TrainingData>[];
-
-    trainingIntensityReport = getTrainingProgressionReport(
-        data: trainingData,
-        targetMinReps: typicalRepRange.minReps,
-        targetMaxReps: typicalRepRange.maxReps);
-
-    final isEmptySets =
-        hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
+    hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
 
     final errorWidgets = _errors.entries
         .map((error) => InformationContainerLite(
@@ -613,11 +607,14 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
               icon: const FaIcon(FontAwesomeIcons.solidLightbulb, size: 18),
               tooltip: 'Weights and Reps Recommendations',
             ),
-          IconButton(
-            onPressed: _addSet,
-            icon: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 22),
-            tooltip: 'Add new set',
-          ),
+          // Hide "Add Set" button for duration exercises in log mode (sets are added via stopwatch)
+          if (!(exerciseType == ExerciseType.duration &&
+              widget.editorType == RoutineEditorMode.log))
+            IconButton(
+              onPressed: _addSet,
+              icon: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 22),
+              tooltip: 'Add new set',
+            ),
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -662,8 +659,15 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             padding: EdgeInsets.only(bottom: 30),
             child: Column(
               spacing: 20,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Stopwatch UI for duration exercises in log mode
+                if (exerciseType == ExerciseType.duration &&
+                    widget.editorType == RoutineEditorMode.log)
+                  DurationStopwatchWidget(
+                    key: _durationStopwatchKey,
+                    onLogSet: _onLogDurationSet,
+                  ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -680,7 +684,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                           editorType: widget.editorType,
                         )
                     },
-                    if (currentSets.isEmpty)
+                    if (currentSets.isEmpty && withReps(type: exerciseType))
                       Column(
                         children: [
                           const SizedBox(height: 10),
@@ -746,15 +750,17 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                       },
                       trailing: CustomIcon(Icons.chevron_right_rounded,
                           color: Colors.white)),
-                Text(
-                  "RPE (Rate of Perceived Exertion) measures how hard your set feels based on effort, fatigue, and how close you are to failure. Your rating of ${trainingIntensityReport.averageRPE.roundToDouble()} helps us understand how challenging the set was, so we can make smarter weight suggestions.",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12,
-                      height: 1.8,
-                      color:
-                          isDarkMode ? Colors.white70 : Colors.grey.shade800),
-                )
+                if (exerciseLog.notes.isNotEmpty)
+                  Text(
+                    exerciseLog.notes,
+                    textAlign: TextAlign.start,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w400,
+                        fontSize: 12,
+                        height: 1.8,
+                        color:
+                            isDarkMode ? Colors.white70 : Colors.grey.shade800),
+                  )
               ],
             ),
           ),
@@ -888,29 +894,44 @@ class _DurationSetListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: EdgeInsets.zero,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: sets.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (_, index) {
-        final setDto = sets[index];
-        return DurationSetRow(
-          editorType: editorType,
-          setDto: setDto,
-          onCheck: () => updateSetCheck(index: index),
-          onRemoved: () => removeSet(index: index),
-          startTime:
-              controllers.isNotEmpty ? controllers[index] : DateTime.now(),
-          onUpdateDuration: (Duration duration, bool shouldCheck) =>
-              updateDuration(
-                  index: index,
-                  setDto: setDto,
-                  duration: duration,
-                  shouldCheck: shouldCheck),
-        );
-      },
+    // Filter to show only completed sets in log mode
+    final displaySets = editorType == RoutineEditorMode.log
+        ? sets.where((set) => set.checked).toList()
+        : sets;
+
+    return Column(
+      spacing: 20,
+      children: [
+        // Sets List
+        if (displaySets.isNotEmpty)
+          ListView.separated(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: displaySets.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (_, index) {
+              final setDto = displaySets[index];
+              final actualIndex = sets.indexOf(setDto);
+              return DurationSetRow(
+                editorType: editorType,
+                setDto: setDto,
+                onCheck: () => updateSetCheck(index: actualIndex),
+                onRemoved: () => removeSet(index: actualIndex),
+                startTime:
+                    controllers.isNotEmpty && actualIndex < controllers.length
+                        ? controllers[actualIndex]
+                        : DateTime.now(),
+                onUpdateDuration: (Duration duration, bool shouldCheck) =>
+                    updateDuration(
+                        index: actualIndex,
+                        setDto: setDto,
+                        duration: duration,
+                        shouldCheck: shouldCheck),
+              );
+            },
+          ),
+      ],
     );
   }
 }
@@ -1036,105 +1057,3 @@ class _OneRepMaxSliderState extends State<_OneRepMaxSlider> {
     _weight = _weightForPercentage(reps: 10);
   }
 }
-
-class _RPERatingSlider extends StatefulWidget {
-  final double rpeRating;
-  final void Function(int rpeRating) onSelectRating;
-  final int maxReps;
-
-  const _RPERatingSlider(
-      {this.rpeRating = 5,
-      required this.onSelectRating,
-      required this.maxReps});
-
-  @override
-  State<_RPERatingSlider> createState() => _RPERatingSliderState();
-}
-
-class _RPERatingSliderState extends State<_RPERatingSlider> {
-  double _rpeRating = 5;
-
-  String _lastTwoReps({required int maxReps}) =>
-      maxReps <= 1 ? "$maxReps" : "${maxReps - 1} & $maxReps";
-
-  @override
-  Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-            "How hard was it to complete ${pluralize(word: "rep", count: widget.maxReps)} ${_lastTwoReps(maxReps: widget.maxReps)}?",
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w400,
-                color: isDarkMode ? Colors.white70 : Colors.black)),
-        const SizedBox(height: 12),
-        Text(
-          _ratingDescription(_rpeRating),
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        Slider(
-            value: _rpeRating,
-            onChanged: onChanged,
-            min: 5,
-            max: 10,
-            divisions: 5,
-            thumbColor: vibrantGreen),
-        const SizedBox(height: 10),
-        SizedBox(
-            width: double.infinity,
-            child: OpacityButtonWidgetTwo(
-                label: "save rating".toUpperCase(),
-                buttonColor: vibrantGreen,
-                onPressed: onSelectRepRange)),
-      ],
-    );
-  }
-
-  void onChanged(double value) {
-    HapticFeedback.heavyImpact();
-
-    setState(() {
-      _rpeRating = value;
-    });
-  }
-
-  void onSelectRepRange() {
-    Navigator.of(context).pop();
-    final absoluteRating = _rpeRating.floor();
-    widget.onSelectRating(absoluteRating);
-  }
-
-  String _ratingDescription(double rating) {
-    final absoluteRating = rating.floor();
-
-    final rpeDescription = _repToRPE[absoluteRating] ?? _repToRPE[5]!;
-
-    return "$rpeDescription ${pluralize(word: "rep", count: widget.maxReps)} ${_lastTwoReps(maxReps: widget.maxReps)}";
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _rpeRating = widget.rpeRating < 5 ? 5 : widget.rpeRating;
-  }
-}
-
-Map<int, String> _repToRPE = {
-  1: "😌 Effortless — pure warm-up",
-  2: "🙂 Very easy — lots left in the tank",
-  3: "😊 Easy — could do more",
-  4: "😅 Comfortable — moving well",
-  5: "😮‍💨 Not Challenging at all for",
-  6: "🔥 Challenging to complete",
-  7: "😣 Pushed myself hard for",
-  8: "🥵 Pushed myself harder for",
-  9: "🤯 Struggling to complete",
-  10: "💀 Struggled to complete",
-};

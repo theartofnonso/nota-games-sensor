@@ -20,7 +20,8 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository = exerciseLogRepository;
   }
 
-  UnmodifiableListView<ExerciseLogDto> get exerciseLogs => _exerciseLogRepository.exerciseLogs;
+  UnmodifiableListView<ExerciseLogDto> get exerciseLogs =>
+      _exerciseLogRepository.exerciseLogs;
 
   RoutineLogDto? _initialRoutineLog;
 
@@ -39,8 +40,10 @@ class ExerciseLogController extends ChangeNotifier {
     return _exerciseLogRepository.whereExerciseLog(exerciseId: exerciseId);
   }
 
-  void addExerciseLog({required ExerciseDto exercise, required List<SetDto> pastSets}) {
-    _exerciseLogRepository.addExerciseLog(exercise: exercise, pastSets: pastSets);
+  void addExerciseLog(
+      {required ExerciseDto exercise, required List<SetDto> pastSets}) {
+    _exerciseLogRepository.addExerciseLog(
+        exercise: exercise, pastSets: pastSets);
     _cache();
     logger.i("load exercise log: $exercise");
     notifyListeners();
@@ -58,21 +61,34 @@ class ExerciseLogController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void replaceExerciseLog({required String oldExerciseId, required ExerciseDto newExercise, required List<SetDto> pastSets}) {
-    _exerciseLogRepository.replaceExercise(oldExerciseId: oldExerciseId, newExercise: newExercise, pastSets: pastSets);
+  void replaceExerciseLog(
+      {required String oldExerciseId,
+      required ExerciseDto newExercise,
+      required List<SetDto> pastSets}) {
+    _exerciseLogRepository.replaceExercise(
+        oldExerciseId: oldExerciseId,
+        newExercise: newExercise,
+        pastSets: pastSets);
     _cache();
     notifyListeners();
   }
 
-  void updateExerciseLogNotes({required String exerciseLogId, required String value}) {
-    _exerciseLogRepository.updateExerciseLogNotes(exerciseLogId: exerciseLogId, value: value);
+  void updateExerciseLogNotes(
+      {required String exerciseLogId, required String value}) {
+    _exerciseLogRepository.updateExerciseLogNotes(
+        exerciseLogId: exerciseLogId, value: value);
     _cache();
+    notifyListeners();
   }
 
   void superSetExerciseLogs(
-      {required String firstExerciseLogId, required String secondExerciseLogId, required String superSetId}) {
+      {required String firstExerciseLogId,
+      required String secondExerciseLogId,
+      required String superSetId}) {
     _exerciseLogRepository.addSuperSets(
-        firstExerciseLogId: firstExerciseLogId, secondExerciseLogId: secondExerciseLogId, superSetId: superSetId);
+        firstExerciseLogId: firstExerciseLogId,
+        secondExerciseLogId: secondExerciseLogId,
+        superSetId: superSetId);
     _cache();
     notifyListeners();
   }
@@ -84,52 +100,67 @@ class ExerciseLogController extends ChangeNotifier {
   }
 
   void addSet({required String exerciseLogId, required List<SetDto> pastSets}) {
-    _exerciseLogRepository.addSet(exerciseLogId: exerciseLogId, pastSets: pastSets);
+    _exerciseLogRepository.addSet(
+        exerciseLogId: exerciseLogId, pastSets: pastSets);
     _cache();
     notifyListeners();
   }
 
-  void overwriteSets({required String exerciseLogId, required List<SetDto> newSets}) {
-    _exerciseLogRepository.overwriteSets(exerciseLogId: exerciseLogId, sets: newSets);
+  void overwriteSets(
+      {required String exerciseLogId, required List<SetDto> newSets}) {
+    _exerciseLogRepository.overwriteSets(
+        exerciseLogId: exerciseLogId, sets: newSets);
     _cache();
     notifyListeners();
   }
 
-  void removeSetForExerciseLog({required String exerciseLogId, required int index}) {
-    _exerciseLogRepository.removeSet(exerciseLogId: exerciseLogId, index: index);
+  void removeSetForExerciseLog(
+      {required String exerciseLogId, required int index}) {
+    _exerciseLogRepository.removeSet(
+        exerciseLogId: exerciseLogId, index: index);
     _cache();
     notifyListeners();
   }
 
-  void updateWeight({required String exerciseLogId, required int index, required SetDto setDto}) {
-    _exerciseLogRepository.updateWeight(exerciseLogId: exerciseLogId, index: index, setDto: setDto);
+  void updateWeight(
+      {required String exerciseLogId,
+      required int index,
+      required SetDto setDto}) {
+    _exerciseLogRepository.updateWeight(
+        exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
     notifyListeners();
   }
 
-  void updateReps({required String exerciseLogId, required int index, required SetDto setDto}) {
-    _exerciseLogRepository.updateReps(exerciseLogId: exerciseLogId, index: index, setDto: setDto);
+  void updateReps(
+      {required String exerciseLogId,
+      required int index,
+      required SetDto setDto}) {
+    _exerciseLogRepository.updateReps(
+        exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
     notifyListeners();
   }
 
   void updateDuration(
-      {required String exerciseLogId, required int index, required SetDto setDto, required bool notify}) {
-    _exerciseLogRepository.updateDuration(exerciseLogId: exerciseLogId, index: index, setDto: setDto);
+      {required String exerciseLogId,
+      required int index,
+      required SetDto setDto,
+      required bool notify}) {
+    _exerciseLogRepository.updateDuration(
+        exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
     if (notify) {
       notifyListeners();
     }
   }
 
-  void updateSetCheck({required String exerciseLogId, required int index, required SetDto setDto}) {
-    _exerciseLogRepository.updateSetCheck(exerciseLogId: exerciseLogId, index: index, setDto: setDto);
-    _cache();
-    notifyListeners();
-  }
-
-  void updateRpeRating({required String exerciseLogId, required int index, required SetDto setDto}) {
-    _exerciseLogRepository.updateRpeRating(exerciseLogId: exerciseLogId, index: index, setDto: setDto);
+  void updateSetCheck(
+      {required String exerciseLogId,
+      required int index,
+      required SetDto setDto}) {
+    _exerciseLogRepository.updateSetCheck(
+        exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
     notifyListeners();
   }
@@ -149,11 +180,13 @@ class ExerciseLogController extends ChangeNotifier {
   }
 
   void _cache() {
-    final routineLog = _initialRoutineLog?.copyWith(exerciseLogs: exerciseLogs, endTime: DateTime.now());
-    if(routineLog != null) {
+    final routineLog = _initialRoutineLog?.copyWith(
+        exerciseLogs: exerciseLogs, endTime: DateTime.now());
+    if (routineLog != null) {
       SharedPrefs().routineLog = jsonEncode(routineLog,
-          toEncodable: (Object? value) =>
-          value is RoutineLogDto ? value.toJson() : throw UnsupportedError('Cannot convert to JSON: $value'));
+          toEncodable: (Object? value) => value is RoutineLogDto
+              ? value.toJson()
+              : throw UnsupportedError('Cannot convert to JSON: $value'));
     }
   }
 }

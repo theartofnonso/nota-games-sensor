@@ -10,16 +10,10 @@ class DurationSetHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Table(
-      columnWidths: editorType == RoutineEditorMode.edit
-          ? <int, TableColumnWidth>{
-              0: const FixedColumnWidth(50),
-              1: const FlexColumnWidth(1),
-            }
-          : <int, TableColumnWidth>{
-              0: const FixedColumnWidth(50),
-              1: const FlexColumnWidth(1),
-              2: const FixedColumnWidth(60),
-            },
+      columnWidths: const <int, TableColumnWidth>{
+        0: FixedColumnWidth(50),
+        1: FlexColumnWidth(1),
+      },
       children: <TableRow>[
         TableRow(children: [
           const TableCell(
@@ -28,15 +22,10 @@ class DurationSetHeader extends StatelessWidget {
           ),
           TableCell(
             verticalAlignment: TableCellVerticalAlignment.middle,
-            child: Text("TIME", style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+            child: Text("TIME",
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center),
           ),
-          if (editorType == RoutineEditorMode.log)
-            const TableCell(
-                verticalAlignment: TableCellVerticalAlignment.middle,
-                child: Icon(
-                  Icons.check,
-                  size: 12,
-                ))
         ]),
       ],
     );
