@@ -382,16 +382,6 @@ class ExerciseLogRepository {
         .firstWhere((exerciseLog) => exerciseLog.id == exerciseLogId);
   }
 
-  List<SetDto> _setsForExerciseLog({required String exerciseLogId}) {
-    final exerciseLogIndex =
-        _indexWhereExerciseLog(exerciseLogId: exerciseLogId);
-    if (exerciseLogIndex == -1) {
-      return [];
-    }
-    final exerciseLog = _exerciseLogs[exerciseLogIndex];
-    return exerciseLog.sets;
-  }
-
   List<ExerciseLogDto> _copyExerciseLogs() {
     return List<ExerciseLogDto>.from(_exerciseLogs);
   }

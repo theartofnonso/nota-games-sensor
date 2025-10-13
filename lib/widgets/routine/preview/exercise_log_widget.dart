@@ -1,24 +1,18 @@
-import 'package:collection/collection.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:tracker_app/dtos/exercise_log_dto.dart';
-import 'package:tracker_app/dtos/set_dtos/duration_set_dto.dart';
-import 'package:tracker_app/dtos/set_dtos/reps_dto.dart';
-import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
 import 'package:tracker_app/enums/exercise_type_enums.dart';
-import 'package:tracker_app/widgets/routine/preview/sets_listview.dart';
+import 'package:tracker_app/widgets/routine/preview/set_headers/single_set_header.dart';
 
-import '../../../colors.dart';
 import '../../../controllers/exercise_and_routine_controller.dart';
+import '../../../dtos/exercise_log_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
+import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
-import '../../../utils/data_trend_utils.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
-import '../preview/set_headers/double_set_header.dart';
-import '../preview/set_headers/single_set_header.dart';
+import 'set_headers/double_set_header.dart';
+import 'sets_listview.dart';
 
 enum StrengthStatus {
   improving(

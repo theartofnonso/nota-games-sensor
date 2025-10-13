@@ -30,7 +30,6 @@ import '../../../enums/routine_editor_type_enums.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/one_rep_max_calculator.dart';
-import '../../buttons/opacity_button_widget_two.dart';
 import '../../depth_stack.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../information_containers/transparent_information_container_lite.dart';
@@ -514,9 +513,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom != 0;
 
-    final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
-
     final exerciseLog = context.select<ExerciseLogController, ExerciseLogDto>(
         (c) => c.whereExerciseLog(exerciseId: _exerciseLog.exercise.id));
 
@@ -524,15 +520,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     final currentSets = exerciseLog.sets;
 
-    final previousSets = exerciseAndRoutineController.wherePrevSetsForExercise(
-        exercise: exerciseLog.exercise);
-
     final currentWorkingSets = currentSets
-        .workingSets(exerciseType)
-        .where((s) => s.isWorkingSet)
-        .toList();
-
-    final previousWorkingSets = previousSets
         .workingSets(exerciseType)
         .where((s) => s.isWorkingSet)
         .toList();
@@ -554,21 +542,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
       ExerciseType.bodyWeight => getHighestReps(currentWorkingSets),
       ExerciseType.duration => getLongestDuration(currentWorkingSets),
     };
-
-    /// Determine typical rep range using historic training data
-    final workingSets = [...currentWorkingSets, ...previousWorkingSets];
-    final reps = switch (exerciseType) {
-      ExerciseType.weights => markHighestWeightSets(workingSets),
-      ExerciseType.bodyWeight => markHighestRepsSets(workingSets),
-      ExerciseType.duration => markHighestDurationSets(workingSets),
-    }
-        .map((set) {
-      return switch (exerciseType) {
-        ExerciseType.weights => (set as WeightAndRepsSetDto).reps,
-        ExerciseType.bodyWeight => (set as RepsSetDto).reps,
-        ExerciseType.duration => 0,
-      };
-    }).toList();
 
     hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
 

@@ -5,14 +5,11 @@ import 'dart:io';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
 import 'package:tracker_app/models/Exercise.dart';
 import 'package:tracker_app/shared_prefs.dart';
-import 'package:tracker_app/utils/date_utils.dart';
-import 'package:tracker_app/widgets/icons/linear_progress_bar_with_indicator.dart';
 
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/viewmodels/routine_log_arguments.dart';
@@ -20,7 +17,6 @@ import '../enums/routine_editor_type_enums.dart';
 import '../models/RoutineLog.dart';
 import '../models/RoutinePlan.dart';
 import '../models/RoutineTemplate.dart';
-import '../utils/dialog_utils.dart';
 import '../utils/general_utils.dart';
 import '../utils/navigation_utils.dart';
 import 'overview_screen.dart';
@@ -42,11 +38,6 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final lastYearRange = yearToDateTimeRange(datetime: DateTime.now());
-    final logsForTheYear =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true)
-            .whereLogsIsWithinRange(range: lastYearRange);
-
     return Scaffold(
       body: Container(
         height: double.infinity,

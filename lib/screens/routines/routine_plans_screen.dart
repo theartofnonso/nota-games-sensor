@@ -29,14 +29,15 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     return Consumer<ExerciseAndRoutineController>(builder: (_, provider, __) {
-
       final plans = List<RoutinePlanDto>.from(provider.plans);
 
-      final logs = provider.logs;
+      final defaultPlanGridItem =
+          RoutinePlanGridItemWidget(plan: RoutinePlanDto.defaultPlan);
 
-      final defaultPlanGridItem = RoutinePlanGridItemWidget(plan: RoutinePlanDto.defaultPlan);
-
-      final children = [defaultPlanGridItem, ...plans.map((plan) => RoutinePlanGridItemWidget(plan: plan))];
+      final children = [
+        defaultPlanGridItem,
+        ...plans.map((plan) => RoutinePlanGridItemWidget(plan: plan))
+      ];
 
       return Scaffold(
           appBar: AppBar(
@@ -46,44 +47,44 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
             ),
             actions: [
               IconButton(
-                  onPressed: _showMenuBottomSheet, icon: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 28))
+                  onPressed: _showMenuBottomSheet,
+                  icon:
+                      const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 28))
             ],
           ),
           body: Container(
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: themeGradient(context: context),
-        ),
-        child: SafeArea(
-          minimum: const EdgeInsets.only(top: 10, right: 10, left: 10),
-          bottom: false,
-          child: Column(spacing: 16, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            children.isNotEmpty
-                ? Expanded(
-                    child: GridView.count(
-                        crossAxisCount: 2,
-                        childAspectRatio: 1,
-                        mainAxisSpacing: 10.0,
-                        crossAxisSpacing: 10.0,
-                        children: children),
-                  )
-                : Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: const NoListEmptyState(
-                          message:
-                              "It might feel quiet now, but tap the + button to create a plan or ask TRNR coach for help."),
-                    ),
-                  ),
-          ]),
-        ),
-      ));
-    });
-  }
-
-  void _showLoadingScreen() {
-    setState(() {
-      _loading = true;
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: themeGradient(context: context),
+            ),
+            child: SafeArea(
+              minimum: const EdgeInsets.only(top: 10, right: 10, left: 10),
+              bottom: false,
+              child: Column(
+                  spacing: 16,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    children.isNotEmpty
+                        ? Expanded(
+                            child: GridView.count(
+                                crossAxisCount: 2,
+                                childAspectRatio: 1,
+                                mainAxisSpacing: 10.0,
+                                crossAxisSpacing: 10.0,
+                                children: children),
+                          )
+                        : Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10.0),
+                              child: const NoListEmptyState(
+                                  message:
+                                      "It might feel quiet now, but tap the + button to create a plan or ask TRNR coach for help."),
+                            ),
+                          ),
+                  ]),
+            ),
+          ));
     });
   }
 
@@ -107,7 +108,8 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
               size: 18,
             ),
             horizontalTitleGap: 6,
-            title: Text("Create new workout plan", style: Theme.of(context).textTheme.bodyLarge),
+            title: Text("Create new workout plan",
+                style: Theme.of(context).textTheme.bodyLarge),
             onTap: () {
               Navigator.of(context).pop();
               navigateToRoutinePlanEditor(context: context);
