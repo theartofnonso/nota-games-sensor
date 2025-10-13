@@ -76,7 +76,7 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      spacing: 16,
+      spacing: 4,
       children: [
         // Timer Display - matching routine log editor style
         Center(
