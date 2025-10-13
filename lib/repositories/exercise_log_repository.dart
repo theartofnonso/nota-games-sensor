@@ -123,8 +123,14 @@ class ExerciseLogRepository {
       return;
     }
 
-    final exerciseLog = _exerciseLogs[exerciseLogIndex];
-    _exerciseLogs[exerciseLogIndex] = exerciseLog.copyWith(notes: value);
+    // Creating a new list by copying the original list
+    List<ExerciseLogDto> newExerciseLogs = _copyExerciseLogs();
+
+    final exerciseLog = newExerciseLogs[exerciseLogIndex];
+    newExerciseLogs[exerciseLogIndex] = exerciseLog.copyWith(notes: value);
+
+    // Assign the new list to maintain immutability
+    _exerciseLogs = newExerciseLogs;
   }
 
   void addSuperSets(
@@ -171,11 +177,13 @@ class ExerciseLogRepository {
       return;
     }
 
-    final sets = _setsForExerciseLog(exerciseLogId: exerciseLogId);
+    // Creating a new list by copying the original list
+    List<ExerciseLogDto> newExerciseLogs = _copyExerciseLogs();
+
+    final exerciseLog = newExerciseLogs[exerciseLogIndex];
+    final sets = List<SetDto>.from(exerciseLog.sets); // Copy the sets list
 
     int newIndex = sets.length;
-
-    final exerciseLog = _whereExerciseLog(exerciseLogId: exerciseLogId);
 
     SetDto newSet = SetDto.newType(type: exerciseLog.exercise.type);
 
@@ -194,12 +202,7 @@ class ExerciseLogRepository {
 
     sets.add(newSet);
 
-    // Creating a new list by copying the original list
-    List<ExerciseLogDto> newExerciseLogs = _copyExerciseLogs();
-
-    // Updating the exerciseLog
-    final newExerciseLog = newExerciseLogs[exerciseLogIndex];
-    newExerciseLogs[exerciseLogIndex] = newExerciseLog.copyWith(sets: sets);
+    newExerciseLogs[exerciseLogIndex] = exerciseLog.copyWith(sets: sets);
 
     // Assign the new list to maintain immutability
     _exerciseLogs = newExerciseLogs;
@@ -237,7 +240,7 @@ class ExerciseLogRepository {
 
     // Updating the exerciseLog
     final exerciseLog = newExerciseLogs[exerciseLogIndex];
-    final sets = exerciseLog.sets;
+    final sets = List<SetDto>.from(exerciseLog.sets); // Copy the sets list
 
     // Use && to check that index is within bounds
     if (index >= 0 && index < sets.length) {
@@ -264,7 +267,8 @@ class ExerciseLogRepository {
 
     // Updating the exerciseLog
     final exerciseLog = newExerciseLogs[exerciseLogIndex];
-    final sets = exerciseLog.sets;
+    final sets = List<SetDto>.from(exerciseLog.sets); // Copy the sets list
+
     if (index >= 0 && index < sets.length) {
       sets[index] = set;
 

@@ -44,7 +44,11 @@ class RoutineLogScreen extends StatefulWidget {
   final bool showSummary;
   final bool isEditable;
 
-  const RoutineLogScreen({super.key, required this.id, required this.showSummary, this.isEditable = true});
+  const RoutineLogScreen(
+      {super.key,
+      required this.id,
+      required this.showSummary,
+      this.isEditable = true});
 
   @override
   State<RoutineLogScreen> createState() => _RoutineLogScreenState();
@@ -62,11 +66,14 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    final exerciseAndRoutineController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final exerciseAndRoutineController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showSnackbar(context: context, message: exerciseAndRoutineController.errorMessage);
+        showSnackbar(
+            context: context,
+            message: exerciseAndRoutineController.errorMessage);
       });
     }
 
@@ -75,17 +82,21 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     if (log == null) return const NotFound();
 
     // We only want to see all logged exercises and sets
-    final completedExerciseLogs = loggedExercises(exerciseLogs: log.exerciseLogs);
+    final completedExerciseLogs =
+        loggedExercises(exerciseLogs: log.exerciseLogs);
 
     final updatedLog = log.copyWith(exerciseLogs: completedExerciseLogs);
 
-    final numberOfCompletedSets = completedExerciseLogs.expand((exerciseLog) => exerciseLog.sets);
+    final numberOfCompletedSets =
+        completedExerciseLogs.expand((exerciseLog) => exerciseLog.sets);
 
-    final muscleGroupFamilyFrequencies = muscleGroupFrequency(exerciseLogs: completedExerciseLogs);
+    final muscleGroupFamilyFrequencies =
+        muscleGroupFrequency(exerciseLogs: completedExerciseLogs);
 
     final pbs = updatedLog.exerciseLogs.map((exerciseLog) {
-      final pastExerciseLogs = exerciseAndRoutineController.whereExerciseLogsBefore(
-          exercise: exerciseLog.exercise, date: exerciseLog.createdAt);
+      final pastExerciseLogs =
+          exerciseAndRoutineController.whereExerciseLogsBefore(
+              exercise: exerciseLog.exercise, date: exerciseLog.createdAt);
 
       return calculatePBs(
           pastExerciseLogs: loggedExercises(exerciseLogs: pastExerciseLogs),
@@ -100,9 +111,12 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     final allLoggedVolumesForTemplate = logs.map((log) => log.volume).toList();
 
-    final avgVolume = allLoggedVolumesForTemplate.isNotEmpty ? allLoggedVolumesForTemplate.average : 0.0;
+    final avgVolume = allLoggedVolumesForTemplate.isNotEmpty
+        ? allLoggedVolumesForTemplate.average
+        : 0.0;
 
-    final trendSummary = _analyzeWeeklyTrends(volumes: allLoggedVolumesForTemplate);
+    final trendSummary =
+        _analyzeWeeklyTrends(volumes: allLoggedVolumesForTemplate);
 
     return Scaffold(
         appBar: AppBar(
@@ -111,19 +125,22 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               onPressed: context.pop,
             ),
             title: Text(updatedLog.name),
-            actions: updatedLog.owner == SharedPrefs().userId && widget.isEditable
+            actions: updatedLog.owner == SharedPrefs().userId &&
+                    widget.isEditable
                 ? [
                     IconButton(
                         onPressed: () => _onShareLog(log: updatedLog),
-                        icon: const FaIcon(FontAwesomeIcons.arrowUpFromBracket, size: 18)),
+                        icon: const FaIcon(FontAwesomeIcons.arrowUpFromBracket,
+                            size: 18)),
                   ]
                 : []),
-        floatingActionButton: updatedLog.owner == SharedPrefs().userId && widget.isEditable
-            ? FloatingActionButton(
-                heroTag: "routine_log_screen",
-                onPressed: _showBottomSheet,
-                child: const FaIcon(FontAwesomeIcons.penToSquare))
-            : null,
+        floatingActionButton:
+            updatedLog.owner == SharedPrefs().userId && widget.isEditable
+                ? FloatingActionButton(
+                    heroTag: "routine_log_screen",
+                    onPressed: _showBottomSheet,
+                    child: const FaIcon(FontAwesomeIcons.penToSquare))
+                : null,
         body: Container(
           height: double.infinity,
           decoration: BoxDecoration(
@@ -138,19 +155,26 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Column(spacing: 12, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      ChipOne(
-                          label: updatedLog.endTime.formattedDayMonthTime(),
-                          child: CustomIcon(FontAwesomeIcons.calendarDay, color: Colors.deepOrange)),
-                      Text(
-                        updatedLog.notes.isNotEmpty ? "${updatedLog.notes}." : "No notes",
-                        style: GoogleFonts.ubuntu(
-                            fontSize: 14,
-                            color: isDarkMode ? Colors.white70 : Colors.black,
-                            height: 1.8,
-                            fontWeight: FontWeight.w400),
-                      )
-                    ]),
+                    child: Column(
+                        spacing: 12,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ChipOne(
+                              label: updatedLog.endTime.formattedDayMonthTime(),
+                              child: CustomIcon(FontAwesomeIcons.calendarDay,
+                                  color: Colors.deepOrange)),
+                          Text(
+                            updatedLog.notes.isNotEmpty
+                                ? "${updatedLog.notes}."
+                                : "No notes",
+                            style: GoogleFonts.ubuntu(
+                                fontSize: 14,
+                                color:
+                                    isDarkMode ? Colors.white70 : Colors.black,
+                                height: 1.8,
+                                fontWeight: FontWeight.w400),
+                          )
+                        ]),
                   ),
                   SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -191,7 +215,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                           icon: FontAwesomeIcons.solidClock,
                           information: _StatisticsInformation(
                               title: "Duration",
-                              description: "The total time you spent on your workout session, from start to finish."),
+                              description:
+                                  "The total time you spent on your workout session, from start to finish."),
                         ),
                         _StatisticWidget(
                           title: "${pbs.length}",
@@ -217,7 +242,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                                 "Here's a breakdown of the muscle groups in your ${updatedLog.name} workout session.",
                             muscleGroup: muscleGroupFamilyFrequencies,
                             minimized: false),
-                        if (updatedLog.templateId.isNotEmpty && updatedLog.owner == SharedPrefs().userId)
+                        if (updatedLog.templateId.isNotEmpty &&
+                            updatedLog.owner == SharedPrefs().userId)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             spacing: 10,
@@ -230,38 +256,52 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                                       ? const SizedBox.shrink()
                                       : getTrendIcon(trend: trendSummary.trend),
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       RichText(
                                         text: TextSpan(
                                           text: volumeInKOrM(avgVolume),
-                                          style: Theme.of(context).textTheme.headlineSmall,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineSmall,
                                           children: [
                                             TextSpan(
                                               text: " ",
                                             ),
                                             TextSpan(
                                               text: weightUnit().toUpperCase(),
-                                              style: Theme.of(context).textTheme.bodyMedium,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium,
                                             ),
                                           ],
                                         ),
                                       ),
                                       Text(
                                         "Session AVERAGE".toUpperCase(),
-                                        style: Theme.of(context).textTheme.bodySmall,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
                                       ),
                                     ],
                                   )
                                 ],
                               ),
                               Text(trendSummary.summary,
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w400, color: isDarkMode ? Colors.white70 : Colors.black)),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                          fontWeight: FontWeight.w400,
+                                          color: isDarkMode
+                                              ? Colors.white70
+                                              : Colors.black)),
                             ],
                           ),
                         ExerciseLogListView(
-                            exerciseLogs: _exerciseLogsToViewModels(exerciseLogs: completedExerciseLogs)),
+                            exerciseLogs: _exerciseLogsToViewModels(
+                                exerciseLogs: completedExerciseLogs)),
                         const SizedBox(
                           height: 60,
                         )
@@ -276,7 +316,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   }
 
   void _loadData() {
-    final routineLogController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final routineLogController =
+        Provider.of<ExerciseAndRoutineController>(context, listen: false);
     _log = routineLogController.logWhereId(id: widget.id);
     if (_log == null) {
       _loading = true;
@@ -309,7 +350,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final log = _log;
         if (log != null) {
-          navigateWithSlideTransition(context: context, child: RoutineLogSummaryScreen(log: log));
+          navigateWithSlideTransition(
+              context: context, child: RoutineLogSummaryScreen(log: log));
         }
       });
     }
@@ -349,7 +391,10 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             ),
             horizontalTitleGap: 6,
             title: Text("Delete log",
-                style: GoogleFonts.ubuntu(color: Colors.red, fontWeight: FontWeight.w500, fontSize: 16)),
+                style: GoogleFonts.ubuntu(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16)),
             onTap: _deleteLog,
           ),
         ]));
@@ -374,11 +419,13 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     }
   }
 
-  List<ExerciseLogViewModel> _exerciseLogsToViewModels({required List<ExerciseLogDto> exerciseLogs}) {
+  List<ExerciseLogViewModel> _exerciseLogsToViewModels(
+      {required List<ExerciseLogDto> exerciseLogs}) {
     return exerciseLogs
         .map((exerciseLog) => ExerciseLogViewModel(
             exerciseLog: exerciseLog,
-            superSet: whereOtherExerciseInSuperSet(firstExercise: exerciseLog, exercises: exerciseLogs)))
+            superSet: whereOtherExerciseInSuperSet(
+                firstExercise: exerciseLog, exercises: exerciseLogs)))
         .toList();
   }
 
@@ -387,15 +434,14 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final log = _log;
     if (log != null) {
       final copyOfLog = log.copyWith();
-      final arguments = RoutineLogArguments(log: copyOfLog, editorMode: RoutineEditorMode.edit);
-      final updatedLog = await navigateToRoutineEditorAndReturnLog(context: context, arguments: arguments);
-      if (updatedLog != null) {
+      final arguments = RoutineLogArguments(
+          log: copyOfLog, editorMode: RoutineEditorMode.edit);
+      final updatedLog = await navigateToRoutineEditorAndReturnLog(
+          context: context, arguments: arguments);
+      if (updatedLog != null && mounted) {
         setState(() {
           _log = updatedLog;
         });
-        if (mounted) {
-          navigateWithSlideTransition(context: context, child: RoutineLogSummaryScreen(log: updatedLog));
-        }
       }
     }
   }
@@ -406,7 +452,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     if (log != null) {
       showDatetimeRangePicker(
           context: context,
-          initialDateTimeRange: DateTimeRange(start: log.startTime, end: log.endTime),
+          initialDateTimeRange:
+              DateTimeRange(start: log.startTime, end: log.endTime),
           onChangedDateTimeRange: (DateTimeRange datetimeRange) async {
             Navigator.of(context).pop();
             final updatedLog = log.copyWith(
@@ -414,7 +461,9 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                 endTime: datetimeRange.end,
                 createdAt: datetimeRange.start,
                 updatedAt: DateTime.now());
-            await Provider.of<ExerciseAndRoutineController>(context, listen: false).updateLog(log: updatedLog);
+            await Provider.of<ExerciseAndRoutineController>(context,
+                    listen: false)
+                .updateLog(log: updatedLog);
             setState(() {
               _log = updatedLog;
             });
@@ -431,11 +480,15 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
       try {
         final exercises = log.exerciseLogs.map((exerciseLog) {
-          final uncheckedSets = exerciseLog.sets.map((set) => set.copyWith(checked: false)).toList();
+          final uncheckedSets = exerciseLog.sets
+              .map((set) => set.copyWith(checked: false))
+              .toList();
 
           /// [Exercise.duration] exercises do not have sets in templates
           /// This is because we only need to store the duration of the exercise in [RoutineEditorType.log] i.e data is log in realtime
-          final sets = withDurationOnly(type: exerciseLog.exercise.type) ? <SetDto>[] : uncheckedSets;
+          final sets = withDurationOnly(type: exerciseLog.exercise.type)
+              ? <SetDto>[]
+              : uncheckedSets;
           return exerciseLog.copyWith(sets: sets);
         }).toList();
         final templateToCreate = RoutineTemplateDto(
@@ -448,16 +501,21 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             createdAt: DateTime.now(),
             updatedAt: DateTime.now());
 
-        final createdTemplate = await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        final createdTemplate = await Provider.of<ExerciseAndRoutineController>(
+                context,
+                listen: false)
             .saveTemplate(templateDto: templateToCreate);
         if (mounted) {
           if (createdTemplate != null) {
-            navigateToRoutineTemplatePreview(context: context, template: createdTemplate);
+            navigateToRoutineTemplatePreview(
+                context: context, template: createdTemplate);
           }
         }
       } catch (_) {
         if (mounted) {
-          showSnackbar(context: context, message: "Oops, we are unable to create template");
+          showSnackbar(
+              context: context,
+              message: "Oops, we are unable to create template");
         }
       } finally {
         _hideLoadingScreen();
@@ -469,13 +527,16 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final log = _log;
     if (log != null) {
       try {
-        await Provider.of<ExerciseAndRoutineController>(context, listen: false).removeLog(log: log);
+        await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            .removeLog(log: log);
         if (mounted) {
           context.pop();
         }
       } catch (_) {
         if (mounted) {
-          showSnackbar(context: context, message: "Oops, we are unable to delete this log");
+          showSnackbar(
+              context: context,
+              message: "Oops, we are unable to delete this log");
         }
       } finally {
         _hideLoadingScreen();
@@ -506,7 +567,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       return TrendSummary(
         trend: Trend.none,
         average: 0,
-        summary: "No training data available yet. Log some sessions to start tracking your progress!",
+        summary:
+            "No training data available yet. Log some sessions to start tracking your progress!",
       );
     }
 
@@ -522,19 +584,22 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     // 3. Now we can safely assume volumes has 2 or more entries
     final previousVolumes = volumes.sublist(0, volumes.length - 1);
-    final averageOfPrevious = previousVolumes.reduce((a, b) => a + b) / previousVolumes.length;
+    final averageOfPrevious =
+        previousVolumes.reduce((a, b) => a + b) / previousVolumes.length;
     final lastWeekVolume = volumes.last;
 
     if (lastWeekVolume == 0) {
       return TrendSummary(
         trend: Trend.none,
         average: averageOfPrevious,
-        summary: "No training data available for this session. Log some workouts to continue tracking your progress!",
+        summary:
+            "No training data available for this session. Log some workouts to continue tracking your progress!",
       );
     }
 
     final difference = lastWeekVolume - averageOfPrevious;
-    final double percentageChange = averageOfPrevious == 0 ? 100.0 : (difference / averageOfPrevious) * 100;
+    final double percentageChange =
+        averageOfPrevious == 0 ? 100.0 : (difference / averageOfPrevious) * 100;
 
     // Decide the trend
     const threshold = 5; // threshold for stable vs up/down
@@ -554,7 +619,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         return TrendSummary(
           trend: Trend.up,
           average: averageOfPrevious,
-          summary: "🌟🌟 This session's volume is $variation higher than your average. Nice job building momentum!",
+          summary:
+              "🌟🌟 This session's volume is $variation higher than your average. Nice job building momentum!",
         );
       case Trend.down:
         return TrendSummary(
@@ -567,7 +633,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         return TrendSummary(
           trend: Trend.stable,
           average: averageOfPrevious,
-          summary: "🔄 Your volume changed by about $variation compared to your session average. "
+          summary:
+              "🔄 Your volume changed by about $variation compared to your session average. "
               "Stay consistent to see long-term progress.",
         );
       case Trend.none:
@@ -594,7 +661,10 @@ class _StatisticWidget extends StatelessWidget {
   final _StatisticsInformation information;
 
   const _StatisticWidget(
-      {this.icon, required this.title, required this.subtitle, required this.information});
+      {this.icon,
+      required this.title,
+      required this.subtitle,
+      required this.information});
 
   @override
   Widget build(BuildContext context) {
@@ -604,14 +674,19 @@ class _StatisticWidget extends StatelessWidget {
     final leading = FaIcon(icon, size: 14);
 
     return GestureDetector(
-      onTap: () =>
-          showBottomSheetWithNoAction(context: context, title: information.title, description: information.description),
+      onTap: () => showBottomSheetWithNoAction(
+          context: context,
+          title: information.title,
+          description: information.description),
       child: Container(
         width: 120,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDarkMode ? sapphireDark80 : Colors.grey.shade200, // Background color of the container
-          borderRadius: BorderRadius.circular(5), // Border radius for rounded corners
+          color: isDarkMode
+              ? sapphireDark80
+              : Colors.grey.shade200, // Background color of the container
+          borderRadius:
+              BorderRadius.circular(5), // Border radius for rounded corners
         ),
         child: Stack(children: [
           Column(
@@ -624,7 +699,8 @@ class _StatisticWidget extends StatelessWidget {
                   const SizedBox(
                     width: 6,
                   ),
-                  Text(subtitle.toUpperCase(), style: Theme.of(context).textTheme.bodySmall)
+                  Text(subtitle.toUpperCase(),
+                      style: Theme.of(context).textTheme.bodySmall)
                 ],
               ),
               const SizedBox(
@@ -637,7 +713,9 @@ class _StatisticWidget extends StatelessWidget {
             ],
           ),
           Positioned.fill(
-            child: const Align(alignment: Alignment.bottomRight, child: FaIcon(FontAwesomeIcons.lightbulb, size: 10)),
+            child: const Align(
+                alignment: Alignment.bottomRight,
+                child: FaIcon(FontAwesomeIcons.lightbulb, size: 10)),
           ),
         ]),
       ),
