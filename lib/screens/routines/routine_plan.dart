@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/utils/string_utils.dart';
@@ -117,7 +117,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(plan.name,
-                        style: GoogleFonts.ubuntu(
+                        style: TextStyle(
                             fontSize: 20,
                             height: 1.5,
                             fontWeight: FontWeight.w900)),
@@ -135,7 +135,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                               color: vibrantBlue)),
                     ]),
                     Text(plan.notes.isNotEmpty ? plan.notes : "No notes",
-                        style: GoogleFonts.ubuntu(
+                        style: TextStyle(
                             fontSize: 14,
                             color: isDarkMode ? Colors.white70 : Colors.black,
                             height: 1.8,

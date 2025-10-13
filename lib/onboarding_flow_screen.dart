@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/colors.dart';
 import 'package:video_player/video_player.dart';
 
@@ -118,7 +118,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     Text(
                       "Training is tough. Let's tell you what to do instead.",
                       textAlign: TextAlign.start,
-                      style: GoogleFonts.ubuntu(
+                      style: TextStyle(
                             color: Colors.white70,
                             fontSize: 20,
                             fontWeight: FontWeight.w500,

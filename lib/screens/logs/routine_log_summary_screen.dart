@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
@@ -304,7 +304,7 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text("Remove Image",
-                    style: GoogleFonts.ubuntu(
+                    style: TextStyle(
                         color: Colors.red,
                         fontWeight: FontWeight.w500,
                         fontSize: 16)),

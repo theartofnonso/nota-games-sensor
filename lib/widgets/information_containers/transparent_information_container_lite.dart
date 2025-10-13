@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 class TransparentInformationContainerLite extends StatelessWidget {
   final String content;
@@ -32,7 +32,7 @@ class TransparentInformationContainerLite extends StatelessWidget {
             Expanded(
                 child: richText ??
                     Text(content,
-                        style: GoogleFonts.ubuntu(
+                        style: TextStyle(
                             fontSize: 14,
                             height: 1.5,
                             color: isDarkMode ? Colors.white : Colors.black,

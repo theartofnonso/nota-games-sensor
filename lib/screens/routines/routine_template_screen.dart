@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/dtos/graph/chart_point_dto.dart';
@@ -262,14 +262,14 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                           spacing: 2,
                           children: [
                             Text(template.name,
-                                style: GoogleFonts.ubuntu(
+                                style: TextStyle(
                                     fontSize: 20,
                                     height: 1.5,
                                     fontWeight: FontWeight.w900)),
                             if (plan != null)
                               Text(
                                 "In ${plan.name}",
-                                style: GoogleFonts.ubuntu(
+                                style: TextStyle(
                                     fontSize: 14,
                                     color: isDarkMode
                                         ? Colors.white70
@@ -292,7 +292,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                               template.notes.isNotEmpty
                                   ? "${template.notes}."
                                   : "No notes",
-                              style: GoogleFonts.ubuntu(
+                              style: TextStyle(
                                   fontSize: 14,
                                   color: isDarkMode
                                       ? Colors.white70

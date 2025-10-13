@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../../utils/general_utils.dart';
 
@@ -84,14 +84,14 @@ class _FullAnimatedGaugeState extends State<FullAnimatedGauge> with SingleTicker
             children: [
               Text(
                 "${widget.value}",
-                style: GoogleFonts.ubuntu(
+                style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w900,
                 ),
               ),
               Text(
                 widget.label,
-                style: GoogleFonts.ubuntu(
+                style: TextStyle(
                   fontSize: 14,
                   color: isDark ? Colors.white70 : Colors.grey.shade600,
                 ),

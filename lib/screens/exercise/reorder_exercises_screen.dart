@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/utils/general_utils.dart';
 
 import '../../dtos/exercise_log_dto.dart';
@@ -42,7 +42,7 @@ class _ReOrderExercisesScreenState extends State<ReOrderExercisesScreen> {
     final widgets = _exercises
         .mapIndexed((index, exercise) => ListTile(
               key: Key("$index"),
-              title: Text(exercise.exercise.name, style: GoogleFonts.ubuntu()),
+              title: Text(exercise.exercise.name, style: TextStyle()),
               trailing: const Icon(
                 Icons.drag_handle,
               ),

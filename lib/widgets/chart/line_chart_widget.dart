@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/dtos/graph/chart_point_dto.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 
@@ -118,7 +118,7 @@ class LineChartWidget extends StatelessWidget {
   Widget _leftTitleWidgets(double value, TitleMeta meta) {
     final colorFunction = leftAxisTitlesColor;
     final color = colorFunction != null ? colorFunction(value) : null;
-    final style = GoogleFonts.ubuntu(fontWeight: FontWeight.w500, fontSize: 9, color: color ?? Colors.grey.shade600);
+    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 9, color: color ?? Colors.grey.shade600);
 
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.fromTitleMeta(meta, enabled: false),
@@ -130,7 +130,7 @@ class LineChartWidget extends StatelessWidget {
   Widget _rightTitleWidgets(double value, TitleMeta meta) {
     final colorFunction = rightAxisTitlesColor;
     final color = colorFunction != null ? colorFunction(value) : null;
-    final style = GoogleFonts.ubuntu(fontWeight: FontWeight.w500, fontSize: 9, color: color ?? Colors.grey.shade600);
+    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 9, color: color ?? Colors.grey.shade600);
 
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.fromTitleMeta(meta, enabled: false),
@@ -151,7 +151,7 @@ class LineChartWidget extends StatelessWidget {
 
   Widget _bottomTitleWidgets(double value, TitleMeta meta) {
     final modifiedDateTimes = periods.length == 1 ? [...periods, ...periods] : periods;
-    final style = GoogleFonts.ubuntu(fontWeight: FontWeight.w500, fontSize: 7, color: Colors.grey.shade600);
+    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 7, color: Colors.grey.shade600);
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.fromTitleMeta(meta),
       meta: meta,

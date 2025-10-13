@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../colors.dart';
 
@@ -50,7 +50,7 @@ class InsightsGridItemWidget extends StatelessWidget {
                     Text(title,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
-                        style: GoogleFonts.ubuntu(fontWeight: FontWeight.w500, color: Colors.white, fontSize: 14, )),
+                        style: TextStyle(fontWeight: FontWeight.w500, color: Colors.white, fontSize: 14, )),
                   ],
                 ),
               ),

@@ -1,6 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../colors.dart';
 import '../utils/general_utils.dart';
@@ -190,7 +190,7 @@ class _Bar extends StatelessWidget {
             child: Center(
               child: Text("${weightWithConversion(value: bar.weight)}",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.ubuntu(fontSize: 12, color: Colors.black, fontWeight: FontWeight.bold)),
+                  style: TextStyle(fontSize: 12, color: Colors.black, fontWeight: FontWeight.bold)),
             )),
         Container(width: 15, height: 40, color: sapphireDark),
         ...plates.map((plate) => _Plate(plate: plate)),
@@ -227,7 +227,7 @@ class _Plate extends StatelessWidget {
       child: Center(
         child: Text("${weightWithConversion(value: plate.weight)}",
             textAlign: TextAlign.center,
-            style: GoogleFonts.ubuntu(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w600)),
+            style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w600)),
       ),
     );
   }

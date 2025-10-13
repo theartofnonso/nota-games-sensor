@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/colors.dart';
@@ -236,7 +236,7 @@ class _CalendarTitleHeader extends StatelessWidget {
         children: [
           Text(
             DateFormat('MMMM yyyy').format(date),
-            style: GoogleFonts.ubuntu(
+            style: TextStyle(
               color: isDarkMode ? Colors.white : Colors.black,
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -357,7 +357,7 @@ class _Day extends StatelessWidget {
           child: Center(
             child: Text(
               "${dateTime.day}",
-              style: GoogleFonts.ubuntu(fontSize: 16, fontWeight: FontWeight.bold, color: _getTextColor()),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _getTextColor()),
             ),
           ),
         ),

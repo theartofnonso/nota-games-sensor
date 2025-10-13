@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
@@ -293,7 +293,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                       ? "${exercise.description}."
                       : "No notes",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.ubuntu(
+                  style: TextStyle(
                       fontSize: 14,
                       color: isDarkMode ? Colors.white70 : Colors.black,
                       height: 1.8,
@@ -477,12 +477,12 @@ class _VideoWidget extends StatelessWidget {
         onTap: () => openUrl(url: videoUrl, context: context),
         leading: FaIcon(
           FontAwesomeIcons.youtube,
-          color: vibrantGreen,
+          color: Colors.red,
           size: 24,
         ),
         title: Text(
           'Watch Exercise Video',
-          style: GoogleFonts.ubuntu(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 16,
           ),
@@ -490,7 +490,7 @@ class _VideoWidget extends StatelessWidget {
         subtitle: credit != null
             ? Text(
                 'Video by $credit',
-                style: GoogleFonts.ubuntu(
+                style: TextStyle(
                   fontSize: 12,
                   color: isDarkMode ? Colors.white70 : Colors.black54,
                 ),

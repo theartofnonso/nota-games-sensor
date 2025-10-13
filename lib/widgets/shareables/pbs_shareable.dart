@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/enums/pb_enums.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/utils/exercise_logs_utils.dart';
@@ -97,15 +97,15 @@ class PBsShareable extends StatelessWidget {
                           ? Padding(
                               padding: const EdgeInsets.symmetric(vertical: 20.0),
                               child: Text(value,
-                                  style: GoogleFonts.ubuntu(
+                                  style: TextStyle(
                                       color: Colors.white, fontSize: 24, fontWeight: FontWeight.w600)),
                             )
                           : const SizedBox(height: 20),
                       Text(pbDto.exercise.name,
-                          style: GoogleFonts.ubuntu(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
                       Text(pbDto.pb.description,
-                          style: GoogleFonts.ubuntu(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
+                          style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 30),
                     ]),
                 Align(

@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../../utils/general_utils.dart';
 
@@ -95,9 +95,9 @@ class _HalfAnimatedGaugeState extends State<HalfAnimatedGauge> with SingleTicker
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text("${widget.value}", style: GoogleFonts.ubuntu(fontSize: 30, height: 1.5, fontWeight: FontWeight.w900)),
+              Text("${widget.value}", style: TextStyle(fontSize: 30, height: 1.5, fontWeight: FontWeight.w900)),
               Text(widget.label,
-                  style: GoogleFonts.ubuntu(
+                  style: TextStyle(
                       fontSize: 14,
                       height: 1.5,
                       fontWeight: FontWeight.w400,

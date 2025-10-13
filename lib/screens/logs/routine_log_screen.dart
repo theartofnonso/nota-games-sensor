@@ -4,7 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
@@ -170,7 +170,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                             updatedLog.notes.isNotEmpty
                                 ? "${updatedLog.notes}."
                                 : "No notes",
-                            style: GoogleFonts.ubuntu(
+                            style: TextStyle(
                                 fontSize: 14,
                                 color:
                                     isDarkMode ? Colors.white70 : Colors.black,
@@ -394,7 +394,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             ),
             horizontalTitleGap: 6,
             title: Text("Delete log",
-                style: GoogleFonts.ubuntu(
+                style: TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.w500,
                     fontSize: 16)),

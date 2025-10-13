@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/exercise_log_controller.dart';
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
@@ -486,7 +486,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
       infoText = "Your average training duration is ${fmt(average)}.";
     }
 
-    final textInfoTextStyle = GoogleFonts.ubuntu(
+    final textInfoTextStyle = TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w400,
     );

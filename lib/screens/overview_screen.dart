@@ -3,16 +3,18 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/screens/editors/past_routine_log_editor_screen.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
+import 'package:tracker_app/widgets/routine/preview/routine_plan_grid_item.dart';
 
 import '../controllers/exercise_and_routine_controller.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/appsync/routine_template_dto.dart';
+import '../dtos/appsync/routine_plan_dto.dart';
 import '../utils/date_utils.dart';
 import '../utils/general_utils.dart';
 import '../utils/navigation_utils.dart';
@@ -214,26 +216,39 @@ class _OverviewScreenState extends State<OverviewScreen> {
               StaggeredGridTile.count(
                 crossAxisCellCount: 1,
                 mainAxisCellCount: 1,
-                child: GestureDetector(
-                  onTap: () => navigateToRoutineHome(context: context),
-                  child: _TemplatesTile(),
-                ),
+                child: RoutinePlanGridItemWidget(
+                    plan: RoutinePlanDto.defaultPlan, radius: 5),
               ),
-              StaggeredGridTile.count(
-                crossAxisCellCount: 1,
-                mainAxisCellCount: 1,
-                child: GestureDetector(
-                  onTap: _showNewBottomSheet,
-                  child: _AddTile(),
-                ),
-              ),
-              StaggeredGridTile.count(
-                crossAxisCellCount: 1,
-                mainAxisCellCount: 1,
-                child: GestureDetector(
-                  onTap: () => navigateToSettings(context: context),
-                  child: _SettingsTile(),
-                ),
+              StaggeredGrid.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                children: [
+                  StaggeredGridTile.count(
+                    crossAxisCellCount: 1,
+                    mainAxisCellCount: 1,
+                    child: GestureDetector(
+                      onTap: () => navigateToRoutineHome(context: context),
+                      child: _RoutinePlansHomeTile(),
+                    ),
+                  ),
+                  StaggeredGridTile.count(
+                    crossAxisCellCount: 1,
+                    mainAxisCellCount: 1,
+                    child: GestureDetector(
+                      onTap: _showNewBottomSheet,
+                      child: _AddTile(),
+                    ),
+                  ),
+                  StaggeredGridTile.count(
+                    crossAxisCellCount: 1,
+                    mainAxisCellCount: 1,
+                    child: GestureDetector(
+                      onTap: () => navigateToSettings(context: context),
+                      child: _SettingsTile(),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -412,7 +427,7 @@ class _NoScheduledTitle extends StatelessWidget {
           borderRadius: BorderRadius.circular(5)),
       child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
         Text("Keep training to see future schedules",
-            style: GoogleFonts.ubuntu(
+            style: TextStyle(
                 fontSize: 18, height: 1.5, fontWeight: FontWeight.w600)),
         const Spacer(),
         Row(
@@ -469,7 +484,7 @@ class _ScheduledTitle extends StatelessWidget {
               child:
                   Column(mainAxisAlignment: MainAxisAlignment.start, children: [
                 Text("${schedule.name} has been completed. Great job!",
-                    style: GoogleFonts.ubuntu(
+                    style: TextStyle(
                         fontSize: 18,
                         height: 1.5,
                         fontWeight: FontWeight.w600)),
@@ -507,7 +522,7 @@ class _ScheduledTitle extends StatelessWidget {
               child:
                   Column(mainAxisAlignment: MainAxisAlignment.start, children: [
                 Text("${schedule.name} is scheduled today!",
-                    style: GoogleFonts.ubuntu(
+                    style: TextStyle(
                         fontSize: 18,
                         height: 1.5,
                         fontWeight: FontWeight.w600)),
@@ -541,8 +556,8 @@ class _ScheduledTitle extends StatelessWidget {
   }
 }
 
-class _TemplatesTile extends StatelessWidget {
-  const _TemplatesTile();
+class _RoutinePlansHomeTile extends StatelessWidget {
+  const _RoutinePlansHomeTile();
 
   @override
   Widget build(BuildContext context) {
@@ -552,35 +567,15 @@ class _TemplatesTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: isDarkMode ? vibrantBlue.withValues(alpha: 0.1) : vibrantBlue,
+          color: isDarkMode
+              ? Colors.purple.withValues(alpha: 0.1)
+              : Colors.purple.shade300,
           borderRadius: BorderRadius.circular(5)),
-      child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-        Text("Manage your training experience",
-            style: GoogleFonts.ubuntu(
-                fontSize: 20, height: 1.5, fontWeight: FontWeight.w600)),
-        const Spacer(),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              width: 25,
-              height: 25,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? vibrantBlue.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Center(
-                child: FaIcon(
-                  FontAwesomeIcons.personWalking,
-                  size: 14,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        FaIcon(
+          FontAwesomeIcons.solidFolderOpen,
+          size: 32,
+          color: Colors.white,
         ),
       ]),
     );
@@ -601,33 +596,11 @@ class _AddTile extends StatelessWidget {
           color:
               isDarkMode ? Colors.yellow.withValues(alpha: 0.1) : Colors.yellow,
           borderRadius: BorderRadius.circular(5)),
-      child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-        Text("Start a fresh session",
-            style: GoogleFonts.ubuntu(
-                fontSize: 20, height: 1.5, fontWeight: FontWeight.w600)),
-        const Spacer(),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-                width: 25,
-                height: 25,
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.yellow.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Center(
-                    child: Center(
-                  child: FaIcon(
-                    FontAwesomeIcons.plus,
-                    size: 14,
-                    color: Colors.white,
-                  ),
-                )))
-          ],
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        FaIcon(
+          FontAwesomeIcons.plus,
+          size: 32,
+          color: Colors.white,
         ),
       ]),
     );
@@ -649,33 +622,11 @@ class _SettingsTile extends StatelessWidget {
               ? Colors.grey.withValues(alpha: 0.1)
               : Colors.grey.shade300,
           borderRadius: BorderRadius.circular(5)),
-      child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-        Text("Settings & Preferences",
-            style: GoogleFonts.ubuntu(
-                fontSize: 20, height: 1.5, fontWeight: FontWeight.w600)),
-        const Spacer(),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              width: 25,
-              height: 25,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? Colors.grey.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Center(
-                child: FaIcon(
-                  FontAwesomeIcons.gear,
-                  size: 14,
-                  color: Colors.white,
-                ),
-              ),
-            )
-          ],
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        FaIcon(
+          FontAwesomeIcons.gear,
+          size: 32,
+          color: Colors.white,
         ),
       ]),
     );

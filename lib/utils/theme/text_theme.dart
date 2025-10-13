@@ -1,50 +1,71 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class TRKRTextTheme {
   TRKRTextTheme._();
 
-  static TextTheme lightTheme = TextTheme(
-    displaySmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.black),
-    displayMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.w600, color: Colors.black),
-    displayLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.w900, color: Colors.black),
-
-    headlineSmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w900, color: Colors.black),
-    headlineMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.w900, color: Colors.black),
-    headlineLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.w900, color: Colors.black),
-
-    titleSmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.black),
-    titleMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.bold, color: Colors.black),
-    titleLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.bold, color: Colors.black),
-
-    labelSmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.black),
-    labelMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.w600, color: Colors.black),
-    labelLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.bold, color: Colors.black),
-
-    bodySmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.black),
-    bodyMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.w500, color: Colors.black),
-    bodyLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.w500, color: Colors.black),
+  static const TextTheme lightTheme = TextTheme(
+    displaySmall: TextStyle(
+        fontWeight: FontWeight.w400, color: Colors.black, fontSize: 36),
+    displayMedium: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.black, fontSize: 45),
+    displayLarge: TextStyle(
+        fontWeight: FontWeight.w900, color: Colors.black, fontSize: 57),
+    headlineSmall: TextStyle(
+        fontWeight: FontWeight.w700, color: Colors.black, fontSize: 24),
+    headlineMedium: TextStyle(
+        fontWeight: FontWeight.w700, color: Colors.black, fontSize: 28),
+    headlineLarge: TextStyle(
+        fontWeight: FontWeight.w700, color: Colors.black, fontSize: 32),
+    titleSmall: TextStyle(
+        fontWeight: FontWeight.w500, color: Colors.black, fontSize: 14),
+    titleMedium: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.black, fontSize: 16),
+    titleLarge: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.black, fontSize: 22),
+    labelSmall: TextStyle(
+        fontWeight: FontWeight.w500, color: Colors.black, fontSize: 11),
+    labelMedium: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.black, fontSize: 12),
+    labelLarge: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.black, fontSize: 14),
+    bodySmall: TextStyle(
+        fontWeight: FontWeight.w400, color: Colors.black, fontSize: 12),
+    bodyMedium: TextStyle(
+        fontWeight: FontWeight.w400, color: Colors.black, fontSize: 14),
+    bodyLarge: TextStyle(
+        fontWeight: FontWeight.w400, color: Colors.black, fontSize: 16),
   );
 
-  static TextTheme darkTheme = TextTheme(
-    displaySmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.white),
-    displayMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.w600, color: Colors.white),
-    displayLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.w900, color: Colors.white),
-
-    headlineSmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w900, color: Colors.white),
-    headlineMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.w900, color: Colors.white),
-    headlineLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.w900, color: Colors.white),
-
-    titleSmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.white),
-    titleMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.bold, color: Colors.white),
-    titleLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.bold, color: Colors.white),
-
-    labelSmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.white),
-    labelMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.w600, color: Colors.white),
-    labelLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.bold, color: Colors.white),
-
-    bodySmall: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.white),
-    bodyMedium: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.white),
-    bodyLarge: GoogleFonts.ubuntu(fontWeight: FontWeight.w400, color: Colors.white),
+  static const TextTheme darkTheme = TextTheme(
+    displaySmall: TextStyle(
+        fontWeight: FontWeight.w400, color: Colors.white, fontSize: 36),
+    displayMedium: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.white, fontSize: 45),
+    displayLarge: TextStyle(
+        fontWeight: FontWeight.w900, color: Colors.white, fontSize: 57),
+    headlineSmall: TextStyle(
+        fontWeight: FontWeight.w700, color: Colors.white, fontSize: 24),
+    headlineMedium: TextStyle(
+        fontWeight: FontWeight.w700, color: Colors.white, fontSize: 28),
+    headlineLarge: TextStyle(
+        fontWeight: FontWeight.w700, color: Colors.white, fontSize: 32),
+    titleSmall: TextStyle(
+        fontWeight: FontWeight.w500, color: Colors.white, fontSize: 14),
+    titleMedium: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.white, fontSize: 16),
+    titleLarge: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.white, fontSize: 22),
+    labelSmall: TextStyle(
+        fontWeight: FontWeight.w500, color: Colors.white, fontSize: 11),
+    labelMedium: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.white, fontSize: 12),
+    labelLarge: TextStyle(
+        fontWeight: FontWeight.w600, color: Colors.white, fontSize: 14),
+    bodySmall: TextStyle(
+        fontWeight: FontWeight.w400, color: Colors.white, fontSize: 12),
+    bodyMedium: TextStyle(
+        fontWeight: FontWeight.w400, color: Colors.white, fontSize: 14),
+    bodyLarge: TextStyle(
+        fontWeight: FontWeight.w400, color: Colors.white, fontSize: 16),
   );
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../../colors.dart';
 
@@ -63,9 +63,9 @@ class SessionMilestoneShareable extends StatelessWidget {
                     const FaIcon(FontAwesomeIcons.award, color: vibrantGreen, size: 40),
                     const SizedBox(height: 20),
                     Text(label,
-                        style: GoogleFonts.ubuntu(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+                        style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
                     Text("Session".toUpperCase(),
-                        style: GoogleFonts.ubuntu(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                   ]),
               Align(
                 alignment: Alignment.bottomRight,

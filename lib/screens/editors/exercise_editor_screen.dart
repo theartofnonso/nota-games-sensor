@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
@@ -98,7 +98,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                       cursorColor: isDarkMode ? Colors.white : Colors.black,
                       keyboardType: TextInputType.text,
                       textCapitalization: TextCapitalization.words,
-                      style: GoogleFonts.ubuntu(
+                      style: TextStyle(
                           fontWeight: FontWeight.w400,
                           color: isDarkMode ? Colors.white : Colors.black,
                           fontSize: 14),

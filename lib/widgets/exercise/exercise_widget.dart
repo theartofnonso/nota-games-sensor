@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/extensions/muscle_group_extension.dart';
 import 'package:tracker_app/utils/string_utils.dart';
@@ -44,11 +44,11 @@ class ExerciseWidget extends StatelessWidget {
         title: Text(exercise.name, style: Theme.of(context).textTheme.titleMedium),
         subtitle: exercise.primaryMuscleGroup == MuscleGroup.fullBody
             ? Text("Fullbody".toUpperCase(),
-                style: GoogleFonts.ubuntu(color: Colors.deepOrangeAccent, fontWeight: FontWeight.w600, fontSize: 12))
+                style: TextStyle(color: Colors.deepOrangeAccent, fontWeight: FontWeight.w600, fontSize: 12))
             : RichText(
                 text: TextSpan(
                     text: exercise.primaryMuscleGroup.name.toUpperCase(),
-                    style: GoogleFonts.ubuntu(
+                    style: TextStyle(
                         color: Colors.deepOrangeAccent, fontWeight: FontWeight.w600, fontSize: 12, height: 1.5),
                     children: [
                     if (exercise.secondaryMuscleGroups.isNotEmpty)
@@ -57,7 +57,7 @@ class ExerciseWidget extends StatelessWidget {
                           : const TextSpan(text: " | "),
                     TextSpan(
                         text: listWithAnd(strings: secondaryMuscleGroupNames),
-                        style: GoogleFonts.ubuntu(
+                        style: TextStyle(
                             color: Colors.orange.withValues(alpha: 0.6), fontWeight: FontWeight.w500, fontSize: 11)),
                   ])),
         trailing: GestureDetector(

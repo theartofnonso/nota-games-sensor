@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
 import 'package:tracker_app/screens/editors/exercise_editor_screen.dart';
@@ -94,7 +94,7 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
               rightActionLabel: 'Delete',
               isRightActionDestructive: true);
         },
-        child: Text("Delete", style: GoogleFonts.ubuntu(color: Colors.red)),
+        child: Text("Delete", style: TextStyle(color: Colors.red)),
       )
     ];
 

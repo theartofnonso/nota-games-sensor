@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/utils/progressive_overload_utils.dart';
 
 /// A semicircular gauge whose gradient colors rotate slowly with the gauge
@@ -97,9 +97,9 @@ class _ProgressionHalfAnimatedGaugeState extends State<ProgressionHalfAnimatedGa
             const SizedBox(
               height: 20,
             ),
-            Text("${widget.value}", style: GoogleFonts.ubuntu(fontSize: 30, height: 1.5, fontWeight: FontWeight.w900)),
+            Text("${widget.value}", style: TextStyle(fontSize: 30, height: 1.5, fontWeight: FontWeight.w900)),
             Text(widget.label,
-                style: GoogleFonts.ubuntu(
+                style: TextStyle(
                     fontSize: 14,
                     height: 1.5,
                     fontWeight: FontWeight.w400,

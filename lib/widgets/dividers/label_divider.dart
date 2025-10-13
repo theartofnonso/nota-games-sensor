@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 class LabelDivider extends StatelessWidget {
   final String label;
@@ -15,12 +15,12 @@ class LabelDivider extends StatelessWidget {
     return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
       leftToRight ? Text(
         shouldCapitalise ? label.toUpperCase() : label,
-        style: GoogleFonts.ubuntu(color: labelColor, fontWeight: FontWeight.w700, fontSize: fontSize),
+        style: TextStyle(color: labelColor, fontWeight: FontWeight.w700, fontSize: fontSize),
       ) : SizedBox.shrink(),
       Spacer(),
       !leftToRight ? Text(
         shouldCapitalise ? label.toUpperCase() : label,
-        style: GoogleFonts.ubuntu(color: labelColor, fontWeight: FontWeight.w700, fontSize: fontSize),
+        style: TextStyle(color: labelColor, fontWeight: FontWeight.w700, fontSize: fontSize),
       ) : SizedBox.shrink()
     ]);
   }

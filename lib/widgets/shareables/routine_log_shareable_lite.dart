@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
@@ -72,20 +72,20 @@ class RoutineLogShareableLite extends StatelessWidget {
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(log.name,
-                            style: GoogleFonts.ubuntu(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 16)),
+                            style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 16)),
                         subtitle: _DateDurationPBWidget(dateTime: log.createdAt, duration: log.duration(), pbs: pbs),
                       ),
                       RichText(
                           text: TextSpan(
                               text:
                                   "${log.exerciseLogs.length} ${pluralize(word: "Exercise", count: log.exerciseLogs.length)}",
-                              style: GoogleFonts.ubuntu(fontWeight: FontWeight.w500),
+                              style: TextStyle(fontWeight: FontWeight.w500),
                               children: [
                             const TextSpan(text: " "),
                             TextSpan(
                                 text:
                                     "x${log.exerciseLogs.fold(0, (sum, e) => sum + e.sets.length)} ${pluralize(word: "Set", count: log.exerciseLogs.fold(0, (sum, e) => sum + e.sets.length))}",
-                                style: GoogleFonts.ubuntu(
+                                style: TextStyle(
                                     fontWeight: FontWeight.w500, color: Colors.white70, fontSize: 12)),
                           ])),
                     ]),
@@ -144,7 +144,7 @@ class _DateDurationPBWidget extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(datetimeSummary,
-                style: GoogleFonts.ubuntu(
+                style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.95), fontWeight: FontWeight.w500, fontSize: 12)),
           ],
         ),
@@ -159,7 +159,7 @@ class _DateDurationPBWidget extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(duration.hmsAnalog(),
-                style: GoogleFonts.ubuntu(
+                style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.95), fontWeight: FontWeight.w500, fontSize: 12)),
           ],
         ),
@@ -168,7 +168,7 @@ class _DateDurationPBWidget extends StatelessWidget {
             ? Row(children: [
                 const FaIcon(FontAwesomeIcons.solidStar, color: vibrantGreen, size: 14),
                 const SizedBox(width: 6),
-                Text("$pbs", style: GoogleFonts.ubuntu(fontSize: 12, color: Colors.white))
+                Text("$pbs", style: TextStyle(fontSize: 12, color: Colors.white))
               ])
             : const SizedBox.shrink(),
       ],

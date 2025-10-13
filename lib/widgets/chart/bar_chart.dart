@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../../colors.dart';
 import '../../dtos/graph/chart_point_dto.dart';
@@ -135,7 +135,7 @@ class CustomBarChart extends StatelessWidget {
       }).toList();
 
   Widget _leftTitleWidgets(double value, TitleMeta meta) {
-    final style = GoogleFonts.ubuntu(fontWeight: FontWeight.w500, fontSize: 9, color: Colors.grey.shade600);
+    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 9, color: Colors.grey.shade600);
 
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.fromTitleMeta(meta, enabled: false),
@@ -153,7 +153,7 @@ class CustomBarChart extends StatelessWidget {
 
   Widget _bottomTitleWidgets(double value, TitleMeta meta) {
     final modifiedDateTimes = periods.length == 1 ? [...periods, ...periods] : periods;
-    final style = GoogleFonts.ubuntu(fontWeight: FontWeight.w500, fontSize: 9, color: Colors.grey.shade600);
+    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 9, color: Colors.grey.shade600);
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.disable(),
       meta: meta,

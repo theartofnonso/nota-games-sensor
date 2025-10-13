@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import '../../../colors.dart';
 import '../../../dtos/exercise_log_dto.dart';
@@ -136,7 +136,7 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
               ),
               horizontalTitleGap: 6,
               title: Text("Remove",
-                  style: GoogleFonts.ubuntu(color: Colors.red, fontWeight: FontWeight.w500, fontSize: 16)),
+                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500, fontSize: 16)),
               onTap: () {
                 Navigator.of(context).pop();
                 onRemoveLog();

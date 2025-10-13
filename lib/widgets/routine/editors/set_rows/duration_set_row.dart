@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/dtos/set_dtos/duration_set_dto.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 
@@ -48,7 +48,7 @@ class DurationSetRow extends StatelessWidget {
               height: 50,
               child: Center(
                 child: Text(setDto.duration.hmsDigital(),
-                    style: GoogleFonts.ubuntu(fontWeight: FontWeight.w600)),
+                    style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ),

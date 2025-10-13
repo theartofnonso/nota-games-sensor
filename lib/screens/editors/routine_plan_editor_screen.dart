@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
@@ -243,7 +243,7 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
                           ),
                           keyboardType: TextInputType.text,
                           textCapitalization: TextCapitalization.words,
-                          style: GoogleFonts.ubuntu(
+                          style: TextStyle(
                               fontWeight: FontWeight.w400,
                               color: isDarkMode ? Colors.white : Colors.black,
                               fontSize: 14),
@@ -257,7 +257,7 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
                           maxLines: null,
                           keyboardType: TextInputType.text,
                           textCapitalization: TextCapitalization.sentences,
-                          style: GoogleFonts.ubuntu(
+                          style: TextStyle(
                               fontWeight: FontWeight.w400,
                               color: isDarkMode ? Colors.white : Colors.black,
                               fontSize: 14),

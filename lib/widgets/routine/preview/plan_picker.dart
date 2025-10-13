@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 
 import '../../../../colors.dart';
@@ -23,7 +23,7 @@ class PlanPicker extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               title: Text(
                 plan.name,
-                style: GoogleFonts.ubuntu(fontWeight: FontWeight.w400),
+                style: TextStyle(fontWeight: FontWeight.w400),
               ),
             ))
         .toList();

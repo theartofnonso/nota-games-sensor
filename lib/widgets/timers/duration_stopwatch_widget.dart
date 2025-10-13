@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:tracker_app/extensions/duration_extension.dart';
 
 import '../../colors.dart';
@@ -135,7 +135,7 @@ class _ControlButton extends StatelessWidget {
       icon: FaIcon(icon, size: 14, color: color),
       label: Text(
         label,
-        style: GoogleFonts.ubuntu(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
