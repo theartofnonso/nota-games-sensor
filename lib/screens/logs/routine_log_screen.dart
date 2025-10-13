@@ -104,8 +104,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     final trendSummary = _analyzeWeeklyTrends(volumes: allLoggedVolumesForTemplate);
 
-    final readiness = log.readinessScore;
-
     return Scaffold(
         appBar: AppBar(
             leading: IconButton(
@@ -204,16 +202,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                               description:
                                   "Your highest achievement in an exercise, like the heaviest weight lifted, most reps performed, or highest training volume."),
                         ),
-                        if (readiness > 0)
-                          _StatisticWidget(
-                            title: "$readiness%",
-                            subtitle: "Readiness",
-                            icon: FontAwesomeIcons.boltLightning,
-                            information: _StatisticsInformation(
-                                title: "Readiness",
-                                description:
-                                    "A readiness check helps you assess how prepared you are for training intensity—helping you train smarter, avoid overtraining, and reduce the risk of injury."),
-                          ),
                       ],
                     ),
                   ),

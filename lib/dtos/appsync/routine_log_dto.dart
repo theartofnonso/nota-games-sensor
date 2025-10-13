@@ -8,7 +8,6 @@ import '../../models/RoutineLog.dart';
 import '../exercise_log_dto.dart';
 
 class RoutineLogDto {
-
   final String id;
 
   final String templateId;
@@ -27,8 +26,6 @@ class RoutineLogDto {
 
   final String owner;
 
-  final int readinessScore;
-
   final DateTime createdAt;
 
   final DateTime updatedAt;
@@ -43,7 +40,6 @@ class RoutineLogDto {
     required this.startTime,
     required this.endTime,
     required this.owner,
-    this.readinessScore = 0,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -61,7 +57,6 @@ class RoutineLogDto {
       'startTime': startTime.toIso8601String(),
       'endTime': endTime.toIso8601String(),
       'exercises': exerciseLogs.map((exercise) => exercise.toJson()).toList(),
-      'readiness': readinessScore,
     };
   }
 
@@ -78,17 +73,20 @@ class RoutineLogDto {
     final startTime = DateTime.parse(json["startTime"]);
     final endTime = DateTime.parse(json["endTime"]);
     final exerciseLogsInJson = json["exercises"] as List<dynamic>;
-    final readinessScore = json["readiness"] ?? 0;
     List<ExerciseLogDto> exerciseLogs = [];
     if (exerciseLogsInJson.isNotEmpty && exerciseLogsInJson.first is String) {
       exerciseLogs = exerciseLogsInJson
           .map((json) => ExerciseLogDto.fromJson(
-              routineLogId: log.id, json: jsonDecode(json), createdAt: log.createdAt.getDateTimeInUtc()))
+              routineLogId: log.id,
+              json: jsonDecode(json),
+              createdAt: log.createdAt.getDateTimeInUtc()))
           .toList();
     } else {
       exerciseLogs = exerciseLogsInJson
-          .map((json) =>
-              ExerciseLogDto.fromJson(routineLogId: log.id, createdAt: log.createdAt.getDateTimeInUtc(), json: json))
+          .map((json) => ExerciseLogDto.fromJson(
+              routineLogId: log.id,
+              createdAt: log.createdAt.getDateTimeInUtc(),
+              json: json))
           .toList();
     }
 
@@ -102,7 +100,6 @@ class RoutineLogDto {
       startTime: startTime,
       endTime: endTime,
       owner: log.owner ?? "",
-      readinessScore: readinessScore,
       createdAt: log.createdAt.getDateTimeInUtc(),
       updatedAt: log.updatedAt.getDateTimeInUtc(),
     );
@@ -113,7 +110,6 @@ class RoutineLogDto {
     final name = json["name"] ?? "";
     final notes = json["notes"] ?? "";
     final summary = json["summary"];
-    final readinessScore = json["readinessScore"] ?? 0;
     final startTime = DateTime.parse(json["startTime"]);
     final endTime = DateTime.parse(json["endTime"]);
     final exerciseLogJsons = json["exercises"] as List<dynamic>;
@@ -130,7 +126,6 @@ class RoutineLogDto {
       startTime: startTime,
       endTime: endTime,
       owner: "",
-      readinessScore: readinessScore,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -146,7 +141,6 @@ class RoutineLogDto {
     DateTime? endTime,
     List<ExerciseLogDto>? exerciseLogs,
     String? owner,
-    int? readinessScore,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -156,7 +150,6 @@ class RoutineLogDto {
       name: name ?? this.name,
       notes: notes ?? this.notes,
       summary: summary ?? this.summary,
-      readinessScore: readinessScore ?? this.readinessScore,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       // Deep copy the list. For any new list passed in, we clone its items;
@@ -172,10 +165,11 @@ class RoutineLogDto {
 
   @override
   String toString() {
-    return 'RoutineLogDto{id: $id, templateId: $templateId, name: $name, notes: $notes, summary: $summary, readinessScore: $readinessScore, startTime: $startTime, endTime: $endTime, exerciseLogs: $exerciseLogs, owner: $owner, createdAt: $createdAt, updatedAt: $updatedAt}';
+    return 'RoutineLogDto{id: $id, templateId: $templateId, name: $name, notes: $notes, summary: $summary, startTime: $startTime, endTime: $endTime, exerciseLogs: $exerciseLogs, owner: $owner, createdAt: $createdAt, updatedAt: $updatedAt}';
   }
 
-  double get volume => exerciseLogs.expand((exerciseLog) => exerciseLog.sets).map((set) {
+  double get volume =>
+      exerciseLogs.expand((exerciseLog) => exerciseLog.sets).map((set) {
         return switch (set.type) {
           ExerciseType.weights => (set as WeightAndRepsSetDto).volume(),
           ExerciseType.bodyWeight => 0.0,

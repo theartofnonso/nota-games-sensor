@@ -18,7 +18,6 @@ import '../enums/routine_editor_type_enums.dart';
 import '../utils/date_utils.dart';
 import '../utils/general_utils.dart';
 import '../utils/navigation_utils.dart';
-import '../widgets/ai_widgets/trkr_coach_text_widget.dart';
 import '../widgets/backgrounds/trkr_loading_screen.dart';
 import '../widgets/calendar/calendar.dart';
 import '../widgets/calendar/calendar_logs.dart';
@@ -26,7 +25,6 @@ import '../widgets/dividers/label_divider.dart';
 import '../widgets/monitors/full_animated_gauge.dart';
 import '../widgets/monthly_insights/log_streak_chart.dart';
 import '../widgets/monthly_insights/volume_chart.dart';
-import 'AI/trkr_coach_chat_screen.dart';
 
 enum TrainingAndVolume {
   training,
@@ -262,42 +260,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   });
             },
           ),
-          const SizedBox(
-            height: 10,
-          ),
-          LabelDivider(
-            label: "Don't know what to train?",
-            labelColor: isDarkMode ? Colors.white70 : Colors.black,
-            dividerColor: sapphireLighter,
-          ),
-          const SizedBox(
-            height: 6,
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            horizontalTitleGap: 10,
-            title: TRKRCoachTextWidget("Describe your workout",
-                style: GoogleFonts.ubuntu(color: vibrantGreen, fontWeight: FontWeight.w500, fontSize: 16)),
-            onTap: () {
-              Navigator.of(context).pop();
-              _switchToAIContext();
-            },
-          ),
         ]));
-  }
-
-  void _switchToAIContext() async {
-    final result =
-        await navigateWithSlideTransition(context: context, child: const TRKRCoachChatScreen()) as RoutineTemplateDto?;
-    if (result != null) {
-      if (mounted) {
-        final log = result.toLog();
-        final arguments = RoutineLogArguments(log: log, editorMode: RoutineEditorMode.log);
-        if (mounted) {
-          navigateToRoutineLogEditor(context: context, arguments: arguments);
-        }
-      }
-    }
   }
 
   void _onSelectCalendarDateTime(DateTime date) {
