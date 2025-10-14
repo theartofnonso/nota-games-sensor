@@ -7,7 +7,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/screens/editors/past_routine_log_editor_screen.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_plan_grid_item.dart';
 
@@ -15,6 +14,7 @@ import '../controllers/exercise_and_routine_controller.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/appsync/routine_template_dto.dart';
 import '../dtos/appsync/routine_plan_dto.dart';
+import '../dtos/viewmodels/past_routine_log_arguments.dart';
 import '../utils/date_utils.dart';
 import '../utils/general_utils.dart';
 import '../utils/navigation_utils.dart';
@@ -305,9 +305,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         owner: "",
                         createdAt: datetimeRange.start,
                         updatedAt: datetimeRange.end);
-                    navigateWithSlideTransition(
+                    navigateToPastRoutineLogEditor(
                         context: context,
-                        child: PastRoutineLogEditorScreen(log: log));
+                        arguments: PastRoutineLogArguments(log: log));
                   });
             },
           ),
@@ -567,9 +567,7 @@ class _RoutinePlansHomeTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.purple.withValues(alpha: 0.1)
-              : Colors.purple.shade300,
+          color: isDarkMode ? vibrantBlue.withValues(alpha: 0.1) : vibrantBlue,
           borderRadius: BorderRadius.circular(5)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         FaIcon(
