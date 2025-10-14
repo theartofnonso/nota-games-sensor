@@ -57,16 +57,20 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   }
 
   Future<void> _loadAppData() async {
-    _observeExerciseQuery();
-    _observeRoutineLogQuery();
-    _observeRoutineTemplateQuery();
-    _observeRoutinePlanQuery();
+    await _observeExerciseQuery();
+    await _observeRoutineLogQuery();
+    await _observeRoutineTemplateQuery();
+    await _observeRoutinePlanQuery();
   }
 
-  void _observeExerciseQuery() async {
+  Future<void> _observeExerciseQuery() async {
     final controller =
         Provider.of<ExerciseAndRoutineController>(context, listen: false);
+
+    // Always load local exercises first
     await controller.loadLocalExercises();
+
+    // Then set up the observe stream
     _exerciseStream = Amplify.DataStore.observeQuery(
       Exercise.classType,
       sortBy: [Exercise.CREATEDAT.ascending()],
@@ -77,7 +81,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     });
   }
 
-  void _observeRoutineTemplateQuery() {
+  Future<void> _observeRoutineTemplateQuery() async {
     _routineTemplateStream = Amplify.DataStore.observeQuery(
       RoutineTemplate.classType,
       sortBy: [RoutineTemplate.CREATEDAT.descending()],
@@ -89,7 +93,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     });
   }
 
-  void _observeRoutinePlanQuery() {
+  Future<void> _observeRoutinePlanQuery() async {
     _routinePlanStream = Amplify.DataStore.observeQuery(
       RoutinePlan.classType,
       sortBy: [RoutinePlan.CREATEDAT.descending()],
@@ -101,7 +105,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     });
   }
 
-  void _observeRoutineLogQuery() {
+  Future<void> _observeRoutineLogQuery() async {
     _routineLogStream = Amplify.DataStore.observeQuery(
       RoutineLog.classType,
       sortBy: [RoutineLog.CREATEDAT.ascending()],
@@ -129,19 +133,24 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
 
       Posthog().identify(userId: userId);
 
-      _loadAppData();
+      // ── 3. Load app data ──────────────────────────────────────────────────
+      await _loadAppData();
     }
 
     // Amplify-specific failures
     on AuthException catch (e, st) {
       debugPrint('[UserSetup] Amplify Auth error: ${e.message}');
       debugPrintStack(stackTrace: st);
+      // Still try to load data even if auth fails
+      await _loadAppData();
     }
 
     // Anything else
     catch (e, st) {
       debugPrint('[UserSetup] unexpected error: $e');
       debugPrintStack(stackTrace: st);
+      // Still try to load data even if setup fails
+      await _loadAppData();
     }
   }
 
@@ -164,7 +173,10 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
 
     WidgetsBinding.instance.addObserver(this);
 
-    _userSetup();
+    // Ensure data loading starts immediately
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _userSetup();
+    });
 
     if (Platform.isIOS) {
       FlutterLocalNotificationsPlugin()
