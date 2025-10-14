@@ -24,7 +24,6 @@ import '../../utils/uri_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
-import '../exercise/library/exercise_library_screen.dart';
 
 enum WeightUnit {
   kg("kg"),
@@ -201,14 +200,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                 ),
                 ListTile(
-                  onTap: _navigateToExerciseLibrary,
-                  leading: FaIcon(FontAwesomeIcons.personWalking,
-                      color: isDarkMode ? Colors.white70 : Colors.black38),
-                  title: Text("Exercises",
-                      style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: Text("manage exercises"),
-                ),
-                ListTile(
                     onTap: _sendFeedback,
                     leading: FaIcon(FontAwesomeIcons.solidPaperPlane,
                         color: isDarkMode ? Colors.white70 : Colors.black38),
@@ -278,11 +269,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
 
     await openUrl(url: emailUri.toString(), context: context);
-  }
-
-  void _navigateToExerciseLibrary() {
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => const ExerciseLibraryScreen(readOnly: true)));
   }
 
   void _clearAppData() async {
