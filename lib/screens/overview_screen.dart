@@ -88,16 +88,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     crossAxisCellCount: 1,
                     mainAxisCellCount: 1,
                     child: GestureDetector(
-                      onTap: _navigateToExerciseLibrary,
-                      child: _ExercisesTile(),
+                      onTap: _showNewBottomSheet,
+                      child: _AddTile(),
                     ),
                   ),
                   StaggeredGridTile.count(
                     crossAxisCellCount: 1,
                     mainAxisCellCount: 1,
                     child: GestureDetector(
-                      onTap: _showNewBottomSheet,
-                      child: _AddTile(),
+                      onTap: _navigateToExerciseLibrary,
+                      child: _ExercisesTile(),
                     ),
                   ),
                   StaggeredGridTile.count(
@@ -264,39 +264,37 @@ class _LogStreakTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    return Consumer<ExerciseAndRoutineController>(
+      builder: (context, controller, _) {
+        final routineLogs =
+            controller.whereLogsIsWithinRange(range: dateTimeRange);
+        final routineLogsByDay =
+            groupBy(routineLogs, (log) => log.createdAt.withoutTime().day);
+        final monthlyProgress = routineLogsByDay.length;
+        final color = lowToHighIntensityColor(monthlyProgress / 12);
 
-    final routineLogs = exerciseAndRoutineController.whereLogsIsWithinRange(
-        range: dateTimeRange);
-
-    final routineLogsByDay =
-        groupBy(routineLogs, (log) => log.createdAt.withoutTime().day);
-
-    final monthlyProgress = routineLogsByDay.length;
-
-    final color = lowToHighIntensityColor(monthlyProgress / 12);
-
-    return GestureDetector(
-      onTap: () {
-        showBottomSheetWithNoAction(
-            context: context,
-            title: "Log Streak",
-            description:
-                "Streak is the number of days you engage in strength training each month, with an ideal target of 12 days.");
+        return GestureDetector(
+          onTap: () {
+            showBottomSheetWithNoAction(
+                context: context,
+                title: "Log Streak",
+                description:
+                    "Streak is the number of days you engage in strength training each month, with an ideal target of 12 days.");
+          },
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(5)),
+            child: FullAnimatedGauge(
+              value: monthlyProgress,
+              min: 0,
+              max: 12,
+              label: "Days",
+            ),
+          ),
+        );
       },
-      child: Container(
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(5)),
-        child: FullAnimatedGauge(
-          value: monthlyProgress,
-          min: 0,
-          max: 12,
-          label: "Days",
-        ),
-      ),
     );
   }
 }
@@ -306,36 +304,36 @@ class _YearlyStreakTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    return Consumer<ExerciseAndRoutineController>(
+      builder: (context, controller, _) {
+        final lastYearRange = yearToDateTimeRange(datetime: DateTime.now());
+        final logsForTheYear =
+            controller.whereLogsIsWithinRange(range: lastYearRange);
+        final yearlyProgress = logsForTheYear.length;
+        final year = DateTime.now().year;
 
-    final lastYearRange = yearToDateTimeRange(datetime: DateTime.now());
-    final logsForTheYear = exerciseAndRoutineController.whereLogsIsWithinRange(
-        range: lastYearRange);
-
-    final yearlyProgress = logsForTheYear.length;
-    final year = DateTime.now().year;
-
-    return GestureDetector(
-      onTap: () {
-        showBottomSheetWithNoAction(
-            context: context,
-            title: "Yearly Streak",
-            description:
-                "Your yearly streak tracks your total training sessions in $year. Hit 12 sessions a month to stay on track for 144 in a year.");
+        return GestureDetector(
+          onTap: () {
+            showBottomSheetWithNoAction(
+                context: context,
+                title: "Yearly Streak",
+                description:
+                    "Your yearly streak tracks your total training sessions in $year. Hit 12 sessions a month to stay on track for 144 in a year.");
+          },
+          child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+                color: vibrantGreen.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(5)),
+            child: FullAnimatedGauge(
+              value: yearlyProgress,
+              min: 0,
+              max: 144,
+              label: "Sessions",
+            ),
+          ),
+        );
       },
-      child: Container(
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-            color: vibrantGreen.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(5)),
-        child: FullAnimatedGauge(
-          value: yearlyProgress,
-          min: 0,
-          max: 144,
-          label: "Sessions",
-        ),
-      ),
     );
   }
 }
@@ -375,8 +373,9 @@ class _ExercisesTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color:
-              isDarkMode ? vibrantGreen.withValues(alpha: 0.1) : vibrantGreen,
+          color: isDarkMode
+              ? Colors.grey.withValues(alpha: 0.1)
+              : Colors.grey.shade300,
           borderRadius: BorderRadius.circular(5)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         FaIcon(
@@ -400,8 +399,9 @@ class _AddTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color:
-              isDarkMode ? Colors.yellow.withValues(alpha: 0.1) : Colors.yellow,
+          color: isDarkMode
+              ? Colors.grey.withValues(alpha: 0.1)
+              : Colors.grey.shade300,
           borderRadius: BorderRadius.circular(5)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         FaIcon(

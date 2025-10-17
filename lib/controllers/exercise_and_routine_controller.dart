@@ -43,19 +43,24 @@ class ExerciseAndRoutineController extends ChangeNotifier {
     _amplifyLogRepository = amplifyLogRepository;
   }
 
-  UnmodifiableListView<ExerciseDto> get exercises => _amplifyExerciseRepository.exercises;
+  UnmodifiableListView<ExerciseDto> get exercises =>
+      _amplifyExerciseRepository.exercises;
 
-  UnmodifiableListView<RoutineTemplateDto> get templates => _amplifyTemplateRepository.templates;
+  UnmodifiableListView<RoutineTemplateDto> get templates =>
+      _amplifyTemplateRepository.templates;
 
-  UnmodifiableListView<RoutinePlanDto> get plans => _amplifyPlanRepository.plans;
+  UnmodifiableListView<RoutinePlanDto> get plans =>
+      _amplifyPlanRepository.plans;
 
   UnmodifiableListView<RoutineLogDto> get logs => _amplifyLogRepository.logs;
 
-  UnmodifiableMapView<String, List<ExerciseLogDto>> get exerciseLogsByExerciseId =>
-      _amplifyLogRepository.exerciseLogsByExerciseId;
+  UnmodifiableMapView<String, List<ExerciseLogDto>>
+      get exerciseLogsByExerciseId =>
+          _amplifyLogRepository.exerciseLogsByExerciseId;
 
-  UnmodifiableMapView<MuscleGroup, List<ExerciseLogDto>> get exerciseLogsByMuscleGroup =>
-      _amplifyLogRepository.exerciseLogsByMuscleGroup;
+  UnmodifiableMapView<MuscleGroup, List<ExerciseLogDto>>
+      get exerciseLogsByMuscleGroup =>
+          _amplifyLogRepository.exerciseLogsByMuscleGroup;
 
   /// Exercises
 
@@ -65,6 +70,7 @@ class ExerciseAndRoutineController extends ChangeNotifier {
 
   void streamExercises({required List<Exercise> exercises}) {
     _amplifyExerciseRepository.loadExerciseStream(exercises: exercises);
+    notifyListeners();
   }
 
   Future<void> saveExercise({required ExerciseDto exerciseDto}) async {
@@ -167,11 +173,13 @@ class ExerciseAndRoutineController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<RoutineTemplateDto?> saveTemplate({required RoutineTemplateDto templateDto}) async {
+  Future<RoutineTemplateDto?> saveTemplate(
+      {required RoutineTemplateDto templateDto}) async {
     RoutineTemplateDto? savedTemplate;
     isLoading = true;
     try {
-      savedTemplate = await _amplifyTemplateRepository.saveTemplate(templateDto: templateDto);
+      savedTemplate = await _amplifyTemplateRepository.saveTemplate(
+          templateDto: templateDto);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving exercise template", error: e);
@@ -217,10 +225,12 @@ class ExerciseAndRoutineController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<RoutineLogDto?> saveLog({required RoutineLogDto logDto, TemporalDateTime? datetime}) async {
+  Future<RoutineLogDto?> saveLog(
+      {required RoutineLogDto logDto, TemporalDateTime? datetime}) async {
     RoutineLogDto? savedLog;
     try {
-      savedLog = await _amplifyLogRepository.saveLog(logDto: logDto, datetime: datetime);
+      savedLog = await _amplifyLogRepository.saveLog(
+          logDto: logDto, datetime: datetime);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving log exercise", error: e);
@@ -287,31 +297,42 @@ class ExerciseAndRoutineController extends ChangeNotifier {
   }
 
   List<RoutineLogDto> whereLogsWithTemplateId({required String templateId}) {
-    return _amplifyLogRepository.whereLogsWithTemplateId(templateId: templateId);
+    return _amplifyLogRepository.whereLogsWithTemplateId(
+        templateId: templateId);
   }
 
-  List<RoutineLogDto> whereLogsWithTemplateName({required String templateName}) {
-    return _amplifyLogRepository.whereLogsWithTemplateName(templateName: templateName);
+  List<RoutineLogDto> whereLogsWithTemplateName(
+      {required String templateName}) {
+    return _amplifyLogRepository.whereLogsWithTemplateName(
+        templateName: templateName);
   }
 
-  List<RoutineLogDto> whereRoutineLogsBefore({required String templateId, required DateTime datetime}) {
-    return _amplifyLogRepository.whereRoutineLogsBefore(templateId: templateId, date: datetime);
+  List<RoutineLogDto> whereRoutineLogsBefore(
+      {required String templateId, required DateTime datetime}) {
+    return _amplifyLogRepository.whereRoutineLogsBefore(
+        templateId: templateId, date: datetime);
   }
 
-  List<ExerciseLogDto> whereExerciseLogsBefore({required ExerciseDto exercise, required DateTime date}) {
-    return _amplifyLogRepository.whereExerciseLogsBefore(exercise: exercise, date: date);
+  List<ExerciseLogDto> whereExerciseLogsBefore(
+      {required ExerciseDto exercise, required DateTime date}) {
+    return _amplifyLogRepository.whereExerciseLogsBefore(
+        exercise: exercise, date: date);
   }
 
   List<SetDto> whereRecentSetsForExercise({required ExerciseDto exercise}) {
     return _amplifyLogRepository.whereRecentSetsForExercise(exercise: exercise);
   }
 
-  List<SetDto> wherePrevSetsForExercise({required ExerciseDto exercise, int? take}) {
-    return _amplifyLogRepository.wherePrevSetsForExercise(exercise: exercise, take: take);
+  List<SetDto> wherePrevSetsForExercise(
+      {required ExerciseDto exercise, int? take}) {
+    return _amplifyLogRepository.wherePrevSetsForExercise(
+        exercise: exercise, take: take);
   }
 
-  List<SetDto> wherePrevSetsGroupForIndex({required ExerciseDto exercise, required int index, int? take}) {
-    return _amplifyLogRepository.wherePrevSetsGroupForIndex(exercise: exercise, index: index, take: take);
+  List<SetDto> wherePrevSetsGroupForIndex(
+      {required ExerciseDto exercise, required int index, int? take}) {
+    return _amplifyLogRepository.wherePrevSetsGroupForIndex(
+        exercise: exercise, index: index, take: take);
   }
 
   /// Exercise Helpers methods
