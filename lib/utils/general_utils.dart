@@ -108,7 +108,8 @@ Future<NotificationsEnabledOptions> checkIosNotificationPermission() async {
           isAlertEnabled: false,
           isBadgeEnabled: false,
           isProvisionalEnabled: false,
-          isCriticalEnabled: false);
+          isCriticalEnabled: false,
+          isProvidesAppNotificationSettingsEnabled: false);
 }
 
 Future<bool> requestNotificationPermission() async {
