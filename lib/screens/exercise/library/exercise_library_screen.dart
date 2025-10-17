@@ -246,6 +246,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Exercise library nudges removed
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
                 child: CSearchBar(
@@ -412,3 +413,5 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     super.dispose();
   }
 }
+
+// Using shared InfoBanner

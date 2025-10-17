@@ -24,7 +24,8 @@ import '../widgets/calendar/calendar_logs.dart';
 import '../widgets/monitors/full_animated_gauge.dart';
 import '../widgets/monthly_insights/log_streak_chart.dart';
 import '../widgets/monthly_insights/volume_chart.dart';
-import '../nudges/nudge_engine.dart';
+import '../nudges/overview_nudges.dart';
+import '../widgets/information_containers/transparent_information_container_lite.dart';
 
 enum TrainingAndVolume {
   training,
@@ -446,36 +447,13 @@ class _SettingsTile extends StatelessWidget {
 class _OverviewNudgeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     return Consumer<ExerciseAndRoutineController>(
       builder: (context, controller, _) {
-        final message = NudgeEngine.buildOverviewNudge(controller: controller);
+        final message = OverviewNudges.build(controller: controller);
         if (message == null) return const SizedBox.shrink();
-
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.info_outline, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  message,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            ],
-          ),
+        return TransparentInformationContainerLite(
+          content: message,
+          useOpacity: true,
         );
       },
     );

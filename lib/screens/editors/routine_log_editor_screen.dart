@@ -497,3 +497,5 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         textStyle: textInfoTextStyle);
   }
 }
+
+// Removed in-session info banner

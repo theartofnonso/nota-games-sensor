@@ -67,6 +67,7 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
                   spacing: 16,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Plans nudge moved to the plan screen
                     children.isNotEmpty
                         ? Expanded(
                             child: GridView.count(

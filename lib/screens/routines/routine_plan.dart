@@ -23,6 +23,8 @@ import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
+import '../../nudges/plans_nudges.dart';
+import '../../widgets/information_containers/transparent_information_container_lite.dart';
 
 class RoutinePlanScreen extends StatefulWidget {
   static const routeName = '/routine_plan_screen';
@@ -116,6 +118,17 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                   spacing: 16,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Builder(builder: (context) {
+                      final controller =
+                          Provider.of<ExerciseAndRoutineController>(context,
+                              listen: false);
+                      final msg = PlansNudges.build(controller: controller);
+                      if (msg == null) return const SizedBox.shrink();
+                      return TransparentInformationContainerLite(
+                        content: msg,
+                        useOpacity: true,
+                      );
+                    }),
                     Text(plan.name,
                         style: TextStyle(
                             fontSize: 20,

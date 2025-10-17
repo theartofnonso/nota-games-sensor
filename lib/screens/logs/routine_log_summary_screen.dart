@@ -27,6 +27,8 @@ import '../../utils/exercise_logs_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../utils/shareables_utils.dart';
 import '../../widgets/dividers/label_divider.dart';
+import '../../nudges/post_summary_nudges.dart';
+import '../../widgets/information_containers/transparent_information_container_lite.dart';
 
 class RoutineLogSummaryScreen extends StatefulWidget {
   static const routeName = '/routine_log_summary_screen';
@@ -111,6 +113,9 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
       routineLogGlobalKey,
     ];
 
+    final postNudge = PostSummaryNudges.build(
+        controller: exerciseAndRoutineController, log: updatedLog);
+
     return Stack(alignment: Alignment.topCenter, children: [
       Scaffold(
         floatingActionButton: FloatingActionButton(
@@ -149,6 +154,14 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                if (postNudge != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                    child: TransparentInformationContainerLite(
+                      content: postNudge,
+                      useOpacity: true,
+                    ),
+                  ),
                 const SizedBox(height: 30),
                 AspectRatio(
                   aspectRatio: 1,
@@ -348,3 +361,5 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
     super.dispose();
   }
 }
+
+// Using shared InfoBanner
