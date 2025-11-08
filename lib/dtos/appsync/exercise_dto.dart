@@ -16,12 +16,12 @@ class ExerciseDto {
   final DateTime updatedAt;
 
   const ExerciseDto({
-    required this.id,
+    this.id = "",
     required this.name,
     required this.type,
     required this.primaryMuscleGroup,
     required this.secondaryMuscleGroups,
-    required this.notes,
+    this.notes = "",
     this.imageUrl,
     this.description,
     required this.owner,

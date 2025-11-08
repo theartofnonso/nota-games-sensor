@@ -43,30 +43,6 @@ class SupabaseRoutinePlanRepository {
     }
   }
 
-  StreamSubscription<List<Map<String, dynamic>>>? _plansSubscription;
-
-  void subscribeToPlans() {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      logger.w('No user logged in, cannot subscribe to plans');
-      return;
-    }
-
-    _plansSubscription = _client
-        .from('routine_plans')
-        .stream(primaryKey: ['id'])
-        .eq('owner', userId)
-        .listen((data) {
-          _plans =
-              data.map((item) => _convertMapToRoutinePlanDto(item)).toList();
-          logger.i('Plans updated via subscription: ${_plans.length}');
-        });
-  }
-
-  void unsubscribe() {
-    _plansSubscription?.cancel();
-  }
-
   Future<RoutinePlanDto> savePlan({required RoutinePlanDto planDto}) async {
     try {
       final userId = _client.auth.currentUser?.id;
@@ -77,9 +53,7 @@ class SupabaseRoutinePlanRepository {
       final now = DateTime.now().toUtc();
       final id = planDto.id.isNotEmpty
           ? planDto.id
-          : _client.auth.currentUser!.id +
-              '_' +
-              DateTime.now().millisecondsSinceEpoch.toString();
+          : '${_client.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}';
 
       await _client.from('routine_plans').insert({
         'id': id,
@@ -157,7 +131,6 @@ class SupabaseRoutinePlanRepository {
 
   void clear() {
     _plans.clear();
-    unsubscribe();
   }
 
   /// Helper method to convert Supabase map to RoutinePlanDto

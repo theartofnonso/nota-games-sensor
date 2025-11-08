@@ -43,31 +43,6 @@ class SupabaseRoutineTemplateRepository {
     }
   }
 
-  StreamSubscription<List<Map<String, dynamic>>>? _templatesSubscription;
-
-  void subscribeToTemplates() {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      logger.w('No user logged in, cannot subscribe to templates');
-      return;
-    }
-
-    _templatesSubscription = _client
-        .from('routine_templates')
-        .stream(primaryKey: ['id'])
-        .eq('owner', userId)
-        .listen((data) {
-          _templates = data
-              .map((item) => _convertMapToRoutineTemplateDto(item))
-              .toList();
-          logger.i('Templates updated via subscription: ${_templates.length}');
-        });
-  }
-
-  void unsubscribe() {
-    _templatesSubscription?.cancel();
-  }
-
   Future<RoutineTemplateDto> saveTemplate(
       {required RoutineTemplateDto templateDto}) async {
     try {
@@ -79,9 +54,7 @@ class SupabaseRoutineTemplateRepository {
       final now = DateTime.now().toUtc();
       final id = templateDto.id.isNotEmpty
           ? templateDto.id
-          : _client.auth.currentUser!.id +
-              '_' +
-              DateTime.now().millisecondsSinceEpoch.toString();
+          : '${_client.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}';
 
       await _client.from('routine_templates').insert({
         'id': id,
@@ -163,7 +136,6 @@ class SupabaseRoutineTemplateRepository {
 
   void clear() {
     _templates.clear();
-    unsubscribe();
   }
 
   /// Helper method to convert Supabase map to RoutineTemplateDto

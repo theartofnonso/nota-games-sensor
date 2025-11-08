@@ -44,7 +44,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final exerciseEditorController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: true);
 
     if (exerciseEditorController.errorMessage.isNotEmpty) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -198,7 +199,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                           child: OpacityButtonWidgetTwo(
                               onPressed: _createExercise,
                               label: "Create Exercise",
-                              buttonColor: Theme.of(context).colors.vibrantAccent),
+                              buttonColor:
+                                  Theme.of(context).colors.vibrantAccent),
                         ),
                       ),
                   ]),
@@ -250,29 +252,27 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
   void _createExercise() async {
     final exerciseName = _exerciseNameController.text.trim();
 
-    if (exerciseName.isEmpty) return;
-
     if (exerciseName.isEmpty) {
       _showSnackbar("Please provide a name for this exercise");
-    } else {
-      final exercise = ExerciseDto(
-          id: "",
-          name: exerciseName,
-          primaryMuscleGroup: _primaryMuscleGroup,
-          secondaryMuscleGroups: [],
-          type: _exerciseType,
-          notes: "",
-          owner: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now());
+      return;
+    }
 
-      await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-          .saveExercise(exerciseDto: exercise);
+    final exercise = ExerciseDto(
+        name: exerciseName,
+        primaryMuscleGroup: _primaryMuscleGroup,
+        secondaryMuscleGroups: [],
+        type: _exerciseType,
+        owner: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now());
 
-      logger.i("created exercise ${exercise.toString()}");
-      if (mounted) {
-        context.pop();
-      }
+    await Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false)
+        .saveExercise(exerciseDto: exercise);
+
+    logger.i("created exercise ${exercise.toString()}");
+    if (mounted) {
+      context.pop();
     }
   }
 
@@ -289,7 +289,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
       final exerciseToBeUpdated = exercise.copyWith(
           name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
-      await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+      await Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false)
           .updateExercise(exercise: exerciseToBeUpdated);
 
       if (mounted) {

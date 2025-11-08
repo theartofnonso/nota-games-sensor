@@ -61,7 +61,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     try {
       await loadLocalExercises();
       await loadUserData();
-      subscribeToRealtimeUpdates();
     } catch (e) {
       logger.e("Error initializing controller", error: e);
       errorMessage = "Failed to initialize. Please restart the app.";
@@ -86,12 +85,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
-  void subscribeToRealtimeUpdates() {
-    _exerciseRepository.subscribeToExercises();
-    _templateRepository.subscribeToTemplates();
-    _planRepository.subscribeToPlans();
-    _logRepository.subscribeToLogs();
-  }
 
   /// Exercises
 
@@ -374,10 +367,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _exerciseRepository.unsubscribe();
-    _templateRepository.unsubscribe();
-    _planRepository.unsubscribe();
-    _logRepository.unsubscribe();
     super.dispose();
   }
 }

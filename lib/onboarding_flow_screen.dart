@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import 'package:tracker_app/colors.dart';
@@ -62,16 +60,18 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                       "Training is tough. Let's tell you what to do instead.",
                       textAlign: TextAlign.start,
                       style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        color: Colors.white70,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       child: OpacityButtonWidgetTwo(
-                          label: "Start training better", onPressed: widget.onPressed, buttonColor: Colors.white),
+                          label: "Start training better",
+                          onPressed: widget.onPressed,
+                          buttonColor: Colors.white),
                     ),
                     const SizedBox(height: 40),
                   ],

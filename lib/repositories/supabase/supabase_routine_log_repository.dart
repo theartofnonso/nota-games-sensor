@@ -87,44 +87,6 @@ class SupabaseRoutineLogRepository {
     }
   }
 
-  StreamSubscription<List<Map<String, dynamic>>>? _logsSubscription;
-
-  void subscribeToLogs() {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      logger.w('No user logged in, cannot subscribe to logs');
-      return;
-    }
-
-    _logsSubscription = _client
-        .from('routine_logs')
-        .stream(primaryKey: ['id'])
-        .eq('owner', userId)
-        .listen((data) {
-          // Filter by date range in memory for stream
-          final dateRange = theLastYearDateTimeRange();
-          final yearAgoUtc = dateRange.start.toUtc();
-          final nowUtc = dateRange.end.toUtc();
-
-          _logs = data
-              .where((item) {
-                final createdAt = DateTime.parse(item['created_at'] as String);
-                return createdAt.isAfter(yearAgoUtc) &&
-                    createdAt.isBefore(nowUtc);
-              })
-              .map((item) => _convertMapToRoutineLogDto(item))
-              .toList();
-          _syncTrainingReminders();
-          _groupExerciseLogsById();
-          _groupExerciseLogsByMuscleGroup();
-          logger.i('Logs updated via subscription: ${_logs.length}');
-        });
-  }
-
-  void unsubscribe() {
-    _logsSubscription?.cancel();
-  }
-
   /// Everytime we sync logs, we refresh the training reminders
   /// First we cancel all notifications previously set when we supported daily notifications,
   /// then pending workout sessions and
@@ -172,9 +134,7 @@ class SupabaseRoutineLogRepository {
       final now = datetime?.toUtc() ?? DateTime.now().toUtc();
       final id = logDto.id.isNotEmpty
           ? logDto.id
-          : _client.auth.currentUser!.id +
-              '_' +
-              DateTime.now().millisecondsSinceEpoch.toString();
+          : '${_client.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}';
 
       await _client.from('routine_logs').insert({
         'id': id,
@@ -394,7 +354,6 @@ class SupabaseRoutineLogRepository {
   void clear() {
     _logs.clear();
     _exerciseLogsByExerciseId.clear();
-    unsubscribe();
   }
 
   /// Helper method to convert Supabase map to RoutineLogDto
