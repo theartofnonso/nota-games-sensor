@@ -12,8 +12,8 @@ class TRKRAppBarTheme {
       titleTextStyle: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey.shade900, fontSize: 16));
 
   static AppBarTheme darkTheme = AppBarTheme(
-      backgroundColor: sapphireDark,
-      foregroundColor: Colors.white,
+      backgroundColor: bgPrimary,
+      foregroundColor: textPrimary,
       actionsIconTheme: TRKRIconTheme.darkTheme,
-      titleTextStyle: TextStyle(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 16));
+      titleTextStyle: TextStyle(fontWeight: FontWeight.w700, color: textPrimary, fontSize: 16));
 }

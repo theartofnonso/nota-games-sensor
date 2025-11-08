@@ -6,27 +6,25 @@ class TRKRInputTextFieldTheme {
 
   static InputDecorationTheme lightTheme = InputDecorationTheme(
     enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12), 
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.black.withOpacity(0.1), width: 1)),
     focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12), 
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: freshGreen.withOpacity(0.3), width: 1.5)),
     filled: true,
     fillColor: lightContainer,
-    hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
-    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
   );
 
   static InputDecorationTheme darkTheme = InputDecorationTheme(
     enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12), 
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1), width: 1)),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: borderLight, width: 1)),
     focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12), 
-        borderSide: BorderSide(color: mutedGreen.withOpacity(0.5), width: 1.5)),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: success.withOpacity(0.5), width: 1.5)),
     filled: true,
-    fillColor: charcoalContainer,
-    hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 15),
-    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    fillColor: bgSecondary,
+    hintStyle: TextStyle(color: textPrimary.withOpacity(0.3), fontSize: 14),
   );
 }

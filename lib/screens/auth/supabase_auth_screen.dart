@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tracker_app/colors.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -14,7 +15,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   bool _otpSent = false;
   final _emailController = TextEditingController();
   final _otpController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -24,7 +24,27 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   }
 
   Future<void> _sendOTP() async {
-    if (!_formKey.currentState!.validate()) return;
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your email'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (!email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid email'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -135,88 +155,59 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Icon(
-                    Icons.fitness_center,
-                    size: 80,
-                    color: theme.colorScheme.primary,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Modern Email Input with integrated button
+                if (!_otpSent)
+                  _ModernEmailInput(
+                    controller: _emailController,
+                    onSubmit: _sendOTP,
+                    isLoading: _isLoading,
+                    isDarkMode: isDarkMode,
                   ),
-                  const SizedBox(height: 24),
+
+                // OTP field (shown after email submitted)
+                if (_otpSent) ...[
+                  _ModernOTPInput(
+                    controller: _otpController,
+                    onSubmit: _verifyOTP,
+                    isLoading: _isLoading,
+                    isDarkMode: isDarkMode,
+                  ),
+                  const SizedBox(height: 16),
                   Text(
-                    'TRACKR',
+                    'Enter the 6-digit code sent to ${_emailController.text.trim()}',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Train Better',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       color: theme.colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
-                  const SizedBox(height: 48),
-
-                  // Modern Email Input with integrated button
-                  if (!_otpSent)
-                    _ModernEmailInput(
-                      controller: _emailController,
-                      onSubmit: _sendOTP,
-                      isLoading: _isLoading,
-                      isDarkMode: isDarkMode,
-                    ),
-
-                  // OTP field (shown after email submitted)
-                  if (_otpSent) ...[
-                    _ModernOTPInput(
-                      controller: _otpController,
-                      onSubmit: _verifyOTP,
-                      isLoading: _isLoading,
-                      isDarkMode: isDarkMode,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Enter the 6-digit code sent to ${_emailController.text.trim()}',
-                      textAlign: TextAlign.center,
+                  const SizedBox(height: 24),
+                  TextButton(
+                    onPressed: _resetForm,
+                    child: Text(
+                      'Use different email',
                       style: TextStyle(
+                        color: theme.colorScheme.primary,
                         fontSize: 14,
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    TextButton(
-                      onPressed: _resetForm,
-                      child: Text(
-                        'Use different email',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary,
-                          fontSize: 14,
-                        ),
+                  ),
+                  TextButton(
+                    onPressed: _isLoading ? null : _sendOTP,
+                    child: Text(
+                      'Resend code',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary.withOpacity(0.7),
+                        fontSize: 14,
                       ),
                     ),
-                    TextButton(
-                      onPressed: _isLoading ? null : _sendOTP,
-                      child: Text(
-                        'Resend code',
-                        style: TextStyle(
-                          color: theme.colorScheme.primary.withOpacity(0.7),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
@@ -251,10 +242,9 @@ class _ModernEmailInput extends StatelessWidget {
           width: 1,
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
       child: Row(
         children: [
-          const SizedBox(width: 16),
           Icon(
             Icons.email_outlined,
             color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -262,7 +252,7 @@ class _ModernEmailInput extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: TextFormField(
+            child: TextField(
               controller: controller,
               style: TextStyle(
                 color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800,
@@ -271,47 +261,40 @@ class _ModernEmailInput extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: 'your@email.com',
                 hintStyle: TextStyle(
-                  color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                  color:
+                      isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
                   fontSize: 15,
                 ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
+                filled: false,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
-                }
-                if (!value.contains('@')) {
-                  return 'Please enter a valid email';
-                }
-                return null;
-              },
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: isLoading ? null : onSubmit,
               borderRadius: BorderRadius.circular(50),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFF3A5C4A),
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: isLoading
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
+                    ? SizedBox(
+                        height: 18,
+                        width: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.grey.shade300),
                         ),
                       )
                     : Row(
@@ -322,7 +305,6 @@ class _ModernEmailInput extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.grey.shade300,
                               fontSize: 15,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -336,7 +318,6 @@ class _ModernEmailInput extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 4),
         ],
       ),
     );
@@ -369,10 +350,9 @@ class _ModernOTPInput extends StatelessWidget {
           width: 1,
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
       child: Row(
         children: [
-          const SizedBox(width: 16),
           Icon(
             Icons.lock_outline,
             color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -380,7 +360,7 @@ class _ModernOTPInput extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: TextFormField(
+            child: TextField(
               controller: controller,
               style: TextStyle(
                 color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800,
@@ -390,16 +370,16 @@ class _ModernOTPInput extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: '000000',
                 hintStyle: TextStyle(
-                  color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                  color:
+                      isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
                   fontSize: 15,
                   letterSpacing: 4,
                 ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
+                filled: false,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 counterText: '',
               ),
               keyboardType: TextInputType.number,
@@ -412,25 +392,27 @@ class _ModernOTPInput extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: isLoading ? null : onSubmit,
               borderRadius: BorderRadius.circular(50),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFF3A5C4A),
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: isLoading
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
+                    ? SizedBox(
+                        height: 18,
+                        width: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.grey.shade300),
                         ),
                       )
                     : Row(
@@ -441,7 +423,6 @@ class _ModernOTPInput extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.grey.shade300,
                               fontSize: 15,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -455,7 +436,6 @@ class _ModernOTPInput extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 4),
         ],
       ),
     );
