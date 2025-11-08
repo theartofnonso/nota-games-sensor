@@ -17,7 +17,7 @@ import 'package:tracker_app/utils/routine_editors_utils.dart';
 import 'package:tracker_app/widgets/routine/editors/exercise_log_grid_item.dart';
 import 'package:tracker_app/widgets/timers/stopwatch_timer.dart';
 
-import '../../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/routine_editor_type_enums.dart';
@@ -180,7 +180,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
           },
           leftActionLabel: 'Cancel',
           rightActionLabel: 'End',
-          rightActionColor: vibrantGreen);
+          rightActionColor: Theme.of(context).colors.vibrantAccent);
     } else {
       showBottomSheetWithNoAction(
           context: context,
@@ -353,7 +353,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                         child: SizedBox(
                             width: double.infinity,
                             child: OpacityButtonWidgetTwo(
-                              buttonColor: vibrantGreen,
+                              buttonColor: Theme.of(context).colors.vibrantAccent,
                               label: widget.mode == RoutineEditorMode.log
                                   ? "Finish Session"
                                   : "Update Session",

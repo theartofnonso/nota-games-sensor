@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tracker_app/colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -231,14 +231,15 @@ class _ModernEmailInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.extension<TRKRColors>()!;
+
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF212121) : Colors.grey.shade100,
+        color: colors.containerBackground,
         borderRadius: BorderRadius.circular(50),
         border: Border.all(
-          color: isDarkMode
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.1),
+          color: colors.borderLight,
           width: 1,
         ),
       ),
@@ -247,7 +248,7 @@ class _ModernEmailInput extends StatelessWidget {
         children: [
           Icon(
             Icons.email_outlined,
-            color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            color: colors.textSecondary,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -255,14 +256,13 @@ class _ModernEmailInput extends StatelessWidget {
             child: TextField(
               controller: controller,
               style: TextStyle(
-                color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800,
+                color: theme.colorScheme.onSurface,
                 fontSize: 15,
               ),
               decoration: InputDecoration(
                 hintText: 'your@email.com',
                 hintStyle: TextStyle(
-                  color:
-                      isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                  color: colors.textSecondary,
                   fontSize: 15,
                 ),
                 border: InputBorder.none,
@@ -284,7 +284,7 @@ class _ModernEmailInput extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3A5C4A),
+                  color: colors.mutedGreen,
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: isLoading
@@ -294,7 +294,7 @@ class _ModernEmailInput extends StatelessWidget {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.grey.shade300),
+                              colors.textSecondary),
                         ),
                       )
                     : Row(
@@ -303,14 +303,14 @@ class _ModernEmailInput extends StatelessWidget {
                           Text(
                             'continue',
                             style: TextStyle(
-                              color: Colors.grey.shade300,
+                              color: colors.textSecondary,
                               fontSize: 15,
                             ),
                           ),
                           const SizedBox(width: 8),
                           FaIcon(
                             FontAwesomeIcons.arrowRight,
-                            color: Colors.grey.shade300,
+                            color: colors.textSecondary,
                             size: 14,
                           ),
                         ],
@@ -339,14 +339,15 @@ class _ModernOTPInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.extension<TRKRColors>()!;
+
     return Container(
       decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF212121) : Colors.grey.shade100,
+        color: colors.containerBackground,
         borderRadius: BorderRadius.circular(50),
         border: Border.all(
-          color: isDarkMode
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.1),
+          color: colors.borderLight,
           width: 1,
         ),
       ),
@@ -355,7 +356,7 @@ class _ModernOTPInput extends StatelessWidget {
         children: [
           Icon(
             Icons.lock_outline,
-            color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            color: colors.textSecondary,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -363,15 +364,14 @@ class _ModernOTPInput extends StatelessWidget {
             child: TextField(
               controller: controller,
               style: TextStyle(
-                color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800,
+                color: theme.colorScheme.onSurface,
                 fontSize: 15,
                 letterSpacing: 4,
               ),
               decoration: InputDecoration(
                 hintText: '000000',
                 hintStyle: TextStyle(
-                  color:
-                      isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                  color: colors.textSecondary,
                   fontSize: 15,
                   letterSpacing: 4,
                 ),
@@ -402,7 +402,7 @@ class _ModernOTPInput extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3A5C4A),
+                  color: colors.mutedGreen,
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: isLoading
@@ -412,7 +412,7 @@ class _ModernOTPInput extends StatelessWidget {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.grey.shade300),
+                              colors.textSecondary),
                         ),
                       )
                     : Row(
@@ -421,14 +421,14 @@ class _ModernOTPInput extends StatelessWidget {
                           Text(
                             'verify',
                             style: TextStyle(
-                              color: Colors.grey.shade300,
+                              color: colors.textSecondary,
                               fontSize: 15,
                             ),
                           ),
                           const SizedBox(width: 8),
                           FaIcon(
                             FontAwesomeIcons.arrowRight,
-                            color: Colors.grey.shade300,
+                            color: colors.textSecondary,
                             size: 14,
                           ),
                         ],

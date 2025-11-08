@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../colors.dart';
 import '../../enums/muscle_group_enums.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class MuscleGroupFamilyFrequencyChart extends StatelessWidget {
   final Map<MuscleGroup, double> frequencyData;
@@ -66,7 +66,7 @@ class _LinearBar extends StatelessWidget {
               children: [
                 LinearProgressIndicator(
                   value: frequency,
-                  backgroundColor: isDarkMode || forceDarkMode ? sapphireDark80 : Colors.grey.shade400,
+                  backgroundColor: isDarkMode || forceDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade400,
                   color: isDarkMode || forceDarkMode ? Colors.white : Colors.black,
                   minHeight: 25,
                   borderRadius: BorderRadius.circular(3.0), // Border r

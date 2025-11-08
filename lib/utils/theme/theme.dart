@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/utils/theme/app_bar_theme.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 import 'package:tracker_app/utils/theme/floating_action_button_theme.dart';
 import 'package:tracker_app/utils/theme/input_textfield_theme.dart';
 import 'package:tracker_app/utils/theme/navigation_bar_theme.dart';
@@ -44,7 +45,8 @@ class TRKRTheme {
       ),
       menuBarTheme: TRKRMenuBarTheme.lightTheme,
       textSelectionTheme: TextSelectionThemeData(cursorColor: Colors.white),
-      floatingActionButtonTheme: TRKRFloatingActionButtonTheme.lightTheme);
+      floatingActionButtonTheme: TRKRFloatingActionButtonTheme.lightTheme,
+      extensions: const [TRKRColors.light]);
 
   static ThemeData darkTheme = ThemeData(
       colorScheme: const ColorScheme(
@@ -76,5 +78,6 @@ class TRKRTheme {
       ),
       menuBarTheme: TRKRMenuBarTheme.darkTheme,
       textSelectionTheme: TextSelectionThemeData(cursorColor: Colors.white),
-      navigationBarTheme: TRKRNavigationBarTheme.darkTheme);
+      navigationBarTheme: TRKRNavigationBarTheme.darkTheme,
+      extensions: const [TRKRColors.dark]);
 }

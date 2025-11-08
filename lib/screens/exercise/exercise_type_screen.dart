@@ -3,8 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tracker_app/utils/general_utils.dart';
 
-import '../../colors.dart';
 import '../../enums/exercise_type_enums.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class ExerciseTypeScreen extends StatelessWidget {
   final ExerciseType exerciseType;
@@ -48,8 +48,8 @@ class ExerciseTypeScreen extends StatelessWidget {
                           onTap: () => _selectExerciseType(
                               type: exerciseTypes[index], context: context),
                           leading: type == exerciseType
-                              ? const FaIcon(FontAwesomeIcons.solidSquareCheck,
-                                  color: vibrantGreen)
+                              ? FaIcon(FontAwesomeIcons.solidSquareCheck,
+                                  color: Theme.of(context).colors.vibrantAccent)
                               : const FaIcon(FontAwesomeIcons.solidSquareCheck),
                           trailing: _TrailingWidget(type: exerciseTypes[index]),
                           title: Text(exerciseTypes[index].name),

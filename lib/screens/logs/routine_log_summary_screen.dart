@@ -17,7 +17,6 @@ import 'package:tracker_app/widgets/shareables/pbs_shareable.dart';
 import 'package:tracker_app/widgets/shareables/routine_log_shareable_lite.dart';
 import 'package:tracker_app/widgets/shareables/session_milestone_shareable.dart';
 
-import '../../colors.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../enums/posthog_analytics_event.dart';
@@ -29,6 +28,7 @@ import '../../utils/shareables_utils.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../nudges/post_summary_nudges.dart';
 import '../../widgets/information_containers/transparent_information_container_lite.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class RoutineLogSummaryScreen extends StatefulWidget {
   static const routeName = '/routine_log_summary_screen';
@@ -179,7 +179,7 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
                   controller: _pageController,
                   count: pages.length,
                   effect:
-                      const ExpandingDotsEffect(activeDotColor: vibrantGreen),
+                      ExpandingDotsEffect(activeDotColor: Theme.of(context).colors.vibrantAccent),
                 ),
               ],
             ),
@@ -312,7 +312,7 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
               LabelDivider(
                 label: "Don't like the vibe?",
                 labelColor: isDarkMode ? Colors.white70 : Colors.black,
-                dividerColor: sapphireLighter,
+                dividerColor: Theme.of(context).colors.dividerColor,
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,

@@ -10,7 +10,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/screens/request_screens/notifications_request.dart';
 import 'package:tracker_app/shared_prefs.dart';
 import 'package:tracker_app/urls.dart';
@@ -23,6 +22,7 @@ import '../../utils/uri_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 enum WeightUnit {
   kg("kg"),
@@ -124,7 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 label: "Notifications",
                                 labelColor:
                                     isDarkMode ? Colors.white : Colors.black,
-                                dividerColor: sapphireLighter,
+                                dividerColor: Theme.of(context).colors.dividerColor,
                                 fontSize: 14,
                               ),
                               const SizedBox(height: 8),
@@ -173,8 +173,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   subtitle: Text("Choose kg or lbs"),
                   trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
                     backgroundColor:
-                        isDarkMode ? sapphireDark : Colors.grey.shade400,
-                    thumbColor: isDarkMode ? sapphireDark80 : Colors.white,
+                        isDarkMode ? Theme.of(context).colors.sapphireDark : Colors.grey.shade400,
+                    thumbColor: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.white,
                     groupValue: _weightUnit,
                     children: {
                       WeightUnit.kg: SizedBox(
@@ -271,7 +271,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false).clear();
     }
   }
-
 
   void _turnOnNotification() async {
     if (!_notificationEnabled) {

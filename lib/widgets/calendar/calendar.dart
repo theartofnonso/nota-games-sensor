@@ -3,11 +3,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:tracker_app/colors.dart';
+
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/utils/date_utils.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class _DateViewModel {
   final DateTime dateTime;
@@ -331,12 +332,12 @@ class _Day extends StatelessWidget {
     required this.isDarkMode,
   });
 
-  Color _getBackgroundColor() => hasRoutineLog
-      ? (isDarkMode ? vibrantGreen.withValues(alpha: 0.1) : vibrantGreen)
-      : (isDarkMode ? sapphireDark80.withValues(alpha: 0.5) : Colors.grey.shade200);
+  Color _getBackgroundColor(BuildContext context) => hasRoutineLog
+      ? (isDarkMode ? Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.1) : Theme.of(context).colors.vibrantAccent)
+      : (isDarkMode ? Theme.of(context).colors.sapphireDark80.withValues(alpha: 0.5) : Colors.grey.shade200);
 
-  Color _getTextColor() =>
-      hasRoutineLog ? (isDarkMode ? vibrantGreen : Colors.black) : (isDarkMode ? Colors.white : Colors.black);
+  Color _getTextColor(BuildContext context) =>
+      hasRoutineLog ? (isDarkMode ? Theme.of(context).colors.vibrantAccent : Colors.black) : (isDarkMode ? Colors.white : Colors.black);
 
   Border? _dateBorder() {
     if (selected) return Border.all(color: Colors.blueGrey, width: 2);
@@ -353,11 +354,11 @@ class _Day extends StatelessWidget {
         decoration: BoxDecoration(border: _dateBorder(), borderRadius: BorderRadius.circular(2)),
         child: Container(
           margin: const EdgeInsets.all(2),
-          decoration: BoxDecoration(color: _getBackgroundColor(), borderRadius: BorderRadius.circular(2)),
+          decoration: BoxDecoration(color: _getBackgroundColor(context), borderRadius: BorderRadius.circular(2)),
           child: Center(
             child: Text(
               "${dateTime.day}",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _getTextColor()),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _getTextColor(context)),
             ),
           ),
         ),

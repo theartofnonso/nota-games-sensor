@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 
-import '../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class CSearchBar extends StatelessWidget {
   final Function(String) onChanged;
@@ -30,7 +30,7 @@ class CSearchBar extends StatelessWidget {
         hintText: hintText,
         hintStyle: WidgetStatePropertyAll<TextStyle>(TextStyle(color: Colors.white70)),
         textStyle: WidgetStatePropertyAll<TextStyle>(TextStyle(color: Colors.white)),
-        backgroundColor: WidgetStatePropertyAll<Color>(sapphireDark),
+        backgroundColor: WidgetStatePropertyAll<Color>(Theme.of(context).colors.sapphireDark),
         shape: WidgetStatePropertyAll<OutlinedBorder>(RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(5.0),
         )));

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class ListTileEmptyState extends StatelessWidget {
 
@@ -19,7 +18,7 @@ class ListTileEmptyState extends StatelessWidget {
             width: 160,
             height: 10,
             decoration: BoxDecoration(
-              color: isDarkMode ? sapphireDark : Colors.grey.shade600,
+              color: isDarkMode ? Theme.of(context).colors.sapphireDark : Colors.grey.shade600,
               borderRadius: BorderRadius.circular(10.0), // Adjust the radius as needed
             )),
         const SizedBox(height: 5),
@@ -27,7 +26,7 @@ class ListTileEmptyState extends StatelessWidget {
             width: 100,
             height: 10,
             decoration: BoxDecoration(
-              color: isDarkMode ? sapphireDark : Colors.grey.shade600,
+              color: isDarkMode ? Theme.of(context).colors.sapphireDark : Colors.grey.shade600,
               borderRadius: BorderRadius.circular(10.0), // Adjust the radius as needed
             ))
       ],

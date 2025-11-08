@@ -1,7 +1,5 @@
 
-
 import 'package:flutter/material.dart';
-import 'package:tracker_app/colors.dart';
 
 /// A horizontal progress bar that displays an [icon] sliding along the track
 /// proportionally to the current [progress] value.
@@ -21,7 +19,7 @@ class IconProgressBar extends StatelessWidget {
   final Color backgroundColor;
 
   /// Color of the filled portion of the track.
-  final Color fillColor;
+  final Color? fillColor;
 
   /// Widget displayed as the sliding indicator. (Often an [Icon]).
   final Widget icon;
@@ -38,7 +36,7 @@ class IconProgressBar extends StatelessWidget {
     required this.icon,
     this.height = 8,
     this.backgroundColor = const Color(0xFFE0E0E0),
-    this.fillColor = vibrantGreen,
+    this.fillColor,
     this.iconSize = 24,
     this.animationDuration = const Duration(milliseconds: 800),
   }) : assert(progress >= 0 && progress <= 1, 'progress must be between 0 and 1');
@@ -68,7 +66,7 @@ class IconProgressBar extends StatelessWidget {
               height: height,
               width: trackWidth * progress,
               decoration: BoxDecoration(
-                color: fillColor,
+                color: fillColor ?? Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

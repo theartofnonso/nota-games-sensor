@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import 'package:tracker_app/colors.dart';
+import 'package:flutter/material.dart';
+
 import 'package:tracker_app/widgets/buttons/opacity_button_widget.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class DoubleGenericPicker<T> extends StatefulWidget {
   /// The initially selected item (optional).
@@ -134,7 +136,7 @@ class _DoubleGenericPickerState<T> extends State<DoubleGenericPicker<T>> {
             };
             widget.onItemSelected(selectedItem);
           },
-          buttonColor: vibrantGreen,
+          buttonColor: Theme.of(context).colors.vibrantAccent,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           label: "Select ${widget.firstLabelBuilder(_firstSelectedItem)} ${widget.secondLabelBuilder(_secondSelectedItem)}",
         ),

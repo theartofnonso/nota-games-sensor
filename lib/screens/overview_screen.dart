@@ -5,7 +5,6 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_plan_grid_item.dart';
@@ -26,6 +25,7 @@ import '../widgets/monthly_insights/log_streak_chart.dart';
 import '../widgets/monthly_insights/volume_chart.dart';
 import '../nudges/overview_nudges.dart';
 import '../widgets/information_containers/transparent_information_container_lite.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 enum TrainingAndVolume {
   training,
@@ -146,8 +146,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       const Spacer(),
                       CupertinoSlidingSegmentedControl<TrainingAndVolume>(
                         backgroundColor:
-                            isDarkMode ? sapphireDark : Colors.grey.shade400,
-                        thumbColor: isDarkMode ? sapphireDark80 : Colors.white,
+                            isDarkMode ? Theme.of(context).colors.sapphireDark : Colors.grey.shade400,
+                        thumbColor: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.white,
                         groupValue: _trainingAndVolume,
                         children: {
                           TrainingAndVolume.training: SizedBox(
@@ -327,7 +327,7 @@ class _YearlyStreakTile extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-                color: vibrantGreen.withValues(alpha: 0.1),
+                color: Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(5)),
             child: FullAnimatedGauge(
               value: yearlyProgress,
@@ -353,7 +353,7 @@ class _RoutinePlansHomeTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: isDarkMode ? vibrantBlue.withValues(alpha: 0.1) : vibrantBlue,
+          color: isDarkMode ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1) : Theme.of(context).colorScheme.secondary,
           borderRadius: BorderRadius.circular(5)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         FaIcon(

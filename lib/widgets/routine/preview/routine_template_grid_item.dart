@@ -3,10 +3,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 
-import '../../../colors.dart';
 import '../../../dtos/appsync/routine_template_dto.dart';
 import '../../../utils/string_utils.dart';
 import '../../icons/custom_icon.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class RoutineTemplateGridItemWidget extends StatelessWidget {
   final RoutineTemplateDto template;
@@ -28,7 +28,7 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: isDarkMode ? sapphireDark80 : Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+              color: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
           child: Column(spacing: 14, crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (plan != null)
               Text("In ${plan?.name}",
@@ -48,7 +48,7 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
             ),
             Wrap(
               children: [
-                CustomIcon(FontAwesomeIcons.personWalking, color: vibrantGreen, width: 20, height: 20, iconSize: 10.5,),
+                CustomIcon(FontAwesomeIcons.personWalking, color: Theme.of(context).colors.vibrantAccent, width: 20, height: 20, iconSize: 10.5,),
                 const SizedBox(
                   width: 6,
                 ),

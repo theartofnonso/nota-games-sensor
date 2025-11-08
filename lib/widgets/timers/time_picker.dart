@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import 'package:tracker_app/colors.dart';
+import 'package:flutter/material.dart';
 
 import '../buttons/opacity_button_widget_two.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class TimePicker extends StatefulWidget {
   final Duration? initialDuration;
@@ -42,7 +43,7 @@ class _TimerPickerState extends State<TimePicker> {
           child: OpacityButtonWidgetTwo(
               onPressed: () => widget.onDurationChanged(_duration),
               label: "Select duration",
-              buttonColor: vibrantGreen,),
+              buttonColor: Theme.of(context).colors.vibrantAccent,),
         )
       ],
     );

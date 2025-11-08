@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 /// TRNR Theme Glassmorphism Container
 /// 
@@ -39,10 +39,10 @@ class GlassContainer extends StatelessWidget {
           height: height,
           padding: padding,
           decoration: BoxDecoration(
-            color: _getBackgroundColor(),
+            color: _getBackgroundColor(context),
             borderRadius: effectiveBorderRadius,
-            border: border ?? _getDefaultBorder(),
-            boxShadow: _getShadow(),
+            border: border ?? _getDefaultBorder(context),
+            boxShadow: _getShadow(context),
           ),
           child: child,
         ),
@@ -50,29 +50,29 @@ class GlassContainer extends StatelessWidget {
     );
   }
 
-  Color _getBackgroundColor() {
+  Color _getBackgroundColor(BuildContext context) {
     switch (style) {
       case GlassStyle.light:
-        return glassLight;
+        return Theme.of(context).colors.glassLight;
       case GlassStyle.medium:
-        return glassMedium;
+        return Theme.of(context).colors.glassMedium;
       case GlassStyle.dark:
-        return glassDark;
+        return Theme.of(context).colors.glassDark;
     }
   }
 
-  Border _getDefaultBorder() {
+  Border _getDefaultBorder(BuildContext context) {
     switch (style) {
       case GlassStyle.light:
-        return Border.all(color: borderLight, width: 1);
+        return Border.all(color: Theme.of(context).colors.borderLight, width: 1);
       case GlassStyle.medium:
-        return Border.all(color: borderMedium, width: 1);
+        return Border.all(color: Theme.of(context).colors.borderMedium, width: 1);
       case GlassStyle.dark:
-        return Border.all(color: borderSubtle, width: 1);
+        return Border.all(color: Theme.of(context).colors.borderSubtle, width: 1);
     }
   }
 
-  List<BoxShadow> _getShadow() {
+  List<BoxShadow> _getShadow(BuildContext context) {
     switch (style) {
       case GlassStyle.light:
         return [
@@ -102,196 +102,156 @@ class GlassContainer extends StatelessWidget {
   }
 }
 
-enum GlassStyle {
-  light,  // backdrop-blur-xl bg-white/5 border-white/10
-  medium, // backdrop-blur-xl bg-white/10 border-white/20
-  dark,   // backdrop-blur-xl bg-zinc-900/30 border-white/5
-}
+/// Glass Styles
+enum GlassStyle { light, medium, dark }
 
-/// Glass Button with TRNR styling
-class GlassButton extends StatelessWidget {
-  final VoidCallback? onPressed;
-  final Widget child;
-  final GlowState glowState;
-  final BorderRadius? borderRadius;
-  final EdgeInsetsGeometry? padding;
-
-  const GlassButton({
-    super.key,
-    required this.onPressed,
-    required this.child,
-    this.glowState = GlowState.idle,
-    this.borderRadius,
-    this.padding,
-  });
+/// Example Usage Widget
+/// 
+/// This demonstrates how to use the glass container in different scenarios
+class GlassContainerExample extends StatelessWidget {
+  const GlassContainerExample({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderRadius = borderRadius ?? BorderRadius.circular(9999);
-    
-    return ClipRRect(
-      borderRadius: effectiveBorderRadius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onPressed,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-              padding: padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: glassLight,
-                borderRadius: effectiveBorderRadius,
-                border: Border.all(color: borderLight, width: 1),
-                boxShadow: _getGlowShadow(),
-              ),
-              child: DefaultTextStyle(
-                style: TextStyle(
-                  color: textPrimary.withOpacity(0.7),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-                child: child,
-              ),
-            ),
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).colors.glassLight,
+              Theme.of(context).colors.glassMedium,
+            ],
           ),
         ),
-      ),
-    );
-  }
-
-  List<BoxShadow> _getGlowShadow() {
-    switch (glowState) {
-      case GlowState.idle:
-        return [
-          BoxShadow(
-            color: successGlow,
-            blurRadius: 20,
-            spreadRadius: 8,
-          ),
-        ];
-      case GlowState.active:
-        return [
-          BoxShadow(
-            color: infoGlow,
-            blurRadius: 20,
-            spreadRadius: 8,
-          ),
-        ];
-      case GlowState.error:
-        return [
-          BoxShadow(
-            color: errorGlow,
-            blurRadius: 20,
-            spreadRadius: 8,
-          ),
-        ];
-      case GlowState.none:
-        return [];
-    }
-  }
-}
-
-enum GlowState {
-  idle,   // Green glow
-  active, // Blue glow
-  error,  // Red glow
-  none,   // No glow
-}
-
-/// Status Indicator with glassmorphic styling
-class StatusIndicator extends StatelessWidget {
-  final String label;
-  final StatusType type;
-
-  const StatusIndicator({
-    super.key,
-    required this.label,
-    required this.type,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(9999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: _getBackgroundColor(),
-            borderRadius: BorderRadius.circular(9999),
-            border: Border.all(color: _getBorderColor(), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: _getGlowColor(),
-                blurRadius: 12,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Light glass
+              GlassContainer(
+                style: GlassStyle.light,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.wb_sunny_outlined,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Light Glass',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Medium glass (default)
+              GlassContainer(
+                padding: const EdgeInsets.all(24),
+                width: 300,
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.cloud_outlined,
+                      size: 48,
+                      color: Theme.of(context).colors.successGlow,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Medium Glass',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Dark glass
+              GlassContainer(
+                style: GlassStyle.dark,
+                padding: const EdgeInsets.all(24),
+                borderRadius: BorderRadius.circular(24),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.nightlight_outlined,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Dark Glass',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: _getTextColor(),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ),
       ),
     );
   }
+}
 
-  Color _getBackgroundColor() {
-    switch (type) {
+// Additional utilities for glass effects
+
+/// Glass Status Container
+/// 
+/// A specialized glass container with status-based styling
+class GlassStatusContainer extends StatelessWidget {
+  final Widget child;
+  final StatusType status;
+  final EdgeInsetsGeometry? padding;
+  final BorderRadius? borderRadius;
+
+  const GlassStatusContainer({
+    super.key,
+    required this.child,
+    required this.status,
+    this.padding,
+    this.borderRadius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      style: GlassStyle.medium,
+      padding: padding ?? const EdgeInsets.all(16),
+      borderRadius: borderRadius,
+      border: Border.all(
+        color: _getStatusBorderColor(context),
+        width: 1.5,
+      ),
+      child: child,
+    );
+  }
+
+  Color _getStatusBorderColor(BuildContext context) {
+    switch (status) {
       case StatusType.success:
-        return const Color(0x99064e3b); // emerald-950/60
-      case StatusType.info:
-        return const Color(0x99172554); // blue-950/60
+        return Theme.of(context).colorScheme.primary.withOpacity(0.4);
+      case StatusType.warning:
+        return Colors.orange.withOpacity(0.4);
       case StatusType.error:
-        return const Color(0x99450a0a); // red-950/60
+        return Theme.of(context).colorScheme.error.withOpacity(0.4);
+      case StatusType.info:
+        return Theme.of(context).colorScheme.secondary.withOpacity(0.4);
     }
   }
 
-  Color _getBorderColor() {
-    switch (type) {
-      case StatusType.success:
-        return success.withOpacity(0.4);
-      case StatusType.info:
-        return info.withOpacity(0.4);
-      case StatusType.error:
-        return error.withOpacity(0.4);
-    }
-  }
-
-  Color _getGlowColor() {
-    switch (type) {
-      case StatusType.success:
-        return successGlow;
-      case StatusType.info:
-        return infoGlow;
-      case StatusType.error:
-        return errorGlow;
-    }
-  }
-
-  Color _getTextColor() {
-    switch (type) {
-      case StatusType.success:
-        return const Color(0xFF6ee7b7); // emerald-300
-      case StatusType.info:
-        return const Color(0xFF93c5fd); // blue-300
-      case StatusType.error:
-        return const Color(0xFFfca5a5); // red-300
-    }
-  }
 }
 
 enum StatusType {
   success,
-  info,
+  warning,
   error,
+  info,
 }
-

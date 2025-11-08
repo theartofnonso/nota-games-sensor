@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
-import '../../../colors.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/routine_plan_dto.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/string_utils.dart';
 import '../../icons/custom_icon.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class RoutinePlanGridItemWidget extends StatelessWidget {
   final RoutinePlanDto plan;
@@ -36,7 +36,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: isDarkMode ? sapphireDark80 : Colors.grey.shade200,
+              color: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(radius)),
           child: Column(
               spacing: 12,
@@ -57,7 +57,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                       children: [
                         CustomIcon(
                           FontAwesomeIcons.personWalking,
-                          color: vibrantGreen,
+                          color: Theme.of(context).colors.vibrantAccent,
                           width: 20,
                           height: 20,
                           iconSize: 10.5,
@@ -77,7 +77,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                       children: [
                         CustomIcon(
                           FontAwesomeIcons.hashtag,
-                          color: vibrantBlue,
+                          color: Theme.of(context).colorScheme.secondary,
                           width: 20,
                           height: 20,
                           iconSize: 10.5,

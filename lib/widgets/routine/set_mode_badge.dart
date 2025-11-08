@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tracker_app/dtos/set_dtos/set_dto.dart';
-
-import '../../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class SetModeBadge extends StatelessWidget {
   final SetDto setDto;
@@ -26,13 +25,13 @@ class SetModeBadge extends StatelessWidget {
             height: 18,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: isDarkMode ? vibrantGreen.withValues(alpha: 0.1) : vibrantGreen,
+              color: isDarkMode ? Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.1) : Theme.of(context).colors.vibrantAccent,
               borderRadius: BorderRadius.circular(3),
             ),
             child: Center(
               child: FaIcon(
                 FontAwesomeIcons.w,
-                color: isDarkMode ? vibrantGreen : Colors.black,
+                color: isDarkMode ? Theme.of(context).colors.vibrantAccent : Colors.black,
                 size: 8,
               ),
             )),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 import '../../../../dtos/pb_dto.dart';
 import '../../../pbs/pb_icon.dart';
 
@@ -30,7 +30,7 @@ class SingleSetRow extends StatelessWidget {
         label: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4),
           decoration: BoxDecoration(
-            color: pbs.isNotEmpty ? (isDarkMode ? sapphireDark80 : Colors.grey.shade200) : null,
+            color: pbs.isNotEmpty ? (isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200) : null,
             borderRadius: BorderRadius.circular(5), // Rounded corners
           ),
           child: Row(spacing: 6, children: pbsForSet),

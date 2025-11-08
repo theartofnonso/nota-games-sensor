@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class ThemeListTile extends StatelessWidget {
   final Widget child;
@@ -13,7 +13,7 @@ class ThemeListTile extends StatelessWidget {
 
     return Container(
         decoration: BoxDecoration(
-          color: isDarkMode ? sapphireDark80 : Colors.grey.shade200, // Background color
+          color: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200, // Background color
           borderRadius: BorderRadius.circular(5), // Rounded corners
         ),
         child: child);

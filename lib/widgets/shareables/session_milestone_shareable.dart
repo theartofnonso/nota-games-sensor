@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
-
-import '../../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 GlobalKey sessionMilestoneGlobalKey = GlobalKey();
 
@@ -32,12 +30,12 @@ class SessionMilestoneShareable extends StatelessWidget {
                     )
                   : null,
               gradient: imageFile == null
-                  ? const LinearGradient(
+                  ? LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        sapphireDark80,
-                        sapphireDark,
+                        Theme.of(context).colors.sapphireDark80,
+                        Theme.of(context).colors.sapphireDark,
                       ],
                     )
                   : null,
@@ -51,8 +49,8 @@ class SessionMilestoneShareable extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      sapphireDark.withValues(alpha: 0.4),
-                      sapphireDark,
+                      Theme.of(context).colors.sapphireDark.withValues(alpha: 0.4),
+                      Theme.of(context).colors.sapphireDark,
                     ],
                   )),
                 )),
@@ -60,7 +58,7 @@ class SessionMilestoneShareable extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const FaIcon(FontAwesomeIcons.award, color: vibrantGreen, size: 40),
+                    FaIcon(FontAwesomeIcons.award, color: Theme.of(context).colors.vibrantAccent, size: 40),
                     const SizedBox(height: 20),
                     Text(label,
                         style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),

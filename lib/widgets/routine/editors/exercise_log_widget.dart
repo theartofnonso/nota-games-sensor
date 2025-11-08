@@ -22,7 +22,6 @@ import 'package:tracker_app/widgets/routine/editors/set_rows/duration_set_row.da
 import 'package:tracker_app/widgets/routine/editors/set_rows/reps_set_row.dart';
 import 'package:tracker_app/widgets/routine/editors/set_rows/weights_and_reps_set_row.dart';
 
-import '../../../colors.dart';
 import '../../../dtos/set_dtos/reps_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
@@ -35,6 +34,7 @@ import '../../empty_states/no_list_empty_state.dart';
 import '../../information_containers/transparent_information_container_lite.dart';
 import '../../timers/duration_stopwatch_widget.dart';
 import '../../weight_plate_calculator.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
@@ -980,7 +980,7 @@ class _OneRepMaxSliderState extends State<_OneRepMaxSlider> {
             min: 1,
             max: 20,
             divisions: 19,
-            thumbColor: vibrantGreen),
+            thumbColor: Theme.of(context).colors.vibrantAccent),
       ],
     );
   }

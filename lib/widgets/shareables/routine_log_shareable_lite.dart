@@ -5,9 +5,9 @@ import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 
-import '../../colors.dart';
 import '../../enums/muscle_group_enums.dart';
 import '../../utils/string_utils.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 GlobalKey routineLogGlobalKey = GlobalKey();
 
@@ -39,12 +39,12 @@ class RoutineLogShareableLite extends StatelessWidget {
                     )
                   : null,
               gradient: imageFile == null
-                  ? const LinearGradient(
+                  ? LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        sapphireDark80,
-                        sapphireDark,
+                        Theme.of(context).colors.sapphireDark80,
+                        Theme.of(context).colors.sapphireDark,
                       ],
                     )
                   : null,
@@ -58,8 +58,8 @@ class RoutineLogShareableLite extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      sapphireDark.withValues(alpha: 0.4),
-                      sapphireDark,
+                      Theme.of(context).colors.sapphireDark.withValues(alpha: 0.4),
+                      Theme.of(context).colors.sapphireDark,
                     ],
                   )),
                 )),
@@ -166,7 +166,7 @@ class _DateDurationPBWidget extends StatelessWidget {
         const SizedBox(width: 10),
         pbs > 0
             ? Row(children: [
-                const FaIcon(FontAwesomeIcons.solidStar, color: vibrantGreen, size: 14),
+                FaIcon(FontAwesomeIcons.solidStar, color: Theme.of(context).colors.vibrantAccent, size: 14),
                 const SizedBox(width: 6),
                 Text("$pbs", style: TextStyle(fontSize: 12, color: Colors.white))
               ])

@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/exercise_type_enums.dart';
 import 'package:tracker_app/widgets/search_bar.dart';
 
-import '../../../colors.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../enums/muscle_group_enums.dart';
@@ -17,6 +16,7 @@ import '../../../widgets/buttons/opacity_button_widget.dart';
 import '../../../widgets/empty_states/no_list_empty_state.dart';
 import '../../../widgets/exercise/exercise_widget.dart';
 import '../../editors/exercise_editor_screen.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class ExerciseLibraryScreen extends StatefulWidget {
   final bool readOnly;
@@ -185,7 +185,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                   onPressed: () =>
                       _onSelectMuscleGroup(newMuscleGroup: muscleGroup),
                   buttonColor: _getMuscleGroup(muscleGroup: muscleGroup) != null
-                      ? vibrantGreen
+                      ? Theme.of(context).colors.vibrantAccent
                       : null,
                   label: muscleGroup.displayName.toUpperCase()),
             ))
@@ -263,7 +263,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                     OpacityButtonWidget(
                         onPressed: _toggleOwnerExercises,
                         buttonColor:
-                            _shouldShowOwnerExercises ? vibrantGreen : null,
+                            _shouldShowOwnerExercises ? Theme.of(context).colors.vibrantAccent : null,
                         label: "Your Exercises".toUpperCase()),
                     const SizedBox(width: 6),
                     ...muscleGroups.sublist(0, muscleGroupScrollViewHalf),
@@ -292,7 +292,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                                         child: Divider(
                                           height: 0.5,
                                           color: isDarkMode
-                                              ? sapphireLighter
+                                              ? Theme.of(context).colors.dividerColor
                                               : Colors.grey.shade200,
                                         ),
                                       )

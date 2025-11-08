@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 
-import '../../colors.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../shared_prefs.dart';
@@ -16,6 +15,7 @@ import '../../utils/routine_editors_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class RoutinePlanEditorScreen extends StatefulWidget {
   static const routeName = '/routine-plan-editor';
@@ -286,7 +286,7 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
                         child: SizedBox(
                             width: double.infinity,
                             child: OpacityButtonWidgetTwo(
-                                buttonColor: vibrantGreen,
+                                buttonColor: Theme.of(context).colors.vibrantAccent,
                                 label: plan != null
                                     ? "Update Plan"
                                     : "Create Plan",

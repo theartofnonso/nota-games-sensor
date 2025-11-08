@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import 'package:tracker_app/colors.dart';
+import 'package:flutter/material.dart';
 
 import 'buttons/opacity_button_widget_two.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class GenericPicker<T> extends StatefulWidget {
   /// The initially selected item (optional).
@@ -39,14 +40,16 @@ class _GenericPickerState<T> extends State<GenericPicker<T>> {
 
     // If initialValue is provided and exists in the item list, use it;
     // otherwise, default to the first item (if the list isn't empty).
-    if (widget.initialValue != null && widget.items.contains(widget.initialValue)) {
+    if (widget.initialValue != null &&
+        widget.items.contains(widget.initialValue)) {
       _selectedItem = widget.initialValue as T;
     } else if (widget.items.isNotEmpty) {
       _selectedItem = widget.items.first;
     } else {
       // Handle empty items list scenario here if needed.
       // For demonstration, we'll just throw:
-      throw ArgumentError('GenericPicker cannot be built with an empty items list.');
+      throw ArgumentError(
+          'GenericPicker cannot be built with an empty items list.');
     }
   }
 
@@ -84,7 +87,7 @@ class _GenericPickerState<T> extends State<GenericPicker<T>> {
         // Replace this button with your custom 'OpacityButtonWidget' if you like.
         OpacityButtonWidgetTwo(
           onPressed: () => widget.onItemSelected(_selectedItem),
-          buttonColor: vibrantGreen,
+          buttonColor: Theme.of(context).colors.vibrantAccent,
           label: "Select ${widget.labelBuilder(_selectedItem)}",
         ),
       ],

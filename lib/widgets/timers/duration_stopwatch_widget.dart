@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:tracker_app/extensions/duration_extension.dart';
-
-import '../../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class DurationStopwatchWidget extends StatefulWidget {
   final VoidCallback onLogSet;
@@ -96,7 +95,7 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
               onPressed: _isRunning ? _pauseStopwatch : _startStopwatch,
               icon: _isRunning ? FontAwesomeIcons.pause : FontAwesomeIcons.play,
               label: _isRunning ? "PAUSE" : "START",
-              color: _isRunning ? Colors.orange : vibrantGreen,
+              color: _isRunning ? Colors.orange : Theme.of(context).colors.vibrantAccent,
             ),
 
             // Stop Button (only show if timer has started)
@@ -105,7 +104,7 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
                 onPressed: _stopAndLogSet,
                 icon: FontAwesomeIcons.check,
                 label: "LOG SET",
-                color: vibrantBlue,
+                color: Theme.of(context).colorScheme.secondary,
               ),
           ],
         ),

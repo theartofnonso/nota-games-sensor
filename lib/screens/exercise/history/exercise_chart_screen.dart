@@ -14,7 +14,6 @@ import 'package:tracker_app/extensions/muscle_group_extension.dart';
 import 'package:tracker_app/widgets/buttons/opacity_button_widget.dart';
 import 'package:tracker_app/widgets/list_tile.dart';
 
-import '../../../colors.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/graph/chart_point_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
@@ -24,6 +23,7 @@ import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
 import '../../../widgets/chart/line_chart_widget.dart';
 import '../../logs/routine_log_screen.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 enum SummaryType {
   weight("Heaviest Weight"),
@@ -192,14 +192,15 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   }
 
   Color? _buttonColor({required SummaryType type}) {
-    return _summaryType == type ? vibrantGreen : null;
+    return _summaryType == type ? Theme.of(context).colors.vibrantAccent : null;
   }
 
   void _navigateTo({required String? routineLogId}) {
     if (routineLogId != null) {
-      final routineLog =
-          Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-              .logWhereId(id: routineLogId);
+      final routineLog = Provider.of<SupabaseExerciseAndRoutineController>(
+              context,
+              listen: false)
+          .logWhereId(id: routineLogId);
       if (routineLog != null) {
         context.push(RoutineLogScreen.routeName, extra: {
           "log": routineLog,
@@ -264,7 +265,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                         controller: _controller,
                         count: muscleGroupsIllustrations.length,
                         effect: WormEffect(
-                            activeDotColor: vibrantGreen,
+                            activeDotColor:
+                                Theme.of(context).colors.vibrantAccent,
                             dotWidth: 8.0,
                             dotHeight: 8.0,
                             dotColor: isDarkMode
@@ -446,4 +448,3 @@ class _MetricListTile extends StatelessWidget {
     );
   }
 }
-

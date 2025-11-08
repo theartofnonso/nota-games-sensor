@@ -10,7 +10,7 @@ import 'package:tracker_app/dtos/exercise_log_dto.dart';
 import 'package:tracker_app/enums/routine_editor_type_enums.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 
-import '../../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/set_dtos/weight_and_reps_dto.dart';
@@ -363,7 +363,7 @@ class _PastRoutineLogEditorScreenState
                         child: SizedBox(
                             width: double.infinity,
                             child: OpacityButtonWidgetTwo(
-                                buttonColor: vibrantGreen,
+                                buttonColor: Theme.of(context).colors.vibrantAccent,
                                 label: "Log Past Session",
                                 onPressed: _createLog)),
                       ),

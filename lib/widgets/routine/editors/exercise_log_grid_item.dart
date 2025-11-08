@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-
-import '../../../colors.dart';
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../utils/dialog_utils.dart';
 import '../../../utils/navigation_utils.dart';
 import '../editors/exercise_log_widget.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class ExerciseLogGridItemWidget extends StatelessWidget {
   final RoutineEditorMode editorType;
@@ -44,9 +43,9 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
         .map((setDto) => FaIcon(
               setDto.checked ? FontAwesomeIcons.solidSquareCheck : FontAwesomeIcons.solidSquareCheck,
               color: isPastRoutine && setDto.isNotEmpty()
-                  ? vibrantGreen
+                  ? Theme.of(context).colors.vibrantAccent
                   : setDto.checked
-                      ? vibrantGreen
+                      ? Theme.of(context).colors.vibrantAccent
                       : Colors.grey.shade500,
             ))
         .toList();
@@ -64,7 +63,7 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
       child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: isDarkMode ? sapphireDark80 : Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+              color: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
           child: Column(spacing: 12, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

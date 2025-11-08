@@ -6,11 +6,11 @@ import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/utils/exercise_logs_utils.dart';
 import 'package:tracker_app/utils/general_utils.dart';
 
-import '../../colors.dart';
 import '../../dtos/pb_dto.dart';
 import '../../dtos/set_dtos/duration_set_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/set_dtos/weight_and_reps_dto.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 GlobalKey pbsGlobalKey = GlobalKey();
 
@@ -55,12 +55,12 @@ class PBsShareable extends StatelessWidget {
                     )
                   : null,
               gradient: imageFile == null
-                  ? const LinearGradient(
+                  ? LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        sapphireDark80,
-                        sapphireDark,
+                        Theme.of(context).colors.sapphireDark80,
+                        Theme.of(context).colors.sapphireDark,
                       ],
                     )
                   : null,
@@ -77,8 +77,8 @@ class PBsShareable extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        sapphireDark.withValues(alpha: 0.4),
-                        sapphireDark,
+                        Theme.of(context).colors.sapphireDark.withValues(alpha: 0.4),
+                        Theme.of(context).colors.sapphireDark,
                       ],
                     )),
                   )),
@@ -86,10 +86,10 @@ class PBsShareable extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                         FaIcon(FontAwesomeIcons.solidStar, color: Colors.green, size: 14),
                         SizedBox(width: 8),
-                        FaIcon(FontAwesomeIcons.solidStar, color: vibrantGreen, size: 16),
+                        FaIcon(FontAwesomeIcons.solidStar, color: Theme.of(context).colors.vibrantAccent, size: 16),
                         SizedBox(width: 8),
                         FaIcon(FontAwesomeIcons.solidStar, color: Colors.green, size: 14)
                       ]),

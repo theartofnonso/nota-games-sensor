@@ -11,8 +11,8 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/dtos/graph/chart_point_dto.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/shared_prefs.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
-import '../../colors.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
@@ -284,7 +284,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                     "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
                                 child: CustomIcon(
                                     FontAwesomeIcons.personWalking,
-                                    color: vibrantGreen)),
+                                    color: Theme.of(context).colors.vibrantAccent)),
                             Text(
                               template.notes.isNotEmpty
                                   ? "${template.notes}."
@@ -409,7 +409,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             leadingIcon: FaIcon(FontAwesomeIcons.weightHanging),
                             title: "Training Volume",
                             color: isDarkMode
-                                ? sapphireDark80
+                                ? Theme.of(context).colors.sapphireDark80
                                 : Colors.grey.shade200,
                             description:
                                 "Volume is the total amount of work done, often calculated as sets × reps × weight. Higher volume increases muscle size (hypertrophy).",
@@ -423,7 +423,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       child: Container(
                         decoration: BoxDecoration(
                             color: isDarkMode
-                                ? sapphireDark80
+                                ? Theme.of(context).colors.sapphireDark80
                                 : Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(5)),
                         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -506,10 +506,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             CupertinoSlidingSegmentedControl<
                                 _OriginalNewValues>(
                               backgroundColor: isDarkMode
-                                  ? sapphireDark
+                                  ? Theme.of(context).colors.sapphireDark
                                   : Colors.grey.shade200,
                               thumbColor:
-                                  isDarkMode ? sapphireDark80 : Colors.white,
+                                  isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.white,
                               groupValue: _originalNewValues,
                               children: {
                                 _OriginalNewValues.originalValues: SizedBox(

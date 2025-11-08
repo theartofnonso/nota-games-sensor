@@ -6,8 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
-import '../../colors.dart';
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/exercise_type_enums.dart';
@@ -109,8 +109,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                       children: [
                         LabelDivider(
                           label: "Select muscle group to train".toUpperCase(),
-                          labelColor: isDarkMode ? Colors.white : Colors.black,
-                          dividerColor: sapphireLighter,
+                          labelColor: Theme.of(context).colorScheme.onSurface,
+                          dividerColor: Theme.of(context).colors.dividerColor,
                           fontSize: 14,
                         ),
                         Text(
@@ -153,9 +153,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                           LabelDivider(
                             label:
                                 "Choose how to log this exercise".toUpperCase(),
-                            labelColor:
-                                isDarkMode ? Colors.white : Colors.black,
-                            dividerColor: sapphireLighter,
+                            labelColor: Theme.of(context).colorScheme.onSurface,
+                            dividerColor: Theme.of(context).colors.dividerColor,
                             fontSize: 14,
                           ),
                           Text(
@@ -199,7 +198,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                           child: OpacityButtonWidgetTwo(
                               onPressed: _createExercise,
                               label: "Create Exercise",
-                              buttonColor: vibrantGreen),
+                              buttonColor: Theme.of(context).colors.vibrantAccent),
                         ),
                       ),
                   ]),
