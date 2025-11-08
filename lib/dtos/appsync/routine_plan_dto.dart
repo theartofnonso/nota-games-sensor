@@ -12,7 +12,7 @@ class RoutinePlanDto {
           "This is your default plan. If you'd like to organize your workouts into different plans, simply create a new one.");
 
   RoutinePlanDto({
-    required this.id,
+    this.id = "",
     required this.name,
     required this.notes,
   });
