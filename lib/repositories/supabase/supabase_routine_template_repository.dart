@@ -52,17 +52,26 @@ class SupabaseRoutineTemplateRepository {
       }
 
       final now = DateTime.now().toUtc();
-      final id = templateDto.id.isNotEmpty
-          ? templateDto.id
-          : '${_client.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}';
 
-      await _client.from('routine_templates').insert({
-        'id': id,
+      final insertData = {
         'owner': userId,
         'data': jsonEncode(templateDto.toJson()),
         'created_at': now.toIso8601String(),
         'updated_at': now.toIso8601String(),
-      });
+      };
+
+      // Only include id if it's not empty (let Supabase auto-generate otherwise)
+      if (templateDto.id.isNotEmpty) {
+        insertData['id'] = templateDto.id;
+      }
+
+      final response = await _client
+          .from('routine_templates')
+          .insert(insertData)
+          .select()
+          .single();
+
+      final generatedId = response['id'] as String;
 
       Posthog().capture(
         eventName: PostHogAnalyticsEvent.createRoutineTemplate.displayName,
@@ -71,7 +80,7 @@ class SupabaseRoutineTemplateRepository {
 
       logger.i('Saved template: ${templateDto.name}');
 
-      final updatedWithId = templateDto.copyWith(id: id);
+      final updatedWithId = templateDto.copyWith(id: generatedId);
       return updatedWithId;
     } catch (e) {
       logger.e('Error saving template: $e');

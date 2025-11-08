@@ -132,18 +132,27 @@ class SupabaseRoutineLogRepository {
       }
 
       final now = datetime?.toUtc() ?? DateTime.now().toUtc();
-      final id = logDto.id.isNotEmpty
-          ? logDto.id
-          : '${_client.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}';
 
-      await _client.from('routine_logs').insert({
-        'id': id,
+      final insertData = {
         'owner': userId,
         'data': jsonEncode(logDto.toJson()),
         'created_at': now.toIso8601String(),
         'updated_at': now.toIso8601String(),
         'type': 'RoutineLog',
-      });
+      };
+
+      // Only include id if it's not empty (let Supabase auto-generate otherwise)
+      if (logDto.id.isNotEmpty) {
+        insertData['id'] = logDto.id;
+      }
+
+      final response = await _client
+          .from('routine_logs')
+          .insert(insertData)
+          .select()
+          .single();
+
+      final generatedId = response['id'] as String;
 
       logger.i('Saved log: ${logDto.name}');
 
@@ -151,10 +160,10 @@ class SupabaseRoutineLogRepository {
           eventName: PostHogAnalyticsEvent.logRoutine.displayName,
           properties: Map<String, Object>.from(logDto.toJson()));
 
-      final updatedRoutineLogWithId = logDto.copyWith(id: id);
+      final updatedRoutineLogWithId = logDto.copyWith(id: generatedId);
       final updatedRoutineWithExerciseIds = updatedRoutineLogWithId.copyWith(
           exerciseLogs: updatedRoutineLogWithId.exerciseLogs
-              .map((log) => log.copyWith(routineLogId: id))
+              .map((log) => log.copyWith(routineLogId: generatedId))
               .toList());
 
       return updatedRoutineWithExerciseIds;

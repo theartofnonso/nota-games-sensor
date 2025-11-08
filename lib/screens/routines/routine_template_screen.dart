@@ -189,11 +189,14 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                 ),
               ),
             ),
-            Image.asset(
-              recoveryMuscleIllustration(
-                  recoveryPercentage: recovery, muscleGroup: muscleGroup),
-              fit: BoxFit.contain,
-              height: 50, // Adjust the height as needed
+            Opacity(
+              opacity: recovery == 0 ? 0.3 : 1.0,
+              child: Image.asset(
+                recoveryMuscleIllustration(
+                    recoveryPercentage: recovery, muscleGroup: muscleGroup),
+                fit: BoxFit.contain,
+                height: 50, // Adjust the height as needed
+              ),
             )
           ]),
         ),

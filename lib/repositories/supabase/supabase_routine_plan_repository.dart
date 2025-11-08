@@ -51,17 +51,26 @@ class SupabaseRoutinePlanRepository {
       }
 
       final now = DateTime.now().toUtc();
-      final id = planDto.id.isNotEmpty
-          ? planDto.id
-          : '${_client.auth.currentUser!.id}_${DateTime.now().millisecondsSinceEpoch}';
 
-      await _client.from('routine_plans').insert({
-        'id': id,
+      final insertData = {
         'owner': userId,
         'data': jsonEncode(planDto.toJson()),
         'created_at': now.toIso8601String(),
         'updated_at': now.toIso8601String(),
-      });
+      };
+
+      // Only include id if it's not empty (let Supabase auto-generate otherwise)
+      if (planDto.id.isNotEmpty) {
+        insertData['id'] = planDto.id;
+      }
+
+      final response = await _client
+          .from('routine_plans')
+          .insert(insertData)
+          .select()
+          .single();
+
+      final generatedId = response['id'] as String;
 
       Posthog().capture(
         eventName: PostHogAnalyticsEvent.createRoutineTemplate.displayName,
@@ -70,7 +79,7 @@ class SupabaseRoutinePlanRepository {
 
       logger.i('Saved plan: $planDto');
 
-      final updatedWithId = planDto.copyWith(id: id);
+      final updatedWithId = planDto.copyWith(id: generatedId);
       return updatedWithId;
     } catch (e) {
       logger.e('Error saving plan: $e');

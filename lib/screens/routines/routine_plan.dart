@@ -4,8 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/utils/string_utils.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
@@ -56,7 +56,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     if (plan == null) return const NotFound();
 
     final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: true);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -120,7 +121,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                   children: [
                     Builder(builder: (context) {
                       final controller =
-                          Provider.of<SupabaseExerciseAndRoutineController>(context,
+                          Provider.of<SupabaseExerciseAndRoutineController>(
+                              context,
                               listen: false);
                       final msg = PlansNudges.build(controller: controller);
                       if (msg == null) return const SizedBox.shrink();
@@ -139,13 +141,13 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                         label:
                             '${exercises.length} ${pluralize(word: "Exercise", count: exercises.length)}',
                         child: CustomIcon(FontAwesomeIcons.personWalking,
-                            color: vibrantGreen),
+                            color: Theme.of(context).colors.vibrantAccent),
                       ),
                       ChipOne(
                           label:
                               '${routineTemplates.length} ${pluralize(word: "Session", count: routineTemplates.length)}',
                           child: CustomIcon(FontAwesomeIcons.hashtag,
-                              color: vibrantBlue)),
+                              color: Theme.of(context).colorScheme.secondary)),
                     ]),
                     Text(plan.notes.isNotEmpty ? plan.notes : "No notes",
                         style: TextStyle(
@@ -204,7 +206,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
   void _deleteRoutinePlan({required RoutinePlanDto plan}) async {
     try {
       final exerciseAndRoutineController =
-          Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+          Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false);
 
       final routineTemplates = exerciseAndRoutineController.templates
           .where((template) => template.planId == plan.id)
@@ -330,7 +333,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       _plan = RoutinePlanDto.defaultPlan;
     } else {
       final exerciseAndRoutineController =
-          Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+          Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false);
       _plan = exerciseAndRoutineController.planWhere(id: widget.id);
     }
   }
