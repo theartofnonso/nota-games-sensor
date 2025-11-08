@@ -17,7 +17,12 @@ class RoutineLogShareableLite extends StatelessWidget {
   final int pbs;
   final Image? image;
 
-  const RoutineLogShareableLite({super.key, required this.log, required this.frequencyData, this.pbs = 0, this.image});
+  const RoutineLogShareableLite(
+      {super.key,
+      required this.log,
+      required this.frequencyData,
+      this.pbs = 0,
+      this.image});
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +63,10 @@ class RoutineLogShareableLite extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Theme.of(context).colors.sapphireDark.withValues(alpha: 0.4),
+                      Theme.of(context)
+                          .colors
+                          .sapphireDark
+                          .withValues(alpha: 0.4),
                       Theme.of(context).colors.sapphireDark,
                     ],
                   )),
@@ -72,8 +80,14 @@ class RoutineLogShareableLite extends StatelessWidget {
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(log.name,
-                            style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 16)),
-                        subtitle: _DateDurationPBWidget(dateTime: log.createdAt, duration: log.duration(), pbs: pbs),
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                fontSize: 16)),
+                        subtitle: _DateDurationPBWidget(
+                            dateTime: log.startTime,
+                            duration: log.duration(),
+                            pbs: pbs),
                       ),
                       RichText(
                           text: TextSpan(
@@ -86,7 +100,9 @@ class RoutineLogShareableLite extends StatelessWidget {
                                 text:
                                     "x${log.exerciseLogs.fold(0, (sum, e) => sum + e.sets.length)} ${pluralize(word: "Set", count: log.exerciseLogs.fold(0, (sum, e) => sum + e.sets.length))}",
                                 style: TextStyle(
-                                    fontWeight: FontWeight.w500, color: Colors.white70, fontSize: 12)),
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white70,
+                                    fontSize: 12)),
                           ])),
                     ]),
               ),
@@ -145,7 +161,9 @@ class _DateDurationPBWidget extends StatelessWidget {
             const SizedBox(width: 6),
             Text(datetimeSummary,
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.95), fontWeight: FontWeight.w500, fontSize: 12)),
+                    color: Colors.white.withValues(alpha: 0.95),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12)),
           ],
         ),
         const SizedBox(width: 10),
@@ -160,15 +178,19 @@ class _DateDurationPBWidget extends StatelessWidget {
             const SizedBox(width: 6),
             Text(duration.hmsAnalog(),
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.95), fontWeight: FontWeight.w500, fontSize: 12)),
+                    color: Colors.white.withValues(alpha: 0.95),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12)),
           ],
         ),
         const SizedBox(width: 10),
         pbs > 0
             ? Row(children: [
-                FaIcon(FontAwesomeIcons.solidStar, color: Theme.of(context).colors.vibrantAccent, size: 14),
+                FaIcon(FontAwesomeIcons.solidStar,
+                    color: Theme.of(context).colors.vibrantAccent, size: 14),
                 const SizedBox(width: 6),
-                Text("$pbs", style: TextStyle(fontSize: 12, color: Colors.white))
+                Text("$pbs",
+                    style: TextStyle(fontSize: 12, color: Colors.white))
               ])
             : const SizedBox.shrink(),
       ],

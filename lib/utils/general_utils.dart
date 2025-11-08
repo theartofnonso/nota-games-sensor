@@ -83,13 +83,11 @@ String timeOfDay({DateTime? datetime}) {
   return 'Evening';
 }
 
-Future<bool> batchDeleteUserData(
-    {required String tableName}) async {
+Future<bool> batchDeleteUserData({required String tableName}) async {
   // Note: For Supabase, batch deletes should be done via the repository layer
   // This is a placeholder that should be implemented in the specific repository
   throw UnimplementedError(
-    'Batch delete should be implemented in the Supabase repository for $tableName'
-  );
+      'Batch delete should be implemented in the Supabase repository for $tableName');
 }
 
 Future<NotificationsEnabledOptions> checkIosNotificationPermission() async {
@@ -338,10 +336,7 @@ void logEmptyRoutine({required BuildContext context, String? workoutVideoUrl}) {
       exerciseLogs: [],
       notes: "",
       startTime: DateTime.now(),
-      endTime: DateTime.now(),
-      owner: "",
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now());
+      endTime: DateTime.now());
 
   final arguments =
       RoutineLogArguments(log: log, editorMode: RoutineEditorMode.log);

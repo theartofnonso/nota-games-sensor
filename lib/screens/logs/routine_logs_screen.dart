@@ -23,7 +23,7 @@ class RoutineLogsScreen extends StatelessWidget {
             .whereLogsIsSameMonth(dateTime: dateTime);
 
     final logs = routineLogsForMonth
-        .sorted((a, b) => b.createdAt.compareTo(a.createdAt));
+        .sorted((a, b) => b.startTime.compareTo(a.startTime));
 
     final month = dateTime.formattedFullMonth();
 
@@ -56,7 +56,7 @@ class RoutineLogsScreen extends StatelessWidget {
                             final log = logs[index];
                             return RoutineLogWidget(
                                 log: log,
-                                trailing: log.createdAt.durationSinceOrDate());
+                                trailing: log.startTime.durationSinceOrDate());
                           },
                           separatorBuilder: (BuildContext context, int index) =>
                               Divider(color: Colors.transparent),

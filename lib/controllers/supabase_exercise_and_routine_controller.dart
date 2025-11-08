@@ -39,19 +39,21 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     _logRepository = logRepository;
   }
 
-  UnmodifiableListView<ExerciseDto> get exercises => _exerciseRepository.exercises;
+  UnmodifiableListView<ExerciseDto> get exercises =>
+      _exerciseRepository.exercises;
 
-  UnmodifiableListView<RoutineTemplateDto> get templates => _templateRepository.templates;
+  UnmodifiableListView<RoutineTemplateDto> get templates =>
+      _templateRepository.templates;
 
   UnmodifiableListView<RoutinePlanDto> get plans => _planRepository.plans;
 
   UnmodifiableListView<RoutineLogDto> get logs => _logRepository.logs;
 
-  UnmodifiableMapView<String, List<ExerciseLogDto>> get exerciseLogsByExerciseId =>
-      _logRepository.exerciseLogsByExerciseId;
+  UnmodifiableMapView<String, List<ExerciseLogDto>>
+      get exerciseLogsByExerciseId => _logRepository.exerciseLogsByExerciseId;
 
-  UnmodifiableMapView<MuscleGroup, List<ExerciseLogDto>> get exerciseLogsByMuscleGroup =>
-      _logRepository.exerciseLogsByMuscleGroup;
+  UnmodifiableMapView<MuscleGroup, List<ExerciseLogDto>>
+      get exerciseLogsByMuscleGroup => _logRepository.exerciseLogsByMuscleGroup;
 
   /// Initialization
   Future<void> initialize() async {
@@ -59,7 +61,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await loadLocalExercises();
       await loadUserData();
     } catch (e) {
       logger.e("Error initializing controller", error: e);
@@ -85,13 +86,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
-
   /// Exercises
-
-  Future<void> loadLocalExercises() async {
-    await _exerciseRepository.loadLocalExercises();
-    notifyListeners();
-  }
 
   Future<void> saveExercise({required ExerciseDto exerciseDto}) async {
     isLoading = true;
@@ -189,11 +184,13 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Templates
 
-  Future<RoutineTemplateDto?> saveTemplate({required RoutineTemplateDto templateDto}) async {
+  Future<RoutineTemplateDto?> saveTemplate(
+      {required RoutineTemplateDto templateDto}) async {
     RoutineTemplateDto? savedTemplate;
     isLoading = true;
     try {
-      savedTemplate = await _templateRepository.saveTemplate(templateDto: templateDto);
+      savedTemplate =
+          await _templateRepository.saveTemplate(templateDto: templateDto);
       await _templateRepository.loadTemplates();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -238,10 +235,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Logs
 
-  Future<RoutineLogDto?> saveLog({required RoutineLogDto logDto, DateTime? datetime}) async {
+  Future<RoutineLogDto?> saveLog(
+      {required RoutineLogDto logDto, DateTime? datetime}) async {
     RoutineLogDto? savedLog;
     try {
-      savedLog = await _logRepository.saveLog(logDto: logDto, datetime: datetime);
+      savedLog =
+          await _logRepository.saveLog(logDto: logDto, datetime: datetime);
       await _logRepository.loadLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -314,28 +313,37 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return _logRepository.whereLogsWithTemplateId(templateId: templateId);
   }
 
-  List<RoutineLogDto> whereLogsWithTemplateName({required String templateName}) {
+  List<RoutineLogDto> whereLogsWithTemplateName(
+      {required String templateName}) {
     return _logRepository.whereLogsWithTemplateName(templateName: templateName);
   }
 
-  List<RoutineLogDto> whereRoutineLogsBefore({required String templateId, required DateTime datetime}) {
-    return _logRepository.whereRoutineLogsBefore(templateId: templateId, date: datetime);
+  List<RoutineLogDto> whereRoutineLogsBefore(
+      {required String templateId, required DateTime datetime}) {
+    return _logRepository.whereRoutineLogsBefore(
+        templateId: templateId, date: datetime);
   }
 
-  List<ExerciseLogDto> whereExerciseLogsBefore({required ExerciseDto exercise, required DateTime date}) {
-    return _logRepository.whereExerciseLogsBefore(exercise: exercise, date: date);
+  List<ExerciseLogDto> whereExerciseLogsBefore(
+      {required ExerciseDto exercise, required DateTime date}) {
+    return _logRepository.whereExerciseLogsBefore(
+        exercise: exercise, date: date);
   }
 
   List<SetDto> whereRecentSetsForExercise({required ExerciseDto exercise}) {
     return _logRepository.whereRecentSetsForExercise(exercise: exercise);
   }
 
-  List<SetDto> wherePrevSetsForExercise({required ExerciseDto exercise, int? take}) {
-    return _logRepository.wherePrevSetsForExercise(exercise: exercise, take: take);
+  List<SetDto> wherePrevSetsForExercise(
+      {required ExerciseDto exercise, int? take}) {
+    return _logRepository.wherePrevSetsForExercise(
+        exercise: exercise, take: take);
   }
 
-  List<SetDto> wherePrevSetsGroupForIndex({required ExerciseDto exercise, required int index, int? take}) {
-    return _logRepository.wherePrevSetsGroupForIndex(exercise: exercise, index: index, take: take);
+  List<SetDto> wherePrevSetsGroupForIndex(
+      {required ExerciseDto exercise, required int index, int? take}) {
+    return _logRepository.wherePrevSetsGroupForIndex(
+        exercise: exercise, index: index, take: take);
   }
 
   /// Exercise Helper methods
@@ -370,4 +378,3 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     super.dispose();
   }
 }
-

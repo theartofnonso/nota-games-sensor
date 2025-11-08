@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
@@ -30,7 +29,7 @@ class SupabaseRoutineTemplateRepository {
           .from('routine_templates')
           .select()
           .eq('owner', userId)
-          .order('created_at', ascending: false);
+          .order('createdAt', ascending: false);
 
       _templates = (response as List<dynamic>)
           .map((item) => _convertMapToRoutineTemplateDto(item))
@@ -51,23 +50,9 @@ class SupabaseRoutineTemplateRepository {
         throw Exception('User not authenticated');
       }
 
-      final now = DateTime.now().toUtc();
-
-      final insertData = {
-        'owner': userId,
-        'data': jsonEncode(templateDto.toJson()),
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      };
-
-      // Only include id if it's not empty (let Supabase auto-generate otherwise)
-      if (templateDto.id.isNotEmpty) {
-        insertData['id'] = templateDto.id;
-      }
-
       final response = await _client
           .from('routine_templates')
-          .insert(insertData)
+          .insert(templateDto.toJson())
           .select()
           .single();
 
@@ -95,14 +80,9 @@ class SupabaseRoutineTemplateRepository {
         throw Exception('User not authenticated');
       }
 
-      final now = DateTime.now().toUtc();
-
       await _client
           .from('routine_templates')
-          .update({
-            'data': jsonEncode(template.toJson()),
-            'updated_at': now.toIso8601String(),
-          })
+          .update(template.toJson())
           .eq('id', template.id)
           .eq('owner', userId);
 
@@ -150,14 +130,6 @@ class SupabaseRoutineTemplateRepository {
   /// Helper method to convert Supabase map to RoutineTemplateDto
   RoutineTemplateDto _convertMapToRoutineTemplateDto(
       Map<String, dynamic> item) {
-    final dataJson = jsonDecode(item['data'] as String) as Map<String, dynamic>;
-
-    // Add metadata from Supabase
-    dataJson['id'] = item['id'];
-    dataJson['owner'] = item['owner'];
-    dataJson['createdAt'] = item['created_at'];
-    dataJson['updatedAt'] = item['updated_at'];
-
-    return RoutineTemplateDto.fromJson(json: dataJson);
+    return RoutineTemplateDto.fromJson(json: Map<String, dynamic>.from(item));
   }
 }

@@ -9,7 +9,6 @@ import 'package:tracker_app/utils/dialog_utils.dart';
 
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
-import '../../shared_prefs.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/routine_editors_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
@@ -76,12 +75,8 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
     if (!_validateRoutinePlanInputs()) return;
 
     final newPlan = RoutinePlanDto(
-      id: "",
       name: _planNameController.text,
       notes: _planNotesController.text,
-      owner: SharedPrefs().userId,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
     );
 
     final templateController =
@@ -124,8 +119,7 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
   RoutinePlanDto _getUpdatedRoutinePlan({required RoutinePlanDto plan}) {
     final planToBeUpdated = plan.copyWith(
         name: _planNameController.text.trim(),
-        notes: _planNotesController.text.trim(),
-        updatedAt: DateTime.now());
+        notes: _planNotesController.text.trim());
 
     return planToBeUpdated;
   }
@@ -286,7 +280,8 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
                         child: SizedBox(
                             width: double.infinity,
                             child: OpacityButtonWidgetTwo(
-                                buttonColor: Theme.of(context).colors.vibrantAccent,
+                                buttonColor:
+                                    Theme.of(context).colors.vibrantAccent,
                                 label: plan != null
                                     ? "Update Plan"
                                     : "Create Plan",

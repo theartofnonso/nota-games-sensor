@@ -7,34 +7,36 @@
 -- Create table
 CREATE TABLE IF NOT EXISTS public.routine_plans (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    owner UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    data JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    owner UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    notes TEXT DEFAULT '',
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Add comment
 COMMENT ON TABLE public.routine_plans IS 'Workout plans that organize multiple templates';
-COMMENT ON COLUMN public.routine_plans.data IS 'JSON containing plan details (name, notes, etc.)';
+COMMENT ON COLUMN public.routine_plans.name IS 'Plan name';
+COMMENT ON COLUMN public.routine_plans.notes IS 'User notes about the plan';
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_routine_plans_owner 
     ON public.routine_plans(owner);
 
-CREATE INDEX IF NOT EXISTS idx_routine_plans_created_at 
-    ON public.routine_plans(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_routine_plans_createdAt 
+    ON public.routine_plans("createdAt" DESC);
 
-CREATE INDEX IF NOT EXISTS idx_routine_plans_owner_created_at 
-    ON public.routine_plans(owner, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_routine_plans_owner_createdAt 
+    ON public.routine_plans(owner, "createdAt" DESC);
 
-CREATE INDEX IF NOT EXISTS idx_routine_plans_data_name 
-    ON public.routine_plans USING gin ((data -> 'name'));
+CREATE INDEX IF NOT EXISTS idx_routine_plans_name 
+    ON public.routine_plans(name);
 
--- Create updated_at trigger
-CREATE TRIGGER update_routine_plans_updated_at 
+-- Create updatedAt trigger
+CREATE TRIGGER update_routine_plans_updatedAt 
     BEFORE UPDATE ON public.routine_plans
     FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION update_updatedAt_column();
 
 -- ============================================================================
 -- ROW LEVEL SECURITY

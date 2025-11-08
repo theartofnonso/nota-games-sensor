@@ -11,7 +11,6 @@ import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../dtos/viewmodels/routine_template_arguments.dart';
-import '../../shared_prefs.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
@@ -99,11 +98,9 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            plan.owner == SharedPrefs().userId
-                ? IconButton(
-                    onPressed: _showMenuBottomSheet,
-                    icon: FaIcon(Icons.more_vert_rounded))
-                : const SizedBox.shrink()
+            IconButton(
+                onPressed: _showMenuBottomSheet,
+                icon: const FaIcon(Icons.more_vert_rounded))
           ],
         ),
         body: Container(

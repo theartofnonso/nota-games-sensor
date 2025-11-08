@@ -10,7 +10,7 @@ enum ExerciseType {
   final String description;
 
   static ExerciseType fromString(String string) {
-    return ExerciseType.values.firstWhere((value) => value.id.toLowerCase() == string.toLowerCase());
+    return ExerciseType.values
+        .firstWhere((value) => value.id.toLowerCase() == string.toLowerCase());
   }
-
 }

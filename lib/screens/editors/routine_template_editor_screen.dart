@@ -58,9 +58,10 @@ class _RoutineTemplateEditorScreenState
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
           final onlyExercise = selectedExercises.first;
-          final pastSets =
-              Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-                  .whereRecentSetsForExercise(exercise: onlyExercise);
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                  context,
+                  listen: false)
+              .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
   }
@@ -100,7 +101,8 @@ class _RoutineTemplateEditorScreenState
         context: context,
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                  context,
                   listen: false)
               .whereRecentSetsForExercise(exercise: selectedExercises.first);
           controller.replaceExerciseLog(
@@ -142,12 +144,10 @@ class _RoutineTemplateEditorScreenState
         name: _templateNameController.text,
         exerciseTemplates: exercises,
         notes: _templateNotesController.text,
-        owner: "",
-        planId: widget.planId,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now());
+        planId: widget.planId);
 
-    await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+    await Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false)
         .saveTemplate(templateDto: template);
     _navigateBack();
   }
@@ -184,14 +184,14 @@ class _RoutineTemplateEditorScreenState
     return template.copyWith(
         name: _templateNameController.text.trim(),
         notes: _templateNotesController.text.trim(),
-        exerciseTemplates: exerciseLogs,
-        updatedAt: DateTime.now());
+        exerciseTemplates: exerciseLogs);
   }
 
   void _doUpdateRoutineTemplate(
       {required RoutineTemplateDto updatedTemplate}) async {
-    final templateProvider =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+    final templateProvider = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
 
     final updatedRoutineTemplate =
         _getUpdatedRoutineTemplate(template: updatedTemplate);
@@ -260,7 +260,8 @@ class _RoutineTemplateEditorScreenState
         Provider.of<ExerciseLogController>(context, listen: false);
 
     final routineTemplateController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: true);
 
     if (routineTemplateController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -404,7 +405,8 @@ class _RoutineTemplateEditorScreenState
                         child: SizedBox(
                             width: double.infinity,
                             child: OpacityButtonWidgetTwo(
-                                buttonColor: Theme.of(context).colors.vibrantAccent,
+                                buttonColor:
+                                    Theme.of(context).colors.vibrantAccent,
                                 label: template != null
                                     ? "Update Workout"
                                     : "Create Workout",
@@ -452,9 +454,10 @@ class _RoutineTemplateEditorScreenState
     final exercises = widget.template?.exerciseTemplates;
     if (exercises != null && exercises.isNotEmpty) {
       final updatedExerciseLogs = exercises.map((exerciseLog) {
-        final previousSets =
-            Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-                .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
+        final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                context,
+                listen: false)
+            .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
         if (previousSets.isNotEmpty) {
           final unCheckedSets = previousSets
               .take(exerciseLog.sets.length)

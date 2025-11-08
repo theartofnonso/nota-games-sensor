@@ -218,25 +218,24 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
 
     final weightUnitLabel = weightUnit();
 
-    final muscleGroupsIllustrations = [
-      widget.exercise.primaryMuscleGroup,
-      ...widget.exercise.secondaryMuscleGroups
-    ]
-        .where((muscleGroup) => muscleGroup != MuscleGroup.fullBody)
-        .map((muscleGroup) {
-      return Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Image.asset(
-          'muscles_illustration/${muscleGroup.illustration()}.png',
-          fit: BoxFit.contain,
-          height: 120, // Adjust the height as needed
-        ),
-        const SizedBox(
-          height: 6,
-        ),
-        Text(muscleGroup.name.toUpperCase(),
-            style: Theme.of(context).textTheme.bodyMedium)
-      ]);
-    }).toList();
+    final muscleGroup = widget.exercise.primaryMuscleGroup;
+
+    final muscleGroupsIllustrations = muscleGroup != MuscleGroup.fullBody
+        ? [
+            Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Image.asset(
+                'muscles_illustration/${muscleGroup.illustration()}.png',
+                fit: BoxFit.contain,
+                height: 120, // Adjust the height as needed
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Text(muscleGroup.name.toUpperCase(),
+                  style: Theme.of(context).textTheme.bodyMedium)
+            ])
+          ]
+        : <Widget>[];
 
     final exercise = widget.exercise;
 
@@ -278,14 +277,12 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
               ),
             ],
           ),
-          if (exercise.description != null)
+          if (exercise.notes.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  exercise.description != null
-                      ? "${exercise.description}."
-                      : "No notes",
+                  exercise.notes.isNotEmpty ? "${exercise.notes}." : "No notes",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 14,

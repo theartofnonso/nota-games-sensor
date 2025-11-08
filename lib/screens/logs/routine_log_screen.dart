@@ -8,7 +8,6 @@ import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/screens/logs/routine_log_summary_screen.dart';
-import 'package:tracker_app/shared_prefs.dart';
 import 'package:tracker_app/utils/navigation_utils.dart';
 import 'package:tracker_app/widgets/backgrounds/trkr_loading_screen.dart';
 
@@ -63,7 +62,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -124,8 +124,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               onPressed: context.pop,
             ),
             title: Text(updatedLog.name),
-            actions: updatedLog.owner == SharedPrefs().userId &&
-                    widget.isEditable
+            actions: widget.isEditable
                 ? [
                     IconButton(
                         onPressed: () => _onShareLog(log: updatedLog),
@@ -133,13 +132,12 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                             size: 18)),
                   ]
                 : []),
-        floatingActionButton:
-            updatedLog.owner == SharedPrefs().userId && widget.isEditable
-                ? FloatingActionButton(
-                    heroTag: "routine_log_screen",
-                    onPressed: _showBottomSheet,
-                    child: const FaIcon(FontAwesomeIcons.penToSquare))
-                : null,
+        floatingActionButton: widget.isEditable
+            ? FloatingActionButton(
+                heroTag: "routine_log_screen",
+                onPressed: _showBottomSheet,
+                child: const FaIcon(FontAwesomeIcons.penToSquare))
+            : null,
         body: Container(
           height: double.infinity,
           decoration: BoxDecoration(
@@ -241,8 +239,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                                 "Here's a breakdown of the muscle groups in your ${updatedLog.name} workout session.",
                             muscleGroup: muscleGroupFamilyFrequencies,
                             minimized: false),
-                        if (updatedLog.templateId.isNotEmpty &&
-                            updatedLog.owner == SharedPrefs().userId)
+                        if (updatedLog.templateId.isNotEmpty)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             spacing: 10,
@@ -316,11 +313,10 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   void _loadData() async {
     final routineLogController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
     _log = routineLogController.logWhereId(id: widget.id);
-    
-    // TODO: Implement shared workout loading via Supabase public access
-    // For now, only load from user's own data
+
     if (_log == null) {
       setState(() {
         _loading = false;
@@ -443,10 +439,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
           onChangedDateTimeRange: (DateTimeRange datetimeRange) async {
             Navigator.of(context).pop();
             final updatedLog = log.copyWith(
-                startTime: datetimeRange.start,
-                endTime: datetimeRange.end,
-                createdAt: datetimeRange.start,
-                updatedAt: DateTime.now());
+                startTime: datetimeRange.start, endTime: datetimeRange.end);
             await Provider.of<SupabaseExerciseAndRoutineController>(context,
                     listen: false)
                 .updateLog(log: updatedLog);
@@ -482,15 +475,12 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             name: log.name,
             notes: log.notes,
             exerciseTemplates: exercises,
-            planId: defaultPlanId,
-            owner: "",
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now());
+            planId: defaultPlanId);
 
-        final createdTemplate = await Provider.of<SupabaseExerciseAndRoutineController>(
-                context,
-                listen: false)
-            .saveTemplate(templateDto: templateToCreate);
+        final createdTemplate =
+            await Provider.of<SupabaseExerciseAndRoutineController>(context,
+                    listen: false)
+                .saveTemplate(templateDto: templateToCreate);
         if (mounted) {
           if (createdTemplate != null) {
             navigateToRoutineTemplatePreview(
@@ -513,7 +503,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final log = _log;
     if (log != null) {
       try {
-        await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+        await Provider.of<SupabaseExerciseAndRoutineController>(context,
+                listen: false)
             .removeLog(log: log);
         if (mounted) {
           context.pop();

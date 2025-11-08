@@ -7,34 +7,42 @@
 -- Create table
 CREATE TABLE IF NOT EXISTS public.routine_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    owner UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    data JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    owner UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
+    "planId" TEXT NOT NULL DEFAULT 'DEFAULT_PLAN_ID',
+    name TEXT NOT NULL,
+    notes TEXT DEFAULT '',
+    exercises JSONB NOT NULL,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Add comment
 COMMENT ON TABLE public.routine_templates IS 'Reusable workout templates';
-COMMENT ON COLUMN public.routine_templates.data IS 'JSON containing template details (name, exercises, sets, notes, etc.)';
+COMMENT ON COLUMN public.routine_templates.name IS 'Template name';
+COMMENT ON COLUMN public.routine_templates."planId" IS 'ID of the parent plan';
+COMMENT ON COLUMN public.routine_templates.exercises IS 'JSON array of exercise templates with sets';
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_routine_templates_owner 
     ON public.routine_templates(owner);
 
-CREATE INDEX IF NOT EXISTS idx_routine_templates_created_at 
-    ON public.routine_templates(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_routine_templates_createdAt 
+    ON public.routine_templates("createdAt" DESC);
 
-CREATE INDEX IF NOT EXISTS idx_routine_templates_owner_created_at 
-    ON public.routine_templates(owner, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_routine_templates_owner_createdAt 
+    ON public.routine_templates(owner, "createdAt" DESC);
 
-CREATE INDEX IF NOT EXISTS idx_routine_templates_data_name 
-    ON public.routine_templates USING gin ((data -> 'name'));
+CREATE INDEX IF NOT EXISTS idx_routine_templates_planId 
+    ON public.routine_templates("planId");
 
--- Create updated_at trigger
-CREATE TRIGGER update_routine_templates_updated_at 
+CREATE INDEX IF NOT EXISTS idx_routine_templates_name 
+    ON public.routine_templates(name);
+
+-- Create updatedAt trigger
+CREATE TRIGGER update_routine_templates_updatedAt 
     BEFORE UPDATE ON public.routine_templates
     FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION update_updatedAt_column();
 
 -- ============================================================================
 -- ROW LEVEL SECURITY

@@ -145,9 +145,12 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       },
                       const Spacer(),
                       CupertinoSlidingSegmentedControl<TrainingAndVolume>(
-                        backgroundColor:
-                            isDarkMode ? Theme.of(context).colors.sapphireDark : Colors.grey.shade400,
-                        thumbColor: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.white,
+                        backgroundColor: isDarkMode
+                            ? Theme.of(context).colors.sapphireDark
+                            : Colors.grey.shade400,
+                        thumbColor: isDarkMode
+                            ? Theme.of(context).colors.sapphireDark80
+                            : Colors.white,
                         groupValue: _trainingAndVolume,
                         children: {
                           TrainingAndVolume.training: SizedBox(
@@ -230,10 +233,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         exerciseLogs: [],
                         notes: "",
                         startTime: datetimeRange.start,
-                        endTime: datetimeRange.end,
-                        owner: "",
-                        createdAt: datetimeRange.start,
-                        updatedAt: datetimeRange.end);
+                        endTime: datetimeRange.end);
                     navigateToPastRoutineLogEditor(
                         context: context,
                         arguments: PastRoutineLogArguments(log: log));
@@ -273,7 +273,7 @@ class _LogStreakTile extends StatelessWidget {
         final routineLogs =
             controller.whereLogsIsWithinRange(range: dateTimeRange);
         final routineLogsByDay =
-            groupBy(routineLogs, (log) => log.createdAt.withoutTime().day);
+            groupBy(routineLogs, (log) => log.startTime.withoutTime().day);
         final monthlyProgress = routineLogsByDay.length;
         final color = lowToHighIntensityColor(monthlyProgress / 12);
 
@@ -327,7 +327,10 @@ class _YearlyStreakTile extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-                color: Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.1),
+                color: Theme.of(context)
+                    .colors
+                    .vibrantAccent
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(5)),
             child: FullAnimatedGauge(
               value: yearlyProgress,
@@ -353,7 +356,9 @@ class _RoutinePlansHomeTile extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-          color: isDarkMode ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1) : Theme.of(context).colorScheme.secondary,
+          color: isDarkMode
+              ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)
+              : Theme.of(context).colorScheme.secondary,
           borderRadius: BorderRadius.circular(5)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         FaIcon(

@@ -260,11 +260,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     final exercise = ExerciseDto(
         name: exerciseName,
         primaryMuscleGroup: _primaryMuscleGroup,
-        secondaryMuscleGroups: [],
-        type: _exerciseType,
-        owner: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now());
+        type: _exerciseType);
 
     await Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false)

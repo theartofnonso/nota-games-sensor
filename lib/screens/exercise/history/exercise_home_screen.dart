@@ -7,7 +7,6 @@ import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller
 import 'package:tracker_app/screens/editors/exercise_editor_screen.dart';
 import 'package:tracker_app/screens/exercise/history/exercise_chart_screen.dart';
 import 'package:tracker_app/screens/exercise/history/history_screen.dart';
-import 'package:tracker_app/shared_prefs.dart';
 
 import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../utils/dialog_utils.dart';
@@ -129,30 +128,28 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
                             ?.copyWith(fontWeight: FontWeight.w600))),
               ],
             ),
-            actions: exercise.owner == SharedPrefs().userId
-                ? [
-                    MenuAnchor(
-                      builder: (BuildContext context, MenuController controller,
-                          Widget? child) {
-                        return IconButton(
-                          onPressed: () {
-                            if (controller.isOpen) {
-                              controller.close();
-                            } else {
-                              controller.open();
-                            }
-                          },
-                          icon: const Icon(
-                            Icons.more_vert_rounded,
-                            size: 24,
-                          ),
-                          tooltip: 'Show menu',
-                        );
-                      },
-                      menuChildren: menuActions,
-                    )
-                  ]
-                : null,
+            actions: [
+              MenuAnchor(
+                builder: (BuildContext context, MenuController controller,
+                    Widget? child) {
+                  return IconButton(
+                    onPressed: () {
+                      if (controller.isOpen) {
+                        controller.close();
+                      } else {
+                        controller.open();
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.more_vert_rounded,
+                      size: 24,
+                    ),
+                    tooltip: 'Show menu',
+                  );
+                },
+                menuChildren: menuActions,
+              )
+            ],
           ),
           body: Container(
             width: double.infinity,

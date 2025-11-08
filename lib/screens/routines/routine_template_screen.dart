@@ -1,4 +1,3 @@
-
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +9,6 @@ import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/dtos/graph/chart_point_dto.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
-import 'package:tracker_app/shared_prefs.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
@@ -87,7 +85,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -133,7 +132,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     final listOfMuscleAndRecovery = muscleGroups.map((muscleGroup) {
       final pastExerciseLogs =
-          (Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+          (Provider.of<SupabaseExerciseAndRoutineController>(context,
+                      listen: false)
                   .exerciseLogsByMuscleGroup[muscleGroup] ??
               []);
       final lastExerciseLog =
@@ -217,12 +217,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     return Scaffold(
         floatingActionButton: FloatingActionButton(
             heroTag: UniqueKey,
-            onPressed: () => template.owner == SharedPrefs().userId
-                ? _launchRoutineLogEditor(muscleGroups: muscleGroups)
-                : _createTemplate(),
-            child: template.owner == SharedPrefs().userId
-                ? const FaIcon(FontAwesomeIcons.play, size: 24)
-                : const FaIcon(FontAwesomeIcons.download)),
+            onPressed: () =>
+                _launchRoutineLogEditor(muscleGroups: muscleGroups),
+            child: const FaIcon(FontAwesomeIcons.play, size: 24)),
         appBar: AppBar(
           backgroundColor: appBarBackgroundColor(context: context),
           surfaceTintColor: Colors.transparent,
@@ -232,11 +229,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            template.owner == SharedPrefs().userId
-                ? IconButton(
-                    onPressed: () => _showMenuBottomSheet(planDto: plan),
-                    icon: FaIcon(Icons.more_vert_rounded))
-                : const SizedBox.shrink()
+            IconButton(
+                onPressed: () => _showMenuBottomSheet(planDto: plan),
+                icon: const FaIcon(Icons.more_vert_rounded))
           ],
         ),
         body: Container(
@@ -287,7 +282,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                     "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
                                 child: CustomIcon(
                                     FontAwesomeIcons.personWalking,
-                                    color: Theme.of(context).colors.vibrantAccent)),
+                                    color: Theme.of(context)
+                                        .colors
+                                        .vibrantAccent)),
                             Text(
                               template.notes.isNotEmpty
                                   ? "${template.notes}."
@@ -318,184 +315,178 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       ],
                     ),
                   ),
-                  if (template.owner == SharedPrefs().userId)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 10,
-                            children: [
-                              Wrap(
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 10,
-                                children: [
-                                  trendSummary.trend == Trend.none
-                                      ? const SizedBox.shrink()
-                                      : getTrendIcon(trend: trendSummary.trend),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      RichText(
-                                        text: TextSpan(
-                                          text: volumeInKOrM(avgVolume),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineSmall,
-                                          children: [
-                                            TextSpan(
-                                              text: " ",
-                                            ),
-                                            TextSpan(
-                                              text: weightUnit().toUpperCase(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Text(
-                                        "Session AVERAGE".toUpperCase(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 10,
+                          children: [
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 10,
+                              children: [
+                                trendSummary.trend == Trend.none
+                                    ? const SizedBox.shrink()
+                                    : getTrendIcon(trend: trendSummary.trend),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    RichText(
+                                      text: TextSpan(
+                                        text: volumeInKOrM(avgVolume),
                                         style: Theme.of(context)
                                             .textTheme
-                                            .bodySmall,
+                                            .headlineSmall,
+                                        children: [
+                                          TextSpan(
+                                            text: " ",
+                                          ),
+                                          TextSpan(
+                                            text: weightUnit().toUpperCase(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium,
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                              Text(trendSummary.summary,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w400,
-                                          color: isDarkMode
-                                              ? Colors.white70
-                                              : Colors.black)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const SizedBox(height: 16),
-                              LineChartWidget(
-                                chartPoints: volumeChartPoints,
-                                periods: [],
-                                unit: ChartUnit.weight,
-                                aspectRation: 4.5,
-                                lineChartSide: LineChartSide.right,
-                                rightReservedSize: 20,
-                                hasLeftAxisTitles: false,
-                                belowBarData: false,
-                                hasRightAxisTitles: false,
-                              ),
-                            ],
-                          ),
-                          Text(
-                              "Here’s a volume trend of your ${template.name} training over the last ${allLogsForTemplate.length} ${pluralize(word: "session", count: allLogsForTemplate.length)}.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                      color: isDarkMode
-                                          ? Colors.white70
-                                          : Colors.black)),
-                          const SizedBox(height: 12),
-                          InformationContainer(
-                            leadingIcon: FaIcon(FontAwesomeIcons.weightHanging),
-                            title: "Training Volume",
-                            color: isDarkMode
-                                ? Theme.of(context).colors.sapphireDark80
-                                : Colors.grey.shade200,
-                            description:
-                                "Volume is the total amount of work done, often calculated as sets × reps × weight. Higher volume increases muscle size (hypertrophy).",
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (template.owner == SharedPrefs().userId)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Theme.of(context).colors.sapphireDark80
-                                : Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(5)),
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 20,
+                                    ),
+                                    Text(
+                                      "Session AVERAGE".toUpperCase(),
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
+                            Text(trendSummary.summary,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                        fontWeight: FontWeight.w400,
+                                        color: isDarkMode
+                                            ? Colors.white70
+                                            : Colors.black)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text("Muscle Recovery".toUpperCase(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                      "Delayed Onset Muscle Soreness (DOMS) refers to the muscle pain or stiffness experienced after intense physical activity. It typically develops 24 to 48 hours after exercise and can last for several days.",
+                            const SizedBox(height: 16),
+                            LineChartWidget(
+                              chartPoints: volumeChartPoints,
+                              periods: [],
+                              unit: ChartUnit.weight,
+                              aspectRation: 4.5,
+                              lineChartSide: LineChartSide.right,
+                              rightReservedSize: 20,
+                              hasLeftAxisTitles: false,
+                              belowBarData: false,
+                              hasRightAxisTitles: false,
+                            ),
+                          ],
+                        ),
+                        Text(
+                            "Here’s a volume trend of your ${template.name} training over the last ${allLogsForTemplate.length} ${pluralize(word: "session", count: allLogsForTemplate.length)}.",
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                    fontWeight: FontWeight.w400,
+                                    color: isDarkMode
+                                        ? Colors.white70
+                                        : Colors.black)),
+                        const SizedBox(height: 12),
+                        InformationContainer(
+                          leadingIcon: FaIcon(FontAwesomeIcons.weightHanging),
+                          title: "Training Volume",
+                          color: isDarkMode
+                              ? Theme.of(context).colors.sapphireDark80
+                              : Colors.grey.shade200,
+                          description:
+                              "Volume is the total amount of work done, often calculated as sets × reps × weight. Higher volume increases muscle size (hypertrophy).",
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? Theme.of(context).colors.sapphireDark80
+                              : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(5)),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 20,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Muscle Recovery".toUpperCase(),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium),
+                                const SizedBox(height: 10),
+                                Text(
+                                    "Delayed Onset Muscle Soreness (DOMS) refers to the muscle pain or stiffness experienced after intense physical activity. It typically develops 24 to 48 hours after exercise and can last for several days.",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                            fontWeight: FontWeight.w400,
+                                            color: isDarkMode
+                                                ? Colors.white70
+                                                : Colors.black)),
+                              ],
+                            ),
+                          ),
+                          if (listOfMuscleAndRecovery.isNotEmpty)
+                            Column(
+                              spacing: 10,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        spacing: 20,
+                                        children: [
+                                          SizedBox(width: 2),
+                                          ...muscleGroupsIllustrations,
+                                          SizedBox(width: 2),
+                                        ])),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10.0),
+                                  child: Text(
+                                      selectedMuscleAndRecovery?.description ??
+                                          "",
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyMedium
                                           ?.copyWith(
                                               fontWeight: FontWeight.w400,
                                               color: isDarkMode
-                                                  ? Colors.white70
+                                                  ? Colors.white
                                                   : Colors.black)),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            if (listOfMuscleAndRecovery.isNotEmpty)
-                              Column(
-                                spacing: 10,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          spacing: 20,
-                                          children: [
-                                            SizedBox(width: 2),
-                                            ...muscleGroupsIllustrations,
-                                            SizedBox(width: 2),
-                                          ])),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10.0),
-                                    child: Text(
-                                        selectedMuscleAndRecovery
-                                                ?.description ??
-                                            "",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                                fontWeight: FontWeight.w400,
-                                                color: isDarkMode
-                                                    ? Colors.white
-                                                    : Colors.black)),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: Column(
@@ -511,8 +502,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                               backgroundColor: isDarkMode
                                   ? Theme.of(context).colors.sapphireDark
                                   : Colors.grey.shade200,
-                              thumbColor:
-                                  isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.white,
+                              thumbColor: isDarkMode
+                                  ? Theme.of(context).colors.sapphireDark80
+                                  : Colors.white,
                               groupValue: _originalNewValues,
                               children: {
                                 _OriginalNewValues.originalValues: SizedBox(
@@ -587,7 +579,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
   void _deleteRoutine({required RoutineTemplateDto template}) async {
     try {
-      await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+      await Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false)
           .removeTemplate(template: template);
       if (mounted) {
         context.pop();
@@ -650,15 +643,12 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             name: copy ? "Copy of ${template.name}" : template.name,
             notes: template.notes,
             exerciseTemplates: exercises,
-            owner: "",
-            planId: template.planId,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now());
+            planId: template.planId);
 
-        final createdTemplate = await Provider.of<SupabaseExerciseAndRoutineController>(
-                context,
-                listen: false)
-            .saveTemplate(templateDto: templateToBeCreated);
+        final createdTemplate =
+            await Provider.of<SupabaseExerciseAndRoutineController>(context,
+                    listen: false)
+                .saveTemplate(templateDto: templateToBeCreated);
         if (mounted) {
           if (createdTemplate != null) {
             navigateToRoutineTemplatePreview(
@@ -679,11 +669,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
   void _loadData() {
     final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
     _template = exerciseAndRoutineController.templateWhere(id: widget.id);
-    
-    // TODO: Implement shared workout loading via Supabase public access
-    // For now, only load from user's own data
+
     if (_template == null) {
       setState(() {
         _loading = false;
@@ -866,7 +855,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final template = _template;
 
     final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
     final plans = exerciseAndRoutineController.plans;
 
     if (template != null) {
@@ -878,9 +868,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           onSelect: (selectedPlan) async {
             Navigator.of(context).pop();
 
-            final templateProvider = Provider.of<SupabaseExerciseAndRoutineController>(
-                context,
-                listen: false);
+            final templateProvider =
+                Provider.of<SupabaseExerciseAndRoutineController>(context,
+                    listen: false);
 
             final updatedRoutineTemplate =
                 template.copyWith(planId: selectedPlan.id);

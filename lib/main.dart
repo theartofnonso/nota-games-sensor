@@ -295,9 +295,11 @@ class _MyAppState extends State<MyApp> {
     _isAuthenticated = session != null;
 
     if (_isAuthenticated) {
-      // Initialize data if user is authenticated
-      final controller = context.read<SupabaseExerciseAndRoutineController>();
-      await controller.initialize();
+      // Initialize data if user is authenticated after the build is complete
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final controller = context.read<SupabaseExerciseAndRoutineController>();
+        await controller.initialize();
+      });
     }
 
     // Listen to auth state changes

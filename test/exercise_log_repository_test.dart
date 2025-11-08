@@ -14,36 +14,24 @@ void main() {
     id: "id_lyingLegCurlExercise",
     name: "Lying Leg Curl",
     primaryMuscleGroup: MuscleGroup.hamstrings,
-    secondaryMuscleGroups: [MuscleGroup.hamstrings],
     type: ExerciseType.weights,
     notes: '',
-    owner: false,
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
   );
 
   final plankExercise = ExerciseDto(
     id: "id_plankExercise",
     name: "Plank",
     primaryMuscleGroup: MuscleGroup.abs,
-    secondaryMuscleGroups: [MuscleGroup.hamstrings],
     type: ExerciseType.duration,
     notes: '',
-    owner: false,
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
   );
 
   final benchPressExercise = ExerciseDto(
     id: "id_benchPressExercise",
     name: "Bench Press",
     primaryMuscleGroup: MuscleGroup.chest,
-    secondaryMuscleGroups: [MuscleGroup.hamstrings],
     type: ExerciseType.weights,
     notes: '',
-    owner: false,
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
   );
 
   // Mock exercise logs

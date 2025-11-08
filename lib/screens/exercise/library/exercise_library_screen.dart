@@ -44,8 +44,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   /// Holds a list of [ExerciseDto] that has been recently logged
   late List<ExerciseDto> _recentExercises; // injected
 
-  bool _shouldShowOwnerExercises = false;
-
   /// Search through the list of exercises
   ///
   /// Calculates a 'relevance' score for an ExerciseDto based on the query parts.
@@ -85,11 +83,12 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         query.split(RegExp(r'[\s-]+')).where((q) => q.isNotEmpty).toList();
 
     // Get the list of all exercises (excluding any you want to filter out by default)
-    final allExercises =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-            .exercises
-            .where((exercise) => !widget.excludeExercises.contains(exercise))
-            .toList();
+    final allExercises = Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false)
+        .exercises
+        .where((exercise) => !widget.excludeExercises.contains(exercise))
+        .toList();
 
     // Filter by exercise type if provided
     List<ExerciseDto> filteredExercises;
@@ -105,12 +104,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       filteredExercises = filteredExercises
           .where((ex) => _selectedMuscleGroups.contains(ex.primaryMuscleGroup))
           .toList();
-    }
-
-    // Filter to owner exercises if needed
-    if (_shouldShowOwnerExercises) {
-      filteredExercises =
-          filteredExercises.where((ex) => ex.owner).toList();
     }
 
     // If the user typed nothing, you can simply show the entire filtered list
@@ -260,12 +253,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 10.0),
                   scrollDirection: Axis.horizontal,
                   child: Row(children: [
-                    OpacityButtonWidget(
-                        onPressed: _toggleOwnerExercises,
-                        buttonColor:
-                            _shouldShowOwnerExercises ? Theme.of(context).colors.vibrantAccent : null,
-                        label: "Your Exercises".toUpperCase()),
-                    const SizedBox(width: 6),
                     ...muscleGroups.sublist(0, muscleGroupScrollViewHalf),
                   ])),
               SingleChildScrollView(
@@ -292,7 +279,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                                         child: Divider(
                                           height: 0.5,
                                           color: isDarkMode
-                                              ? Theme.of(context).colors.dividerColor
+                                              ? Theme.of(context)
+                                                  .colors
+                                                  .dividerColor
                                               : Colors.grey.shade200,
                                         ),
                                       )
@@ -351,21 +340,15 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   void _loadOrSyncExercises() {
     final exerciseType = widget.type;
 
-    _filteredExercises =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-            .exercises
-            .where((exercise) => !widget.excludeExercises.contains(exercise))
-            .where((exercise) =>
-                exerciseType != null ? exercise.type == widget.type : true)
-            .toList();
+    _filteredExercises = Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false)
+        .exercises
+        .where((exercise) => !widget.excludeExercises.contains(exercise))
+        .where((exercise) =>
+            exerciseType != null ? exercise.type == widget.type : true)
+        .toList();
 
-    _runSearch();
-  }
-
-  void _toggleOwnerExercises() {
-    setState(() {
-      _shouldShowOwnerExercises = !_shouldShowOwnerExercises;
-    });
     _runSearch();
   }
 
@@ -395,7 +378,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     final dateRange = lastQuarterDateTimeRange();
 
     final allRecentExercises =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+                listen: false)
             .whereLogsIsWithinRange(range: dateRange)
             .expand((log) => log.exerciseLogs)
             .map((exerciseLog) => exerciseLog.exercise);

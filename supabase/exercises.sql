@@ -7,34 +7,40 @@
 -- Create table
 CREATE TABLE IF NOT EXISTS public.exercises (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    owner UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    data JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    owner UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    "primaryMuscleGroup" TEXT NOT NULL,
+    notes TEXT DEFAULT '',
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Add comment
 COMMENT ON TABLE public.exercises IS 'User-created custom exercises';
-COMMENT ON COLUMN public.exercises.data IS 'JSON containing exercise details (name, type, muscle groups, video, etc.)';
+COMMENT ON COLUMN public.exercises.name IS 'Exercise name';
+COMMENT ON COLUMN public.exercises.type IS 'Exercise type: WR (Weights), BW (Bodyweight), DR (Duration)';
+COMMENT ON COLUMN public.exercises."primaryMuscleGroup" IS 'Primary muscle group targeted';
+COMMENT ON COLUMN public.exercises.notes IS 'User notes about the exercise';
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_exercises_owner 
     ON public.exercises(owner);
 
-CREATE INDEX IF NOT EXISTS idx_exercises_created_at 
-    ON public.exercises(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_exercises_createdAt 
+    ON public.exercises("createdAt" DESC);
 
-CREATE INDEX IF NOT EXISTS idx_exercises_owner_created_at 
-    ON public.exercises(owner, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_exercises_owner_createdAt 
+    ON public.exercises(owner, "createdAt" DESC);
 
-CREATE INDEX IF NOT EXISTS idx_exercises_data_name 
-    ON public.exercises USING gin ((data -> 'name'));
+CREATE INDEX IF NOT EXISTS idx_exercises_name 
+    ON public.exercises(name);
 
--- Create updated_at trigger
-CREATE TRIGGER update_exercises_updated_at 
+-- Create updatedAt trigger
+CREATE TRIGGER update_exercises_updatedAt 
     BEFORE UPDATE ON public.exercises
     FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION update_updatedAt_column();
 
 -- ============================================================================
 -- ROW LEVEL SECURITY

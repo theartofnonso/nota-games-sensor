@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -68,9 +67,9 @@ class SupabaseRoutineLogRepository {
           .from('routine_logs')
           .select()
           .eq('owner', userId)
-          .gte('created_at', startOfCurrentYear)
-          .lte('created_at', endOfCurrentYear)
-          .order('created_at', ascending: false);
+          .gte('createdAt', startOfCurrentYear)
+          .lte('createdAt', endOfCurrentYear)
+          .order('createdAt', ascending: false);
 
       _logs = (response as List<dynamic>)
           .map((item) => _convertMapToRoutineLogDto(item))
@@ -106,12 +105,12 @@ class SupabaseRoutineLogRepository {
         final endOfWeek = week.end;
 
         final weeklyLogs = _logs.where((log) =>
-            log.createdAt.isBetweenInclusive(from: startOfWeek, to: endOfWeek));
+            log.startTime.isBetweenInclusive(from: startOfWeek, to: endOfWeek));
 
         final weeklyLogsTimes = weeklyLogs.map((log) {
-          final createdAt = log.createdAt;
+          final startTime = log.startTime;
           final logDuration = log.duration();
-          return createdAt.subtract(logDuration);
+          return startTime.subtract(logDuration);
         });
 
         historicTrainingTimes.addAll(weeklyLogsTimes);
@@ -131,24 +130,9 @@ class SupabaseRoutineLogRepository {
         throw Exception('User not authenticated');
       }
 
-      final now = datetime?.toUtc() ?? DateTime.now().toUtc();
-
-      final insertData = {
-        'owner': userId,
-        'data': jsonEncode(logDto.toJson()),
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-        'type': 'RoutineLog',
-      };
-
-      // Only include id if it's not empty (let Supabase auto-generate otherwise)
-      if (logDto.id.isNotEmpty) {
-        insertData['id'] = logDto.id;
-      }
-
       final response = await _client
           .from('routine_logs')
-          .insert(insertData)
+          .insert(logDto.toJson())
           .select()
           .single();
 
@@ -180,16 +164,9 @@ class SupabaseRoutineLogRepository {
         throw Exception('User not authenticated');
       }
 
-      final updatedAt = log.updatedAt.toUtc();
-      final startTime = log.startTime.toUtc();
-
       await _client
           .from('routine_logs')
-          .update({
-            'data': jsonEncode(log.toJson()),
-            'created_at': startTime.toIso8601String(),
-            'updated_at': updatedAt.toIso8601String(),
-          })
+          .update(log.toJson())
           .eq('id', log.id)
           .eq('owner', userId);
 
@@ -304,16 +281,16 @@ class SupabaseRoutineLogRepository {
   /// Year - Looking for a log in the same year, hence the need to match the year
   RoutineLogDto? whereLogIsSameDay({required DateTime dateTime}) {
     return _logs
-        .firstWhereOrNull((log) => log.createdAt.isSameDayMonthYear(dateTime));
+        .firstWhereOrNull((log) => log.startTime.isSameDayMonthYear(dateTime));
   }
 
   RoutineLogDto? whereLogIsSameMonth({required DateTime dateTime}) {
     return _logs
-        .firstWhereOrNull((log) => log.createdAt.isSameMonthYear(dateTime));
+        .firstWhereOrNull((log) => log.startTime.isSameMonthYear(dateTime));
   }
 
   RoutineLogDto? whereLogIsSameYear({required DateTime dateTime}) {
-    return _logs.firstWhereOrNull((log) => log.createdAt.isSameYear(dateTime));
+    return _logs.firstWhereOrNull((log) => log.startTime.isSameYear(dateTime));
   }
 
   /// RoutineLogs for the following [DateTime]
@@ -322,24 +299,24 @@ class SupabaseRoutineLogRepository {
   /// Year - Looking for logs in the same year, hence the need to match the year
   List<RoutineLogDto> whereLogsIsSameDay({required DateTime dateTime}) {
     return _logs
-        .where((log) => log.createdAt.isSameDayMonthYear(dateTime))
+        .where((log) => log.startTime.isSameDayMonthYear(dateTime))
         .toList();
   }
 
   List<RoutineLogDto> whereLogsIsSameMonth({required DateTime dateTime}) {
     return _logs
-        .where((log) => log.createdAt.isSameMonthYear(dateTime))
+        .where((log) => log.startTime.isSameMonthYear(dateTime))
         .toList();
   }
 
   List<RoutineLogDto> whereLogsIsSameYear({required DateTime dateTime}) {
-    return _logs.where((log) => log.createdAt.isSameYear(dateTime)).toList();
+    return _logs.where((log) => log.startTime.isSameYear(dateTime)).toList();
   }
 
   List<RoutineLogDto> whereLogsIsWithinRange({required DateTimeRange range}) {
     return _logs
         .where((log) =>
-            log.createdAt.isBetweenInclusive(from: range.start, to: range.end))
+            log.startTime.isBetweenInclusive(from: range.start, to: range.end))
         .toList();
   }
 
@@ -356,7 +333,7 @@ class SupabaseRoutineLogRepository {
       {required String templateId, required DateTime date}) {
     return _logs
         .where((log) =>
-            log.templateId == templateId && log.createdAt.isBefore(date))
+            log.templateId == templateId && log.startTime.isBefore(date))
         .toList();
   }
 
@@ -367,14 +344,6 @@ class SupabaseRoutineLogRepository {
 
   /// Helper method to convert Supabase map to RoutineLogDto
   RoutineLogDto _convertMapToRoutineLogDto(Map<String, dynamic> item) {
-    final dataJson = jsonDecode(item['data'] as String) as Map<String, dynamic>;
-
-    // Add metadata from Supabase
-    dataJson['id'] = item['id'];
-    dataJson['owner'] = item['owner'];
-    dataJson['createdAt'] = item['created_at'];
-    dataJson['updatedAt'] = item['updated_at'];
-
-    return RoutineLogDto.fromJson(json: dataJson);
+    return RoutineLogDto.fromJson(json: Map<String, dynamic>.from(item));
   }
 }

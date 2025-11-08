@@ -5,13 +5,15 @@ import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 
 import 'date_utils.dart';
 
-TrainingFrequencyArchetype trainingFrequencyArchetype({required int avgSessions}) {
+TrainingFrequencyArchetype trainingFrequencyArchetype(
+    {required int avgSessions}) {
   if (avgSessions <= 2) return TrainingFrequencyArchetype.rarelyTrains;
   if (avgSessions <= 4) return TrainingFrequencyArchetype.oftenTrains;
   return TrainingFrequencyArchetype.alwaysTrains;
 }
 
-TrainingDurationArchetype trainingDurationArchetype({required Duration avgDuration}) {
+TrainingDurationArchetype trainingDurationArchetype(
+    {required Duration avgDuration}) {
   final minutes = avgDuration.inMinutes;
   if (minutes < 30) return TrainingDurationArchetype.shortSessions;
   if (minutes < 60) return TrainingDurationArchetype.standardSessions;
@@ -53,7 +55,9 @@ List<TrainingArchetype> classifyTrainingArchetypes({
   // Helpers
   // ---------------------------------------------------------------------------
   /// Returns a rounded‐up mean for any list of ints.
-  int safeAverage(List<int> values) => values.isEmpty ? 0 : (values.reduce((a, b) => a + b) / values.length).round();
+  int safeAverage(List<int> values) => values.isEmpty
+      ? 0
+      : (values.reduce((a, b) => a + b) / values.length).round();
 
   // ---------------------------------------------------------------------------
   // 1. Collect the last 13 calendar weeks
@@ -70,7 +74,7 @@ List<TrainingArchetype> classifyTrainingArchetypes({
 
   for (final week in weeksInLastQuarter) {
     final weekLogs = logs.where(
-      (log) => log.createdAt.isBetweenInclusive(from: week.start, to: week.end),
+      (log) => log.startTime.isBetweenInclusive(from: week.start, to: week.end),
     );
 
     sessionsPerWeek.add(weekLogs.length);
@@ -80,7 +84,8 @@ List<TrainingArchetype> classifyTrainingArchetypes({
   // ---------------------------------------------------------------------------
   // 3. Weekly-average archetypes (safe even when the lists are empty)
   // ---------------------------------------------------------------------------
-  final trainingFrequencyArch = trainingFrequencyArchetype(avgSessions: safeAverage(sessionsPerWeek));
+  final trainingFrequencyArch =
+      trainingFrequencyArchetype(avgSessions: safeAverage(sessionsPerWeek));
 
   final trainingDurationArch = trainingDurationArchetype(
     avgDuration: Duration(minutes: safeAverage(allDurations)),
