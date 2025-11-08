@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
@@ -126,6 +127,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -165,126 +167,296 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                   ),
                   const SizedBox(height: 48),
 
-                  // Email field (always shown)
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.email),
+                  // Modern Email Input with integrated button
+                  if (!_otpSent)
+                    _ModernEmailInput(
+                      controller: _emailController,
+                      onSubmit: _sendOTP,
+                      isLoading: _isLoading,
+                      isDarkMode: isDarkMode,
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                    enabled: !_otpSent,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
 
                   // OTP field (shown after email submitted)
                   if (_otpSent) ...[
-                    TextFormField(
+                    _ModernOTPInput(
                       controller: _otpController,
-                      decoration: InputDecoration(
-                        labelText: 'Verification Code',
-                        hintText: '6-digit code',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        prefixIcon: const Icon(Icons.lock),
-                      ),
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      autofocus: true,
-                      onChanged: (value) {
-                        // Auto-submit when 6 digits entered
-                        if (value.length == 6) {
-                          _verifyOTP();
-                        }
-                      },
+                      onSubmit: _verifyOTP,
+                      isLoading: _isLoading,
+                      isDarkMode: isDarkMode,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     Text(
                       'Enter the 6-digit code sent to ${_emailController.text.trim()}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
-                  ],
-
-                  const SizedBox(height: 24),
-
-                  // Action button
-                  ElevatedButton(
-                    onPressed:
-                        _isLoading ? null : (_otpSent ? _verifyOTP : _sendOTP),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            _otpSent ? 'Verify Code' : 'Send Code',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Back/Change email button
-                  if (_otpSent)
+                    const SizedBox(height: 24),
                     TextButton(
                       onPressed: _resetForm,
                       child: Text(
                         'Use different email',
                         style: TextStyle(
                           color: theme.colorScheme.primary,
+                          fontSize: 14,
                         ),
                       ),
                     ),
-
-                  if (_otpSent)
                     TextButton(
                       onPressed: _isLoading ? null : _sendOTP,
                       child: Text(
                         'Resend code',
                         style: TextStyle(
                           color: theme.colorScheme.primary.withOpacity(0.7),
+                          fontSize: 14,
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ModernEmailInput extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onSubmit;
+  final bool isLoading;
+  final bool isDarkMode;
+
+  const _ModernEmailInput({
+    required this.controller,
+    required this.onSubmit,
+    required this.isLoading,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF212121) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(
+          color: isDarkMode
+              ? Colors.white.withOpacity(0.1)
+              : Colors.black.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: Row(
+        children: [
+          const SizedBox(width: 16),
+          Icon(
+            Icons.email_outlined,
+            color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextFormField(
+              controller: controller,
+              style: TextStyle(
+                color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800,
+                fontSize: 15,
+              ),
+              decoration: InputDecoration(
+                hintText: 'your@email.com',
+                hintStyle: TextStyle(
+                  color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                  fontSize: 15,
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              keyboardType: TextInputType.emailAddress,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your email';
+                }
+                if (!value.contains('@')) {
+                  return 'Please enter a valid email';
+                }
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: isLoading ? null : onSubmit,
+              borderRadius: BorderRadius.circular(50),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3A5C4A),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                        ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'continue',
+                            style: TextStyle(
+                              color: Colors.grey.shade300,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          FaIcon(
+                            FontAwesomeIcons.arrowRight,
+                            color: Colors.grey.shade300,
+                            size: 14,
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModernOTPInput extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onSubmit;
+  final bool isLoading;
+  final bool isDarkMode;
+
+  const _ModernOTPInput({
+    required this.controller,
+    required this.onSubmit,
+    required this.isLoading,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF212121) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(
+          color: isDarkMode
+              ? Colors.white.withOpacity(0.1)
+              : Colors.black.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: Row(
+        children: [
+          const SizedBox(width: 16),
+          Icon(
+            Icons.lock_outline,
+            color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextFormField(
+              controller: controller,
+              style: TextStyle(
+                color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800,
+                fontSize: 15,
+                letterSpacing: 4,
+              ),
+              decoration: InputDecoration(
+                hintText: '000000',
+                hintStyle: TextStyle(
+                  color: isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                  fontSize: 15,
+                  letterSpacing: 4,
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                counterText: '',
+              ),
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              autofocus: true,
+              onChanged: (value) {
+                if (value.length == 6) {
+                  onSubmit();
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: isLoading ? null : onSubmit,
+              borderRadius: BorderRadius.circular(50),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3A5C4A),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: isLoading
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                        ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'verify',
+                            style: TextStyle(
+                              color: Colors.grey.shade300,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          FaIcon(
+                            FontAwesomeIcons.arrowRight,
+                            color: Colors.grey.shade300,
+                            size: 14,
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
     );
   }
