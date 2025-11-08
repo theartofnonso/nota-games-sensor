@@ -3,7 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
@@ -28,7 +28,7 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
   Widget build(BuildContext context) {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    return Consumer<ExerciseAndRoutineController>(builder: (_, provider, __) {
+    return Consumer<SupabaseExerciseAndRoutineController>(builder: (_, provider, __) {
       final plans = List<RoutinePlanDto>.from(provider.plans);
 
       final defaultPlanGridItem =

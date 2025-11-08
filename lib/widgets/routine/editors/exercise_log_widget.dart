@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/controllers/exercise_log_controller.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
 import 'package:tracker_app/dtos/set_dtos/duration_set_dto.dart';
@@ -73,7 +73,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _show1RMRecommendations() {
     final pastExerciseLogs =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
                 .exerciseLogsByExerciseId[_exerciseLog.id] ??
             [];
     final completedPastExerciseLogs =
@@ -158,7 +158,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _addSet() {
     final pastSets =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .whereRecentSetsForExercise(exercise: _exerciseLog.exercise);
     Provider.of<ExerciseLogController>(context, listen: false)
         .addSet(exerciseLogId: _exerciseLog.id, pastSets: pastSets);
@@ -174,7 +174,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   void _updateWeight(
       {required int index, required double weight, required SetDto setDto}) {
     final previousSets =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousWeights =
@@ -198,7 +198,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   void _updateReps(
       {required int index, required int reps, required SetDto setDto}) {
     final previousSets =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousReps = previousSets
@@ -327,7 +327,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _loadWeightAndRepsControllers({required List<SetDto> sets}) {
     final previousSets =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousWeights =
@@ -362,7 +362,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _loadRepsControllers({required List<SetDto> sets}) {
     final previousSets =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousReps = previousSets

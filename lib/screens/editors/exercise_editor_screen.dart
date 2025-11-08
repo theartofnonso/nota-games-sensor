@@ -8,7 +8,7 @@ import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 
 import '../../colors.dart';
-import '../../controllers/exercise_and_routine_controller.dart';
+import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/exercise_type_enums.dart';
 import '../../logger.dart';
@@ -44,7 +44,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final exerciseEditorController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
 
     if (exerciseEditorController.errorMessage.isNotEmpty) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -262,9 +262,12 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
           primaryMuscleGroup: _primaryMuscleGroup,
           secondaryMuscleGroups: [],
           type: _exerciseType,
-          owner: "");
+          notes: "",
+          owner: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now());
 
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+      await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
           .saveExercise(exerciseDto: exercise);
 
       logger.i("created exercise ${exercise.toString()}");
@@ -287,7 +290,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
       final exerciseToBeUpdated = exercise.copyWith(
           name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+      await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
           .updateExercise(exercise: exerciseToBeUpdated);
 
       if (mounted) {

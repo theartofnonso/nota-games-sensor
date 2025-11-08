@@ -18,7 +18,7 @@ import 'package:tracker_app/widgets/shareables/routine_log_shareable_lite.dart';
 import 'package:tracker_app/widgets/shareables/session_milestone_shareable.dart';
 
 import '../../colors.dart';
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../enums/posthog_analytics_event.dart';
 import '../../urls.dart';
@@ -63,7 +63,7 @@ class _RoutineLogSummaryScreenState extends State<RoutineLogSummaryScreen> {
     final updatedLog = widget.log.copyWith(exerciseLogs: updatedExerciseLogs);
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
     List<RoutineLogDto> routineLogsForTheYear = exerciseAndRoutineController
         .whereLogsIsSameYear(dateTime: DateTime.now().withoutTime());
 

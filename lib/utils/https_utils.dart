@@ -1,13 +1,21 @@
-import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:http/http.dart' as http;
 
-
-Future<String> getAPI({required String endpoint, Map<String, String>? queryParameters}) async {
-  final restOperation = Amplify.API.get(endpoint, queryParameters: queryParameters);
+/// Simple HTTP GET utility for making API calls
+Future<String> getAPI({
+  required String endpoint,
+  Map<String, String>? queryParameters,
+}) async {
   try {
-    await restOperation.response;
-  } on ApiException catch (e) {
-    safePrint('Failed to get data from API: $e');
+    final uri = Uri.parse(endpoint).replace(queryParameters: queryParameters);
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      return response.body;
+    } else {
+      throw Exception('Failed to get data from API: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Failed to get data from API: $e');
+    rethrow;
   }
-  final restResponse = await restOperation.response;
-  return restResponse.decodeBody();
 }

@@ -1,8 +1,4 @@
-import 'dart:convert';
-
 import 'package:tracker_app/shared_prefs.dart';
-
-import '../../models/RoutinePlan.dart';
 
 const defaultPlanId = "DEFAULT_PLAN_ID";
 
@@ -18,7 +14,7 @@ class RoutinePlanDto {
       id: defaultPlanId,
       name: "Your workout plans",
       notes:
-          "This is your default plan. If you’d like to organize your workouts into different plans, simply create a new one.",
+          "This is your default plan. If you'd like to organize your workouts into different plans, simply create a new one.",
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       owner: SharedPrefs().userId);
@@ -32,30 +28,32 @@ class RoutinePlanDto {
     required this.owner,
   });
 
-  Map<String, Object> toJson() {
+  Map<String, dynamic> toJson() {
     return {
       "id": id,
       'name': name,
       'notes': notes,
+      'owner': owner,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
-  factory RoutinePlanDto.toDto(RoutinePlan plan) {
-    return RoutinePlanDto.fromPlan(plan: plan);
-  }
-
-  factory RoutinePlanDto.fromPlan({required RoutinePlan plan}) {
-    final json = jsonDecode(plan.data);
+  factory RoutinePlanDto.fromJson({required Map<String, dynamic> json}) {
+    final id = json["id"] ?? "";
     final name = json["name"] ?? "";
     final notes = json["notes"] ?? "";
+    final owner = json["owner"] ?? "";
+    final createdAt = json["createdAt"] != null ? DateTime.parse(json["createdAt"]) : DateTime.now();
+    final updatedAt = json["updatedAt"] != null ? DateTime.parse(json["updatedAt"]) : DateTime.now();
 
     return RoutinePlanDto(
-      id: plan.id,
+      id: id,
       name: name,
       notes: notes,
-      owner: plan.owner ?? "",
-      createdAt: plan.createdAt.getDateTimeInUtc(),
-      updatedAt: plan.updatedAt.getDateTimeInUtc(),
+      owner: owner,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 

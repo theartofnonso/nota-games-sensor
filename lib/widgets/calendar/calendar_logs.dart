@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../routine/preview/routine_log_widget.dart';
 
 class CalendarLogs extends StatelessWidget {
@@ -12,7 +12,7 @@ class CalendarLogs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final routineLogController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final routineLogController = Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
     final logs = routineLogController.whereLogsIsSameDay(dateTime: dateTime).toList();
     final children = logs.map((log) {
       Widget widget;

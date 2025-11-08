@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -11,20 +9,18 @@ import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/screens/logs/routine_log_summary_screen.dart';
 import 'package:tracker_app/shared_prefs.dart';
-import 'package:tracker_app/utils/https_utils.dart';
 import 'package:tracker_app/utils/navigation_utils.dart';
 import 'package:tracker_app/widgets/backgrounds/trkr_loading_screen.dart';
 
 import '../../../colors.dart';
 import '../../../dtos/exercise_log_dto.dart';
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/viewmodels/exercise_log_view_model.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
-import '../../models/RoutineLog.dart';
 import '../../utils/data_trend_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
@@ -67,7 +63,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -318,29 +314,16 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         ));
   }
 
-  void _loadData() {
+  void _loadData() async {
     final routineLogController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
     _log = routineLogController.logWhereId(id: widget.id);
+    
+    // TODO: Implement shared workout loading via Supabase public access
+    // For now, only load from user's own data
     if (_log == null) {
-      _loading = true;
-      getAPI(endpoint: "/routine-logs/${widget.id}").then((data) {
-        if (data.isNotEmpty) {
-          final json = jsonDecode(data);
-          final body = json["data"];
-          final routineLogJson = body["getRoutineLog"];
-          if (routineLogJson != null) {
-            final log = RoutineLog.fromJson(routineLogJson);
-            setState(() {
-              _loading = false;
-              _log = RoutineLogDto.toDto(log);
-            });
-          } else {
-            setState(() {
-              _loading = false;
-            });
-          }
-        }
+      setState(() {
+        _loading = false;
       });
     }
   }
@@ -464,7 +447,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                 endTime: datetimeRange.end,
                 createdAt: datetimeRange.start,
                 updatedAt: DateTime.now());
-            await Provider.of<ExerciseAndRoutineController>(context,
+            await Provider.of<SupabaseExerciseAndRoutineController>(context,
                     listen: false)
                 .updateLog(log: updatedLog);
             setState(() {
@@ -504,7 +487,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             createdAt: DateTime.now(),
             updatedAt: DateTime.now());
 
-        final createdTemplate = await Provider.of<ExerciseAndRoutineController>(
+        final createdTemplate = await Provider.of<SupabaseExerciseAndRoutineController>(
                 context,
                 listen: false)
             .saveTemplate(templateDto: templateToCreate);
@@ -530,7 +513,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final log = _log;
     if (log != null) {
       try {
-        await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .removeLog(log: log);
         if (mounted) {
           context.pop();

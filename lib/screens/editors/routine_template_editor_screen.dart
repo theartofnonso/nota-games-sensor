@@ -3,7 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/controllers/exercise_log_controller.dart';
 import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
@@ -59,7 +59,7 @@ class _RoutineTemplateEditorScreenState
         onSelected: (List<ExerciseDto> selectedExercises) {
           final onlyExercise = selectedExercises.first;
           final pastSets =
-              Provider.of<ExerciseAndRoutineController>(context, listen: false)
+              Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
                   .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
@@ -100,7 +100,7 @@ class _RoutineTemplateEditorScreenState
         context: context,
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<ExerciseAndRoutineController>(context,
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
                   listen: false)
               .whereRecentSetsForExercise(exercise: selectedExercises.first);
           controller.replaceExerciseLog(
@@ -147,7 +147,7 @@ class _RoutineTemplateEditorScreenState
         createdAt: DateTime.now(),
         updatedAt: DateTime.now());
 
-    await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+    await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
         .saveTemplate(templateDto: template);
     _navigateBack();
   }
@@ -191,7 +191,7 @@ class _RoutineTemplateEditorScreenState
   void _doUpdateRoutineTemplate(
       {required RoutineTemplateDto updatedTemplate}) async {
     final templateProvider =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
 
     final updatedRoutineTemplate =
         _getUpdatedRoutineTemplate(template: updatedTemplate);
@@ -260,7 +260,7 @@ class _RoutineTemplateEditorScreenState
         Provider.of<ExerciseLogController>(context, listen: false);
 
     final routineTemplateController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
 
     if (routineTemplateController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -453,7 +453,7 @@ class _RoutineTemplateEditorScreenState
     if (exercises != null && exercises.isNotEmpty) {
       final updatedExerciseLogs = exercises.map((exerciseLog) {
         final previousSets =
-            Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
                 .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
         if (previousSets.isNotEmpty) {
           final unCheckedSets = previousSets

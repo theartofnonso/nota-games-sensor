@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,13 +9,13 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tracker_app/colors.dart';
-import 'package:tracker_app/graphQL/queries.dart';
 import 'package:tracker_app/screens/request_screens/notifications_request.dart';
 import 'package:tracker_app/shared_prefs.dart';
 import 'package:tracker_app/urls.dart';
 
-import '../../controllers/exercise_and_routine_controller.dart';
+import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
@@ -207,13 +206,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                         style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text("help us improve")),
                 ListTile(
-                    onTap: _visitTRKR,
-                    leading: FaIcon(FontAwesomeIcons.instagram,
-                        color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("TRNR in the wild",
-                        style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text("follow us on socials")),
-                ListTile(
                     onTap: _logout,
                     leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
                         color: isDarkMode ? Colors.white70 : Colors.black38),
@@ -273,42 +265,13 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _clearAppData() async {
     Posthog().reset();
-    await Amplify.DataStore.clear();
     SharedPrefs().clear();
     await FlutterLocalNotificationsPlugin().cancelAll();
     if (mounted) {
-      Provider.of<ExerciseAndRoutineController>(context, listen: false).clear();
+      Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false).clear();
     }
   }
 
-  void _visitTRKR() {
-    displayBottomSheet(
-        context: context,
-        child: Column(children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.globe, size: 18),
-            horizontalTitleGap: 6,
-            title: Text("On the web",
-                style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              openUrl(url: trackrWebUrl, context: context);
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.instagram, size: 20),
-            horizontalTitleGap: 6,
-            title: Text("On Instagram",
-                style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              openUrl(url: instagramUrl, context: context);
-            },
-          )
-        ]));
-  }
 
   void _turnOnNotification() async {
     if (!_notificationEnabled) {
@@ -344,9 +307,9 @@ class _SettingsScreenState extends State<SettingsScreen>
           Navigator.of(context).pop();
           _showLoadingScreen();
           _clearAppData();
-          await Amplify.Auth.signOut();
+          await Supabase.instance.client.auth.signOut();
           if (mounted) {
-            context.go('/'); // Replace '/welcome' with your initial route
+            context.go('/'); // Navigate to auth screen
           }
         },
         leftActionLabel: 'Cancel',
@@ -365,25 +328,29 @@ class _SettingsScreenState extends State<SettingsScreen>
           Navigator.of(context).pop();
           _showLoadingScreen();
 
-          final deletedExercises = await batchDeleteUserData(
-              document: deleteUserExerciseData,
-              documentKey: "deleteUserExerciseData");
-          final deletedRoutineTemplates = await batchDeleteUserData(
-              document: deleteUserRoutineTemplateData,
-              documentKey: "deleteUserRoutineTemplateData");
-          final deletedRoutineLogs = await batchDeleteUserData(
-              document: deleteUserRoutineLogData,
-              documentKey: "deleteUserRoutineLogData");
-          if (deletedExercises &&
-              deletedRoutineTemplates &&
-              deletedRoutineLogs) {
+          try {
+            final userId = Supabase.instance.client.auth.currentUser?.id;
+            if (userId == null) {
+              throw Exception('User not authenticated');
+            }
+
+            // Delete all user data from Supabase
+            await Supabase.instance.client.from('exercises').delete().eq('owner', userId);
+            await Supabase.instance.client.from('routine_templates').delete().eq('owner', userId);
+            await Supabase.instance.client.from('routine_plans').delete().eq('owner', userId);
+            await Supabase.instance.client.from('routine_logs').delete().eq('owner', userId);
+
             _hideLoadingScreen();
             _clearAppData();
-            await Amplify.Auth.deleteUser();
+            
+            // Sign out the user (Supabase doesn't have deleteUser on client, 
+            // user deletion should be done via dashboard or admin API)
+            await Supabase.instance.client.auth.signOut();
+            
             if (mounted) {
-              context.go('/'); // Replace '/welcome' with your initial route
+              context.go('/'); // Navigate to auth screen
             }
-          } else {
+          } catch (e) {
             _hideLoadingScreen();
             if (mounted) {
               showSnackbar(

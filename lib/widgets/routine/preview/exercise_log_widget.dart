@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/exercise_type_enums.dart';
 import 'package:tracker_app/widgets/routine/preview/set_headers/single_set_header.dart';
 
-import '../../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
@@ -88,7 +88,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     final exerciseType = exercise.type;
 
     final routineLogController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
 
     final pastExerciseLogs = routineLogController.whereExerciseLogsBefore(
         exercise: exercise, date: widget.exerciseLog.createdAt);

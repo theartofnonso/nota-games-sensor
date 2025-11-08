@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
@@ -14,7 +13,7 @@ import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/shared_prefs.dart';
 
 import '../../colors.dart';
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
@@ -23,13 +22,11 @@ import '../../enums/chart_unit_enum.dart';
 import '../../enums/posthog_analytics_event.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../enums/routine_preview_type_enum.dart';
-import '../../models/RoutineTemplate.dart';
 import '../../urls.dart';
 import '../../utils/data_trend_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
-import '../../utils/https_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../utils/string_utils.dart';
@@ -90,7 +87,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -136,7 +133,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     final listOfMuscleAndRecovery = muscleGroups.map((muscleGroup) {
       final pastExerciseLogs =
-          (Provider.of<ExerciseAndRoutineController>(context, listen: false)
+          (Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
                   .exerciseLogsByMuscleGroup[muscleGroup] ??
               []);
       final lastExerciseLog =
@@ -587,7 +584,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
   void _deleteRoutine({required RoutineTemplateDto template}) async {
     try {
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+      await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
           .removeTemplate(template: template);
       if (mounted) {
         context.pop();
@@ -655,7 +652,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             createdAt: DateTime.now(),
             updatedAt: DateTime.now());
 
-        final createdTemplate = await Provider.of<ExerciseAndRoutineController>(
+        final createdTemplate = await Provider.of<SupabaseExerciseAndRoutineController>(
                 context,
                 listen: false)
             .saveTemplate(templateDto: templateToBeCreated);
@@ -679,27 +676,14 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
   void _loadData() {
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
     _template = exerciseAndRoutineController.templateWhere(id: widget.id);
+    
+    // TODO: Implement shared workout loading via Supabase public access
+    // For now, only load from user's own data
     if (_template == null) {
-      _loading = true;
-      getAPI(endpoint: "/routine-templates/${widget.id}").then((data) {
-        if (data.isNotEmpty) {
-          final json = jsonDecode(data);
-          final body = json["data"];
-          final routineTemplate = body["getRoutineTemplate"];
-          if (routineTemplate != null) {
-            final template = RoutineTemplate.fromJson(routineTemplate);
-            setState(() {
-              _loading = false;
-              _template = RoutineTemplateDto.toDto(template);
-            });
-          } else {
-            setState(() {
-              _loading = false;
-            });
-          }
-        }
+      setState(() {
+        _loading = false;
       });
     }
   }
@@ -879,7 +863,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final template = _template;
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
     final plans = exerciseAndRoutineController.plans;
 
     if (template != null) {
@@ -891,7 +875,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           onSelect: (selectedPlan) async {
             Navigator.of(context).pop();
 
-            final templateProvider = Provider.of<ExerciseAndRoutineController>(
+            final templateProvider = Provider.of<SupabaseExerciseAndRoutineController>(
                 context,
                 listen: false);
 

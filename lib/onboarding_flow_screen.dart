@@ -3,18 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import 'package:tracker_app/colors.dart';
-import 'package:video_player/video_player.dart';
 
 import 'utils/theme/theme.dart';
 import 'widgets/buttons/opacity_button_widget_two.dart';
-
-// ---------------------------------------------------------------------------
-//  FULL‑SCREEN VIDEO + SOFT BLUR + OVERLAYED TEXT & CTA BUTTON
-// ---------------------------------------------------------------------------
-//  * Plays an asset‑based video that fills the screen (autoplay + loop).
-//  * Applies a configurable gaussian blur (`blurSigma`) over the video.
-//  * Adds a fade gradient for readability plus headline & button at bottom.
-// ---------------------------------------------------------------------------
 
 class OnboardingFlowScreen extends StatefulWidget {
   static const routeName = '/onboarding_flow_screen';
@@ -28,27 +19,6 @@ class OnboardingFlowScreen extends StatefulWidget {
 }
 
 class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
-  late VideoPlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.asset("images/video.MOV")
-      ..setLooping(true)
-      ..setVolume(0)
-      ..setLooping(true)
-      ..initialize().then((_) {
-        setState(() {});
-        _controller.play();
-      });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -59,47 +29,19 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         backgroundColor: Colors.black,
         body: Stack(
           children: [
-            // ----------------- FULL‑SCREEN VIDEO -----------------
-            Positioned.fill(
-              child: FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: _controller.value.size.width,
-                  height: _controller.value.size.height,
-                  child: VideoPlayer(_controller),
-                ),
-              ),
-            ),
-
-            // ----------------- BLUR LAYER ------------------------
-            // Uses BackdropFilter to blur everything beneath it.
-            Positioned.fill(
-              child: ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: 5.0,
-                    sigmaY: 5.0,
-                  ),
-                  child: Container(
-                    // transparent container is required
-                    color: Colors.transparent,
-                  ),
-                ),
-              ),
-            ),
-
-            // ----------------- TOP→BOTTOM FADE ------------------
+            // ----------------- GRADIENT BACKGROUND -----------------
             Positioned.fill(
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black54],
+                    colors: [vibrantBlue, vibrantGreen],
                   ),
                 ),
               ),
             ),
+
             // ----------------- BOTTOM OVERLAY --------------------
             Align(
               alignment: Alignment.bottomCenter,
@@ -113,8 +55,9 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                       'images/framer_logo.png',
                       fit: BoxFit.contain,
                       color: Colors.white,
-                      height: 60, // Adjust the height as needed
+                      height: 60,
                     ),
+                    const SizedBox(height: 12),
                     Text(
                       "Training is tough. Let's tell you what to do instead.",
                       textAlign: TextAlign.start,
@@ -128,8 +71,9 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: OpacityButtonWidgetTwo(
-                          label: "Start training better", onPressed: widget.onPressed, buttonColor: vibrantGreen),
-                    )
+                          label: "Start training better", onPressed: widget.onPressed, buttonColor: Colors.white),
+                    ),
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),

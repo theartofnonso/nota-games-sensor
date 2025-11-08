@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/utils/string_utils.dart';
 
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../dtos/viewmodels/routine_template_arguments.dart';
@@ -56,7 +56,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     if (plan == null) return const NotFound();
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -120,7 +120,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                   children: [
                     Builder(builder: (context) {
                       final controller =
-                          Provider.of<ExerciseAndRoutineController>(context,
+                          Provider.of<SupabaseExerciseAndRoutineController>(context,
                               listen: false);
                       final msg = PlansNudges.build(controller: controller);
                       if (msg == null) return const SizedBox.shrink();
@@ -204,7 +204,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
   void _deleteRoutinePlan({required RoutinePlanDto plan}) async {
     try {
       final exerciseAndRoutineController =
-          Provider.of<ExerciseAndRoutineController>(context, listen: false);
+          Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
 
       final routineTemplates = exerciseAndRoutineController.templates
           .where((template) => template.planId == plan.id)
@@ -330,7 +330,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       _plan = RoutinePlanDto.defaultPlan;
     } else {
       final exerciseAndRoutineController =
-          Provider.of<ExerciseAndRoutineController>(context, listen: false);
+          Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
       _plan = exerciseAndRoutineController.planWhere(id: widget.id);
     }
   }

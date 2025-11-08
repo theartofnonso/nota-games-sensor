@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/dtos/appsync/routine_template_dto.dart';
 import 'package:tracker_app/widgets/search_bar.dart';
 
-import '../../../controllers/exercise_and_routine_controller.dart';
+import '../../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../utils/general_utils.dart';
 import '../../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
@@ -69,7 +69,7 @@ class _RoutineTemplateLibraryScreenState
 
     // Get the list of all templates (excluding any you want to filter out by default)
     final filteredTemplates =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .templates
             .where((template) => !widget.excludeTemplates.contains(template))
             .where((template) => template.planId.isEmpty)
@@ -180,7 +180,7 @@ class _RoutineTemplateLibraryScreenState
 
   void _loadTemplates() {
     _filteredTemplates =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .templates
             .where((template) => !widget.excludeTemplates.contains(template))
             .where((template) => template.planId.isEmpty)

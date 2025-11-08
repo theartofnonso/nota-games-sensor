@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/utils/string_utils.dart';
 
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/graph/chart_point_dto.dart';
 import '../../enums/chart_unit_enum.dart';
 import '../../utils/data_trend_utils.dart';
@@ -18,7 +18,7 @@ class LogStreakChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final routineLogController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final routineLogController = Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
 
     final dateRange = theLastYearDateTimeRange();
 

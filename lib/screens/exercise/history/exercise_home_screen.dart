@@ -3,7 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/screens/editors/exercise_editor_screen.dart';
 import 'package:tracker_app/screens/exercise/history/exercise_chart_screen.dart';
 import 'package:tracker_app/screens/exercise/history/history_screen.dart';
@@ -33,7 +33,8 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   void _deleteExercise(BuildContext context) async {
     context.pop();
     try {
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+      await Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false)
           .removeExercise(exercise: widget.exercise);
       if (context.mounted) {
         context.pop();
@@ -54,7 +55,8 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
     if (exercise == null) return const NotFound();
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     final exerciseLogs =
         exerciseAndRoutineController.exerciseLogsByExerciseId[exercise.id] ??
@@ -98,10 +100,8 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
       )
     ];
 
-    final hasVideo = (exercise.video?.data) != null;
-
     return DefaultTabController(
-        length: hasVideo ? 3 : 2,
+        length: 2,
         child: Scaffold(
           appBar: AppBar(
             backgroundColor: appBarBackgroundColor(context: context),
@@ -127,13 +127,6 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
                             .textTheme
                             .bodySmall
                             ?.copyWith(fontWeight: FontWeight.w600))),
-                if (hasVideo)
-                  Tab(
-                      child: Text("Video",
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(fontWeight: FontWeight.w600))),
               ],
             ),
             actions: exercise.owner == SharedPrefs().userId

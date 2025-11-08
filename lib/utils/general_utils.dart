@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -86,13 +84,12 @@ String timeOfDay({DateTime? datetime}) {
 }
 
 Future<bool> batchDeleteUserData(
-    {required String document, required String documentKey}) async {
-  final operation = Amplify.API.mutate(
-    request: GraphQLRequest<dynamic>(document: document),
+    {required String tableName}) async {
+  // Note: For Supabase, batch deletes should be done via the repository layer
+  // This is a placeholder that should be implemented in the specific repository
+  throw UnimplementedError(
+    'Batch delete should be implemented in the Supabase repository for $tableName'
   );
-  final response = await operation.response;
-  final result = jsonDecode(response.data);
-  return result[documentKey];
 }
 
 Future<NotificationsEnabledOptions> checkIosNotificationPermission() async {

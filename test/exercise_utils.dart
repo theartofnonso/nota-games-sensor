@@ -19,7 +19,10 @@ ExerciseDto makeExercise({
     type: type,
     primaryMuscleGroup: primary,
     secondaryMuscleGroups: secondary,
-    owner: '',
+    notes: '',
+    owner: true,
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
   );
 }
 
@@ -32,7 +35,12 @@ ExerciseLogDto makeLog({
   return ExerciseLogDto(
     id: exercise.id,
     exercise: exercise,
-    sets: sets.isNotEmpty ? sets : [WeightAndRepsSetDto(weight: 10, reps: 12, checked: true, dateTime: createdAt)],
+    sets: sets.isNotEmpty
+        ? sets
+        : [
+            WeightAndRepsSetDto(
+                weight: 10, reps: 12, checked: true, dateTime: createdAt)
+          ],
     createdAt: createdAt ?? DateTime.now(),
     routineLogId: 'routine1',
     superSetId: '',

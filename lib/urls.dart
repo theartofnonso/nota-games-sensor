@@ -6,7 +6,7 @@ const instagramUrl = 'https://www.instagram.com/ware.trainer';
 const pexelsImageUrl =
     'https://www.pexels.com/photo/man-and-woman-doing-push-up-face-to-face-6740308/';
 
-/// Amplify API Endpoints
+/// API Endpoints
 const routineLogs = '/routine-logs';
 
 /// Share Routine

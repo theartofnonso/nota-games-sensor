@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
-import 'package:tracker_app/models/ModelProvider.dart';
 
 import '../exercise_log_dto.dart';
 
@@ -27,49 +24,47 @@ class RoutineTemplateDto {
     required this.owner,
   });
 
-  Map<String, Object> toJson() {
+  Map<String, dynamic> toJson() {
     return {
       "id": id,
       "planId": planId,
       'name': name,
       'notes': notes,
       'exercises': exerciseTemplates.map((exercise) => exercise.toJson()).toList(),
+      'owner': owner,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
-  factory RoutineTemplateDto.toDto(RoutineTemplate template) {
-    return RoutineTemplateDto.fromTemplate(template: template);
-  }
-
-  factory RoutineTemplateDto.fromTemplate({required RoutineTemplate template}) {
-    final json = jsonDecode(template.data);
+  factory RoutineTemplateDto.fromJson({required Map<String, dynamic> json}) {
+    final id = json["id"] ?? "";
     final String? rawPlanId = json['planId'] as String?;
     final String planId = (rawPlanId?.isNotEmpty ?? false) ? rawPlanId! : defaultPlanId;
     final name = json["name"] ?? "";
     final notes = json["notes"] ?? "";
+    final owner = json["owner"] ?? "";
+    final createdAt = json["createdAt"] != null ? DateTime.parse(json["createdAt"]) : DateTime.now();
+    final updatedAt = json["updatedAt"] != null ? DateTime.parse(json["updatedAt"]) : DateTime.now();
+    
     final rawExerciseTemplates = json["exercises"] as List<dynamic>;
-    List<ExerciseLogDto> exerciseTemplates = [];
-    if (rawExerciseTemplates.isNotEmpty && rawExerciseTemplates.first is String) {
-      exerciseTemplates = rawExerciseTemplates
-          .map((json) => ExerciseLogDto.fromJson(
-              routineLogId: template.id, json: jsonDecode(json), createdAt: template.createdAt.getDateTimeInUtc()))
-          .toList();
-    } else {
-      exerciseTemplates = rawExerciseTemplates
-          .map((json) => ExerciseLogDto.fromJson(
-              routineLogId: template.id, createdAt: template.createdAt.getDateTimeInUtc(), json: json))
-          .toList();
-    }
+    final exerciseTemplates = rawExerciseTemplates.map((exerciseJson) {
+      return ExerciseLogDto.fromJson(
+        routineLogId: id,
+        json: exerciseJson,
+        createdAt: createdAt,
+      );
+    }).toList();
 
     return RoutineTemplateDto(
-      id: template.id,
+      id: id,
       planId: planId,
       name: name,
       exerciseTemplates: exerciseTemplates,
       notes: notes,
-      owner: template.owner ?? "",
-      createdAt: template.createdAt.getDateTimeInUtc(),
-      updatedAt: template.updatedAt.getDateTimeInUtc(),
+      owner: owner,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
@@ -102,7 +97,6 @@ class RoutineTemplateDto {
       planId: planId ?? this.planId,
       name: name ?? this.name,
       notes: notes ?? this.notes,
-      // Deep copy each ExerciseLogDto.
       exerciseTemplates: exerciseTemplates != null
           ? exerciseTemplates.map((e) => e.copyWith()).toList()
           : this.exerciseTemplates.map((e) => e.copyWith()).toList(),

@@ -4,7 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/colors.dart';
-import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/utils/date_utils.dart';
@@ -131,7 +131,7 @@ class _CalendarState extends State<Calendar> with SingleTickerProviderStateMixin
   Widget _buildWeekGrid(bool isDark) {
     final monday = _mondayOf(_anchor); // always anchor‑week
     final days = List.generate(7, (i) => monday.add(Duration(days: i)));
-    final logs = widget.logs ?? context.read<ExerciseAndRoutineController>().logs;
+    final logs = widget.logs ?? context.read<SupabaseExerciseAndRoutineController>().logs;
 
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(), // <— not scrollable
@@ -194,7 +194,7 @@ class _CalendarState extends State<Calendar> with SingleTickerProviderStateMixin
     final last = DateTime(monthStart.year, monthStart.month + 1, 0);
     final logs = widget.logs ??
         context
-            .read<ExerciseAndRoutineController>()
+            .read<SupabaseExerciseAndRoutineController>()
             .logs
             .where((l) => l.createdAt.isBetweenInclusive(from: first, to: last));
 

@@ -1,10 +1,9 @@
-import 'package:amplify_datastore/amplify_datastore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/controllers/exercise_log_controller.dart';
 import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
@@ -58,7 +57,7 @@ class _PastRoutineLogEditorScreenState
         onSelected: (List<ExerciseDto> selectedExercises) {
           final onlyExercise = selectedExercises.first;
           final pastSets =
-              Provider.of<ExerciseAndRoutineController>(context, listen: false)
+              Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
                   .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
@@ -99,7 +98,7 @@ class _PastRoutineLogEditorScreenState
         context: context,
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<ExerciseAndRoutineController>(context,
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
                   listen: false)
               .whereRecentSetsForExercise(exercise: selectedExercises.first);
           controller.replaceExerciseLog(
@@ -151,11 +150,10 @@ class _PastRoutineLogEditorScreenState
     final updatedLog = widget.log.copyWith(
         name: routineName, notes: routineNotes, exerciseLogs: exerciseLogs);
 
-    final datetime =
-        TemporalDateTime.withOffset(updatedLog.startTime, Duration.zero);
+    final datetime = updatedLog.startTime;
 
     final createdLog =
-        await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .saveLog(logDto: updatedLog, datetime: datetime);
     _navigateBack(log: createdLog);
   }
@@ -219,7 +217,7 @@ class _PastRoutineLogEditorScreenState
         Provider.of<ExerciseLogController>(context, listen: false);
 
     final routineTemplateController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
 
     if (routineTemplateController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -410,7 +408,7 @@ class _PastRoutineLogEditorScreenState
     if (exercises.isNotEmpty) {
       final updatedExerciseLogs = exercises.map((exerciseLog) {
         final previousSets =
-            Provider.of<ExerciseAndRoutineController>(context, listen: false)
+            Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
                 .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
         if (previousSets.isNotEmpty) {
           final unCheckedSets = previousSets

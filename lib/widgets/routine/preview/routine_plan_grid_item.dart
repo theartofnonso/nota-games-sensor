@@ -3,7 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../../../colors.dart';
-import '../../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/routine_plan_dto.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/string_utils.dart';
@@ -22,7 +22,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
 
     final routineTemplates = exerciseAndRoutineController.templates
         .where((template) => template.planId == plan.id)

@@ -7,7 +7,7 @@ import 'package:tracker_app/enums/exercise_type_enums.dart';
 import 'package:tracker_app/widgets/search_bar.dart';
 
 import '../../../colors.dart';
-import '../../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../enums/muscle_group_enums.dart';
 import '../../../utils/date_utils.dart';
@@ -86,7 +86,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
     // Get the list of all exercises (excluding any you want to filter out by default)
     final allExercises =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .exercises
             .where((exercise) => !widget.excludeExercises.contains(exercise))
             .toList();
@@ -110,7 +110,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     // Filter to owner exercises if needed
     if (_shouldShowOwnerExercises) {
       filteredExercises =
-          filteredExercises.where((ex) => ex.owner.isNotEmpty).toList();
+          filteredExercises.where((ex) => ex.owner).toList();
     }
 
     // If the user typed nothing, you can simply show the entire filtered list
@@ -352,7 +352,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     final exerciseType = widget.type;
 
     _filteredExercises =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .exercises
             .where((exercise) => !widget.excludeExercises.contains(exercise))
             .where((exercise) =>
@@ -395,7 +395,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     final dateRange = lastQuarterDateTimeRange();
 
     final allRecentExercises =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
             .whereLogsIsWithinRange(range: dateRange)
             .expand((log) => log.exerciseLogs)
             .map((exerciseLog) => exerciseLog.exercise);

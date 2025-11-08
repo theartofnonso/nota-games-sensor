@@ -18,7 +18,7 @@ import 'package:tracker_app/widgets/routine/editors/exercise_log_grid_item.dart'
 import 'package:tracker_app/widgets/timers/stopwatch_timer.dart';
 
 import '../../colors.dart';
-import '../../controllers/exercise_and_routine_controller.dart';
+import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/date_utils.dart';
@@ -58,7 +58,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         onSelected: (List<ExerciseDto> selectedExercises) {
           final onlyExercise = selectedExercises.first;
           final pastSets =
-              Provider.of<ExerciseAndRoutineController>(context, listen: false)
+              Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
                   .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
@@ -99,7 +99,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         context: context,
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<ExerciseAndRoutineController>(context,
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
                   listen: false)
               .whereRecentSetsForExercise(exercise: selectedExercises.first);
           controller.replaceExerciseLog(
@@ -125,7 +125,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         _routineLog().copyWith(endTime: DateTime.now());
 
     if (mounted) {
-      final createdRoutineLog = await Provider.of<ExerciseAndRoutineController>(
+      final createdRoutineLog = await Provider.of<SupabaseExerciseAndRoutineController>(
               context,
               listen: false)
           .saveLog(logDto: routineLogToBeCreated);
@@ -137,7 +137,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   Future<void> _doUpdateRoutineLog() async {
     final routineLogToBeUpdated = _routineLog();
 
-    await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+    await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
         .updateLog(log: routineLogToBeUpdated);
 
     _navigateBack(routineLog: routineLogToBeUpdated);
@@ -230,7 +230,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     final List<int> allDurations = <int>[]; // in minutes
 
     final exerciseLogController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
 
     for (final week in weeksInLastQuarter) {
       final weekLogs =
@@ -248,7 +248,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   @override
   Widget build(BuildContext context) {
     final routineLogEditorController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
 
     if (routineLogEditorController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -391,7 +391,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 
   void _loadRoutineAndExerciseLogs() {
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
 
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);

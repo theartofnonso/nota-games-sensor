@@ -4,7 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 
 import '../../colors.dart';
@@ -39,7 +39,8 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
     final plan = widget.plan;
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     final routineTemplates = exerciseAndRoutineController.templates
         .where((template) => template.planId == plan?.id)
@@ -84,7 +85,8 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
     );
 
     final templateController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     final createdPlan = await templateController.savePlan(planDto: newPlan);
 
@@ -129,8 +131,9 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
   }
 
   void _doUpdateRoutinePlan({required RoutinePlanDto planToBeUpdated}) async {
-    final planProvider =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final planProvider = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
 
     await planProvider.updatePlan(planDto: planToBeUpdated);
 
@@ -158,7 +161,8 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
 
     if (plan != null) {
       final templateProvider =
-          Provider.of<ExerciseAndRoutineController>(context, listen: false);
+          Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false);
       final templateWithoutIdPlanId = templateToBeRemoved.copyWith(planId: "");
       await templateProvider.updateTemplate(template: templateWithoutIdPlanId);
 
@@ -176,7 +180,8 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
 
     /// We listen for [_routineTemplates] have been updated i.e. Have their planId removed
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     final children = _routineTemplates
         .mapIndexed(
@@ -316,7 +321,8 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
     _planNotesController = TextEditingController(text: plan?.notes);
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     _routineTemplates = exerciseAndRoutineController.templates
         .where((template) => template.planId == plan?.id)

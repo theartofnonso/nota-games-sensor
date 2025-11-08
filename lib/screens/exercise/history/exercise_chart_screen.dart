@@ -1,6 +1,5 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
@@ -16,14 +15,13 @@ import 'package:tracker_app/widgets/buttons/opacity_button_widget.dart';
 import 'package:tracker_app/widgets/list_tile.dart';
 
 import '../../../colors.dart';
-import '../../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/graph/chart_point_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../enums/chart_unit_enum.dart';
 import '../../../enums/exercise_type_enums.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
-import '../../../utils/uri_utils.dart';
 import '../../../widgets/chart/line_chart_widget.dart';
 import '../../logs/routine_log_screen.dart';
 
@@ -200,7 +198,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   void _navigateTo({required String? routineLogId}) {
     if (routineLogId != null) {
       final routineLog =
-          Provider.of<ExerciseAndRoutineController>(context, listen: false)
+          Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
               .logWhereId(id: routineLogId);
       if (routineLog != null) {
         context.push(RoutineLogScreen.routeName, extra: {
@@ -248,12 +246,6 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (exercise.video != null)
-            _VideoWidget(
-              videoUrl: exercise.video!.toString(),
-              creditSource: exercise.creditSource?.toString(),
-              credit: exercise.credit,
-            ),
           Stack(
             children: [
               AspectRatio(
@@ -455,53 +447,3 @@ class _MetricListTile extends StatelessWidget {
   }
 }
 
-class _VideoWidget extends StatelessWidget {
-  final String videoUrl;
-  final String? creditSource;
-  final String? credit;
-
-  const _VideoWidget({
-    required this.videoUrl,
-    this.creditSource,
-    this.credit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20.0),
-      child: ListTile(
-        onTap: () => openUrl(url: videoUrl, context: context),
-        leading: FaIcon(
-          FontAwesomeIcons.youtube,
-          color: Colors.red,
-          size: 24,
-        ),
-        title: Text(
-          'Watch Exercise Video',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: credit != null
-            ? Text(
-                'Video by $credit',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDarkMode ? Colors.white70 : Colors.black54,
-                ),
-              )
-            : null,
-        trailing: FaIcon(
-          FontAwesomeIcons.arrowUpRightFromSquare,
-          size: 16,
-          color: isDarkMode ? Colors.white54 : Colors.black54,
-        ),
-      ),
-    );
-  }
-}

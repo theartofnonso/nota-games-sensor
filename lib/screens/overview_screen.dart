@@ -10,7 +10,7 @@ import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_plan_grid_item.dart';
 
-import '../controllers/exercise_and_routine_controller.dart';
+import '../controllers/supabase_exercise_and_routine_controller.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/appsync/routine_plan_dto.dart';
 import '../dtos/viewmodels/past_routine_log_arguments.dart';
@@ -268,7 +268,7 @@ class _LogStreakTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ExerciseAndRoutineController>(
+    return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
         final routineLogs =
             controller.whereLogsIsWithinRange(range: dateTimeRange);
@@ -308,7 +308,7 @@ class _YearlyStreakTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ExerciseAndRoutineController>(
+    return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
         final lastYearRange = yearToDateTimeRange(datetime: DateTime.now());
         final logsForTheYear =
@@ -359,7 +359,7 @@ class _RoutinePlansHomeTile extends StatelessWidget {
         FaIcon(
           FontAwesomeIcons.solidFolderOpen,
           size: 32,
-          color: Colors.white,
+          color: isDarkMode ? Colors.white : Colors.black,
         ),
       ]),
     );
@@ -385,7 +385,7 @@ class _ExercisesTile extends StatelessWidget {
         FaIcon(
           FontAwesomeIcons.personWalking,
           size: 32,
-          color: Colors.white,
+          color: isDarkMode ? Colors.white : Colors.black,
         ),
       ]),
     );
@@ -411,7 +411,7 @@ class _AddTile extends StatelessWidget {
         FaIcon(
           FontAwesomeIcons.plus,
           size: 32,
-          color: Colors.white,
+          color: isDarkMode ? Colors.white : Colors.black,
         ),
       ]),
     );
@@ -437,7 +437,7 @@ class _SettingsTile extends StatelessWidget {
         FaIcon(
           FontAwesomeIcons.gear,
           size: 32,
-          color: Colors.white,
+          color: isDarkMode ? Colors.white : Colors.black,
         ),
       ]),
     );
@@ -447,7 +447,7 @@ class _SettingsTile extends StatelessWidget {
 class _OverviewNudgeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Consumer<ExerciseAndRoutineController>(
+    return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
         final message = OverviewNudges.build(controller: controller);
         if (message == null) return const SizedBox.shrink();
