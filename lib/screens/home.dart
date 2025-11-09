@@ -38,7 +38,6 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         child: RefreshIndicator(
           onRefresh: _loadAppData,
           child: SafeArea(
-            minimum: const EdgeInsets.all(10),
             bottom: false,
             child: OverviewScreen(),
           ),

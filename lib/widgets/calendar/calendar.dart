@@ -27,11 +27,14 @@ const int _kMonthOrigin = 1000;
 /// to a month grid on tap of the header. No external [DateTime] dependency required.
 class Calendar extends StatefulWidget {
   const Calendar(
-      {super.key, this.onSelectDate, this.logs, this.onMonthChanged});
+      {super.key, this.onSelectDate, this.logs, this.onMonthChanged, this.initiallyExpanded = false});
 
   /// Fired whenever the user selects a day.
   final void Function(DateTime dateTime)? onSelectDate;
-  final void Function(DateTimeRange range)? onMonthChanged; // Add this
+  final void Function(DateTimeRange range)? onMonthChanged;
+  
+  /// Whether the calendar should start in expanded (month) view
+  final bool initiallyExpanded;
 
   final List<RoutineLogDto>? logs;
 
@@ -46,7 +49,7 @@ class _CalendarState extends State<Calendar>
   late DateTime _selected;
   late DateTime _focused;
   late final PageController _monthCtl;
-  bool _expanded = false;
+  late bool _expanded;
 
   late int _currentMonthWeeks;
 
@@ -60,6 +63,7 @@ class _CalendarState extends State<Calendar>
     _focused = _selected;
     _monthCtl = PageController(initialPage: _kMonthOrigin);
     _currentMonthWeeks = _calculateWeeksInMonth(_focused);
+    _expanded = widget.initiallyExpanded;
 
     // Trigger initial month range
     WidgetsBinding.instance.addPostFrameCallback((_) {

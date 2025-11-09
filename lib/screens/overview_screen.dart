@@ -1,25 +1,12 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/utils/dialog_utils.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:tracker_app/extensions/duration_extension.dart';
+import 'package:tracker_app/widgets/routine/preview/routine_log_widget.dart';
 
-import '../controllers/supabase_exercise_and_routine_controller.dart';
-import '../dtos/appsync/routine_log_dto.dart';
-import '../dtos/viewmodels/past_routine_log_arguments.dart';
-import '../screens/exercise/library/exercise_library_screen.dart';
-import '../utils/date_utils.dart';
-import '../utils/general_utils.dart';
-import '../utils/navigation_utils.dart';
 import '../widgets/backgrounds/trkr_loading_screen.dart';
-import '../widgets/calendar/calendar.dart';
-import '../widgets/calendar/calendar_logs.dart';
-import '../widgets/monitors/full_animated_gauge.dart';
-import '../nudges/overview_nudges.dart';
-import '../widgets/information_containers/transparent_information_container_lite.dart';
+import '../widgets/calendar/infinite_calendar.dart';
 
 class OverviewScreen extends StatefulWidget {
   static const routeName = '/overview_screen';
@@ -33,81 +20,91 @@ class OverviewScreen extends StatefulWidget {
 class _OverviewScreenState extends State<OverviewScreen> {
   bool _loading = false;
 
-  DateTime? _selectedCalendarDate;
-
-  DateTimeRange? _calendarDateTimeRange;
-
   @override
   Widget build(BuildContext context) {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Column(children: [
-          Calendar(
-              onSelectDate: _onSelectCalendarDateTime,
-              onMonthChanged: _onMonthChanged),
-          const SizedBox(
-            height: 10,
-          ),
-          _OverviewNudgeBanner(),
-          const SizedBox(height: 10),
-          CalendarLogs(dateTime: _selectedCalendarDate ?? DateTime.now()),
-          StaggeredGrid.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            children: [
-              StaggeredGrid.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                children: [
-                  StaggeredGridTile.count(
-                    crossAxisCellCount: 1,
-                    mainAxisCellCount: 1,
-                    child: GestureDetector(
-                      onTap: () => navigateToRoutineHome(context: context),
-                      child: _RoutinePlansHomeTile(),
-                    ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0A),
+      body: InfiniteCalendar(
+        onDateTap: (date) => _showLogsForDate(context, date),
+      ),
+    );
+  }
+
+  void _showLogsForDate(BuildContext context, DateTime date) {
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    final logs = controller.whereLogsIsSameDay(dateTime: date).toList();
+
+    if (logs.isEmpty) {
+      // No logs for this day - don't show bottom sheet
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? Color(0xFF1A1F2E) : Colors.white,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  StaggeredGridTile.count(
-                    crossAxisCellCount: 1,
-                    mainAxisCellCount: 1,
-                    child: GestureDetector(
-                      onTap: _showNewBottomSheet,
-                      child: _AddTile(),
-                    ),
+                ),
+                // Header with date
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Text(
+                    DateFormat('EEEE, MMMM d, y').format(date),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-                  StaggeredGridTile.count(
-                    crossAxisCellCount: 1,
-                    mainAxisCellCount: 1,
-                    child: GestureDetector(
-                      onTap: _navigateToExerciseLibrary,
-                      child: _ExercisesTile(),
-                    ),
+                ),
+                const Divider(),
+                // Scrollable log list
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: logs.length,
+                    itemBuilder: (context, index) {
+                      final log = logs[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: RoutineLogWidget(
+                          log: log,
+                          trailing: log.duration().hmsAnalog(),
+                        ),
+                      );
+                    },
                   ),
-                  StaggeredGridTile.count(
-                    crossAxisCellCount: 1,
-                    mainAxisCellCount: 1,
-                    child: GestureDetector(
-                      onTap: () => navigateToSettings(context: context),
-                      child: _SettingsTile(),
-                    ),
-                  ),
-                ],
-              ),
-              StaggeredGridTile.count(
-                crossAxisCellCount: 1,
-                mainAxisCellCount: 1,
-                child: _LogStreakTile(
-                    dateTimeRange:
-                        _calendarDateTimeRange ?? thisMonthDateRange()),
-              ),
-            ],
-          ),
-        ]),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -118,230 +115,5 @@ class _OverviewScreenState extends State<OverviewScreen> {
         _loading = false;
       });
     }
-  }
-
-  void _showNewBottomSheet() {
-    displayBottomSheet(
-        context: context,
-        child: Column(children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.play, size: 18),
-            horizontalTitleGap: 6,
-            title: Text("Log new session",
-                style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              logEmptyRoutine(context: context);
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.clockRotateLeft, size: 18),
-            horizontalTitleGap: 6,
-            title: Text("Log past session",
-                style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              showDatetimeRangePicker(
-                  context: context,
-                  onChangedDateTimeRange: (DateTimeRange datetimeRange) {
-                    Navigator.of(context).pop();
-                    final logName =
-                        "${timeOfDay(datetime: datetimeRange.start)} Session";
-                    final log = RoutineLogDto(
-                        id: "",
-                        templateId: '',
-                        name: logName,
-                        exerciseLogs: [],
-                        notes: "",
-                        startTime: datetimeRange.start,
-                        endTime: datetimeRange.end);
-                    navigateToPastRoutineLogEditor(
-                        context: context,
-                        arguments: PastRoutineLogArguments(log: log));
-                  });
-            },
-          ),
-        ]));
-  }
-
-  void _onSelectCalendarDateTime(DateTime date) {
-    setState(() {
-      _selectedCalendarDate = date;
-    });
-  }
-
-  void _onMonthChanged(DateTimeRange dateRange) {
-    setState(() {
-      _calendarDateTimeRange = dateRange;
-    });
-  }
-
-  void _navigateToExerciseLibrary() {
-    navigateWithSlideTransition(
-        context: context, child: const ExerciseLibraryScreen(readOnly: true));
-  }
-}
-
-class _LogStreakTile extends StatelessWidget {
-  final DateTimeRange dateTimeRange;
-
-  const _LogStreakTile({required this.dateTimeRange});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<SupabaseExerciseAndRoutineController>(
-      builder: (context, controller, _) {
-        final routineLogs =
-            controller.whereLogsIsWithinRange(range: dateTimeRange);
-        final routineLogsByDay =
-            groupBy(routineLogs, (log) => log.startTime.withoutTime().day);
-        final monthlyProgress = routineLogsByDay.length;
-        final color = lowToHighIntensityColor(monthlyProgress / 12);
-
-        return GestureDetector(
-          onTap: () {
-            showBottomSheetWithNoAction(
-                context: context,
-                title: "Log Streak",
-                description:
-                    "Streak is the number of days you engage in strength training each month, with an ideal target of 12 days.");
-          },
-          child: Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(5)),
-            child: FullAnimatedGauge(
-              value: monthlyProgress,
-              min: 0,
-              max: 12,
-              label: "Days",
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _RoutinePlansHomeTile extends StatelessWidget {
-  const _RoutinePlansHomeTile();
-
-  @override
-  Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: isDarkMode
-              ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)
-              : Theme.of(context).colorScheme.secondary,
-          borderRadius: BorderRadius.circular(5)),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        FaIcon(
-          FontAwesomeIcons.solidFolderOpen,
-          size: 32,
-          color: isDarkMode ? Colors.white : Colors.black,
-        ),
-      ]),
-    );
-  }
-}
-
-class _ExercisesTile extends StatelessWidget {
-  const _ExercisesTile();
-
-  @override
-  Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.grey.withValues(alpha: 0.1)
-              : Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(5)),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        FaIcon(
-          FontAwesomeIcons.personWalking,
-          size: 32,
-          color: isDarkMode ? Colors.white : Colors.black,
-        ),
-      ]),
-    );
-  }
-}
-
-class _AddTile extends StatelessWidget {
-  const _AddTile();
-
-  @override
-  Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.grey.withValues(alpha: 0.1)
-              : Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(5)),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        FaIcon(
-          FontAwesomeIcons.plus,
-          size: 32,
-          color: isDarkMode ? Colors.white : Colors.black,
-        ),
-      ]),
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile();
-
-  @override
-  Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.grey.withValues(alpha: 0.1)
-              : Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(5)),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        FaIcon(
-          FontAwesomeIcons.gear,
-          size: 32,
-          color: isDarkMode ? Colors.white : Colors.black,
-        ),
-      ]),
-    );
-  }
-}
-
-class _OverviewNudgeBanner extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<SupabaseExerciseAndRoutineController>(
-      builder: (context, controller, _) {
-        final message = OverviewNudges.build(controller: controller);
-        if (message == null) return const SizedBox.shrink();
-        return TransparentInformationContainerLite(
-          content: message,
-          useOpacity: true,
-        );
-      },
-    );
   }
 }
