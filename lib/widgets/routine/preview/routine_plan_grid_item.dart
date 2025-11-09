@@ -12,9 +12,10 @@ import 'package:tracker_app/utils/theme/color_extensions.dart';
 class RoutinePlanGridItemWidget extends StatelessWidget {
   final RoutinePlanDto plan;
   final double radius;
+  final void Function()? onTap;
 
   const RoutinePlanGridItemWidget(
-      {super.key, required this.plan, this.radius = 12});
+      {super.key, required this.plan, this.radius = 12, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +32,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
     final exerciseTemplates = routineTemplates
         .expand((routineTemplate) => routineTemplate.exerciseTemplates);
     return GestureDetector(
-      onTap: () => navigateToRoutinePlanPreview(context: context, plan: plan),
+      onTap: onTap ?? () => navigateToRoutinePlanPreview(context: context, plan: plan),
       child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),

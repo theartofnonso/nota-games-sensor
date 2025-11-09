@@ -94,13 +94,13 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
           surfaceTintColor: Colors.transparent,
           scrolledUnderElevation: 0,
           leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
+            icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
             onPressed: context.pop,
           ),
           actions: [
             IconButton(
                 onPressed: _showMenuBottomSheet,
-                icon: const FaIcon(Icons.more_vert_rounded))
+                icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, size: 22))
           ],
         ),
         body: Container(

@@ -11,10 +11,10 @@ import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/utils/general_utils.dart';
 import 'package:tracker_app/utils/navigation_utils.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_log_widget.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_plan_grid_item.dart';
 
+import '../screens/routines/routine_plan.dart';
 import '../widgets/backgrounds/trkr_loading_screen.dart';
 import '../widgets/calendar/infinite_calendar.dart';
 
@@ -244,6 +244,13 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       final plan = plans[index];
                       return RoutinePlanGridItemWidget(
                         plan: plan,
+                        onTap: () {
+                          Navigator.pop(context); // Close bottom sheet
+                          navigateWithSlideTransition(
+                            context: context,
+                            child: RoutinePlanScreen(id: plan.id),
+                          );
+                        },
                       );
                     },
                   )
