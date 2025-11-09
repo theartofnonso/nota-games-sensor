@@ -135,22 +135,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             Text(widget.exerciseLog.notes,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium),
-          // Show progression summary for weight exercises
-          if (exerciseType == ExerciseType.weights)
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isDarkMode ? Colors.white10 : Colors.black38,
-                  width: 1.0,
-                ),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: summarizeProgression(
-                  values: _weightsForExercise(pastSets: pastSets),
-                  context: context,
-                  textAlign: TextAlign.center),
-            ),
           switch (exerciseType) {
             ExerciseType.weights => DoubleSetHeader(
                 firstLabel: weightUnit().toUpperCase(), secondLabel: 'REPS'),

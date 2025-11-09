@@ -23,7 +23,8 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     final routineTemplates = exerciseAndRoutineController.templates
         .where((template) => template.planId == plan.id)
@@ -32,12 +33,15 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
     final exerciseTemplates = routineTemplates
         .expand((routineTemplate) => routineTemplate.exerciseTemplates);
     return GestureDetector(
-      onTap: onTap ?? () => navigateToRoutinePlanPreview(context: context, plan: plan),
+      onTap: onTap ??
+          () => navigateToRoutinePlanPreview(context: context, plan: plan),
       child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200,
+              color: isDarkMode
+                  ? Theme.of(context).colors.sapphireDark80
+                  : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(radius),
               border: Border.all(
                 color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade400,

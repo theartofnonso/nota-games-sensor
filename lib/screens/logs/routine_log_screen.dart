@@ -103,11 +103,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         .map((log) => routineWithLoggedExercises(log: log))
         .toList();
 
-    final allLoggedVolumesForTemplate = logs.map((log) => log.volume).toList();
-
-    final avgVolume = allLoggedVolumesForTemplate.isNotEmpty
-        ? allLoggedVolumesForTemplate.average
-        : 0.0;
+    logs.map((log) => log.volume).toList();
 
     return Scaffold(
         appBar: AppBar(
@@ -131,6 +127,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             ? FloatingActionButton(
                 heroTag: "routine_log_screen",
                 onPressed: _showBottomSheet,
+                backgroundColor: themeGradient(context: context).colors.first,
+                elevation: 8.0,
                 child: const FaIcon(FontAwesomeIcons.penToSquare))
             : null,
         body: Container(
@@ -234,44 +232,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                                 "Here's a breakdown of the muscle groups in your ${updatedLog.name} workout session.",
                             muscleGroup: muscleGroupFamilyFrequencies,
                             minimized: false),
-                        if (updatedLog.templateId.isNotEmpty)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 10,
-                            children: [
-                              Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  RichText(
-                                    text: TextSpan(
-                                      text: volumeInKOrM(avgVolume),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineSmall,
-                                      children: [
-                                        TextSpan(
-                                          text: " ",
-                                        ),
-                                        TextSpan(
-                                          text: weightUnit().toUpperCase(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Text(
-                                    "Session AVERAGE".toUpperCase(),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
                         ExerciseLogListView(
                             exerciseLogs: _exerciseLogsToViewModels(
                                 exerciseLogs: completedExerciseLogs)),
@@ -510,7 +470,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         rightActionLabel: 'Delete',
         isRightActionDestructive: true);
   }
-
 }
 
 class _StatisticsInformation {
@@ -545,7 +504,6 @@ class _StatisticWidget extends StatelessWidget {
           title: information.title,
           description: information.description),
       child: Container(
-        width: 120,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDarkMode
@@ -553,6 +511,10 @@ class _StatisticWidget extends StatelessWidget {
               : Colors.grey.shade200, // Background color of the container
           borderRadius:
               BorderRadius.circular(5), // Border radius for rounded corners
+          border: Border.all(
+            color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade400,
+            width: 1,
+          ),
         ),
         child: Stack(children: [
           Column(
@@ -574,7 +536,7 @@ class _StatisticWidget extends StatelessWidget {
               ),
               Text(title, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(
-                height: 16,
+                height: 32,
               ),
             ],
           ),
