@@ -61,7 +61,7 @@ class _RoutineTemplateEditorScreenState
           final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
                   context,
                   listen: false)
-              .whereRecentSetsForExercise(exercise: onlyExercise);
+                  .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
   }
@@ -457,7 +457,7 @@ class _RoutineTemplateEditorScreenState
         final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
                 context,
                 listen: false)
-            .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
+                .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
         if (previousSets.isNotEmpty) {
           final unCheckedSets = previousSets
               .take(exerciseLog.sets.length)

@@ -28,14 +28,11 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
   Widget build(BuildContext context) {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    return Consumer<SupabaseExerciseAndRoutineController>(builder: (_, provider, __) {
+    return Consumer<SupabaseExerciseAndRoutineController>(
+        builder: (_, provider, __) {
       final plans = List<RoutinePlanDto>.from(provider.plans);
 
-      final defaultPlanGridItem =
-          RoutinePlanGridItemWidget(plan: RoutinePlanDto.defaultPlan);
-
       final children = [
-        defaultPlanGridItem,
         ...plans.map((plan) => RoutinePlanGridItemWidget(plan: plan))
       ];
 

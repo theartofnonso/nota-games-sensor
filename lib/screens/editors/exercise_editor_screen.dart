@@ -257,18 +257,18 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
       return;
     }
 
-    final exercise = ExerciseDto(
-        name: exerciseName,
-        primaryMuscleGroup: _primaryMuscleGroup,
+      final exercise = ExerciseDto(
+          name: exerciseName,
+          primaryMuscleGroup: _primaryMuscleGroup,
         type: _exerciseType);
 
     await Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false)
-        .saveExercise(exerciseDto: exercise);
+          .saveExercise(exerciseDto: exercise);
 
-    logger.i("created exercise ${exercise.toString()}");
-    if (mounted) {
-      context.pop();
+      logger.i("created exercise ${exercise.toString()}");
+      if (mounted) {
+        context.pop();
     }
   }
 

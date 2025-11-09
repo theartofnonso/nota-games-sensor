@@ -41,7 +41,7 @@ enum StrengthStatus {
   ),
   insufficient(
       description:
-          "You’ve logged only one training. Great job! Log more sessions to identify trends over time.");
+          "You've logged only one training. Great job! Log more sessions to track your progress.");
 
   const StrengthStatus({required this.description});
 
@@ -52,11 +52,11 @@ enum WeightAndRPE {
   weight(
       name: "Weight",
       description:
-          "Track your heaviest weight lifted. An upward trend highlights your strength gains and consistent improvement over time."),
+          "Track your heaviest weight lifted to monitor your strength gains and consistent improvement over time."),
   rpe(
       name: "Volume and RPE",
       description:
-          "Volume shows how much work you do, while RPE reveals how hard it feels. An upward volume trend shows you’re progressively handling more work. While a downward RPE trend at the same workload suggests the exercises are feeling easier.");
+          "Volume shows how much work you do, while RPE reveals how hard it feels. Progressive volume shows you're handling more work, while lower RPE at the same workload suggests the exercises are feeling easier.");
 
   const WeightAndRPE({required this.name, required this.description});
 
@@ -88,7 +88,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     final exerciseType = exercise.type;
 
     final routineLogController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     final pastExerciseLogs = routineLogController.whereExerciseLogsBefore(
         exercise: exercise, date: widget.exerciseLog.createdAt);

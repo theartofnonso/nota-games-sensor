@@ -115,7 +115,7 @@ class GlassContainerExample extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+              decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -184,14 +184,14 @@ class GlassContainerExample extends StatelessWidget {
                       Icons.nightlight_outlined,
                       size: 48,
                       color: Theme.of(context).colorScheme.primary,
-                    ),
+                ),
                     const SizedBox(height: 16),
                     Text(
                       'Dark Glass',
                       style: Theme.of(context).textTheme.titleLarge,
-                    ),
+              ),
                   ],
-                ),
+            ),
               ),
             ],
           ),
@@ -229,7 +229,7 @@ class GlassStatusContainer extends StatelessWidget {
       border: Border.all(
         color: _getStatusBorderColor(context),
         width: 1.5,
-      ),
+          ),
       child: child,
     );
   }

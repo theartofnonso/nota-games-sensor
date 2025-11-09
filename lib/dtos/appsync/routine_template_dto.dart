@@ -1,5 +1,4 @@
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
-import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 
 import '../exercise_log_dto.dart';
 
@@ -11,7 +10,7 @@ class RoutineTemplateDto {
   final List<ExerciseLogDto> exerciseTemplates;
 
   RoutineTemplateDto({
-    required this.id,
+    this.id = "",
     this.planId = "",
     required this.name,
     required this.exerciseTemplates,
@@ -20,7 +19,7 @@ class RoutineTemplateDto {
 
   Map<String, dynamic> toJson() {
     return {
-      "planId": planId,
+      'planId': planId,
       'name': name,
       'notes': notes,
       'exercises':
@@ -30,9 +29,7 @@ class RoutineTemplateDto {
 
   factory RoutineTemplateDto.fromJson({required Map<String, dynamic> json}) {
     final id = json["id"] ?? "";
-    final String? rawPlanId = json['planId'] as String?;
-    final String planId =
-        (rawPlanId?.isNotEmpty ?? false) ? rawPlanId! : defaultPlanId;
+    final planId = json["planId"] ?? "";
     final name = json["name"] ?? "";
     final notes = json["notes"] ?? "";
 

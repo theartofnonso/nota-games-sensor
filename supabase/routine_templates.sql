@@ -8,7 +8,7 @@
 CREATE TABLE IF NOT EXISTS public.routine_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     owner UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
-    "planId" TEXT NOT NULL DEFAULT 'DEFAULT_PLAN_ID',
+    "planId" TEXT NOT NULL,
     name TEXT NOT NULL,
     notes TEXT DEFAULT '',
     exercises JSONB NOT NULL,

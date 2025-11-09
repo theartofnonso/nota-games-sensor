@@ -58,17 +58,10 @@ class SupabaseRoutineLogRepository {
         return;
       }
 
-      // Only sync data for the last year
-      final dateRange = theLastYearDateTimeRange();
-      final startOfCurrentYear = dateRange.start.toUtc().toIso8601String();
-      final endOfCurrentYear = dateRange.end.toUtc().toIso8601String();
-
       final response = await _client
           .from('routine_logs')
           .select()
           .eq('owner', userId)
-          .gte('createdAt', startOfCurrentYear)
-          .lte('createdAt', endOfCurrentYear)
           .order('createdAt', ascending: false);
 
       _logs = (response as List<dynamic>)

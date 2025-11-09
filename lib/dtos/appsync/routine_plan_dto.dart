@@ -1,15 +1,7 @@
-const defaultPlanId = "DEFAULT_PLAN_ID";
-
 class RoutinePlanDto {
   final String id;
   final String name;
   final String notes;
-
-  static final defaultPlan = RoutinePlanDto(
-      id: defaultPlanId,
-      name: "Your workout plans",
-      notes:
-          "This is your default plan. If you'd like to organize your workouts into different plans, simply create a new one.");
 
   RoutinePlanDto({
     this.id = "",

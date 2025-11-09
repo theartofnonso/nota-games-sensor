@@ -4,7 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/screens/logs/routine_log_summary_screen.dart';
@@ -20,7 +19,6 @@ import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/viewmodels/exercise_log_view_model.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
-import '../../utils/data_trend_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
@@ -110,9 +108,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final avgVolume = allLoggedVolumesForTemplate.isNotEmpty
         ? allLoggedVolumesForTemplate.average
         : 0.0;
-
-    final trendSummary =
-        _analyzeWeeklyTrends(volumes: allLoggedVolumesForTemplate);
 
     return Scaffold(
         appBar: AppBar(
@@ -244,55 +239,37 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             spacing: 10,
                             children: [
-                              Wrap(
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 10,
+                              Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
-                                  trendSummary.trend == Trend.none
-                                      ? const SizedBox.shrink()
-                                      : getTrendIcon(trend: trendSummary.trend),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      RichText(
-                                        text: TextSpan(
-                                          text: volumeInKOrM(avgVolume),
+                                  RichText(
+                                    text: TextSpan(
+                                      text: volumeInKOrM(avgVolume),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall,
+                                      children: [
+                                        TextSpan(
+                                          text: " ",
+                                        ),
+                                        TextSpan(
+                                          text: weightUnit().toUpperCase(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .headlineSmall,
-                                          children: [
-                                            TextSpan(
-                                              text: " ",
-                                            ),
-                                            TextSpan(
-                                              text: weightUnit().toUpperCase(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium,
-                                            ),
-                                          ],
+                                              .bodyMedium,
                                         ),
-                                      ),
-                                      Text(
-                                        "Session AVERAGE".toUpperCase(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                    ],
-                                  )
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    "Session AVERAGE".toUpperCase(),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall,
+                                  ),
                                 ],
                               ),
-                              Text(trendSummary.summary,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w400,
-                                          color: isDarkMode
-                                              ? Colors.white70
-                                              : Colors.black)),
                             ],
                           ),
                         ExerciseLogListView(
@@ -471,11 +448,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
           return exerciseLog.copyWith(sets: sets);
         }).toList();
         final templateToCreate = RoutineTemplateDto(
-            id: "",
-            name: log.name,
-            notes: log.notes,
-            exerciseTemplates: exercises,
-            planId: defaultPlanId);
+            name: log.name, notes: log.notes, exerciseTemplates: exercises);
 
         final createdTemplate =
             await Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -538,90 +511,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         isRightActionDestructive: true);
   }
 
-  TrendSummary _analyzeWeeklyTrends({required List<double> volumes}) {
-    // 1. Handle the case when there's no volume data at all
-    if (volumes.isEmpty) {
-      return TrendSummary(
-        trend: Trend.none,
-        average: 0,
-        summary:
-            "No training data available yet. Log some sessions to start tracking your progress!",
-      );
-    }
-
-    // 2. Handle the case when there's only one logged volume
-    if (volumes.length == 1) {
-      return TrendSummary(
-        trend: Trend.none,
-        average: volumes.first,
-        summary: "You've logged your first session's volume. "
-            "Great job! Keep logging more data to see trends over time.",
-      );
-    }
-
-    // 3. Now we can safely assume volumes has 2 or more entries
-    final previousVolumes = volumes.sublist(0, volumes.length - 1);
-    final averageOfPrevious =
-        previousVolumes.reduce((a, b) => a + b) / previousVolumes.length;
-    final lastWeekVolume = volumes.last;
-
-    if (lastWeekVolume == 0) {
-      return TrendSummary(
-        trend: Trend.none,
-        average: averageOfPrevious,
-        summary:
-            "No training data available for this session. Log some workouts to continue tracking your progress!",
-      );
-    }
-
-    final difference = lastWeekVolume - averageOfPrevious;
-    final double percentageChange =
-        averageOfPrevious == 0 ? 100.0 : (difference / averageOfPrevious) * 100;
-
-    // Decide the trend
-    const threshold = 5; // threshold for stable vs up/down
-    late final Trend trend;
-
-    if (percentageChange > threshold) {
-      trend = Trend.up;
-    } else if (percentageChange < -threshold) {
-      trend = Trend.down;
-    } else {
-      trend = Trend.stable;
-    }
-
-    final variation = "${percentageChange.abs().toStringAsFixed(1)}%";
-    switch (trend) {
-      case Trend.up:
-        return TrendSummary(
-          trend: Trend.up,
-          average: averageOfPrevious,
-          summary:
-              "🌟🌟 This session's volume is $variation higher than your average. Nice job building momentum!",
-        );
-      case Trend.down:
-        return TrendSummary(
-          trend: Trend.down,
-          average: averageOfPrevious,
-          summary:
-              "📉 This session's volume is $variation lower than your average. Consider extra rest or checking your form.",
-        );
-      case Trend.stable:
-        return TrendSummary(
-          trend: Trend.stable,
-          average: averageOfPrevious,
-          summary:
-              "🔄 Your volume changed by about $variation compared to your session average. "
-              "Stay consistent to see long-term progress.",
-        );
-      case Trend.none:
-        return TrendSummary(
-          trend: Trend.none,
-          average: averageOfPrevious,
-          summary: "🤔 Unable to identify trends.",
-        );
-    }
-  }
 }
 
 class _StatisticsInformation {
