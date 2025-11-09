@@ -13,7 +13,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/viewmodels/routine_log_arguments.dart';
 import '../enums/routine_editor_type_enums.dart';
-import '../utils/general_utils.dart';
 import '../utils/navigation_utils.dart';
 import 'overview_screen.dart';
 
@@ -29,20 +28,9 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: themeGradient(context: context),
-        ),
-        child: RefreshIndicator(
-          onRefresh: _loadAppData,
-          child: SafeArea(
-            bottom: false,
-            child: OverviewScreen(),
-          ),
-        ),
-      ),
+    return RefreshIndicator(
+      onRefresh: _loadAppData,
+      child: OverviewScreen(),
     );
   }
 

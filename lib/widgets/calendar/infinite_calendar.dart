@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
+import 'package:tracker_app/utils/general_utils.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 /// Infinite scrollable calendar with continuous date flow
@@ -68,7 +69,9 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF0A0A0A),
+      decoration: BoxDecoration(
+        gradient: themeGradient(context: context),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
