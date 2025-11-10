@@ -122,6 +122,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     return Scaffold(
         floatingActionButton: FloatingActionButton(
             heroTag: UniqueKey,
+            backgroundColor: themeGradient(context: context).colors.first,
+            elevation: 8.0,
             onPressed: () =>
                 _launchRoutineLogEditor(muscleGroups: muscleGroups),
             child: const FaIcon(FontAwesomeIcons.play, size: 24)),

@@ -11,6 +11,7 @@ import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/utils/general_utils.dart';
 import 'package:tracker_app/utils/navigation_utils.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_log_widget.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_plan_grid_item.dart';
 
@@ -73,8 +74,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     displayBottomSheet(
       context: context,
+      height: MediaQuery.of(context).size.height * 0.7,
       padding: EdgeInsets.zero,
-      isScrollControlled: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +119,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     _logPastSessionForDate(context, date);
                   },
                   icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                  color: Colors.white,
+                  color: Theme.of(context).colors.vibrantAccent,
                 ),
               ],
             ),
@@ -186,8 +187,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     displayBottomSheet(
       context: context,
+      height: MediaQuery.of(context).size.height * 0.7,
       padding: EdgeInsets.zero,
-      enabledDrag: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,7 +232,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     _createNewPlan(context);
                   },
                   icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                  color: Colors.white,
+                  color: Theme.of(context).colors.vibrantAccent,
                 ),
               ],
             ),
