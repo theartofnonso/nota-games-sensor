@@ -12,11 +12,8 @@ class ThemeListTile extends StatelessWidget {
 
     return Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(5), // Rounded corners
-          border: Border.all(
-            color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade400,
-            width: 1,
-          ),
+          color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(5),
         ),
         child: child);
   }

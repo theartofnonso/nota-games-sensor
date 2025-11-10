@@ -36,11 +36,37 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     return Scaffold(
       backgroundColor: appBarBackgroundColor(context: context),
-      body: SafeArea(
-        bottom: false,
-        child: InfiniteCalendar(
-          onDateTap: (date) => _showLogsForDate(context, date),
-        ),
+      body: Stack(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: InfiniteCalendar(
+              onDateTap: (date) => _showLogsForDate(context, date),
+            ),
+          ),
+          // Settings icon overlay
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 16,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: IconButton(
+                  icon: const FaIcon(FontAwesomeIcons.gear, size: 18),
+                  onPressed: () => navigateToSettings(context: context),
+                  tooltip: 'Settings',
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(12),
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showPlansBottomSheet(context),

@@ -23,6 +23,7 @@ import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
+import '../exercise/library/exercise_library_screen.dart';
 
 enum WeightUnit {
   kg("kg"),
@@ -124,7 +125,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 label: "Notifications",
                                 labelColor:
                                     isDarkMode ? Colors.white : Colors.black,
-                                dividerColor: Theme.of(context).colors.dividerColor,
+                                dividerColor:
+                                    Theme.of(context).colors.dividerColor,
                                 fontSize: 14,
                               ),
                               const SizedBox(height: 8),
@@ -172,9 +174,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                       style: Theme.of(context).textTheme.titleMedium),
                   subtitle: Text("Choose kg or lbs"),
                   trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
-                    backgroundColor:
-                        isDarkMode ? Theme.of(context).colors.sapphireDark : Colors.grey.shade400,
-                    thumbColor: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.white,
+                    backgroundColor: isDarkMode
+                        ? Theme.of(context).colors.sapphireDark
+                        : Colors.grey.shade400,
+                    thumbColor: isDarkMode
+                        ? Theme.of(context).colors.sapphireDark80
+                        : Colors.white,
                     groupValue: _weightUnit,
                     children: {
                       WeightUnit.kg: SizedBox(
@@ -205,6 +210,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                     title: Text("Feedback",
                         style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text("help us improve")),
+                ListTile(
+                    onTap: () => navigateWithSlideTransition(
+                          context: context,
+                          child: const ExerciseLibraryScreen(readOnly: false),
+                        ),
+                    leading: FaIcon(FontAwesomeIcons.personWalking,
+                        color: isDarkMode ? Colors.white70 : Colors.black38),
+                    title: Text("Exercise Library",
+                        style: Theme.of(context).textTheme.titleMedium),
+                    subtitle: Text("manage your exercises")),
                 ListTile(
                     onTap: _logout,
                     leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
@@ -268,7 +283,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     SharedPrefs().clear();
     await FlutterLocalNotificationsPlugin().cancelAll();
     if (mounted) {
-      Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false).clear();
+      Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+          .clear();
     }
   }
 
@@ -334,18 +350,30 @@ class _SettingsScreenState extends State<SettingsScreen>
             }
 
             // Delete all user data from Supabase
-            await Supabase.instance.client.from('exercises').delete().eq('owner', userId);
-            await Supabase.instance.client.from('routine_templates').delete().eq('owner', userId);
-            await Supabase.instance.client.from('routine_plans').delete().eq('owner', userId);
-            await Supabase.instance.client.from('routine_logs').delete().eq('owner', userId);
+            await Supabase.instance.client
+                .from('exercises')
+                .delete()
+                .eq('owner', userId);
+            await Supabase.instance.client
+                .from('routine_templates')
+                .delete()
+                .eq('owner', userId);
+            await Supabase.instance.client
+                .from('routine_plans')
+                .delete()
+                .eq('owner', userId);
+            await Supabase.instance.client
+                .from('routine_logs')
+                .delete()
+                .eq('owner', userId);
 
             _hideLoadingScreen();
             _clearAppData();
-            
-            // Sign out the user (Supabase doesn't have deleteUser on client, 
+
+            // Sign out the user (Supabase doesn't have deleteUser on client,
             // user deletion should be done via dashboard or admin API)
             await Supabase.instance.client.auth.signOut();
-            
+
             if (mounted) {
               context.go('/'); // Navigate to auth screen
             }
