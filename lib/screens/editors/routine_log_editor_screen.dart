@@ -132,18 +132,41 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                   listen: false)
               .saveLog(logDto: routineLogToBeCreated);
 
-      _navigateBack(routineLog: createdRoutineLog);
+      // Only navigate back and clear cache if save succeeded
+      if (createdRoutineLog != null) {
+        _navigateBack(routineLog: createdRoutineLog);
+      } else {
+        // Save failed - show error, keep cache intact
+        if (mounted) {
+          showSnackbar(
+            context: context,
+            message: "Failed to save session. Check your connection and try again."
+          );
+        }
+      }
     }
   }
 
   Future<void> _doUpdateRoutineLog() async {
     final routineLogToBeUpdated = _routineLog();
 
-    await Provider.of<SupabaseExerciseAndRoutineController>(context,
+    final success = await Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
             listen: false)
         .updateLog(log: routineLogToBeUpdated);
 
-    _navigateBack(routineLog: routineLogToBeUpdated);
+    // Only navigate back and clear cache if update succeeded
+    if (success) {
+      _navigateBack(routineLog: routineLogToBeUpdated);
+    } else {
+      // Update failed - show error, keep cache intact
+      if (mounted) {
+        showSnackbar(
+          context: context,
+          message: "Failed to update session. Check your connection and try again."
+        );
+      }
+    }
   }
 
   bool _isRoutinePartiallyComplete() {

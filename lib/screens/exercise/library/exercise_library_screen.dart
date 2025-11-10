@@ -73,11 +73,12 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         query.split(RegExp(r'[\s-]+')).where((q) => q.isNotEmpty).toList();
 
     // Get the list of all exercises (excluding any you want to filter out by default)
+    final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
     final allExercises = Provider.of<SupabaseExerciseAndRoutineController>(
             context,
             listen: false)
         .exercises
-        .where((exercise) => !widget.excludeExercises.contains(exercise))
+        .where((exercise) => !excludeExerciseIds.contains(exercise.id))
         .toList();
 
     // Filter by exercise type if provided
@@ -256,12 +257,13 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   void _loadOrSyncExercises() {
     final exerciseType = widget.type;
+    final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
 
     _filteredExercises = Provider.of<SupabaseExerciseAndRoutineController>(
             context,
             listen: false)
         .exercises
-        .where((exercise) => !widget.excludeExercises.contains(exercise))
+        .where((exercise) => !excludeExerciseIds.contains(exercise.id))
         .where((exercise) =>
             exerciseType != null ? exercise.type == widget.type : true)
         .toList();

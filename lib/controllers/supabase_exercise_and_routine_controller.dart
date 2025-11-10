@@ -246,10 +246,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return savedLog;
   }
 
-  Future<void> updateLog({required RoutineLogDto log}) async {
+  Future<bool> updateLog({required RoutineLogDto log}) async {
     isLoading = true;
+    bool success = false;
     try {
       await _logRepository.updateLog(log);
+      success = true;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating log", error: e);
@@ -258,6 +260,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       errorMessage = "";
       notifyListeners();
     }
+    return success;
   }
 
   Future<void> deleteLog({required RoutineLogDto log}) async {

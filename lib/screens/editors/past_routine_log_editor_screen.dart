@@ -147,7 +147,19 @@ class _PastRoutineLogEditorScreenState
             context,
             listen: false)
         .saveLog(logDto: updatedLog);
-    _navigateBack(log: createdLog);
+    
+    // Only navigate back and clear cache if save succeeded
+    if (createdLog != null) {
+      _navigateBack(log: createdLog);
+    } else {
+      // Save failed - show error, keep cache intact
+      if (mounted) {
+        showSnackbar(
+          context: context,
+          message: "Failed to save session. Check your connection and try again."
+        );
+      }
+    }
   }
 
   void _checkForUnsavedChanges() {
