@@ -226,7 +226,7 @@ class SupabaseRoutineLogRepository {
       // Generate UUID if empty
       final id = logDto.id.isEmpty ? const Uuid().v4() : logDto.id;
       final logWithId = logDto.copyWith(id: id);
-      
+
       // Update exercise logs with routine log ID
       final updatedLog = logWithId.copyWith(
         exerciseLogs: logWithId.exerciseLogs
@@ -278,10 +278,8 @@ class SupabaseRoutineLogRepository {
   Future<void> updateLog({required RoutineLogDto log}) async {
     try {
       // 1. Update local database immediately
-      final local = await isar.localRoutineLogs
-          .filter()
-          .logIdEqualTo(log.id)
-          .findFirst();
+      final local =
+          await isar.localRoutineLogs.filter().logIdEqualTo(log.id).findFirst();
 
       if (local != null) {
         local
@@ -324,10 +322,8 @@ class SupabaseRoutineLogRepository {
   Future<void> removeLog({required RoutineLogDto log}) async {
     try {
       // 1. Remove from local database immediately
-      final local = await isar.localRoutineLogs
-          .filter()
-          .logIdEqualTo(log.id)
-          .findFirst();
+      final local =
+          await isar.localRoutineLogs.filter().logIdEqualTo(log.id).findFirst();
 
       if (local != null) {
         await isar.writeTxn(() async {
