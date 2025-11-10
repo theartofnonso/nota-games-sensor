@@ -8,10 +8,8 @@ import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 import 'package:tracker_app/dtos/viewmodels/past_routine_log_arguments.dart';
 import 'package:tracker_app/dtos/viewmodels/routine_plan_arguments.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
-import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/utils/general_utils.dart';
 import 'package:tracker_app/utils/navigation_utils.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_log_widget.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_plan_grid_item.dart';
 
@@ -72,95 +70,122 @@ class _OverviewScreenState extends State<OverviewScreen> {
       dateLabel = DateFormat('EEEE').format(date);
     }
 
-    displayBottomSheet(
+    showModalBottomSheet(
       context: context,
-      padding: EdgeInsets.zero,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row with date and "Log workout" button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF1A1F2E) : Colors.white,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+              gradient: isDarkMode ? themeGradient(context: context) : null,
+            ),
+            child: Column(
               children: [
-                // Date display
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Header row with date and "Log workout" button
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        dateLabel,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                      // Date display
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              dateLabel,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
+                            Text(
+                              DateFormat('MMMM d').format(date),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.grey.shade400,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
-                      Text(
-                        DateFormat('MMMM d').format(date),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey.shade400,
-                            ),
+                      // Log workout button
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close bottom sheet
+                          _logPastSessionForDate(context, date);
+                        },
+                        icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
+                        color: isDarkMode ? Colors.white : Colors.black,
                       ),
                     ],
                   ),
                 ),
-                // Log workout button
-                IconButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close bottom sheet
-                    _logPastSessionForDate(context, date);
-                  },
-                  icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                  color: Colors.white,
+                Expanded(
+                  child: hasLogs
+                      ? ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          itemCount: logs.length,
+                          itemBuilder: (context, index) {
+                            final log = logs[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12.0),
+                              child: RoutineLogWidget(
+                                log: log,
+                                trailing: log.duration().hmsAnalog(),
+                                onTap: () {
+                                  Navigator.pop(context); // Close bottom sheet
+                                  navigateToRoutineLogPreview(
+                                    context: context,
+                                    log: log,
+                                    isEditable: true,
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        )
+                      : Center(
+                          child: Text(
+                            'No workouts logged this date',
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Colors.grey.shade400,
+                                    ),
+                          ),
+                        ),
                 ),
               ],
             ),
-          ),
-          // Content: logs or empty message
-          Flexible(
-            child: hasLogs
-                ? ListView.builder(
-                    shrinkWrap: true,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: logs.length,
-                    itemBuilder: (context, index) {
-                      final log = logs[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: RoutineLogWidget(
-                          log: log,
-                          trailing: log.duration().hmsAnalog(),
-                          onTap: () {
-                            Navigator.pop(context); // Close bottom sheet
-                            navigateToRoutineLogPreview(
-                              context: context,
-                              log: log,
-                              isEditable: true,
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Text(
-                      'No workouts logged this date',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.grey.shade400,
-                          ),
-                    ),
-                  ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -184,95 +209,122 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final plans = controller.plans;
     final hasPlans = plans.isNotEmpty;
 
-    displayBottomSheet(
+    showModalBottomSheet(
       context: context,
-      padding: EdgeInsets.zero,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row with title and "Create plan" button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+          return Container(
+            decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF1A1F2E) : Colors.white,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+                gradient: isDarkMode ? themeGradient(context: context) : null),
+            child: Column(
               children: [
-                // Title and subtitle
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Header row with title and "Create plan" button
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Plans',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                      // Title and subtitle
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Plans',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
+                            Text(
+                              'Your workout plans',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.grey.shade400,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
-                      Text(
-                        'Your workout plans',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey.shade400,
-                            ),
+                      // Create plan button
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close bottom sheet
+                          _createNewPlan(context);
+                        },
+                        icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
+                        color: isDarkMode ? Colors.white : Colors.black,
                       ),
                     ],
                   ),
                 ),
-                // Create plan button
-                IconButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close bottom sheet
-                    _createNewPlan(context);
-                  },
-                  icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                  color: Colors.white,
+                Expanded(
+                  child: hasPlans
+                      ? GridView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.85,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                          ),
+                          itemCount: plans.length,
+                          itemBuilder: (context, index) {
+                            final plan = plans[index];
+                            return RoutinePlanGridItemWidget(
+                              plan: plan,
+                              onTap: () {
+                                Navigator.pop(context); // Close bottom sheet
+                                navigateWithSlideTransition(
+                                  context: context,
+                                  child: RoutinePlanScreen(id: plan.id),
+                                );
+                              },
+                            );
+                          },
+                        )
+                      : Center(
+                          child: Text(
+                            'No plans created yet',
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Colors.grey.shade400,
+                                    ),
+                          ),
+                        ),
                 ),
               ],
             ),
-          ),
-          Flexible(
-            child: hasPlans
-                ? GridView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.85,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                    ),
-                    itemCount: plans.length,
-                    itemBuilder: (context, index) {
-                      final plan = plans[index];
-                      return RoutinePlanGridItemWidget(
-                        plan: plan,
-                        onTap: () {
-                          Navigator.pop(context); // Close bottom sheet
-                          navigateWithSlideTransition(
-                            context: context,
-                            child: RoutinePlanScreen(id: plan.id),
-                          );
-                        },
-                      );
-                    },
-                  )
-                : Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Text(
-                      'No plans created yet',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.grey.shade400,
-                          ),
-                    ),
-                  ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
