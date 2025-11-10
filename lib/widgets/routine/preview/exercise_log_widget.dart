@@ -87,7 +87,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             listen: false);
 
     final pastExerciseLogs = routineLogController.whereExerciseLogsBefore(
-        exercise: exercise, date: widget.exerciseLog.createdAt);
+        exercise: exercise, dateTime: widget.exerciseLog.createdAt);
 
     final pbs = calculatePBs(
         pastExerciseLogs: pastExerciseLogs,

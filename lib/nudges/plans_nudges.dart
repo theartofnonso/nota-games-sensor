@@ -12,7 +12,7 @@ class PlansNudges {
     // This week (rolling 7 days)
     final DateTime sevenDaysAgo = current.subtract(const Duration(days: 7));
     final DateTimeRange thisWeek = DateTimeRange(start: sevenDaysAgo, end: current);
-    final int sessionsThisWeek = controller.whereLogsIsWithinRange(range: thisWeek).length;
+    final int sessionsThisWeek = controller.whereLogsIsWithinRange(dateRange: thisWeek).length;
     
     // Compute average sessions/week over the last quarter, excluding the current week
     final DateTimeRange lastQuarter = lastQuarterDateTimeRange();
@@ -33,7 +33,7 @@ class PlansNudges {
     
     int totalSessions = 0;
     for (final week in fullPastWeeks) {
-      totalSessions += controller.whereLogsIsWithinRange(range: week).length;
+      totalSessions += controller.whereLogsIsWithinRange(dateRange: week).length;
     }
     
     final double avgSessions = totalSessions / fullPastWeeks.length;

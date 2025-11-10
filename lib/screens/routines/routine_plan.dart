@@ -71,9 +71,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
         .toList();
 
     final logs = routineTemplates
-        .map((template) => exerciseAndRoutineController.whereLogsWithTemplateId(
-            templateId: template.id))
-        .expand((logs) => logs)
+        .expand((template) => exerciseAndRoutineController
+            .whereLogsWithTemplateId(templateId: template.id))
         .toList();
 
     final children = routineTemplates
@@ -322,7 +321,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
           .where((template) => template.planId == plan.id)
           .toList();
 
-      await exerciseAndRoutineController.removePlan(planDto: plan);
+      await exerciseAndRoutineController.removePlan(plan: plan);
 
       for (final template in routineTemplates) {
         final templateWithoutPlanId = template.copyWith(planId: "");

@@ -102,7 +102,7 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
         context,
         listen: false);
 
-    await planProvider.updatePlan(planDto: planToBeUpdated);
+    await planProvider.updatePlan(plan: planToBeUpdated);
 
     for (final template in _routineTemplates) {
       final templateWithPlanId = template.copyWith(planId: planToBeUpdated.id);

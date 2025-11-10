@@ -143,12 +143,10 @@ class _PastRoutineLogEditorScreenState
     final updatedLog = widget.log.copyWith(
         name: routineName, notes: routineNotes, exerciseLogs: exerciseLogs);
 
-    final datetime = updatedLog.startTime;
-
     final createdLog = await Provider.of<SupabaseExerciseAndRoutineController>(
             context,
             listen: false)
-        .saveLog(logDto: updatedLog, datetime: datetime);
+        .saveLog(logDto: updatedLog);
     _navigateBack(log: createdLog);
   }
 

@@ -13,7 +13,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/viewmodels/routine_log_arguments.dart';
 import '../enums/routine_editor_type_enums.dart';
-import '../services/sync_service.dart';
 import '../utils/navigation_utils.dart';
 import 'overview_screen.dart';
 
@@ -39,13 +38,9 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
         listen: false);
-    final syncService = Provider.of<SyncService>(context, listen: false);
 
-    // Load data and trigger sync
-    await Future.wait([
-      controller.loadUserData(),
-      syncService.sync(),
-    ]);
+    // Load data from Supabase
+    await controller.loadUserData();
   }
 
   Future<void> _userSetup() async {

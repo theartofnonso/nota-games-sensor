@@ -73,18 +73,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> loadUserData() async {
     try {
-      // First load from local storage (fast)
       await Future.wait([
         _exerciseRepository.loadUserExercises(),
         _templateRepository.loadTemplates(),
         _planRepository.loadPlans(),
         _logRepository.loadLogs(),
       ]);
-      notifyListeners();
-
-      // Wait for background sync to complete, then notify again
-      // This gives time for Supabase data to be fetched and merged
-      await Future.delayed(const Duration(seconds: 2));
       notifyListeners();
     } catch (e) {
       logger.e("Error loading user data", error: e);
@@ -97,8 +91,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> saveExercise({required ExerciseDto exerciseDto}) async {
     isLoading = true;
     try {
-      await _exerciseRepository.saveExercise(exerciseDto: exerciseDto);
-      // No need to reload - repository already updates in-memory list
+      await _exerciseRepository.saveExercise(exerciseDto);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving exercise", error: e);
@@ -112,8 +105,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> updateExercise({required ExerciseDto exercise}) async {
     isLoading = true;
     try {
-      await _exerciseRepository.updateExercise(exercise: exercise);
-      // No need to reload - repository already updates in-memory list
+      await _exerciseRepository.updateExercise(exercise);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating exercise", error: e);
@@ -127,8 +119,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> removeExercise({required ExerciseDto exercise}) async {
     isLoading = true;
     try {
-      await _exerciseRepository.removeExercise(exercise: exercise);
-      // No need to reload - repository already updates in-memory list
+      await _exerciseRepository.deleteExercise(exercise);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error removing exercise", error: e);
@@ -145,8 +136,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     RoutinePlanDto? savedPlan;
     isLoading = true;
     try {
-      savedPlan = await _planRepository.savePlan(planDto: planDto);
-      // No need to reload - repository already updates in-memory list
+      savedPlan = await _planRepository.savePlan(planDto);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving plan", error: e);
@@ -158,11 +148,10 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return savedPlan;
   }
 
-  Future<void> updatePlan({required RoutinePlanDto planDto}) async {
+  Future<void> updatePlan({required RoutinePlanDto plan}) async {
     isLoading = true;
     try {
-      await _planRepository.updatePlan(plan: planDto);
-      // No need to reload - repository already updates in-memory list
+      await _planRepository.updatePlan(plan);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating plan", error: e);
@@ -173,14 +162,13 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
-  Future<void> removePlan({required RoutinePlanDto planDto}) async {
+  Future<void> deletePlan({required RoutinePlanDto plan}) async {
     isLoading = true;
     try {
-      await _planRepository.removePlan(plan: planDto);
-      // No need to reload - repository already updates in-memory list
+      await _planRepository.deletePlan(plan);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
-      logger.e("Error removing plan", error: e);
+      logger.e("Error deleting plan", error: e);
     } finally {
       isLoading = false;
       errorMessage = "";
@@ -190,14 +178,13 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Templates
 
-  Future<RoutineTemplateDto?> saveTemplate(
-      {required RoutineTemplateDto templateDto}) async {
+  Future<RoutineTemplateDto?> saveTemplate({
+    required RoutineTemplateDto templateDto,
+  }) async {
     RoutineTemplateDto? savedTemplate;
     isLoading = true;
     try {
-      savedTemplate =
-          await _templateRepository.saveTemplate(templateDto: templateDto);
-      // No need to reload - repository already updates in-memory list
+      savedTemplate = await _templateRepository.saveTemplate(templateDto);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving template", error: e);
@@ -209,11 +196,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return savedTemplate;
   }
 
-  Future<void> updateTemplate({required RoutineTemplateDto template}) async {
+  Future<void> updateTemplate({
+    required RoutineTemplateDto template,
+  }) async {
     isLoading = true;
     try {
-      await _templateRepository.updateTemplate(template: template);
-      // No need to reload - repository already updates in-memory list
+      await _templateRepository.updateTemplate(template);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating template", error: e);
@@ -224,14 +212,15 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
-  Future<void> removeTemplate({required RoutineTemplateDto template}) async {
+  Future<void> deleteTemplate({
+    required RoutineTemplateDto template,
+  }) async {
     isLoading = true;
     try {
-      await _templateRepository.removeTemplate(template: template);
-      // No need to reload - repository already updates in-memory list
+      await _templateRepository.deleteTemplate(template);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
-      logger.e("Error removing template", error: e);
+      logger.e("Error deleting template", error: e);
     } finally {
       isLoading = false;
       errorMessage = "";
@@ -241,141 +230,192 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Logs
 
-  Future<RoutineLogDto?> saveLog(
-      {required RoutineLogDto logDto, DateTime? datetime}) async {
+  Future<RoutineLogDto?> saveLog({required RoutineLogDto logDto}) async {
     RoutineLogDto? savedLog;
+    isLoading = true;
     try {
-      savedLog =
-          await _logRepository.saveLog(logDto: logDto, datetime: datetime);
-      // No need to reload - repository already updates in-memory list
+      savedLog = await _logRepository.saveLog(logDto);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving log", error: e);
     } finally {
+      isLoading = false;
+      errorMessage = "";
       notifyListeners();
     }
     return savedLog;
   }
 
   Future<void> updateLog({required RoutineLogDto log}) async {
+    isLoading = true;
     try {
-      await _logRepository.updateLog(log: log);
-      // No need to reload - repository already updates in-memory list
+      await _logRepository.updateLog(log);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating log", error: e);
     } finally {
+      isLoading = false;
+      errorMessage = "";
       notifyListeners();
     }
   }
 
-  Future<void> removeLog({required RoutineLogDto log}) async {
+  Future<void> deleteLog({required RoutineLogDto log}) async {
+    isLoading = true;
     try {
-      await _logRepository.removeLog(log: log);
-      // No need to reload - repository already updates in-memory list
+      await _logRepository.deleteLog(log);
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
-      logger.e("Error removing log", error: e);
+      logger.e("Error deleting log", error: e);
     } finally {
+      isLoading = false;
+      errorMessage = "";
       notifyListeners();
     }
   }
 
-  /// Logs Helper methods
+  /// Query Helpers - Exercises
+
+  ExerciseDto? exerciseWhere({required String id}) {
+    return _exerciseRepository.whereExerciseById(id);
+  }
+
+  ExerciseDto? exerciseWhereByName({required String name}) {
+    return _exerciseRepository.whereExerciseByName(name);
+  }
+
+  /// Query Helpers - Plans
+
+  RoutinePlanDto? planWhere({required String id}) {
+    return _planRepository.wherePlanById(id);
+  }
+
+  /// Query Helpers - Templates
+
+  RoutineTemplateDto? templateWhere({required String id}) {
+    return _templateRepository.whereTemplateById(id);
+  }
+
+  List<RoutineTemplateDto> whereTemplatesForPlan({required String planId}) {
+    return _templateRepository.whereTemplatesByPlanId(planId);
+  }
+
+  /// Query Helpers - Logs
 
   RoutineLogDto? logWhereId({required String id}) {
-    return _logRepository.logWhereId(id: id);
+    return _logRepository.whereLogById(id);
   }
 
-  RoutineLogDto? whereLogIsSameDay({required DateTime dateTime}) {
-    return _logRepository.whereLogIsSameDay(dateTime: dateTime);
-  }
-
-  RoutineLogDto? whereLogIsSameMonth({required DateTime dateTime}) {
-    return _logRepository.whereLogIsSameMonth(dateTime: dateTime);
-  }
-
-  RoutineLogDto? whereLogIsSameYear({required DateTime dateTime}) {
-    return _logRepository.whereLogIsSameYear(dateTime: dateTime);
+  List<RoutineLogDto> whereLogsForTemplate({required String templateId}) {
+    return _logRepository.whereLogsForTemplate(templateId);
   }
 
   List<RoutineLogDto> whereLogsIsSameDay({required DateTime dateTime}) {
-    return _logRepository.whereLogsIsSameDay(dateTime: dateTime);
+    return _logRepository.whereLogsForDate(dateTime);
+  }
+
+  List<DateTime> get allWorkoutDates => _logRepository.allWorkoutDates;
+
+  List<ExerciseLogDto> get allExerciseLogs => _logRepository.allExerciseLogs;
+
+  List<RoutineLogDto> get recentLogs => _logRepository.recentLogs;
+
+  /// Exercise Log Helpers
+
+  List<ExerciseLogDto> whereExerciseLogsForExercise({
+    required ExerciseDto exercise,
+  }) {
+    return _logRepository.whereExerciseLogsForExercise(exercise: exercise);
+  }
+
+  Map<String, dynamic> calculatePersonalBests(ExerciseDto exercise) {
+    return _logRepository.calculatePersonalBests(exercise);
+  }
+
+  /// Workout Stats
+
+  Map<String, dynamic> get workoutStats => _logRepository.workoutStats;
+
+  /// Get personal records for an exercise
+  List<SetDto> wherePersonalRecords({required ExerciseDto exercise}) {
+    final pbs = calculatePersonalBests(exercise);
+    final List<SetDto> records = [];
+
+    if (pbs['bestSet'] != null) {
+      records.add(pbs['bestSet'] as SetDto);
+    }
+
+    return records;
+  }
+
+  /// Additional log helper methods
+  List<RoutineLogDto> whereLogsIsWithinRange({required DateTimeRange dateRange}) {
+    return logs.where((log) {
+      return log.startTime.isAfter(dateRange.start.subtract(const Duration(days: 1))) &&
+             log.startTime.isBefore(dateRange.end.add(const Duration(days: 1)));
+    }).toList();
   }
 
   List<RoutineLogDto> whereLogsIsSameMonth({required DateTime dateTime}) {
-    return _logRepository.whereLogsIsSameMonth(dateTime: dateTime);
-  }
-
-  List<RoutineLogDto> whereLogsIsSameYear({required DateTime dateTime}) {
-    return _logRepository.whereLogsIsSameYear(dateTime: dateTime);
-  }
-
-  List<RoutineLogDto> whereLogsIsWithinRange({required DateTimeRange range}) {
-    return _logRepository.whereLogsIsWithinRange(range: range);
+    return logs.where((log) {
+      return log.startTime.year == dateTime.year &&
+             log.startTime.month == dateTime.month;
+    }).toList();
   }
 
   List<RoutineLogDto> whereLogsWithTemplateId({required String templateId}) {
-    return _logRepository.whereLogsWithTemplateId(templateId: templateId);
+    return whereLogsForTemplate(templateId: templateId);
   }
 
-  List<RoutineLogDto> whereLogsWithTemplateName(
-      {required String templateName}) {
-    return _logRepository.whereLogsWithTemplateName(templateName: templateName);
-  }
-
-  List<RoutineLogDto> whereRoutineLogsBefore(
-      {required String templateId, required DateTime datetime}) {
-    return _logRepository.whereRoutineLogsBefore(
-        templateId: templateId, date: datetime);
-  }
-
-  List<ExerciseLogDto> whereExerciseLogsBefore(
-      {required ExerciseDto exercise, required DateTime date}) {
-    return _logRepository.whereExerciseLogsBefore(
-        exercise: exercise, date: date);
+  List<ExerciseLogDto> whereExerciseLogsBefore({required DateTime dateTime, required ExerciseDto exercise}) {
+    final logsBeforeDate = logs.where((log) => log.startTime.isBefore(dateTime)).toList();
+    final exerciseLogs = <ExerciseLogDto>[];
+    for (final log in logsBeforeDate) {
+      exerciseLogs.addAll(log.exerciseLogs.where((el) => el.exercise.id == exercise.id));
+    }
+    return exerciseLogs;
   }
 
   List<SetDto> whereRecentSetsForExercise({required ExerciseDto exercise}) {
-    return _logRepository.whereRecentSetsForExercise(exercise: exercise);
+    final exerciseLogs = whereExerciseLogsForExercise(exercise: exercise);
+    if (exerciseLogs.isEmpty) return [];
+    
+    // Get the most recent 3 exercise logs
+    final recentLogs = exerciseLogs.take(3).toList();
+    final allSets = <SetDto>[];
+    for (final log in recentLogs) {
+      allSets.addAll(log.sets);
+    }
+    return allSets;
   }
 
-  List<SetDto> wherePrevSetsForExercise(
-      {required ExerciseDto exercise, int? take}) {
-    return _logRepository.wherePrevSetsForExercise(
-        exercise: exercise, take: take);
+  List<SetDto> wherePrevSetsForExercise({required ExerciseDto exercise}) {
+    final exerciseLogs = whereExerciseLogsForExercise(exercise: exercise);
+    if (exerciseLogs.isEmpty) return [];
+    
+    final allSets = <SetDto>[];
+    for (final log in exerciseLogs) {
+      allSets.addAll(log.sets);
+    }
+    return allSets;
   }
 
-  List<SetDto> wherePrevSetsGroupForIndex(
-      {required ExerciseDto exercise, required int index, int? take}) {
-    return _logRepository.wherePrevSetsGroupForIndex(
-        exercise: exercise, index: index, take: take);
+  Future<void> removeLog({required RoutineLogDto log}) async {
+    return deleteLog(log: log);
   }
 
-  /// Exercise Helper methods
-  ExerciseDto? whereExercise({required String exerciseId}) {
-    return _exerciseRepository.whereExercise(exerciseId: exerciseId);
+  Future<void> removePlan({required RoutinePlanDto plan}) async {
+    return deletePlan(plan: plan);
   }
 
-  /// Template Helper methods
-  RoutineTemplateDto? templateWhere({required String id}) {
-    return _templateRepository.templateWhere(id: id);
+  Future<void> removeTemplate({required RoutineTemplateDto template}) async {
+    return deleteTemplate(template: template);
   }
 
-  RoutineTemplateDto? templateWherePlanId({required String id}) {
-    return _templateRepository.templateWherePlanId(id: id);
-  }
-
-  /// Plan Helper methods
-  RoutinePlanDto? planWhere({required String id}) {
-    return _planRepository.planWhere(id: id);
-  }
-
+  /// Clear all data (on logout)
   void clear() {
-    _exerciseRepository.clear();
-    _templateRepository.clear();
-    _planRepository.clear();
-    _logRepository.clear();
+    isLoading = false;
+    errorMessage = '';
     notifyListeners();
   }
 }

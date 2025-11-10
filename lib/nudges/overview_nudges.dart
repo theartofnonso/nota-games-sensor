@@ -10,7 +10,7 @@ class OverviewNudges {
     final DateTime ninetyDaysAgo = current.subtract(const Duration(days: 90));
     final DateTimeRange last90Days =
         DateTimeRange(start: ninetyDaysAgo, end: current);
-    final logs90 = controller.whereLogsIsWithinRange(range: last90Days);
+    final logs90 = controller.whereLogsIsWithinRange(dateRange: last90Days);
 
     if (logs90.isEmpty) return null;
 
@@ -40,7 +40,7 @@ class OverviewNudges {
     final startOfWeek = _startOfWeek(current);
     final thisWeek = DateTimeRange(start: startOfWeek, end: current);
     final sessionsThisWeek =
-        controller.whereLogsIsWithinRange(range: thisWeek).length;
+        controller.whereLogsIsWithinRange(dateRange: thisWeek).length;
 
     if (sessionsThisWeek >= 2) {
       return "Nice consistency this week ($sessionsThisWeek sessions). Keep the rhythm.";

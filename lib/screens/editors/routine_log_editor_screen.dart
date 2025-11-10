@@ -238,7 +238,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 
     for (final week in weeksInLastQuarter) {
       final weekLogs =
-          exerciseLogController.whereLogsIsWithinRange(range: week);
+          exerciseLogController.whereLogsIsWithinRange(dateRange: week);
       allDurations.addAll(weekLogs.map((log) => log.duration().inMinutes));
     }
 

@@ -11,7 +11,7 @@ class PostSummaryNudges {
     final DateTime current = now ?? DateTime.now();
     final DateTime twentyEightDaysAgo = current.subtract(const Duration(days: 28));
     final DateTimeRange last28 = DateTimeRange(start: twentyEightDaysAgo, end: current);
-    final recent = controller.whereLogsIsWithinRange(range: last28);
+    final recent = controller.whereLogsIsWithinRange(dateRange: last28);
     
     if (recent.isEmpty) return null;
     

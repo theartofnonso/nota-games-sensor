@@ -45,8 +45,6 @@ import 'dtos/viewmodels/routine_template_arguments.dart';
 import 'dtos/viewmodels/exercise_editor_arguments.dart';
 import 'dtos/viewmodels/past_routine_log_arguments.dart';
 import 'logger.dart';
-import 'services/isar_service.dart';
-import 'services/sync_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -78,10 +76,6 @@ void main() async {
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
 
-  // Initialize Isar (local database)
-  await IsarService.initialize();
-  logger.i("Isar database initialized");
-
   const DarwinInitializationSettings iOSInitializationSettingsDarwin =
       DarwinInitializationSettings(
     requestAlertPermission: false,
@@ -111,37 +105,15 @@ void main() async {
       options.tracesSampleRate = 1.0;
     },
     appRunner: () {
-      // Get Isar instance
-      final isar = IsarService.instance;
-      final supabase = Supabase.instance.client;
-
-      // Create SyncService (needed by repositories)
-      final syncService = SyncService(isar: isar, supabase: supabase);
-
       return runApp(MultiProvider(providers: [
-        // Provide SyncService
-        ChangeNotifierProvider<SyncService>.value(value: syncService),
-
-        // Provide main controller with offline-first repositories
+        // Provide main controller with Supabase repositories
         ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
           create: (BuildContext context) =>
               SupabaseExerciseAndRoutineController(
-            exerciseRepository: SupabaseExerciseRepository(
-              isar: isar,
-              syncService: syncService,
-            ),
-            templateRepository: SupabaseRoutineTemplateRepository(
-              isar: isar,
-              syncService: syncService,
-            ),
-            planRepository: SupabaseRoutinePlanRepository(
-              isar: isar,
-              syncService: syncService,
-            ),
-            logRepository: SupabaseRoutineLogRepository(
-              isar: isar,
-              syncService: syncService,
-            ),
+            exerciseRepository: SupabaseExerciseRepository(),
+            templateRepository: SupabaseRoutineTemplateRepository(),
+            planRepository: SupabaseRoutinePlanRepository(),
+            logRepository: SupabaseRoutineLogRepository(),
           ),
         ),
         ChangeNotifierProvider<ExerciseLogController>(

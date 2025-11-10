@@ -80,7 +80,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final pbs = updatedLog.exerciseLogs.map((exerciseLog) {
       final pastExerciseLogs =
           exerciseAndRoutineController.whereExerciseLogsBefore(
-              exercise: exerciseLog.exercise, date: exerciseLog.createdAt);
+              exercise: exerciseLog.exercise, dateTime: exerciseLog.createdAt);
 
       return calculatePBs(
           pastExerciseLogs: loggedExercises(exerciseLogs: pastExerciseLogs),
