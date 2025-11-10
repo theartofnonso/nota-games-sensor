@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tracker_app/screens/editors/exercise_editor_screen.dart';
 import 'package:tracker_app/screens/exercise/history/exercise_home_screen.dart';
-import 'package:tracker_app/screens/logs/routine_log_summary_screen.dart';
 import 'package:tracker_app/screens/preferences/settings_screen.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
@@ -25,13 +24,16 @@ import '../screens/routines/routine_template_screen.dart';
 
 Future<ExerciseDto?> navigateToExerciseEditor(
     {required BuildContext context, ExerciseEditorArguments? arguments}) async {
-  final exercise = await context.push(ExerciseEditorScreen.routeName, extra: arguments) as ExerciseDto?;
+  final exercise = await context.push(ExerciseEditorScreen.routeName,
+      extra: arguments) as ExerciseDto?;
   return exercise;
 }
 
 Future<RoutineTemplateDto?> navigateToRoutineTemplateEditor(
-    {required BuildContext context, required RoutineTemplateArguments arguments}) async {
-  final template = await context.push(RoutineTemplateEditorScreen.routeName, extra: arguments) as RoutineTemplateDto?;
+    {required BuildContext context,
+    required RoutineTemplateArguments arguments}) async {
+  final template = await context.push(RoutineTemplateEditorScreen.routeName,
+      extra: arguments) as RoutineTemplateDto?;
   return template;
 }
 
@@ -44,7 +46,9 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
   return plan;
 }
 
-void navigateToPastRoutineLogEditor({required BuildContext context, required PastRoutineLogArguments arguments}) async {
+void navigateToPastRoutineLogEditor(
+    {required BuildContext context,
+    required PastRoutineLogArguments arguments}) async {
   final log = await navigateWithSlideTransition(
     context: context,
     child: PastRoutineLogEditorScreen(log: arguments.log),
@@ -53,54 +57,62 @@ void navigateToPastRoutineLogEditor({required BuildContext context, required Pas
     if (context.mounted) {
       navigateWithSlideTransition(
         context: context,
-        child: RoutineLogScreen(id: (log as RoutineLogDto).id, showSummary: true, isEditable: true),
+        child:
+            RoutineLogScreen(id: (log as RoutineLogDto).id, isEditable: true),
       );
     }
   }
 }
 
-Future<void> navigateToRoutineLogEditor({required BuildContext context, required RoutineLogArguments arguments}) async {
+Future<void> navigateToRoutineLogEditor(
+    {required BuildContext context,
+    required RoutineLogArguments arguments}) async {
   final log = await navigateWithSlideTransition(
     context: context,
-    child: RoutineLogEditorScreen(log: arguments.log, mode: arguments.editorMode),
+    child:
+        RoutineLogEditorScreen(log: arguments.log, mode: arguments.editorMode),
   ) as RoutineLogDto?;
   if (log != null) {
     if (context.mounted) {
       navigateWithSlideTransition(
         context: context,
-        child: RoutineLogScreen(id: log.id, showSummary: true, isEditable: true),
+        child: RoutineLogScreen(id: log.id, isEditable: true),
       );
     }
   }
 }
 
 Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
-    {required BuildContext context, required RoutineLogArguments arguments}) async {
-  final log = await context.push(RoutineLogEditorScreen.routeName, extra: arguments) as RoutineLogDto?;
+    {required BuildContext context,
+    required RoutineLogArguments arguments}) async {
+  final log = await context.push(RoutineLogEditorScreen.routeName,
+      extra: arguments) as RoutineLogDto?;
   return log;
 }
 
-void navigateToRoutineTemplatePreview({required BuildContext context, required RoutineTemplateDto template}) {
+void navigateToRoutineTemplatePreview(
+    {required BuildContext context, required RoutineTemplateDto template}) {
   context.push(RoutineTemplateScreen.routeName, extra: template);
 }
 
-void navigateToRoutinePlanPreview({required BuildContext context, required RoutinePlanDto plan}) {
+void navigateToRoutinePlanPreview(
+    {required BuildContext context, required RoutinePlanDto plan}) {
   context.push(RoutinePlanScreen.routeName, extra: plan);
 }
 
-void navigateToRoutineLogPreview({required BuildContext context, required RoutineLogDto log, bool isEditable = true}) {
+void navigateToRoutineLogPreview(
+    {required BuildContext context,
+    required RoutineLogDto log,
+    bool isEditable = true}) {
   navigateWithSlideTransition(
     context: context,
-    child: RoutineLogScreen(id: log.id, showSummary: false, isEditable: isEditable),
+    child: RoutineLogScreen(id: log.id, isEditable: isEditable),
   );
 }
 
-Future<void> navigateToExerciseHome({required BuildContext context, required ExerciseDto exercise}) async {
+Future<void> navigateToExerciseHome(
+    {required BuildContext context, required ExerciseDto exercise}) async {
   await context.push(ExerciseHomeScreen.routeName, extra: exercise);
-}
-
-void navigateToShareableScreen({required BuildContext context, required RoutineLogDto log}) {
-  context.push(RoutineLogSummaryScreen.routeName, extra: log);
 }
 
 void navigateToRoutineHome({required BuildContext context}) {
@@ -112,14 +124,16 @@ Future<void> navigateToSettings({required BuildContext context}) async {
 }
 
 /// Create a screen on demand
-Future navigateWithSlideTransition({required BuildContext context, required Widget child}) {
+Future navigateWithSlideTransition(
+    {required BuildContext context, required Widget child}) {
   final route = PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) => child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       const begin = Offset(0.0, 1.0);
       const end = Offset.zero;
       const curve = Curves.ease;
-      final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      final tween =
+          Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
       final offsetAnimation = animation.drive(tween);
       return SlideTransition(
         position: offsetAnimation,

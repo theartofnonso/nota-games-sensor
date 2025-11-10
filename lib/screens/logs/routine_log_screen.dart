@@ -5,13 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
-import 'package:tracker_app/screens/logs/routine_log_summary_screen.dart';
 import 'package:tracker_app/utils/navigation_utils.dart';
 import 'package:tracker_app/widgets/backgrounds/trkr_loading_screen.dart';
 
 import '../../../dtos/exercise_log_dto.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
-import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/viewmodels/exercise_log_view_model.dart';
@@ -32,14 +30,9 @@ class RoutineLogScreen extends StatefulWidget {
   static const routeName = '/routine_log_screen';
 
   final String id;
-  final bool showSummary;
   final bool isEditable;
 
-  const RoutineLogScreen(
-      {super.key,
-      required this.id,
-      required this.showSummary,
-      this.isEditable = true});
+  const RoutineLogScreen({super.key, required this.id, this.isEditable = true});
 
   @override
   State<RoutineLogScreen> createState() => _RoutineLogScreenState();
@@ -111,15 +104,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
               onPressed: context.pop,
             ),
-            title: Text(updatedLog.name),
-            actions: widget.isEditable
-                ? [
-                    IconButton(
-                        onPressed: () => _onShareLog(log: updatedLog),
-                        icon: const FaIcon(FontAwesomeIcons.arrowUpFromBracket,
-                            size: 18)),
-                  ]
-                : []),
+            title: Text(updatedLog.name)),
         floatingActionButton: widget.isEditable
             ? FloatingActionButton(
                 heroTag: "routine_log_screen",
@@ -245,23 +230,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         ));
   }
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.showSummary) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false);
-        final log = controller.logWhereId(id: widget.id);
-        if (log != null) {
-          navigateWithSlideTransition(
-              context: context, child: RoutineLogSummaryScreen(log: log));
-        }
-      });
-    }
-  }
-
   void _showBottomSheet() {
     displayBottomSheet(
         context: context,
@@ -303,10 +271,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             onTap: _deleteLog,
           ),
         ]));
-  }
-
-  void _onShareLog({required RoutineLogDto log}) {
-    navigateToShareableScreen(context: context, log: log);
   }
 
   void _showLoadingScreen() {

@@ -1,10 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
@@ -14,10 +12,7 @@ import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../dtos/viewmodels/routine_template_arguments.dart';
-import '../../enums/posthog_analytics_event.dart';
 import '../../enums/routine_editor_type_enums.dart';
-import '../../enums/routine_preview_type_enum.dart';
-import '../../urls.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
@@ -337,9 +332,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
   void _navigateToRoutineTemplateEditor() async {
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context, listen: false);
+        context,
+        listen: false);
     final template = controller.templateWhere(id: widget.id);
-    
+
     if (template != null) {
       final copyOfTemplate = template.copyWith();
       final arguments = RoutineTemplateArguments(
@@ -352,9 +348,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
   void _launchRoutineLogEditor({required List<MuscleGroup> muscleGroups}) {
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context, listen: false);
+        context,
+        listen: false);
     final template = controller.templateWhere(id: widget.id);
-    
+
     if (template != null) {
       final log = template.toLog();
       final arguments =
@@ -365,7 +362,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
   void _createTemplate({bool copy = false}) async {
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context, listen: false);
+        context,
+        listen: false);
     final template = controller.templateWhere(id: widget.id);
     if (template != null) {
       _showLoadingScreen();
@@ -406,81 +404,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     }
   }
 
-  void _showShareBottomSheet() {
-    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context, listen: false);
-    final template = controller.templateWhere(id: widget.id);
-
-    if (template != null) {
-      final workoutLink = "$shareableRoutineUrl/${template.id}";
-      final workoutText = copyRoutineAsText(
-          routineType: RoutinePreviewType.template,
-          name: template.name,
-          notes: template.notes,
-          exerciseLogs: template.exerciseTemplates);
-
-      displayBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(
-                FontAwesomeIcons.link,
-                size: 18,
-              ),
-              horizontalTitleGap: 10,
-              title: Text(
-                "Copy as Link",
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                maxLines: 1,
-              ),
-              subtitle: Text(workoutLink),
-              onTap: () {
-                Posthog().capture(
-                    eventName: PostHogAnalyticsEvent
-                        .shareRoutineTemplateAsLink.displayName);
-                HapticFeedback.heavyImpact();
-                final data = ClipboardData(text: workoutLink);
-                Clipboard.setData(data).then((_) {
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    showSnackbar(
-                        context: context, message: "Workout link copied");
-                  }
-                });
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(
-                FontAwesomeIcons.copy,
-                size: 18,
-              ),
-              horizontalTitleGap: 6,
-              title: Text("Copy as Text",
-                  style: Theme.of(context).textTheme.titleMedium),
-              subtitle: Text("${template.name}..."),
-              onTap: () {
-                Posthog().capture(
-                    eventName: PostHogAnalyticsEvent
-                        .shareRoutineTemplateAsText.displayName);
-                HapticFeedback.heavyImpact();
-                final data = ClipboardData(text: workoutText);
-                Clipboard.setData(data).then((_) {
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    showSnackbar(context: context, message: "Workout copied");
-                  }
-                });
-              },
-            ),
-          ]));
-    }
-  }
-
   void _showMenuBottomSheet({required RoutinePlanDto? planDto}) {
     displayBottomSheet(
         context: context,
@@ -515,19 +438,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(
-              FontAwesomeIcons.share,
-              size: 18,
-            ),
-            horizontalTitleGap: 6,
-            title: Text("Share", style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              _showShareBottomSheet();
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(
               FontAwesomeIcons.solidSquarePlus,
               size: 18,
             ),
@@ -555,8 +465,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             onTap: () {
               Navigator.of(context).pop();
 
-              final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-                  context, listen: false);
+              final controller =
+                  Provider.of<SupabaseExerciseAndRoutineController>(context,
+                      listen: false);
               final template = controller.templateWhere(id: widget.id);
 
               if (template != null) {
@@ -617,7 +528,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       );
     }
   }
-
 }
 
 class RecoveryResult {

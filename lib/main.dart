@@ -28,7 +28,6 @@ import 'package:tracker_app/screens/editors/routine_template_editor_screen.dart'
 import 'package:tracker_app/screens/exercise/history/exercise_home_screen.dart';
 import 'package:tracker_app/screens/home.dart';
 import 'package:tracker_app/screens/logs/routine_log_screen.dart';
-import 'package:tracker_app/screens/logs/routine_log_summary_screen.dart';
 import 'package:tracker_app/onboarding_flow_screen.dart';
 import 'package:tracker_app/screens/preferences/settings_screen.dart';
 import 'package:tracker_app/screens/routines/routine_plan.dart';
@@ -159,23 +158,7 @@ final _router = GoRouter(
   routes: [
     GoRoute(
         path: "/", // Define the path for Home Screen
-        builder: (context, state) => const Home(),
-        routes: [
-          GoRoute(
-            path: "shared-workout/:id",
-            builder: (context, state) {
-              final id = state.pathParameters['id'] ?? "";
-              return RoutineTemplateScreen(id: id);
-            },
-          ),
-          GoRoute(
-            path: "shared-workout-log/:id",
-            builder: (context, state) {
-              final id = state.pathParameters['id'] ?? "";
-              return RoutineLogScreen(id: id, showSummary: false);
-            },
-          )
-        ]),
+        builder: (context, state) => const Home()),
     GoRoute(
       path: RoutineLogEditorScreen.routeName,
       builder: (context, state) {
@@ -248,14 +231,10 @@ final _router = GoRouter(
       pageBuilder: (context, state) {
         final extra = state.extra as Map<String, dynamic>;
         final log = extra["log"] as RoutineLogDto?;
-        final showSummary = extra["showSummary"] as bool;
         final isEditable = extra['isEditable'] as bool;
 
         return CustomTransitionPage(
-            child: RoutineLogScreen(
-                id: log?.id ?? "",
-                showSummary: showSummary,
-                isEditable: isEditable),
+            child: RoutineLogScreen(id: log?.id ?? "", isEditable: isEditable),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               const begin = Offset(0.0, 1.0);
@@ -278,27 +257,6 @@ final _router = GoRouter(
     GoRoute(
       path: Home.routeName,
       builder: (context, state) => const Home(),
-    ),
-    GoRoute(
-      path: RoutineLogSummaryScreen.routeName,
-      pageBuilder: (context, state) {
-        final args = state.extra as RoutineLogDto;
-        return CustomTransitionPage(
-            child: RoutineLogSummaryScreen(log: args),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              const begin = Offset(0.0, 1.0);
-              const end = Offset.zero;
-              const curve = Curves.ease;
-              final tween =
-                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              final offsetAnimation = animation.drive(tween);
-              return SlideTransition(
-                position: offsetAnimation,
-                child: child,
-              );
-            });
-      },
     ),
   ],
 );
