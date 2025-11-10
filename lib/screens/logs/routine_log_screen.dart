@@ -504,43 +504,29 @@ class _StatisticWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          borderRadius:
-              BorderRadius.circular(5), // Border radius for rounded corners
-          border: Border.all(
-            color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade400,
-            width: 1,
-          ),
+          color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(5),
         ),
-        child: Stack(children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  leading,
-                  const SizedBox(
-                    width: 6,
-                  ),
-                  Text(subtitle.toUpperCase(),
-                      style: Theme.of(context).textTheme.bodySmall)
-                ],
-              ),
-              const SizedBox(
-                height: 6,
-              ),
-              Text(title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(
-                height: 32,
-              ),
-            ],
-          ),
-          Positioned.fill(
-            child: const Align(
-                alignment: Alignment.bottomRight,
-                child: FaIcon(FontAwesomeIcons.lightbulb, size: 10)),
-          ),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                leading,
+                const SizedBox(
+                  width: 6,
+                ),
+                Text(subtitle.toUpperCase(),
+                    style: Theme.of(context).textTheme.bodySmall)
+              ],
+            ),
+            const SizedBox(
+              height: 6,
+            ),
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+          ],
+        ),
       ),
     );
   }

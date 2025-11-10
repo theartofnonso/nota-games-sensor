@@ -62,8 +62,12 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final yesterday = today.subtract(const Duration(days: 1));
     final selectedDate = DateTime(date.year, date.month, date.day);
 
+    final isToday = selectedDate == today;
+    final isPast = selectedDate.isBefore(today);
+    final isFuture = selectedDate.isAfter(today);
+
     String dateLabel;
-    if (selectedDate == today) {
+    if (isToday) {
       dateLabel = 'Today';
     } else if (selectedDate == yesterday) {
       dateLabel = 'Yesterday';
@@ -135,15 +139,22 @@ class _OverviewScreenState extends State<OverviewScreen> {
                           ],
                         ),
                       ),
-                      // Log workout button
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Close bottom sheet
-                          _logPastSessionForDate(context, date);
-                        },
-                        icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                        color: isDarkMode ? Colors.white : Colors.black,
-                      ),
+                      // Log workout button (hide for future dates)
+                      if (!isFuture)
+                        IconButton(
+                          onPressed: () {
+                            Navigator.pop(context); // Close bottom sheet
+                            if (isToday) {
+                              // Log a fresh session for today
+                              logEmptyRoutine(context: context);
+                            } else if (isPast) {
+                              // Log a past session for the selected date
+                              _logPastSessionForDate(context, date);
+                            }
+                          },
+                          icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
                     ],
                   ),
                 ),

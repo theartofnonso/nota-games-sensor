@@ -37,25 +37,39 @@ Future<RoutineTemplateDto?> navigateToRoutineTemplateEditor(
 
 Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
     {required BuildContext context, RoutinePlanArguments? arguments}) async {
-  final plan = await context.push(RoutinePlanEditorScreen.routeName, extra: arguments) as RoutinePlanDto?;
+  final plan = await navigateWithSlideTransition(
+    context: context,
+    child: RoutinePlanEditorScreen(plan: arguments?.plan),
+  ) as RoutinePlanDto?;
   return plan;
 }
 
 void navigateToPastRoutineLogEditor({required BuildContext context, required PastRoutineLogArguments arguments}) async {
-  final log = await context.push(PastRoutineLogEditorScreen.routeName, extra: arguments);
+  final log = await navigateWithSlideTransition(
+    context: context,
+    child: PastRoutineLogEditorScreen(log: arguments.log),
+  );
   if (log != null) {
     if (context.mounted) {
-      context.push(RoutineLogScreen.routeName, extra: {"log": log, "showSummary": true, "isEditable": true});
+      navigateWithSlideTransition(
+        context: context,
+        child: RoutineLogScreen(id: (log as RoutineLogDto).id, showSummary: true, isEditable: true),
+      );
     }
   }
 }
 
 Future<void> navigateToRoutineLogEditor({required BuildContext context, required RoutineLogArguments arguments}) async {
-  final log = await context.push(RoutineLogEditorScreen.routeName, extra: arguments) as RoutineLogDto?;
+  final log = await navigateWithSlideTransition(
+    context: context,
+    child: RoutineLogEditorScreen(log: arguments.log, mode: arguments.editorMode),
+  ) as RoutineLogDto?;
   if (log != null) {
     if (context.mounted) {
-      context
-          .push(RoutineLogScreen.routeName, extra: {"log": log, "showSummary": true, "isEditable": true});
+      navigateWithSlideTransition(
+        context: context,
+        child: RoutineLogScreen(id: log.id, showSummary: true, isEditable: true),
+      );
     }
   }
 }
@@ -75,7 +89,10 @@ void navigateToRoutinePlanPreview({required BuildContext context, required Routi
 }
 
 void navigateToRoutineLogPreview({required BuildContext context, required RoutineLogDto log, bool isEditable = true}) {
-  context.push(RoutineLogScreen.routeName, extra: {"log": log, "showSummary": false, "isEditable": isEditable});
+  navigateWithSlideTransition(
+    context: context,
+    child: RoutineLogScreen(id: log.id, showSummary: false, isEditable: isEditable),
+  );
 }
 
 Future<void> navigateToExerciseHome({required BuildContext context, required ExerciseDto exercise}) async {
