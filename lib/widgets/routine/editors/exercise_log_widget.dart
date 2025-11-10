@@ -67,10 +67,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   final _errors = <int, String>{};
 
   void _show1RMRecommendations() {
-    final pastExerciseLogs =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-                .exerciseLogsByExerciseId[_exerciseLog.id] ??
-            [];
+    final pastExerciseLogs = Provider.of<SupabaseExerciseAndRoutineController>(
+                context,
+                listen: false)
+            .exerciseLogsByExerciseId[_exerciseLog.id] ??
+        [];
     final completedPastExerciseLogs =
         loggedExercises(exerciseLogs: pastExerciseLogs);
     if (completedPastExerciseLogs.isNotEmpty) {
@@ -152,9 +153,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _addSet() {
-    final pastSets =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-            .whereRecentSetsForExercise(exercise: _exerciseLog.exercise);
+    final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false)
+        .whereRecentSetsForExercise(exercise: _exerciseLog.exercise);
     Provider.of<ExerciseLogController>(context, listen: false)
         .addSet(exerciseLogId: _exerciseLog.id, pastSets: pastSets);
     _loadControllers();
@@ -168,9 +169,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _updateWeight(
       {required int index, required double weight, required SetDto setDto}) {
-    final previousSets =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-            .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+    final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false)
+        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousWeights =
         previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
@@ -192,9 +194,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _updateReps(
       {required int index, required int reps, required SetDto setDto}) {
-    final previousSets =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-            .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+    final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false)
+        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousReps = previousSets
         .map((set) => switch (_exerciseLog.exercise.type) {
@@ -321,9 +324,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _loadWeightAndRepsControllers({required List<SetDto> sets}) {
-    final previousSets =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-            .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+    final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false)
+        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousWeights =
         previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
@@ -356,9 +360,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _loadRepsControllers({required List<SetDto> sets}) {
-    final previousSets =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-            .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+    final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false)
+        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
 
     final previousReps = previousSets
         .map((set) => switch (_exerciseLog.exercise.type) {
@@ -627,7 +632,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                         children: [
                           const SizedBox(height: 10),
                           NoListEmptyState(
-                              showIcon: false,
                               message:
                                   "Tap the + button to start adding sets to your exercise"),
                         ],

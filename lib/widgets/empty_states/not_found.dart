@@ -24,23 +24,10 @@ class NotFound extends StatelessWidget {
         ),
         child: SafeArea(
             child: Center(
-          child: RichText(
-              text: TextSpan(
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  children: [
-                TextSpan(
-                    text: "Not F",
-                    style: Theme.of(context).textTheme.headlineMedium),
-                const WidgetSpan(
-                    child: Padding(
-                      padding: EdgeInsets.only(left: 4.0),
-                      child: FaIcon(FontAwesomeIcons.magnifyingGlass, size: 28),
-                    ),
-                    alignment: PlaceholderAlignment.middle),
-                TextSpan(
-                    text: "und",
-                    style: Theme.of(context).textTheme.headlineMedium),
-              ])),
+          child: Text(
+            "Not Found",
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
         )),
       ),
     );

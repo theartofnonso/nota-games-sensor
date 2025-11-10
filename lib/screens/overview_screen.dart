@@ -16,6 +16,7 @@ import 'package:tracker_app/widgets/routine/preview/routine_plan_grid_item.dart'
 import '../screens/routines/routine_plan.dart';
 import '../widgets/backgrounds/trkr_loading_screen.dart';
 import '../widgets/calendar/infinite_calendar.dart';
+import '../widgets/custom_logo.dart';
 
 class OverviewScreen extends StatefulWidget {
   static const routeName = '/overview_screen';
@@ -45,7 +46,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
         onPressed: () => _showPlansBottomSheet(context),
         backgroundColor: themeGradient(context: context).colors.first,
         elevation: 8.0,
-        child: const Icon(Icons.rocket_launch),
+        child: const CustomLogo(size: 32),
       ),
     );
   }

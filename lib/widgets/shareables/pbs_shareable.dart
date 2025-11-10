@@ -11,6 +11,7 @@ import '../../dtos/set_dtos/duration_set_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/set_dtos/weight_and_reps_dto.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
+import '../custom_logo.dart';
 
 GlobalKey pbsGlobalKey = GlobalKey();
 
@@ -116,11 +117,7 @@ class PBsShareable extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Spacer(),
-                        Image.asset(
-                          'images/framer_logo.png',
-                          fit: BoxFit.cover,
-                          height: 30, // Adjust the height as needed
-                        )
+                        const CustomLogo(size: 30)
                       ],
                     ),
                   ),

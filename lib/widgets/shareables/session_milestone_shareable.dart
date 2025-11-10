@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
+import '../custom_logo.dart';
 
 GlobalKey sessionMilestoneGlobalKey = GlobalKey();
 
@@ -73,11 +74,7 @@ class SessionMilestoneShareable extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Spacer(),
-                      Image.asset(
-                        'images/framer_logo.png',
-                        fit: BoxFit.cover,
-                        height: 30, // Adjust the height as needed
-                      )
+                      const CustomLogo(size: 30)
                     ],
                   ),
                 ),

@@ -4,6 +4,7 @@ import 'package:tracker_app/colors.dart';
 
 import 'utils/theme/theme.dart';
 import 'widgets/buttons/opacity_button_widget_two.dart';
+import 'widgets/custom_logo.dart';
 
 class OnboardingFlowScreen extends StatefulWidget {
   static const routeName = '/onboarding_flow_screen';
@@ -49,11 +50,11 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Image.asset(
-                      'images/framer_logo.png',
-                      fit: BoxFit.contain,
-                      color: Colors.white,
-                      height: 60,
+                    const CustomLogo(
+                      size: 60,
+                      innerColor: Colors.white,
+                      middleColor: Colors.grey,
+                      outerColor: Colors.white54,
                     ),
                     const SizedBox(height: 12),
                     Text(

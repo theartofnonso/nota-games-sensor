@@ -8,6 +8,7 @@ import 'package:tracker_app/extensions/duration_extension.dart';
 import '../../enums/muscle_group_enums.dart';
 import '../../utils/string_utils.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
+import '../custom_logo.dart';
 
 GlobalKey routineLogGlobalKey = GlobalKey();
 
@@ -114,11 +115,7 @@ class RoutineLogShareableLite extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Spacer(),
-                      Image.asset(
-                        'images/framer_logo.png',
-                        fit: BoxFit.cover,
-                        height: 30, // Adjust the height as needed
-                      )
+                      const CustomLogo(size: 30)
                     ],
                   ),
                 ),
