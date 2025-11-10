@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Custom color extension for TRNR theme
-/// Access via: Theme.of(context).extension<TRKRColors>()!.borderLight
+/// Access via: Theme.of(context).extension TRKRColors borderLight
 class TRKRColors extends ThemeExtension<TRKRColors> {
   final Color containerBackground;
   final Color borderLight;
@@ -61,7 +61,7 @@ class TRKRColors extends ThemeExtension<TRKRColors> {
 
   // Dark theme colors
   static const dark = TRKRColors(
-    containerBackground: Color(0xFF212121), // charcoalContainer
+    containerBackground: Color(0xFF212121), // charcoalContainer (legacy)
     borderLight: Color(0x1AFFFFFF), // white/10
     borderMedium: Color(0x33FFFFFF), // white/20
     borderSubtle: Color(0x0DFFFFFF), // white/5
@@ -152,4 +152,3 @@ class TRKRColors extends ThemeExtension<TRKRColors> {
 extension ThemeExtensions on ThemeData {
   TRKRColors get colors => extension<TRKRColors>()!;
 }
-

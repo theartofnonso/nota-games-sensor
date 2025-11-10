@@ -39,9 +39,6 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: isDarkMode
-                  ? Theme.of(context).colors.sapphireDark80
-                  : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(radius),
               border: Border.all(
                 color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade400,

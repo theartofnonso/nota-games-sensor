@@ -182,7 +182,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -201,7 +201,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                     child: Text(
                       'Resend code',
                       style: TextStyle(
-                        color: theme.colorScheme.primary.withOpacity(0.7),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -236,7 +236,6 @@ class _ModernEmailInput extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colors.containerBackground,
         borderRadius: BorderRadius.circular(50),
         border: Border.all(
           color: colors.borderLight,
@@ -344,7 +343,6 @@ class _ModernOTPInput extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colors.containerBackground,
         borderRadius: BorderRadius.circular(50),
         border: Border.all(
           color: colors.borderLight,

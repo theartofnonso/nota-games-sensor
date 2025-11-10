@@ -57,7 +57,6 @@ Future<void> displayBottomSheet(
                   width: double.infinity,
                   padding: padding ?? const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                      color: isDarkMode ? sapphireDark80 : Colors.grey.shade100,
                       borderRadius: const BorderRadius.all(
                         Radius.circular(20),
                       ),

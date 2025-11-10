@@ -8,13 +8,10 @@ import 'package:tracker_app/controllers/exercise_log_controller.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
 import 'package:tracker_app/dtos/set_dtos/duration_set_dto.dart';
 import 'package:tracker_app/enums/exercise_type_enums.dart';
-import 'package:tracker_app/extensions/set_dtos_extensions.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/utils/exercise_logs_utils.dart';
 import 'package:tracker_app/utils/sets_utils.dart';
 import 'package:tracker_app/utils/string_utils.dart';
-import 'package:tracker_app/widgets/icons/custom_icon.dart';
-import 'package:tracker_app/widgets/information_containers/information_container_lite.dart';
 import 'package:tracker_app/widgets/routine/editors/set_headers/duration_set_header.dart';
 import 'package:tracker_app/widgets/routine/editors/set_headers/reps_set_header.dart';
 import 'package:tracker_app/widgets/routine/editors/set_headers/weight_and_reps_set_header.dart';
@@ -29,9 +26,7 @@ import '../../../enums/routine_editor_type_enums.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/one_rep_max_calculator.dart';
-import '../../depth_stack.dart';
 import '../../empty_states/no_list_empty_state.dart';
-import '../../information_containers/transparent_information_container_lite.dart';
 import '../../timers/duration_stopwatch_widget.dart';
 import '../../weight_plate_calculator.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
@@ -520,40 +515,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     final currentSets = exerciseLog.sets;
 
-    final currentWorkingSets = currentSets
-        .workingSets(exerciseType)
-        .where((s) => s.isWorkingSet)
-        .toList();
-
-    bool isAllSameWeight = false;
-
-    if (exerciseType == ExerciseType.weights) {
-      final weights = currentWorkingSets
-          .map((set) => (set as WeightAndRepsSetDto).weight)
-          .toList();
-      isAllSameWeight = allNumbersAreSame(numbers: weights);
-    }
-
-    /// Determine working set for weight
-    final currentWorkingSet = switch (exerciseType) {
-      ExerciseType.weights => isAllSameWeight
-          ? getHeaviestVolume(currentWorkingSets)
-          : getHighestWeight(currentWorkingSets),
-      ExerciseType.bodyWeight => getHighestReps(currentWorkingSets),
-      ExerciseType.duration => getLongestDuration(currentWorkingSets),
-    };
-
     hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
-
-    final errorWidgets = _errors.entries
-        .map((error) => InformationContainerLite(
-            content: error.value,
-            color: Colors.yellow,
-            useOpacity: false,
-            onTap: () => setState(() => _errors.remove(error.key)),
-            trailing:
-                FaIcon(FontAwesomeIcons.squareXmark, color: Colors.black)))
-        .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -709,23 +671,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                     }
                   ],
                 ),
-                if (_errors.isNotEmpty) DepthStack(children: errorWidgets),
-                if (currentWorkingSet != null &&
-                    currentWorkingSet.isNotEmpty() &&
-                    exerciseType == ExerciseType.weights)
-                  TransparentInformationContainerLite(
-                      content:
-                          "${currentWorkingSet.summary()} is your working set.",
-                      useOpacity: true,
-                      onTap: () {
-                        showBottomSheetWithNoAction(
-                            context: context,
-                            title: "Working Sets",
-                            description:
-                                "Working sets are the primary, challenging sets performed after any warm-up sets. They provide the main training stimulus needed for muscle growth, strength gains, or endurance improvements.");
-                      },
-                      trailing: CustomIcon(Icons.chevron_right_rounded,
-                          color: Colors.white)),
                 if (exerciseLog.notes.isNotEmpty)
                   Text(
                     exerciseLog.notes,
