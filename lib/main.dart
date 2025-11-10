@@ -46,6 +46,8 @@ import 'dtos/viewmodels/routine_template_arguments.dart';
 import 'dtos/viewmodels/exercise_editor_arguments.dart';
 import 'dtos/viewmodels/past_routine_log_arguments.dart';
 import 'logger.dart';
+import 'services/isar_service.dart';
+import 'services/sync_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -77,6 +79,10 @@ void main() async {
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
 
+  // Initialize Isar (local database)
+  await IsarService.initialize();
+  logger.i("Isar database initialized");
+
   const DarwinInitializationSettings iOSInitializationSettingsDarwin =
       DarwinInitializationSettings(
     requestAlertPermission: false,
@@ -105,19 +111,45 @@ void main() async {
       // We recommend adjusting this value in production.
       options.tracesSampleRate = 1.0;
     },
-    appRunner: () => runApp(MultiProvider(providers: [
-      ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
-        create: (BuildContext context) => SupabaseExerciseAndRoutineController(
-          exerciseRepository: SupabaseExerciseRepository(),
-          templateRepository: SupabaseRoutineTemplateRepository(),
-          planRepository: SupabaseRoutinePlanRepository(),
-          logRepository: SupabaseRoutineLogRepository(),
-        ),
-      ),
-      ChangeNotifierProvider<ExerciseLogController>(
+    appRunner: () {
+      // Get Isar instance
+      final isar = IsarService.instance;
+      final supabase = Supabase.instance.client;
+
+      // Create SyncService (needed by repositories)
+      final syncService = SyncService(isar: isar, supabase: supabase);
+
+      return runApp(MultiProvider(providers: [
+        // Provide SyncService
+        ChangeNotifierProvider<SyncService>.value(value: syncService),
+
+        // Provide main controller with offline-first repositories
+        ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
           create: (BuildContext context) =>
-              ExerciseLogController(ExerciseLogRepository())),
-    ], child: const MyApp())),
+              SupabaseExerciseAndRoutineController(
+            exerciseRepository: SupabaseExerciseRepository(
+              isar: isar,
+              syncService: syncService,
+            ),
+            templateRepository: SupabaseRoutineTemplateRepository(
+              isar: isar,
+              syncService: syncService,
+            ),
+            planRepository: SupabaseRoutinePlanRepository(
+              isar: isar,
+              syncService: syncService,
+            ),
+            logRepository: SupabaseRoutineLogRepository(
+              isar: isar,
+              syncService: syncService,
+            ),
+          ),
+        ),
+        ChangeNotifierProvider<ExerciseLogController>(
+            create: (BuildContext context) =>
+                ExerciseLogController(ExerciseLogRepository())),
+      ], child: const MyApp()));
+    },
   );
 }
 
@@ -337,6 +369,9 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return MaterialApp(
+        themeMode: ThemeMode.system,
+        theme: TRKRTheme.lightTheme,
+        darkTheme: TRKRTheme.darkTheme,
         home: Scaffold(
           body: Center(
             child: CircularProgressIndicator(),

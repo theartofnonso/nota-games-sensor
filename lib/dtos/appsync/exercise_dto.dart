@@ -35,6 +35,7 @@ class ExerciseDto {
 
   Map<String, dynamic> toJson() {
     return {
+      "id": id,
       "name": name,
       "type": type.id,
       "primaryMuscleGroup": primaryMuscleGroup.name,

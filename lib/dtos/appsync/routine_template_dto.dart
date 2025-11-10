@@ -19,6 +19,7 @@ class RoutineTemplateDto {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'planId': planId,
       'name': name,
       'notes': notes,

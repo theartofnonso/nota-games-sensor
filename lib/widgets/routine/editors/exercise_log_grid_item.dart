@@ -66,9 +66,30 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
               color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12)),
           child: Column(spacing: 12, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Muscle group illustration - centered at top
+            Expanded(
+              child: Center(
+                child: Opacity(
+                  opacity: 0.8,
+                  child: Image.asset(
+                    'muscles_illustration/${exerciseLogDto.exercise.primaryMuscleGroup.name}.png',
+                    height: 60,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.block,
+                        size: 40,
+                        color: isDarkMode ? Colors.white24 : Colors.grey.shade300,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            // Exercise name at bottom (above checkboxes)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(exerciseLogDto.exercise.name,
                     maxLines: 2,
@@ -93,7 +114,6 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
                   ),
               ],
             ),
-            const Spacer(),
             Wrap(
               spacing: 8,
               runSpacing: 8,

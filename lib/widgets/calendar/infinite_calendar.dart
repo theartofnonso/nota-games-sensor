@@ -21,13 +21,19 @@ class InfiniteCalendar extends StatefulWidget {
 class _InfiniteCalendarState extends State<InfiniteCalendar> {
   final ScrollController _scrollController = ScrollController();
   DateTime _selectedDate = DateTime.now();
+  bool _hasScrolledToToday = false;
 
   @override
   void initState() {
     super.initState();
     // Auto-scroll to current date position after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToCurrentDate();
+      // Add a small delay to ensure the grid is fully rendered
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _scrollToCurrentDate();
+        }
+      });
     });
   }
 
@@ -56,9 +62,16 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
     final approximateRowHeight = 60.0;
     final scrollOffset = rowIndex * approximateRowHeight;
 
-    // Scroll to position
-    _scrollController.jumpTo(
-        scrollOffset.clamp(0.0, _scrollController.position.maxScrollExtent));
+    // Ensure we don't exceed max scroll extent
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    final targetOffset = scrollOffset.clamp(0.0, maxExtent);
+
+    // Animate to position for smoother scrolling
+    _scrollController.animateTo(
+      targetOffset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   DateTime _findPreviousMonday(DateTime date) {
@@ -79,6 +92,20 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
           Expanded(
             child: Consumer<SupabaseExerciseAndRoutineController>(
               builder: (context, controller, _) {
+                // Trigger scroll after data loads (only once)
+                if (!_hasScrolledToToday && !controller.isLoading && controller.logs.isNotEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted && !_hasScrolledToToday) {
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        if (mounted) {
+                          _scrollToCurrentDate();
+                          _hasScrolledToToday = true;
+                        }
+                      });
+                    }
+                  });
+                }
+                
                 return _ContinuousCalendarGrid(
                   scrollController: _scrollController,
                   selectedDate: _selectedDate,
