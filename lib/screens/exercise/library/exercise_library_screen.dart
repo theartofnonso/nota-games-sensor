@@ -222,7 +222,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: const NoListEmptyState(
                             message:
-                                "It might feel quiet now, but exercises including yours will soon appear here."),
+                                "No exercises yet. Create your first exercise to get started."),
                       ),
                     ),
             ],

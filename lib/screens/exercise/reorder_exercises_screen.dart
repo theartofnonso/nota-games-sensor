@@ -42,7 +42,7 @@ class _ReOrderExercisesScreenState extends State<ReOrderExercisesScreen> {
     final widgets = _exercises
         .mapIndexed((index, exercise) => ListTile(
               key: Key("$index"),
-              title: Text(exercise.exercise.name, style: TextStyle()),
+              title: Text(exercise.exercise.name),
               trailing: const Icon(
                 Icons.drag_handle,
               ),

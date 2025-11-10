@@ -367,14 +367,23 @@ class _OverviewScreenState extends State<OverviewScreen> {
     );
   }
 
-  void _createNewPlan(BuildContext context) {
+  void _createNewPlan(BuildContext context) async {
     final plan = RoutinePlanDto(
       id: "",
       name: "",
       notes: "",
     );
     final arguments = RoutinePlanArguments(plan: plan);
-    navigateToRoutinePlanEditor(context: context, arguments: arguments);
+    final createdPlan = await navigateToRoutinePlanEditor(
+        context: context, arguments: arguments);
+
+    // Navigate to the created plan
+    if (createdPlan != null && context.mounted) {
+      navigateWithSlideTransition(
+        context: context,
+        child: RoutinePlanScreen(id: createdPlan.id),
+      );
+    }
   }
 
   void _hideLoadingScreen() {
