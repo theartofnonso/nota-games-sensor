@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'utils/general_utils.dart';
 import 'utils/theme/color_extensions.dart';
@@ -59,23 +60,23 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                           // Main heading text
                           RichText(
                             textAlign: TextAlign.left,
-                            text: const TextSpan(
-                              style: TextStyle(
+                            text: TextSpan(
+                              style: GoogleFonts.spaceMono(
                                 color: Colors.white,
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
                                 height: 1.2,
                               ),
                               children: [
-                                TextSpan(text: 'Where training\n'),
+                                const TextSpan(text: 'Where training\n'),
                                 TextSpan(
                                   text: 'becomes your\n',
-                                  style: TextStyle(
+                                  style: GoogleFonts.spaceMono(
                                     fontSize: 42,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                TextSpan(
+                                const TextSpan(
                                   text: 'true story.',
                                 ),
                               ],
