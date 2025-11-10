@@ -10,11 +10,19 @@ class TRKRListTileTheme {
           borderRadius: BorderRadius.all(Radius.circular(12))),
       contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       titleTextStyle: TextStyle(
-          fontWeight: FontWeight.w600, color: Color(0xFF212121), fontSize: 15),
+          fontFamily: 'Space Mono',
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF212121),
+          fontSize: 15),
       subtitleTextStyle: TextStyle(
-          fontWeight: FontWeight.w400, color: Color(0xFF757575), fontSize: 13),
-      leadingAndTrailingTextStyle:
-          TextStyle(fontWeight: FontWeight.w400, color: Color(0xFF9E9E9E)));
+          fontFamily: 'Space Mono',
+          fontWeight: FontWeight.w400,
+          color: Color(0xFF757575),
+          fontSize: 13),
+      leadingAndTrailingTextStyle: TextStyle(
+          fontFamily: 'Space Mono',
+          fontWeight: FontWeight.w400,
+          color: Color(0xFF9E9E9E)));
 
   static const ListTileThemeData darkTheme = ListTileThemeData(
     textColor: Color(0xFFFFFFFF),
@@ -23,10 +31,18 @@ class TRKRListTileTheme {
         borderRadius: BorderRadius.all(Radius.circular(16))),
     contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
     titleTextStyle: TextStyle(
-        fontWeight: FontWeight.w600, color: Color(0xFFFFFFFF), fontSize: 15),
+        fontFamily: 'Space Mono',
+        fontWeight: FontWeight.w600,
+        color: Color(0xFFFFFFFF),
+        fontSize: 15),
     subtitleTextStyle: TextStyle(
-        fontWeight: FontWeight.w400, color: Color(0xFFa0a0a0), fontSize: 13),
-    leadingAndTrailingTextStyle:
-        TextStyle(fontWeight: FontWeight.w400, color: Color(0xFFa0a0a0)),
+        fontFamily: 'Space Mono',
+        fontWeight: FontWeight.w400,
+        color: Color(0xFFa0a0a0),
+        fontSize: 13),
+    leadingAndTrailingTextStyle: TextStyle(
+        fontFamily: 'Space Mono',
+        fontWeight: FontWeight.w400,
+        color: Color(0xFFa0a0a0)),
   );
 }

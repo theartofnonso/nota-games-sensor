@@ -2,8 +2,10 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import 'package:provider/provider.dart';
+import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/utils/string_utils.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 
@@ -16,11 +18,12 @@ import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/calendar/calendar.dart';
-import '../../widgets/calendar/calendar_logs.dart';
 import '../../widgets/chip_one.dart';
+import '../../dtos/appsync/routine_log_dto.dart';
 import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
+import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
 import '../../nudges/plans_nudges.dart';
 import '../../widgets/information_containers/transparent_information_container_lite.dart';
@@ -38,8 +41,6 @@ class RoutinePlanScreen extends StatefulWidget {
 
 class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
   bool _loading = false;
-
-  DateTime? _selectedCalendarDate;
 
   @override
   Widget build(BuildContext context) {
@@ -157,11 +158,9 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                       children: [
                         Calendar(
                           onSelectDate: (date) =>
-                              _onSelectCalendarDateTime(date: date),
+                              _showLogsForDate(context, date, logs),
                           logs: logs,
                         ),
-                        CalendarLogs(
-                            dateTime: _selectedCalendarDate ?? DateTime.now()),
                       ],
                     ),
                     routineTemplates.isNotEmpty
@@ -193,10 +192,124 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     }
   }
 
-  void _onSelectCalendarDateTime({required DateTime date}) {
-    setState(() {
-      _selectedCalendarDate = date;
-    });
+  void _showLogsForDate(
+      BuildContext context, DateTime date, List<RoutineLogDto> allLogs) {
+    final logsForDate =
+        allLogs.where((log) => log.startTime.isSameDayMonthYear(date)).toList();
+    final hasLogs = logsForDate.isNotEmpty;
+
+    // Determine date label
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final selectedDate = DateTime(date.year, date.month, date.day);
+
+    final isToday = selectedDate == today;
+
+    String dateLabel;
+    if (isToday) {
+      dateLabel = 'Today';
+    } else if (selectedDate == yesterday) {
+      dateLabel = 'Yesterday';
+    } else {
+      dateLabel = DateFormat('EEEE, MMM d').format(date);
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF1A1F2E) : Colors.white,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+              gradient: isDarkMode ? themeGradient(context: context) : null,
+            ),
+            child: Column(
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Header row with date
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        dateLabel,
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      Text(
+                        DateFormat('MMM d, yyyy').format(date),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey.shade400,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Logs list
+                Expanded(
+                  child: hasLogs
+                      ? ListView.separated(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: logsForDate.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final log = logsForDate[index];
+                            return RoutineLogWidget(
+                              log: log,
+                              trailing: DateFormat.jm().format(log.startTime),
+                              onTap: () {
+                                Navigator.pop(context);
+                                navigateToRoutineLogPreview(
+                                    context: context, log: log);
+                              },
+                            );
+                          },
+                        )
+                      : Center(
+                          child: Text(
+                            'No workouts logged on this day',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Colors.grey.shade400,
+                                ),
+                          ),
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _deleteRoutinePlan({required RoutinePlanDto plan}) async {

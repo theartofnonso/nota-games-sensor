@@ -571,6 +571,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                     heroTag: UniqueKey(),
                     onPressed: _dismissKeyboard,
                     enableFeedback: true,
+                    backgroundColor:
+                        themeGradient(context: context).colors.first,
+                    elevation: 8.0,
                     child: FaIcon(Icons.keyboard_hide_rounded),
                   ),
                   if (_selectedSetDto != null)
@@ -578,6 +581,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                       heroTag: UniqueKey(),
                       onPressed: _showWeightCalculator,
                       enableFeedback: true,
+                      backgroundColor:
+                          themeGradient(context: context).colors.first,
+                      elevation: 8.0,
                       child: Image.asset(
                         'icons/dumbbells.png',
                         fit: BoxFit.contain,

@@ -57,9 +57,10 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
           final onlyExercise = selectedExercises.first;
-          final pastSets =
-              Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-                  .whereRecentSetsForExercise(exercise: onlyExercise);
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                  context,
+                  listen: false)
+              .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
   }
@@ -99,7 +100,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         context: context,
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                  context,
                   listen: false)
               .whereRecentSetsForExercise(exercise: selectedExercises.first);
           controller.replaceExerciseLog(
@@ -125,10 +127,10 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         _routineLog().copyWith(endTime: DateTime.now());
 
     if (mounted) {
-      final createdRoutineLog = await Provider.of<SupabaseExerciseAndRoutineController>(
-              context,
-              listen: false)
-          .saveLog(logDto: routineLogToBeCreated);
+      final createdRoutineLog =
+          await Provider.of<SupabaseExerciseAndRoutineController>(context,
+                  listen: false)
+              .saveLog(logDto: routineLogToBeCreated);
 
       _navigateBack(routineLog: createdRoutineLog);
     }
@@ -137,7 +139,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   Future<void> _doUpdateRoutineLog() async {
     final routineLogToBeUpdated = _routineLog();
 
-    await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+    await Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false)
         .updateLog(log: routineLogToBeUpdated);
 
     _navigateBack(routineLog: routineLogToBeUpdated);
@@ -230,7 +233,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     final List<int> allDurations = <int>[]; // in minutes
 
     final exerciseLogController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     for (final week in weeksInLastQuarter) {
       final weekLogs =
@@ -248,7 +252,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   @override
   Widget build(BuildContext context) {
     final routineLogEditorController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: true);
 
     if (routineLogEditorController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -323,14 +328,18 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                   children: [
                     if (widget.mode == RoutineEditorMode.log)
                       GestureDetector(
-                        onTap: _showRoutineTimerInfo,
+                        onTap: avgWorkoutDuration > 0
+                            ? _showRoutineTimerInfo
+                            : null,
                         child: Center(
                           child: StopwatchTimer(
                             digital: true,
                             startTime: widget.log.startTime,
                             textStyle:
                                 Theme.of(context).textTheme.headlineLarge,
-                            maxDuration: Duration(minutes: avgWorkoutDuration),
+                            maxDuration: avgWorkoutDuration > 0
+                                ? Duration(minutes: avgWorkoutDuration)
+                                : null,
                             warningThreshold: const Duration(minutes: 15),
                           ),
                         ),
@@ -353,7 +362,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                         child: SizedBox(
                             width: double.infinity,
                             child: OpacityButtonWidgetTwo(
-                              buttonColor: Theme.of(context).colors.vibrantAccent,
+                              buttonColor:
+                                  Theme.of(context).colors.vibrantAccent,
                               label: widget.mode == RoutineEditorMode.log
                                   ? "Finish Session"
                                   : "Update Session",
@@ -391,7 +401,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 
   void _loadRoutineAndExerciseLogs() {
     final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
