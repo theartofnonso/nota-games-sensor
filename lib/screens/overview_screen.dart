@@ -187,7 +187,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     displayBottomSheet(
       context: context,
-      height: MediaQuery.of(context).size.height * 0.7,
+      height: MediaQuery.of(context).size.height,
       padding: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
