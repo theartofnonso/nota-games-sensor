@@ -187,6 +187,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
     displayBottomSheet(
       context: context,
       padding: EdgeInsets.zero,
+      enabledDrag: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

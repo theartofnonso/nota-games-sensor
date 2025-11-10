@@ -140,6 +140,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           ],
         ),
         body: Container(
+          height: double.infinity,
           decoration: BoxDecoration(
             gradient: themeGradient(context: context),
           ),
