@@ -74,7 +74,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     displayBottomSheet(
       context: context,
-      height: MediaQuery.of(context).size.height * 0.7,
       padding: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -119,7 +118,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     _logPastSessionForDate(context, date);
                   },
                   icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                  color: Theme.of(context).colors.vibrantAccent,
+                  color: Colors.white,
                 ),
               ],
             ),
@@ -187,7 +186,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
     displayBottomSheet(
       context: context,
-      height: MediaQuery.of(context).size.height,
       padding: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -232,7 +230,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     _createNewPlan(context);
                   },
                   icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                  color: Theme.of(context).colors.vibrantAccent,
+                  color: Colors.white,
                 ),
               ],
             ),
