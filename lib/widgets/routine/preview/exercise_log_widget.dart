@@ -150,10 +150,4 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
       ),
     );
   }
-
-  List<num> _weightsForExercise({required List<SetDto> pastSets}) {
-    return pastSets.reversed
-        .map((set) => (set as WeightAndRepsSetDto).weight)
-        .toList();
-  }
 }

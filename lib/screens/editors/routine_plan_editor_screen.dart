@@ -10,9 +10,7 @@ import 'package:tracker_app/utils/dialog_utils.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../utils/general_utils.dart';
-import '../../utils/routine_editors_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 
@@ -34,34 +32,9 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
 
   List<RoutineTemplateDto> _routineTemplates = [];
 
-  void _selectTemplatesInLibrary() async {
-    final plan = widget.plan;
-
-    final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
-
-    final routineTemplates = exerciseAndRoutineController.templates
-        .where((template) => template.planId == plan?.id)
-        .toList();
-
-    showTemplatesInLibrary(
-        context: context,
-        templatesToExclude: [...routineTemplates, ..._routineTemplates],
-        onSelected: (List<RoutineTemplateDto> templates) async {
-          setState(() {
-            _routineTemplates.addAll(templates);
-          });
-        });
-  }
-
   bool _validateRoutinePlanInputs() {
     if (_planNameController.text.isEmpty) {
       _showSnackbar('Please provide a name for this plan');
-      return false;
-    }
-    if (_routineTemplates.isEmpty) {
-      _showSnackbar("Plan must have workout template(s)");
       return false;
     }
     return true;
@@ -195,8 +168,6 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
         )
         .toList();
 
-    final plan = widget.plan;
-
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showSnackbar(exerciseAndRoutineController.errorMessage);
@@ -212,12 +183,7 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
               scrolledUnderElevation: 0,
               leading: IconButton(
                   icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
-                  onPressed: context.pop),
-              actions: [
-                IconButton(
-                    onPressed: _selectTemplatesInLibrary,
-                    icon: const FaIcon(FontAwesomeIcons.solidSquarePlus)),
-              ]),
+                  onPressed: context.pop)),
           body: Container(
             decoration: BoxDecoration(
               gradient: themeGradient(context: context),
@@ -274,30 +240,21 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
                             crossAxisSpacing: 10.0,
                             children: children),
                       ),
-                    if (_routineTemplates.isNotEmpty)
-                      SafeArea(
-                        minimum: EdgeInsets.symmetric(horizontal: 4),
-                        child: SizedBox(
-                            width: double.infinity,
-                            child: OpacityButtonWidgetTwo(
-                                buttonColor:
-                                    Theme.of(context).colors.vibrantAccent,
-                                label: plan != null
-                                    ? "Update Plan"
-                                    : "Create Plan",
-                                onPressed: plan != null
-                                    ? _updateRoutinePlan
-                                    : _createRoutinePlan)),
-                      ),
-                    if (_routineTemplates.isEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: const NoListEmptyState(
-                              message:
-                                  "Tap the + button to start adding workout templates to your plan"),
-                        ),
-                      ),
+                    const SizedBox(height: 10),
+                    SafeArea(
+                      minimum: EdgeInsets.symmetric(horizontal: 20),
+                      child: SizedBox(
+                          width: double.infinity,
+                          child: OpacityButtonWidgetTwo(
+                              buttonColor:
+                                  Theme.of(context).colors.vibrantAccent,
+                              label: widget.plan?.id.isNotEmpty ?? false
+                                  ? "Update Plan"
+                                  : "Create Plan",
+                              onPressed: widget.plan?.id.isNotEmpty ?? false
+                                  ? _updateRoutinePlan
+                                  : _createRoutinePlan)),
+                    ),
                   ],
                 ),
               ),

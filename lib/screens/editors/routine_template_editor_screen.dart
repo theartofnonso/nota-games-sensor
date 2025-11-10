@@ -61,7 +61,7 @@ class _RoutineTemplateEditorScreenState
           final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
                   context,
                   listen: false)
-                  .whereRecentSetsForExercise(exercise: onlyExercise);
+              .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
   }
@@ -113,16 +113,8 @@ class _RoutineTemplateEditorScreenState
   }
 
   bool _validateRoutineTemplateInputs() {
-    final exerciseProviders =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final exercises = exerciseProviders.exerciseLogs;
-
     if (_templateNameController.text.isEmpty) {
       _showSnackbar('Please provide a name for this workout');
-      return false;
-    }
-    if (exercises.isEmpty) {
-      _showSnackbar("Workout must have exercise(s)");
       return false;
     }
     return true;
@@ -399,30 +391,21 @@ class _RoutineTemplateEditorScreenState
                               children: children),
                         ),
                       ),
-                    if (exerciseTemplates.isNotEmpty)
-                      SafeArea(
-                        minimum: EdgeInsets.symmetric(horizontal: 20),
-                        child: SizedBox(
-                            width: double.infinity,
-                            child: OpacityButtonWidgetTwo(
-                                buttonColor:
-                                    Theme.of(context).colors.vibrantAccent,
-                                label: template != null
-                                    ? "Update Workout"
-                                    : "Create Workout",
-                                onPressed: template != null
-                                    ? _updateRoutineTemplate
-                                    : _createRoutineTemplate)),
-                      ),
-                    if (exerciseTemplates.isEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: const NoListEmptyState(
-                              message:
-                                  "Tap the + button to start adding exercises to your workout template"),
-                        ),
-                      ),
+                    const SizedBox(height: 10),
+                    SafeArea(
+                      minimum: EdgeInsets.symmetric(horizontal: 20),
+                      child: SizedBox(
+                          width: double.infinity,
+                          child: OpacityButtonWidgetTwo(
+                              buttonColor:
+                                  Theme.of(context).colors.vibrantAccent,
+                              label: widget.template?.id.isNotEmpty ?? false
+                                  ? "Update Workout"
+                                  : "Create Workout",
+                              onPressed: widget.template?.id.isNotEmpty ?? false
+                                  ? _updateRoutineTemplate
+                                  : _createRoutineTemplate)),
+                    ),
                   ],
                 ),
               ),
@@ -457,7 +440,7 @@ class _RoutineTemplateEditorScreenState
         final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
                 context,
                 listen: false)
-                .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
+            .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
         if (previousSets.isNotEmpty) {
           final unCheckedSets = previousSets
               .take(exerciseLog.sets.length)

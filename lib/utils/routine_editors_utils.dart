@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
-import 'package:tracker_app/dtos/appsync/routine_template_dto.dart';
-import 'package:tracker_app/screens/editors/routine_template_library_screen.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/exercise_log_dto.dart';
@@ -39,22 +36,6 @@ void showExercisesInLibrary(
   if (context.mounted) {
     if (selectedExercises != null && selectedExercises.isNotEmpty) {
       onSelected.call(selectedExercises);
-    }
-  }
-}
-
-void showTemplatesInLibrary(
-    {required BuildContext context,
-      RoutinePlanDto? planDto,
-      required List<RoutineTemplateDto> templatesToExclude,
-      required void Function(List<RoutineTemplateDto> selectedTemplates) onSelected}) async {
-  final selectedTemplates = await Navigator.of(context)
-      .push(MaterialPageRoute(builder: (context) => RoutineTemplateLibraryScreen(excludeTemplates: templatesToExclude)))
-  as List<RoutineTemplateDto>?;
-
-  if (context.mounted) {
-    if (selectedTemplates != null && selectedTemplates.isNotEmpty) {
-      onSelected.call(selectedTemplates);
     }
   }
 }

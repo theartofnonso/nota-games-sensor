@@ -138,6 +138,14 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         child: RoutineLogWidget(
                           log: log,
                           trailing: log.duration().hmsAnalog(),
+                          onTap: () {
+                            Navigator.pop(context); // Close bottom sheet
+                            navigateToRoutineLogPreview(
+                              context: context,
+                              log: log,
+                              isEditable: true,
+                            );
+                          },
                         ),
                       );
                     },

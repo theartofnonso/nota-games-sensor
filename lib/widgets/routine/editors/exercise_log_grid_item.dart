@@ -63,7 +63,12 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
       child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
+              color: isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade400,
+                width: 1,
+              )),
           child: Column(spacing: 12, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

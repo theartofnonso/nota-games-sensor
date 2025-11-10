@@ -56,9 +56,10 @@ class _PastRoutineLogEditorScreenState
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
           final onlyExercise = selectedExercises.first;
-          final pastSets =
-              Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-                  .whereRecentSetsForExercise(exercise: onlyExercise);
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                  context,
+                  listen: false)
+              .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
   }
@@ -98,7 +99,8 @@ class _PastRoutineLogEditorScreenState
         context: context,
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                  context,
                   listen: false)
               .whereRecentSetsForExercise(exercise: selectedExercises.first);
           controller.replaceExerciseLog(
@@ -109,16 +111,8 @@ class _PastRoutineLogEditorScreenState
   }
 
   bool _validateRoutineTemplateInputs() {
-    final exerciseProviders =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final exercises = exerciseProviders.exerciseLogs;
-
     if (_templateNameController.text.isEmpty) {
       _showSnackbar('Please provide a name for this workout');
-      return false;
-    }
-    if (exercises.isEmpty) {
-      _showSnackbar("Workout must have exercise(s)");
       return false;
     }
     return true;
@@ -152,9 +146,10 @@ class _PastRoutineLogEditorScreenState
 
     final datetime = updatedLog.startTime;
 
-    final createdLog =
-        await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-            .saveLog(logDto: updatedLog, datetime: datetime);
+    final createdLog = await Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false)
+        .saveLog(logDto: updatedLog, datetime: datetime);
     _navigateBack(log: createdLog);
   }
 
@@ -217,7 +212,8 @@ class _PastRoutineLogEditorScreenState
         Provider.of<ExerciseLogController>(context, listen: false);
 
     final routineTemplateController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: true);
 
     if (routineTemplateController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -357,25 +353,18 @@ class _PastRoutineLogEditorScreenState
                               children: children),
                         ),
                       ),
+                    const SizedBox(height: 10),
                     if (exerciseLogs.isNotEmpty)
                       SafeArea(
                         minimum: EdgeInsets.symmetric(horizontal: 20),
                         child: SizedBox(
                             width: double.infinity,
                             child: OpacityButtonWidgetTwo(
-                                buttonColor: Theme.of(context).colors.vibrantAccent,
+                                buttonColor:
+                                    Theme.of(context).colors.vibrantAccent,
                                 label: "Log Past Session",
                                 onPressed: _createLog)),
-                      ),
-                    if (exerciseLogs.isEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: const NoListEmptyState(
-                              message:
-                                  "Tap the + button to start adding exercises to your past workout session"),
-                        ),
-                      ),
+                      )
                   ],
                 ),
               ),
@@ -407,9 +396,10 @@ class _PastRoutineLogEditorScreenState
     final exercises = widget.log.exerciseLogs;
     if (exercises.isNotEmpty) {
       final updatedExerciseLogs = exercises.map((exerciseLog) {
-        final previousSets =
-            Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
-                .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
+        final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                context,
+                listen: false)
+            .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
         if (previousSets.isNotEmpty) {
           final unCheckedSets = previousSets
               .take(exerciseLog.sets.length)
