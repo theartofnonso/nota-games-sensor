@@ -18,7 +18,6 @@ import '../../utils/general_utils.dart';
 import '../../utils/routine_editors_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/routine/editors/exercise_log_grid_item.dart';
 import '../../widgets/weight_plate_calculator.dart';
 
@@ -245,8 +244,6 @@ class _RoutineTemplateEditorScreenState
   Widget build(BuildContext context) {
     Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
     final isDarkMode = systemBrightness == Brightness.dark;
-
-    final template = widget.template;
 
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);

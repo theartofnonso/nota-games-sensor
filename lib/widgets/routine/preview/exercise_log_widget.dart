@@ -6,8 +6,6 @@ import 'package:tracker_app/widgets/routine/preview/set_headers/single_set_heade
 
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/exercise_log_dto.dart';
-import '../../../dtos/set_dtos/set_dto.dart';
-import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
@@ -78,9 +76,6 @@ class ExerciseLogWidget extends StatefulWidget {
 class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     final otherSuperSet = widget.superSet;
 
     final exercise = widget.exerciseLog.exercise;
@@ -93,9 +88,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     final pastExerciseLogs = routineLogController.whereExerciseLogsBefore(
         exercise: exercise, date: widget.exerciseLog.createdAt);
-
-    final pastSets =
-        routineLogController.wherePrevSetsForExercise(exercise: exercise);
 
     final pbs = calculatePBs(
         pastExerciseLogs: pastExerciseLogs,

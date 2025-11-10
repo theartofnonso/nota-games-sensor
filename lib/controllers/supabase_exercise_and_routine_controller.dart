@@ -73,12 +73,18 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> loadUserData() async {
     try {
+      // First load from local storage (fast)
       await Future.wait([
         _exerciseRepository.loadUserExercises(),
         _templateRepository.loadTemplates(),
         _planRepository.loadPlans(),
         _logRepository.loadLogs(),
       ]);
+      notifyListeners();
+
+      // Wait for background sync to complete, then notify again
+      // This gives time for Supabase data to be fetched and merged
+      await Future.delayed(const Duration(seconds: 2));
       notifyListeners();
     } catch (e) {
       logger.e("Error loading user data", error: e);
@@ -92,7 +98,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       await _exerciseRepository.saveExercise(exerciseDto: exerciseDto);
-      await _exerciseRepository.loadUserExercises();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving exercise", error: e);
@@ -107,7 +113,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       await _exerciseRepository.updateExercise(exercise: exercise);
-      await _exerciseRepository.loadUserExercises();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating exercise", error: e);
@@ -122,7 +128,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       await _exerciseRepository.removeExercise(exercise: exercise);
-      await _exerciseRepository.loadUserExercises();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error removing exercise", error: e);
@@ -140,7 +146,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       savedPlan = await _planRepository.savePlan(planDto: planDto);
-      await _planRepository.loadPlans();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving plan", error: e);
@@ -156,7 +162,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       await _planRepository.updatePlan(plan: planDto);
-      await _planRepository.loadPlans();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating plan", error: e);
@@ -171,7 +177,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       await _planRepository.removePlan(plan: planDto);
-      await _planRepository.loadPlans();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error removing plan", error: e);
@@ -191,7 +197,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     try {
       savedTemplate =
           await _templateRepository.saveTemplate(templateDto: templateDto);
-      await _templateRepository.loadTemplates();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving template", error: e);
@@ -207,7 +213,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       await _templateRepository.updateTemplate(template: template);
-      await _templateRepository.loadTemplates();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating template", error: e);
@@ -222,7 +228,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       await _templateRepository.removeTemplate(template: template);
-      await _templateRepository.loadTemplates();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error removing template", error: e);
@@ -241,7 +247,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     try {
       savedLog =
           await _logRepository.saveLog(logDto: logDto, datetime: datetime);
-      await _logRepository.loadLogs();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving log", error: e);
@@ -254,7 +260,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> updateLog({required RoutineLogDto log}) async {
     try {
       await _logRepository.updateLog(log: log);
-      await _logRepository.loadLogs();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating log", error: e);
@@ -266,7 +272,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> removeLog({required RoutineLogDto log}) async {
     try {
       await _logRepository.removeLog(log: log);
-      await _logRepository.loadLogs();
+      // No need to reload - repository already updates in-memory list
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error removing log", error: e);
@@ -371,10 +377,5 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     _planRepository.clear();
     _logRepository.clear();
     notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }

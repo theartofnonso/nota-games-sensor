@@ -37,8 +37,6 @@ class RoutinePlanScreen extends StatefulWidget {
 }
 
 class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
-  RoutinePlanDto? _plan;
-
   bool _loading = false;
 
   DateTime? _selectedCalendarDate;
@@ -50,13 +48,14 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    final plan = _plan;
-
-    if (plan == null) return const NotFound();
-
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: true);
+
+    // Reload plan from controller on every build (in case it was updated)
+    final plan = exerciseAndRoutineController.planWhere(id: widget.id);
+
+    if (plan == null) return const NotFound();
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -109,7 +108,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             gradient: themeGradient(context: context),
           ),
           child: SafeArea(
-            minimum: const EdgeInsets.only(top: 10, right: 10, left: 10),
+            minimum: const EdgeInsets.only(right: 10, left: 10),
             bottom: false,
             child: SingleChildScrollView(
               child: Column(
@@ -231,17 +230,16 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
   }
 
   void _navigateToRoutinePlanEditor() async {
-    final plan = _plan;
+    final exerciseAndRoutineController =
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
+    final plan = exerciseAndRoutineController.planWhere(id: widget.id);
+
     if (plan != null) {
       final copyOfPlan = plan.copyWith();
       final arguments = RoutinePlanArguments(plan: copyOfPlan);
-      final updatedPlan = await navigateToRoutinePlanEditor(
-          context: context, arguments: arguments);
-      if (updatedPlan != null) {
-        setState(() {
-          _plan = updatedPlan;
-        });
-      }
+      await navigateToRoutinePlanEditor(context: context, arguments: arguments);
+      // No need to update state - controller will notify listeners
     }
   }
 
@@ -252,7 +250,10 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
   }
 
   void _showMenuBottomSheet() {
-    final plan = _plan;
+    final exerciseAndRoutineController =
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
+    final plan = exerciseAndRoutineController.planWhere(id: widget.id);
 
     displayBottomSheet(
         context: context,
@@ -320,18 +321,5 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             },
           )
         ]));
-  }
-
-  void _loadData() {
-    final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
-    _plan = exerciseAndRoutineController.planWhere(id: widget.id);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
   }
 }

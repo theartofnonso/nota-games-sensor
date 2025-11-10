@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../icons/custom_icon.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class OpacityButtonWidgetTwo extends StatelessWidget {
   final void Function()? onPressed;
@@ -10,14 +9,15 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
   final TextStyle? textStyle;
   final VisualDensity? visualDensity;
 
-  const OpacityButtonWidgetTwo(
-      {super.key,
-      this.onPressed,
-      this.onLongPress,
-      required this.label,
-      this.buttonColor,
-      this.textStyle,
-      this.visualDensity = VisualDensity.compact,});
+  const OpacityButtonWidgetTwo({
+    super.key,
+    this.onPressed,
+    this.onLongPress,
+    required this.label,
+    this.buttonColor,
+    this.textStyle,
+    this.visualDensity = VisualDensity.compact,
+  });
 
   Color? _themeForegroundColor({required bool isDarkMode}) {
     return isDarkMode ? buttonColor : Colors.black;
@@ -28,7 +28,9 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
   }
 
   Color _defaultBackgroundColor({required bool isDarkMode}) {
-    return isDarkMode ? Colors.white.withValues(alpha: 0.15) : Colors.grey.shade200;
+    return isDarkMode
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.grey.shade200;
   }
 
   @override
@@ -40,11 +42,14 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
         style: ButtonStyle(
           visualDensity: visualDensity,
           backgroundColor: WidgetStateProperty.all(
-              _themeBackgroundColor(isDarkMode: isDarkMode) ?? _defaultBackgroundColor(isDarkMode: isDarkMode)),
-          shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(5))),
+              _themeBackgroundColor(isDarkMode: isDarkMode) ??
+                  _defaultBackgroundColor(isDarkMode: isDarkMode)),
+          shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
           overlayColor: WidgetStateProperty.resolveWith<Color?>(
             (Set<WidgetState> states) {
-              return Colors.black.withValues(alpha: 0.3); // Defer to the widget's default.
+              return Colors.black
+                  .withValues(alpha: 0.3); // Defer to the widget's default.
             },
           ),
         ),
@@ -60,8 +65,10 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
                   textAlign: TextAlign.start,
                   style: textStyle ??
                       Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: _themeForegroundColor(isDarkMode: isDarkMode), fontWeight: FontWeight.bold)),
-              CustomIcon(Icons.chevron_right_rounded, color: buttonColor ?? Colors.white)
+                          color: _themeForegroundColor(isDarkMode: isDarkMode),
+                          fontWeight: FontWeight.bold)),
+              FaIcon(FontAwesomeIcons.arrowRight,
+                  color: buttonColor ?? Colors.white)
             ],
           ),
         ));

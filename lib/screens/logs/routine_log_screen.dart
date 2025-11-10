@@ -46,8 +46,6 @@ class RoutineLogScreen extends StatefulWidget {
 }
 
 class _RoutineLogScreenState extends State<RoutineLogScreen> {
-  RoutineLogDto? _log;
-
   bool _loading = false;
 
   @override
@@ -59,7 +57,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
+            listen: true);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -69,7 +67,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       });
     }
 
-    final log = _log;
+    // Reload log from controller on every build (in case it was updated)
+    final log = exerciseAndRoutineController.logWhereId(id: widget.id);
 
     if (log == null) return const NotFound();
 
@@ -246,26 +245,15 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         ));
   }
 
-  void _loadData() async {
-    final routineLogController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
-    _log = routineLogController.logWhereId(id: widget.id);
-
-    if (_log == null) {
-      setState(() {
-        _loading = false;
-      });
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    _loadData();
     if (widget.showSummary) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final log = _log;
+        final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false);
+        final log = controller.logWhereId(id: widget.id);
         if (log != null) {
           navigateWithSlideTransition(
               context: context, child: RoutineLogSummaryScreen(log: log));
@@ -348,24 +336,28 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   void _editLog() async {
     Navigator.of(context).pop();
-    final log = _log;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final log = controller.logWhereId(id: widget.id);
+
     if (log != null) {
       final copyOfLog = log.copyWith();
       final arguments = RoutineLogArguments(
           log: copyOfLog, editorMode: RoutineEditorMode.edit);
-      final updatedLog = await navigateToRoutineEditorAndReturnLog(
+      await navigateToRoutineEditorAndReturnLog(
           context: context, arguments: arguments);
-      if (updatedLog != null && mounted) {
-        setState(() {
-          _log = updatedLog;
-        });
-      }
+      // No need to update state - controller will notify listeners
     }
   }
 
   void _editDuration() {
     Navigator.of(context).pop();
-    final log = _log;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final log = controller.logWhereId(id: widget.id);
+
     if (log != null) {
       showDatetimeRangePicker(
           context: context,
@@ -378,9 +370,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             await Provider.of<SupabaseExerciseAndRoutineController>(context,
                     listen: false)
                 .updateLog(log: updatedLog);
-            setState(() {
-              _log = updatedLog;
-            });
+            // No need to update state - controller will notify listeners
           });
     }
   }
@@ -388,7 +378,10 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   void _createTemplate() async {
     Navigator.of(context).pop();
 
-    final log = _log;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final log = controller.logWhereId(id: widget.id);
     if (log != null) {
       _showLoadingScreen();
 
@@ -431,12 +424,14 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   }
 
   void _doDeleteLog() async {
-    final log = _log;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final log = controller.logWhereId(id: widget.id);
+
     if (log != null) {
       try {
-        await Provider.of<SupabaseExerciseAndRoutineController>(context,
-                listen: false)
-            .removeLog(log: log);
+        await controller.removeLog(log: log);
         if (mounted) {
           context.pop();
         }

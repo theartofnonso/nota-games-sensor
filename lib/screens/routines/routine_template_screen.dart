@@ -61,8 +61,6 @@ class RoutineTemplateScreen extends StatefulWidget {
 }
 
 class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
-  RoutineTemplateDto? _template;
-
   bool _loading = false;
 
   _OriginalNewValues _originalNewValues = _OriginalNewValues.newValues;
@@ -78,7 +76,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
+            listen: true);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -88,7 +86,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       });
     }
 
-    final template = _template;
+    // Reload template from controller on every build (in case it was updated)
+    final template = exerciseAndRoutineController.templateWhere(id: widget.id);
 
     if (template == null) return const NotFound();
 
@@ -337,23 +336,25 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _navigateToRoutineTemplateEditor() async {
-    final template = _template;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context, listen: false);
+    final template = controller.templateWhere(id: widget.id);
+    
     if (template != null) {
       final copyOfTemplate = template.copyWith();
       final arguments = RoutineTemplateArguments(
           template: copyOfTemplate, planId: copyOfTemplate.planId);
-      final updatedTemplate = await navigateToRoutineTemplateEditor(
+      await navigateToRoutineTemplateEditor(
           context: context, arguments: arguments);
-      if (updatedTemplate != null) {
-        setState(() {
-          _template = updatedTemplate;
-        });
-      }
+      // No need to update state - controller will notify listeners
     }
   }
 
   void _launchRoutineLogEditor({required List<MuscleGroup> muscleGroups}) {
-    final template = _template;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context, listen: false);
+    final template = controller.templateWhere(id: widget.id);
+    
     if (template != null) {
       final log = template.toLog();
       final arguments =
@@ -363,7 +364,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _createTemplate({bool copy = false}) async {
-    final template = _template;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context, listen: false);
+    final template = controller.templateWhere(id: widget.id);
     if (template != null) {
       _showLoadingScreen();
 
@@ -403,21 +406,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     }
   }
 
-  void _loadData() {
-    final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
-    _template = exerciseAndRoutineController.templateWhere(id: widget.id);
-
-    if (_template == null) {
-      setState(() {
-        _loading = false;
-      });
-    }
-  }
-
   void _showShareBottomSheet() {
-    final template = _template;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context, listen: false);
+    final template = controller.templateWhere(id: widget.id);
 
     if (template != null) {
       final workoutLink = "$shareableRoutineUrl/${template.id}";
@@ -563,7 +555,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             onTap: () {
               Navigator.of(context).pop();
 
-              final template = _template;
+              final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+                  context, listen: false);
+              final template = controller.templateWhere(id: widget.id);
 
               if (template != null) {
                 showBottomSheetWithMultiActions(
@@ -588,11 +582,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _showPlanPicker() {
-    final template = _template;
-
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
+    final template = exerciseAndRoutineController.templateWhere(id: widget.id);
     final plans = exerciseAndRoutineController.plans;
 
     if (template != null) {
@@ -625,11 +618,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
 }
 
 class RecoveryResult {
