@@ -17,6 +17,7 @@ import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/list_tile.dart';
 import '../../widgets/picker.dart';
+import '../../widgets/muscle_group/muscle_group_grid_picker.dart';
 
 class ExerciseEditorScreen extends StatefulWidget {
   static const routeName = '/exercise-editor';
@@ -214,19 +215,39 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
   void _selectPrimaryMuscleGroup() {
     FocusScope.of(context).unfocus();
-    displayBottomSheet(
-        height: 240,
-        context: context,
-        child: GenericPicker(
-          items: MuscleGroup.sortedValues,
-          labelBuilder: (muscle) => muscle.name,
-          onItemSelected: (value) {
-            Navigator.of(context).pop();
-            setState(() {
-              _primaryMuscleGroup = value;
-            });
-          },
-        ));
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: true,
+      showDragHandle: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF1A1F2E) : Colors.white,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+              gradient: isDarkMode ? themeGradient(context: context) : null,
+            ),
+            child: MuscleGroupGridPicker(
+              selectedMuscleGroup: _primaryMuscleGroup,
+              onSelect: (muscleGroup) {
+                Navigator.of(context).pop();
+                setState(() {
+                  _primaryMuscleGroup = muscleGroup;
+                });
+              },
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _selectExerciseType() {

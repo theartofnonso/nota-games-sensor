@@ -403,6 +403,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
+      showDragHandle: true,
       builder: (context) {
         // Get theme data from the current context
         final brightness = MediaQuery.of(context).platformBrightness;

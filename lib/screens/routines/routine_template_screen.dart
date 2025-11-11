@@ -327,6 +327,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      isDismissible: true,
+      showDragHandle: true,
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.7,
         minChildSize: 0.5,

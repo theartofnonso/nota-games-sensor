@@ -247,6 +247,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       useSafeArea: true,
+      isDismissible: true,
+      showDragHandle: true,
       builder: (context) {
         final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 

@@ -44,6 +44,7 @@ Future<void> displayBottomSheet(
       isScrollControlled: isScrollControlled,
       isDismissible: isDismissible,
       useSafeArea: true,
+      showDragHandle: true,
       enableDrag: enabledDrag,
       backgroundColor: Colors.transparent,
       context: context,

@@ -218,6 +218,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      isDismissible: true,
+      showDragHandle: true,
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.7,
         minChildSize: 0.5,
