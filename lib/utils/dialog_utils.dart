@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tracker_app/utils/general_utils.dart';
+import 'package:tracker_app/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:tracker_app/widgets/timers/datetime_picker.dart';
 import 'package:tracker_app/widgets/timers/datetime_range_picker.dart';
 
@@ -28,61 +28,24 @@ void showSnackbar({required BuildContext context, required String message}) {
       )));
 }
 
-Future<void> displayBottomSheet(
-    {required BuildContext context,
-    required Widget child,
-    Gradient? gradient,
-    double? height,
-    enabledDrag = true,
-    bool isDismissible = true,
-    EdgeInsetsGeometry? padding,
-    bool isScrollControlled = false}) {
-  Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-  final isDarkMode = systemBrightness == Brightness.dark;
-
-  return showModalBottomSheet(
-      isScrollControlled: isScrollControlled,
-      isDismissible: isDismissible,
-      useSafeArea: true,
-      showDragHandle: true,
-      enableDrag: enabledDrag,
-      backgroundColor: Colors.transparent,
-      context: context,
-      builder: (BuildContext context) => SafeArea(
-            minimum: const EdgeInsets.all(10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: height,
-                  width: double.infinity,
-                  padding: padding ?? const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.all(
-                        Radius.circular(20),
-                      ),
-                      gradient:
-                          isDarkMode ? themeGradient(context: context) : null),
-                  child: SafeArea(child: child),
-                ),
-              ],
-            ),
-          ));
-}
-
 void displayTimePicker(
     {required BuildContext context,
     required CupertinoTimerPickerMode mode,
     required Duration initialDuration,
     required void Function(Duration duration) onChangedDuration}) {
   FocusScope.of(context).unfocus();
-  displayBottomSheet(
-      height: 240,
+  showAppBottomSheet(
       context: context,
-      child: TimePicker(
-          mode: mode,
-          initialDuration: initialDuration,
-          onDurationChanged: onChangedDuration));
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: SizedBox(
+          height: 240,
+          child: TimePicker(
+              mode: mode,
+              initialDuration: initialDuration,
+              onDurationChanged: onChangedDuration),
+        ),
+      ));
 }
 
 void showDateTimePicker(
@@ -91,13 +54,18 @@ void showDateTimePicker(
     required void Function(DateTime datetime) onChangedDateTime,
     CupertinoDatePickerMode? mode}) {
   FocusScope.of(context).unfocus();
-  displayBottomSheet(
-      height: 240,
+  showAppBottomSheet(
       context: context,
-      child: DatetimePicker(
-          onSelect: onChangedDateTime,
-          initialDateTime: initialDateTime,
-          mode: mode));
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: SizedBox(
+          height: 240,
+          child: DatetimePicker(
+              onSelect: onChangedDateTime,
+              initialDateTime: initialDateTime,
+              mode: mode),
+        ),
+      ));
 }
 
 void showDatetimeRangePicker(
@@ -106,13 +74,16 @@ void showDatetimeRangePicker(
     required void Function(DateTimeRange datetimeRange)
         onChangedDateTimeRange}) {
   FocusScope.of(context).unfocus();
-  displayBottomSheet(
+  showAppBottomSheet(
       context: context,
-      child: DateTimeRangePicker(
-        initialDateTimeRange: initialDateTimeRange,
-        onSelectRange: onChangedDateTimeRange,
-      ),
-      isScrollControlled: true);
+      isScrollControlled: true,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: DateTimeRangePicker(
+          initialDateTimeRange: initialDateTimeRange,
+          onSelectRange: onChangedDateTimeRange,
+        ),
+      ));
 }
 
 void showBottomSheetWithNoAction(
@@ -120,19 +91,22 @@ void showBottomSheetWithNoAction(
     required String title,
     required String description,
     TextStyle? textStyle}) {
-  displayBottomSheet(
+  showAppBottomSheet(
       context: context,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title,
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.start),
-        const SizedBox(
-          height: 4,
-        ),
-        Text(description,
-            style: textStyle ?? Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.start)
-      ]));
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title,
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.start),
+          const SizedBox(
+            height: 4,
+          ),
+          Text(description,
+              style: textStyle ?? Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.start)
+        ]),
+      ));
 }
 
 void showBottomSheetWithMultiActions(
@@ -146,33 +120,36 @@ void showBottomSheetWithMultiActions(
     bool isLeftActionDestructive = false,
     bool isRightActionDestructive = true,
     Color? rightActionColor}) {
-  displayBottomSheet(
+  showAppBottomSheet(
       context: context,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(title,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.start),
-          Text(description,
-              style: Theme.of(context).textTheme.titleSmall,
-              textAlign: TextAlign.start),
-          const SizedBox(height: 16),
-          Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-            OpacityButtonWidget(
-                onPressed: leftAction,
-                label: leftActionLabel,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
-            const SizedBox(width: 10),
-            OpacityButtonWidget(
-                onPressed: rightAction,
-                label: rightActionLabel,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                buttonColor: vibrantGreen)
-          ])
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(title,
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.start),
+            Text(description,
+                style: Theme.of(context).textTheme.titleSmall,
+                textAlign: TextAlign.start),
+            const SizedBox(height: 16),
+            Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+              OpacityButtonWidget(
+                  onPressed: leftAction,
+                  label: leftActionLabel,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+              const SizedBox(width: 10),
+              OpacityButtonWidget(
+                  onPressed: rightAction,
+                  label: rightActionLabel,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  buttonColor: vibrantGreen)
+            ])
+          ],
+        ),
       ));
 }

@@ -13,6 +13,7 @@ import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/exercise_type_enums.dart';
 import '../../logger.dart';
 import '../../utils/general_utils.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/list_tile.dart';
@@ -215,36 +216,16 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
   void _selectPrimaryMuscleGroup() {
     FocusScope.of(context).unfocus();
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      isDismissible: true,
-      showDragHandle: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) {
-          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-          return Container(
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF1A1F2E) : Colors.white,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
-              gradient: isDarkMode ? themeGradient(context: context) : null,
-            ),
-            child: MuscleGroupGridPicker(
-              selectedMuscleGroup: _primaryMuscleGroup,
-              onSelect: (muscleGroup) {
-                Navigator.of(context).pop();
-                setState(() {
-                  _primaryMuscleGroup = muscleGroup;
-                });
-              },
-            ),
-          );
+      isDraggable: true,
+      child: MuscleGroupGridPicker(
+        selectedMuscleGroup: _primaryMuscleGroup,
+        onSelect: (muscleGroup) {
+          Navigator.of(context).pop();
+          setState(() {
+            _primaryMuscleGroup = muscleGroup;
+          });
         },
       ),
     );
@@ -259,18 +240,23 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     }
 
     FocusScope.of(context).unfocus();
-    displayBottomSheet(
-        height: 240,
+    showAppBottomSheet(
         context: context,
-        child: GenericPicker(
-          items: ExerciseType.values,
-          labelBuilder: (type) => type.description,
-          onItemSelected: (value) {
-            Navigator.of(context).pop();
-            setState(() {
-              _exerciseType = value;
-            });
-          },
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: SizedBox(
+            height: 240,
+            child: GenericPicker(
+              items: ExerciseType.values,
+              labelBuilder: (type) => type.description,
+              onItemSelected: (value) {
+                Navigator.of(context).pop();
+                setState(() {
+                  _exerciseType = value;
+                });
+              },
+            ),
+          ),
         ));
   }
 

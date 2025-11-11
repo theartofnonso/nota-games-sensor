@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/exercise_type_enums.dart';
+import 'package:tracker_app/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:tracker_app/widgets/search_bar.dart';
 
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
@@ -243,67 +244,48 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   }
 
   void _showExerciseOptionsBottomSheet(ExerciseDto exercise) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      useSafeArea: true,
-      isDismissible: true,
-      showDragHandle: true,
-      builder: (context) {
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-        return Container(
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF1A1F2E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            gradient: isDarkMode ? themeGradient(context: context) : null,
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Text(
-                      exercise.name,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Text(
+                exercise.name,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
-                  ),
-                  if (!widget.readOnly) ...[
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading:
-                          const FaIcon(FontAwesomeIcons.circlePlus, size: 20),
-                      horizontalTitleGap: 6,
-                      title: const Text("Add to workout"),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        _navigateBackWithSelectedExercise(exercise);
-                      },
-                    ),
-                  ],
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const FaIcon(FontAwesomeIcons.clockRotateLeft,
-                        size: 20),
-                    horizontalTitleGap: 6,
-                    title: const Text("View history"),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      _navigateToExerciseHistory(exercise);
-                    },
-                  ),
-                ],
               ),
             ),
-          ),
-        );
-      },
+            if (!widget.readOnly) ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const FaIcon(FontAwesomeIcons.circlePlus, size: 20),
+                horizontalTitleGap: 6,
+                title: const Text("Add to workout"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateBackWithSelectedExercise(exercise);
+                },
+              ),
+            ],
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(FontAwesomeIcons.clockRotateLeft, size: 20),
+              horizontalTitleGap: 6,
+              title: const Text("View history"),
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToExerciseHistory(exercise);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -9,6 +9,7 @@ import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
 import 'package:tracker_app/enums/routine_editor_type_enums.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
+import 'package:tracker_app/widgets/bottom_sheets/app_bottom_sheet.dart';
 
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
@@ -379,11 +380,10 @@ class _PastRoutineLogEditorScreenState
   }
 
   void _showWeightCalculator() {
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
         child: WeightPlateCalculator(
-            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0),
-        padding: EdgeInsets.zero);
+            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0));
   }
 
   @override

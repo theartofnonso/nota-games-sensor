@@ -17,6 +17,7 @@ import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
@@ -214,102 +215,78 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       dateLabel = DateFormat('EEEE, MMM d').format(date);
     }
 
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      isDismissible: true,
-      showDragHandle: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) {
-          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-          return Container(
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF1A1F2E) : Colors.white,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
-              gradient: isDarkMode ? themeGradient(context: context) : null,
+      isDraggable: true,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            child: Column(
-              children: [
-                // Handle bar
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
-                    borderRadius: BorderRadius.circular(2),
+            // Header row with date
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    dateLabel,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-                ),
-                // Header row with date
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        dateLabel,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      Text(
-                        DateFormat('MMM d, yyyy').format(date),
+                  Text(
+                    DateFormat('MMM d, yyyy').format(date),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey.shade400,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            // Logs list
+            Expanded(
+              child: hasLogs
+                  ? ListView.separated(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: logsForDate.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final log = logsForDate[index];
+                        return RoutineLogWidget(
+                          log: log,
+                          trailing: DateFormat.jm().format(log.startTime),
+                          onTap: () {
+                            Navigator.pop(context);
+                            navigateToRoutineLogPreview(
+                                context: context, log: log);
+                          },
+                        );
+                      },
+                    )
+                  : Center(
+                      child: Text(
+                        'No workouts logged on this day',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.grey.shade400,
                             ),
                       ),
-                    ],
-                  ),
-                ),
-                // Logs list
-                Expanded(
-                  child: hasLogs
-                      ? ListView.separated(
-                          controller: scrollController,
-                          padding: const EdgeInsets.all(16),
-                          itemCount: logsForDate.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final log = logsForDate[index];
-                            return RoutineLogWidget(
-                              log: log,
-                              trailing: DateFormat.jm().format(log.startTime),
-                              onTap: () {
-                                Navigator.pop(context);
-                                navigateToRoutineLogPreview(
-                                    context: context, log: log);
-                              },
-                            );
-                          },
-                        )
-                      : Center(
-                          child: Text(
-                            'No workouts logged on this day',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Colors.grey.shade400,
-                                ),
-                          ),
-                        ),
-                ),
-              ],
+                    ),
             ),
-          );
-        },
-      ),
+          ],
+        );
+      },
     );
   }
 
@@ -369,10 +346,12 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             listen: false);
     final plan = exerciseAndRoutineController.planWhere(id: widget.id);
 
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
         isScrollControlled: true,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const FaIcon(
@@ -434,6 +413,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
               }
             },
           )
-        ]));
+        ]),
+        ));
   }
 }

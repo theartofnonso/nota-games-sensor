@@ -23,6 +23,7 @@ import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../utils/string_utils.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
 import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
@@ -235,9 +236,11 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   }
 
   void _showBottomSheet() {
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
-        child: Column(children: [
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: Column(children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
@@ -274,7 +277,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                     fontSize: 16)),
             onTap: _deleteLog,
           ),
-        ]));
+        ]),
+        ));
   }
 
   void _showLoadingScreen() {
@@ -362,9 +366,11 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   void _showPlanPickerForTemplate(
       {required RoutineLogDto log, required List<RoutinePlanDto> plans}) {
-    displayBottomSheet(
+    showAppBottomSheet(
       context: context,
-      child: PlanPicker(
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: PlanPicker(
         title: "Save as template into...",
         plans: plans,
         onSelect: (selectedPlan) async {
@@ -389,6 +395,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                 log: log, plans: controller.plans.toList());
           }
         },
+        ),
       ),
     );
   }

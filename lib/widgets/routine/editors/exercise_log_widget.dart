@@ -25,6 +25,7 @@ import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/general_utils.dart';
+import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
 import '../../weight_plate_calculator.dart';
@@ -400,44 +401,45 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     setState(() {
       _showNotes = !_showNotes;
     });
-    showModalBottomSheet(
+
+    showAppBottomSheet(
       context: context,
       isScrollControlled: true,
-      isDismissible: true,
-      showDragHandle: true,
-      builder: (context) {
-        // Get theme data from the current context
-        final brightness = MediaQuery.of(context).platformBrightness;
-        final isDarkMode = brightness == Brightness.dark;
+      child: Builder(
+        builder: (context) {
+          // Get theme data from the current context
+          final brightness = MediaQuery.of(context).platformBrightness;
+          final isDarkMode = brightness == Brightness.dark;
 
-        // 1. Pull the current version from provider, not from the parameter
-        final currentNotes =
-            Provider.of<ExerciseLogController>(context, listen: false)
-                .whereExerciseLog(exerciseId: _exerciseLog.id)
-                .notes;
+          // 1. Pull the current version from provider, not from the parameter
+          final currentNotes =
+              Provider.of<ExerciseLogController>(context, listen: false)
+                  .whereExerciseLog(exerciseId: _exerciseLog.id)
+                  .notes;
 
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: TextField(
-            controller: TextEditingController(text: currentNotes),
-            cursorColor: isDarkMode ? Colors.white : Colors.black,
-            onChanged: (value) => _updateExerciseLogNotes(value: value),
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: "Enter notes",
-              contentPadding: EdgeInsets.all(16.0),
-              border: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              enabledBorder: InputBorder.none,
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
-            maxLines: null,
-            keyboardType: TextInputType.multiline,
-            textCapitalization: TextCapitalization.sentences,
-          ),
-        );
-      },
+            child: TextField(
+              controller: TextEditingController(text: currentNotes),
+              cursorColor: isDarkMode ? Colors.white : Colors.black,
+              onChanged: (value) => _updateExerciseLogNotes(value: value),
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: "Enter notes",
+                contentPadding: EdgeInsets.all(16.0),
+                border: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none,
+              ),
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -461,11 +463,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _showWeightCalculator() {
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
         child: WeightPlateCalculator(
-            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0),
-        padding: EdgeInsets.zero);
+            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0));
   }
 
   void _onTapWeightEditor({required SetDto setDto}) {
@@ -663,8 +664,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                           fontWeight: FontWeight.w400,
                           fontSize: 12,
                           height: 1.8,
-                          color:
-                              isDarkMode ? Colors.white70 : Colors.grey.shade800),
+                          color: isDarkMode
+                              ? Colors.white70
+                              : Colors.grey.shade800),
                     ),
                   )
               ],

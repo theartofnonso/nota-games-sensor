@@ -5,10 +5,10 @@ import 'package:provider/provider.dart';
 
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
-import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 
@@ -98,10 +98,12 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
   }
 
   void _showMenuBottomSheet() {
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
         isScrollControlled: true,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(
@@ -116,6 +118,7 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
               navigateToRoutinePlanEditor(context: context);
             },
           ),
-        ]));
+        ]),
+        ));
   }
 }

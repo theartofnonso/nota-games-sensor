@@ -3,8 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
-import '../../../utils/dialog_utils.dart';
 import '../../../utils/navigation_utils.dart';
+import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../editors/exercise_log_widget.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 
@@ -124,9 +124,11 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
   }
 
   void _showBottomSheet({required BuildContext context}) {
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
-        child: Column(children: [
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: Column(children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 22),
@@ -161,6 +163,7 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
                 Navigator.of(context).pop();
                 onRemoveLog();
               }),
-        ]));
+        ]),
+        ));
   }
 }
