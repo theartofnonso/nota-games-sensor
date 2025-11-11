@@ -7,7 +7,7 @@ extension MuscleGroupExtension on MuscleGroup {
       MuscleGroup.adductors => "adductors",
       MuscleGroup.abs => "abs",
       MuscleGroup.back => "back",
-      MuscleGroup.backShoulder => "rear_shoulders",
+      MuscleGroup.rearShoulders => "rear_shoulders",
       MuscleGroup.biceps => "biceps",
       MuscleGroup.calves => "calves",
       MuscleGroup.chest => "chest",
