@@ -77,7 +77,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    final userEmail = Supabase.instance.client.auth.currentUser?.email ?? "User";
+    final userEmail =
+        Supabase.instance.client.auth.currentUser?.email ?? "User";
 
     return Scaffold(
       appBar: AppBar(
@@ -211,7 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ListTile(
                     onTap: () => navigateWithSlideTransition(
                           context: context,
-                          child: const ExerciseLibraryScreen(readOnly: false),
+                          child: const ExerciseLibraryScreen(readOnly: true),
                         ),
                     leading: FaIcon(FontAwesomeIcons.personWalking,
                         color: isDarkMode ? Colors.white70 : Colors.black38),

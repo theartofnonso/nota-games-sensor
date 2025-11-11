@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
@@ -22,10 +23,15 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
   final ScrollController _scrollController = ScrollController();
   DateTime _selectedDate = DateTime.now();
   bool _hasScrolledToToday = false;
+  bool _showScrollToTodayButton = false;
+  double? _todayScrollOffset;
 
   @override
   void initState() {
     super.initState();
+    // Add scroll listener to detect when user scrolls away from today
+    _scrollController.addListener(_onScroll);
+
     // Auto-scroll to current date position after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Add a small delay to ensure the grid is fully rendered
@@ -35,6 +41,23 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
         }
       });
     });
+  }
+
+  void _onScroll() {
+    if (!mounted || _todayScrollOffset == null) return;
+
+    final currentOffset = _scrollController.offset;
+    final threshold =
+        200.0; // Show button if scrolled more than 200 pixels away
+
+    final isAwayFromToday =
+        (currentOffset - _todayScrollOffset!).abs() > threshold;
+
+    if (isAwayFromToday != _showScrollToTodayButton) {
+      setState(() {
+        _showScrollToTodayButton = isAwayFromToday;
+      });
+    }
   }
 
   @override
@@ -66,6 +89,9 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
     final maxExtent = _scrollController.position.maxScrollExtent;
     final targetOffset = scrollOffset.clamp(0.0, maxExtent);
 
+    // Save today's scroll position for comparison
+    _todayScrollOffset = targetOffset;
+
     // Animate to position for smoother scrolling
     _scrollController.animateTo(
       targetOffset,
@@ -85,39 +111,94 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
       decoration: BoxDecoration(
         gradient: themeGradient(context: context),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          const _DaysOfWeekHeader(),
-          Expanded(
-            child: Consumer<SupabaseExerciseAndRoutineController>(
-              builder: (context, controller, _) {
-                // Trigger scroll after data loads (only once)
-                if (!_hasScrolledToToday && !controller.isLoading && controller.logs.isNotEmpty) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted && !_hasScrolledToToday) {
-                      Future.delayed(const Duration(milliseconds: 100), () {
-                        if (mounted) {
-                          _scrollToCurrentDate();
-                          _hasScrolledToToday = true;
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _DaysOfWeekHeader(),
+              Expanded(
+                child: Consumer<SupabaseExerciseAndRoutineController>(
+                  builder: (context, controller, _) {
+                    // Trigger scroll after data loads (only once)
+                    if (!_hasScrolledToToday &&
+                        !controller.isLoading &&
+                        controller.logs.isNotEmpty) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && !_hasScrolledToToday) {
+                          Future.delayed(const Duration(milliseconds: 100), () {
+                            if (mounted) {
+                              _scrollToCurrentDate();
+                              _hasScrolledToToday = true;
+                            }
+                          });
                         }
                       });
                     }
-                  });
-                }
-                
-                return _ContinuousCalendarGrid(
-                  scrollController: _scrollController,
-                  selectedDate: _selectedDate,
-                  logs: controller.logs,
-                  onDateTap: (date) {
-                    setState(() => _selectedDate = date);
-                    widget.onDateTap?.call(date);
+
+                    return _ContinuousCalendarGrid(
+                      scrollController: _scrollController,
+                      selectedDate: _selectedDate,
+                      logs: controller.logs,
+                      onDateTap: (date) {
+                        setState(() => _selectedDate = date);
+                        widget.onDateTap?.call(date);
+                      },
+                    );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
+          // Floating "Back to Today" button
+          if (_showScrollToTodayButton)
+            Positioned(
+              bottom: 60,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _scrollToCurrentDate,
+                      borderRadius: BorderRadius.circular(28),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const FaIcon(
+                              FontAwesomeIcons.calendarDay,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Today',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

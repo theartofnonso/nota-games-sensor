@@ -4,13 +4,11 @@ import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
 class ExerciseGridItem extends StatelessWidget {
   final ExerciseDto exercise;
   final VoidCallback onTap;
-  final VoidCallback? onLongPress;
 
   const ExerciseGridItem({
     super.key,
     required this.exercise,
     required this.onTap,
-    this.onLongPress,
   });
 
   @override
@@ -23,7 +21,6 @@ class ExerciseGridItem extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      onLongPress: onLongPress,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(

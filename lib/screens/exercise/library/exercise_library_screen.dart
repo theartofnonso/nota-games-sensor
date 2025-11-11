@@ -211,9 +211,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                           return ExerciseGridItem(
                             exercise: exercise,
                             onTap: () => _handleExerciseTap(exercise),
-                            onLongPress: widget.readOnly
-                                ? null
-                                : () => _navigateToExerciseHistory(exercise),
                           );
                         },
                       ),
@@ -237,22 +234,75 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   // Helpers
   // ────────────────────────────────────────────────────────────────────
 
-  /// Handle exercise tap based on context
-  /// - If readOnly = false (from session/template):
-  ///   * Tap = Add to selection
-  ///   * Long press = View exercise history
-  /// - If readOnly = true (from settings):
-  ///   * Tap = Navigate to exercise history
+  /// Handle exercise tap - show bottom sheet with context-aware options
+  /// - If readOnly = false (from session/template): Show "Add to workout" and "View history"
+  /// - If readOnly = true (from settings): Show only "View history"
   void _handleExerciseTap(ExerciseDto exercise) {
     _dismissKeyboard(context);
+    _showExerciseOptionsBottomSheet(exercise);
+  }
 
-    if (widget.readOnly) {
-      // From settings - tap navigates to exercise history
-      _navigateToExerciseHistory(exercise);
-    } else {
-      // From session/template - tap adds exercise to selection
-      _navigateBackWithSelectedExercise(exercise);
-    }
+  void _showExerciseOptionsBottomSheet(ExerciseDto exercise) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (context) {
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF1A1F2E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            gradient: isDarkMode ? themeGradient(context: context) : null,
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Text(
+                      exercise.name,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                  if (!widget.readOnly) ...[
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading:
+                          const FaIcon(FontAwesomeIcons.circlePlus, size: 20),
+                      horizontalTitleGap: 6,
+                      title: const Text("Add to workout"),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _navigateBackWithSelectedExercise(exercise);
+                      },
+                    ),
+                  ],
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const FaIcon(FontAwesomeIcons.clockRotateLeft,
+                        size: 20),
+                    horizontalTitleGap: 6,
+                    title: const Text("View history"),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _navigateToExerciseHistory(exercise);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _loadOrSyncExercises() {
