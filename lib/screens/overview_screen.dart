@@ -125,6 +125,24 @@ class _OverviewScreenState extends State<OverviewScreen> {
     Navigator.of(context).pop(); // Close bottom sheet
 
     final controller = context.read<SupabaseExerciseAndRoutineController>();
+
+    // Check if this log already exists in the database
+    final existingLog = controller.logWhereId(id: routineLog.id);
+
+    if (existingLog != null) {
+      // Log already exists - just clear the cache
+      SharedPrefs().remove(key: SharedPrefs().routineLogKey);
+      setState(() {}); // Refresh to hide notification icon
+      if (mounted) {
+        showSnackbar(
+          context: context,
+          message: 'Workout was already saved!',
+        );
+      }
+      return;
+    }
+
+    // Try to save the cached workout
     final savedLog = await controller.saveLog(logDto: routineLog);
 
     // Clear cache only if save succeeded
