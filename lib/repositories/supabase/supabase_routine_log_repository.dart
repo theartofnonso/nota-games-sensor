@@ -1,15 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/utils/exercise_logs_utils.dart';
 import 'package:tracker_app/utils/routine_utils.dart';
 import 'package:uuid/uuid.dart';
 
@@ -20,8 +16,6 @@ import '../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../dtos/set_dtos/reps_dto.dart';
 import '../../enums/posthog_analytics_event.dart';
 import '../../logger.dart';
-import '../../utils/date_utils.dart';
-import '../../utils/notifications_utils.dart';
 
 class SupabaseRoutineLogRepository {
   final logger = getLogger(className: "SupabaseRoutineLogRepository");
