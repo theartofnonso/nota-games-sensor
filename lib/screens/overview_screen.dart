@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -8,10 +10,14 @@ import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 import 'package:tracker_app/dtos/viewmodels/past_routine_log_arguments.dart';
 import 'package:tracker_app/dtos/viewmodels/routine_plan_arguments.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
+import 'package:tracker_app/shared_prefs.dart';
+import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/utils/general_utils.dart';
 import 'package:tracker_app/utils/navigation_utils.dart';
+import 'package:tracker_app/widgets/buttons/opacity_button_widget_two.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_log_widget.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_plan_grid_item.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 import '../screens/routines/routine_plan.dart';
 import '../widgets/backgrounds/trkr_loading_screen.dart';
@@ -30,9 +36,122 @@ class OverviewScreen extends StatefulWidget {
 class _OverviewScreenState extends State<OverviewScreen> {
   bool _loading = false;
 
+  bool _hasCachedSession() {
+    return SharedPrefs().routineLog.isNotEmpty;
+  }
+
+  void _showRetryBottomSheet() {
+    final cache = SharedPrefs().routineLog;
+    if (cache.isEmpty) return;
+
+    try {
+      final json = jsonDecode(cache);
+      final routineLog = RoutineLogDto.fromJson(json: json);
+      
+      displayBottomSheet(
+        context: context,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.cloud_off_rounded,
+                    color: Theme.of(context).colors.vibrantAccent,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Unsaved Workout',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'You have a workout session that failed to sync:',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black12
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      routineLog.name,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${routineLog.exerciseLogs.length} exercises • ${DateFormat('MMM d, y').format(routineLog.startTime)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  label: 'Retry Sync',
+                  buttonColor: Theme.of(context).colors.vibrantAccent,
+                  onPressed: () => _retryCachedSession(routineLog),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('[Retry] Error showing retry sheet: $e');
+    }
+  }
+
+  Future<void> _retryCachedSession(RoutineLogDto routineLog) async {
+    Navigator.of(context).pop(); // Close bottom sheet
+    
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    final savedLog = await controller.saveLog(logDto: routineLog);
+    
+    // Clear cache only if save succeeded
+    if (savedLog != null) {
+      SharedPrefs().remove(key: SharedPrefs().routineLogKey);
+      setState(() {}); // Refresh to hide notification icon
+      if (mounted) {
+        showSnackbar(
+          context: context,
+          message: 'Session saved successfully!',
+        );
+      }
+    } else {
+      if (mounted) {
+        showSnackbar(
+          context: context,
+          message: 'Failed to sync. Please try again later.',
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
+
+    final hasCachedSession = _hasCachedSession();
 
     return Scaffold(
       backgroundColor: appBarBackgroundColor(context: context),
@@ -44,6 +163,29 @@ class _OverviewScreenState extends State<OverviewScreen> {
               onDateTap: (date) => _showLogsForDate(context, date),
             ),
           ),
+          // Notification icon overlay (only when cached session exists)
+          if (hasCachedSession)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              right: 72, // Position to left of settings icon
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: IconButton(
+                    icon: const FaIcon(FontAwesomeIcons.bell, size: 18),
+                    onPressed: _showRetryBottomSheet,
+                    tooltip: 'Unsaved workout',
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(12),
+                    constraints: const BoxConstraints(),
+                  ),
+                ),
+              ),
+            ),
           // Settings icon overlay
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
