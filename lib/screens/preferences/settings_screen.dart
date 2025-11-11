@@ -77,9 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    final userEmail = SharedPrefs().userEmail.isNotEmpty
-        ? SharedPrefs().userEmail
-        : "Apple Sign in";
+    final userEmail = Supabase.instance.client.auth.currentUser?.email ?? "User";
 
     return Scaffold(
       appBar: AppBar(

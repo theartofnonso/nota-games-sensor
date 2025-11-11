@@ -6,7 +6,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:tracker_app/shared_prefs.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'overview_screen.dart';
@@ -47,16 +46,8 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         return;
       }
 
-      final userId = user.id;
-      final email = user.email ?? '';
-
-      // Persist to SharedPrefs & analytics
-      final prefs = SharedPrefs();
-      prefs
-        ..userId = userId
-        ..userEmail = email;
-
-      Posthog().identify(userId: userId);
+      // Analytics
+      Posthog().identify(userId: user.id);
 
       // Load app data
       final controller = Provider.of<SupabaseExerciseAndRoutineController>(
@@ -70,7 +61,6 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       await _loadAppData();
     }
   }
-
 
   @override
   void initState() {

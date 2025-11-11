@@ -49,8 +49,13 @@ class ExerciseDto {
     final type = json["type"] != null
         ? ExerciseType.fromString(json["type"])
         : ExerciseType.weights;
-    final primaryMuscleGroup = MuscleGroup.values
-        .firstWhere((e) => e.name == json["primaryMuscleGroup"]);
+
+    // Handle muscle group with fallback for legacy/invalid values
+    final primaryMuscleGroup = MuscleGroup.values.firstWhere(
+      (e) => e.name == json["primaryMuscleGroup"],
+      orElse: () => MuscleGroup.fullBody, // Default to fullBody if not found
+    );
+
     final notes = json["notes"] ?? "";
 
     return ExerciseDto(
