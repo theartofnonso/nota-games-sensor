@@ -153,7 +153,7 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
           // Floating "Back to Today" button
           if (_showScrollToTodayButton)
             Positioned(
-              bottom: 60,
+              bottom: 16,
               left: 0,
               right: 0,
               child: Center(
