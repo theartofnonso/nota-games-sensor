@@ -10,10 +10,12 @@ import 'package:tracker_app/widgets/backgrounds/trkr_loading_screen.dart';
 
 import '../../../dtos/exercise_log_dto.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
+import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/viewmodels/exercise_log_view_model.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
+import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
@@ -25,6 +27,7 @@ import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/monthly_insights/muscle_groups_family_frequency_widget.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
+import '../../widgets/routine/preview/plan_picker.dart';
 
 class RoutineLogScreen extends StatefulWidget {
   static const routeName = '/routine_log_screen';
@@ -104,15 +107,15 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
               onPressed: context.pop,
             ),
-            title: Text(updatedLog.name)),
-        floatingActionButton: widget.isEditable
-            ? FloatingActionButton(
-                heroTag: "routine_log_screen",
-                onPressed: _showBottomSheet,
-                backgroundColor: themeGradient(context: context).colors.first,
-                elevation: 8.0,
-                child: const FaIcon(FontAwesomeIcons.penToSquare))
-            : null,
+            title: Text(updatedLog.name),
+            actions: widget.isEditable
+                ? [
+                    IconButton(
+                        onPressed: _showBottomSheet,
+                        icon: const FaIcon(FontAwesomeIcons.ellipsisVertical,
+                            size: 22))
+                  ]
+                : null),
         body: Container(
           height: double.infinity,
           decoration: BoxDecoration(
@@ -252,7 +255,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.download, size: 18),
             horizontalTitleGap: 6,
-            title: Text("Save as template"),
+            title: Text("Save as template into..."),
             onTap: _createTemplate,
           ),
           ListTile(
@@ -346,44 +349,90 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         context,
         listen: false);
     final log = controller.logWhereId(id: widget.id);
-    if (log != null) {
-      _showLoadingScreen();
 
-      try {
-        final exercises = log.exerciseLogs.map((exerciseLog) {
-          final uncheckedSets = exerciseLog.sets
-              .map((set) => set.copyWith(checked: false))
-              .toList();
+    if (log == null) return;
 
-          /// [Exercise.duration] exercises do not have sets in templates
-          /// This is because we only need to store the duration of the exercise in [RoutineEditorType.log] i.e data is log in realtime
-          final sets = withDurationOnly(type: exerciseLog.exercise.type)
-              ? <SetDto>[]
-              : uncheckedSets;
-          return exerciseLog.copyWith(sets: sets);
-        }).toList();
-        final templateToCreate = RoutineTemplateDto(
-            name: log.name, notes: log.notes, exerciseTemplates: exercises);
+    // Get all plans
+    final plans = controller.plans;
 
-        final createdTemplate =
-            await Provider.of<SupabaseExerciseAndRoutineController>(context,
-                    listen: false)
-                .saveTemplate(templateDto: templateToCreate);
-        if (mounted) {
-          if (createdTemplate != null) {
-            navigateToRoutineTemplatePreview(
-                context: context, template: createdTemplate);
+    // Show plan picker to select which plan to save template into
+    _showPlanPickerForTemplate(log: log, plans: plans.toList());
+  }
+
+  void _showPlanPickerForTemplate(
+      {required dynamic log, required List<RoutinePlanDto> plans}) {
+    displayBottomSheet(
+      context: context,
+      child: PlanPicker(
+        title: "Save as template into...",
+        plans: plans,
+        onSelect: (selectedPlan) async {
+          Navigator.of(context).pop();
+          await _doCreateTemplate(log: log, planId: selectedPlan.id);
+        },
+        onCreatePlan: () async {
+          Navigator.of(context).pop(); // Close bottom sheet
+          // Navigate to create a new plan
+          final emptyPlan = RoutinePlanDto(id: "", name: "", notes: "");
+          final arguments = RoutinePlanArguments(plan: emptyPlan);
+          final newPlan = await navigateToRoutinePlanEditor(
+            context: context,
+            arguments: arguments,
+          );
+          // If plan was created, show picker again with the new plan
+          if (newPlan != null && mounted) {
+            final controller =
+                Provider.of<SupabaseExerciseAndRoutineController>(context,
+                    listen: false);
+            _showPlanPickerForTemplate(
+                log: log, plans: controller.plans.toList());
           }
+        },
+      ),
+    );
+  }
+
+  Future<void> _doCreateTemplate(
+      {required dynamic log, required String planId}) async {
+    _showLoadingScreen();
+
+    try {
+      final exercises = log.exerciseLogs.map((exerciseLog) {
+        final uncheckedSets = exerciseLog.sets
+            .map((set) => set.copyWith(checked: false))
+            .toList();
+
+        /// [Exercise.duration] exercises do not have sets in templates
+        final sets = withDurationOnly(type: exerciseLog.exercise.type)
+            ? <SetDto>[]
+            : uncheckedSets;
+        return exerciseLog.copyWith(sets: sets);
+      }).toList();
+
+      final templateToCreate = RoutineTemplateDto(
+          planId: planId,
+          name: log.name,
+          notes: log.notes,
+          exerciseTemplates: exercises);
+
+      final createdTemplate =
+          await Provider.of<SupabaseExerciseAndRoutineController>(context,
+                  listen: false)
+              .saveTemplate(templateDto: templateToCreate);
+      if (mounted) {
+        if (createdTemplate != null) {
+          navigateToRoutineTemplatePreview(
+              context: context, template: createdTemplate);
         }
-      } catch (_) {
-        if (mounted) {
-          showSnackbar(
-              context: context,
-              message: "Oops, we are unable to create template");
-        }
-      } finally {
-        _hideLoadingScreen();
       }
+    } catch (_) {
+      if (mounted) {
+        showSnackbar(
+            context: context,
+            message: "Oops, we are unable to create template");
+      }
+    } finally {
+      _hideLoadingScreen();
     }
   }
 

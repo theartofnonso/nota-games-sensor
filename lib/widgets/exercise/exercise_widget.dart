@@ -26,6 +26,9 @@ class ExerciseWidget extends StatelessWidget {
 
     final exercise = exerciseDto;
 
+    print(
+        'muscles_illustration/${exercise.primaryMuscleGroup.illustration()}.png');
+
     return ListTile(
         onTap: () =>
             selectExercise != null ? selectExercise(exerciseDto) : null,

@@ -17,7 +17,6 @@ import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/list_tile.dart';
 import '../../widgets/picker.dart';
-import '../exercise/exercise_type_screen.dart';
 
 class ExerciseEditorScreen extends StatefulWidget {
   static const routeName = '/exercise-editor';
@@ -170,8 +169,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                                           : Colors.black)),
                           ThemeListTile(
                             child: ListTile(
-                              onTap: _navigateToExerciseTypeScreen,
-                              leading: Text(_exerciseType.name,
+                              onTap: _selectExerciseType,
+                              leading: Text(_exerciseType.description,
                                   textAlign: TextAlign.start,
                                   style: Theme.of(context)
                                       .textTheme
@@ -230,7 +229,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
         ));
   }
 
-  void _navigateToExerciseTypeScreen() async {
+  void _selectExerciseType() {
     if (widget.exercise != null) {
       showSnackbar(
           context: context,
@@ -238,15 +237,20 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
       return;
     }
 
-    /// We don't want to allow editing of exercise type once created.
-    final type = await Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) =>
-            ExerciseTypeScreen(exerciseType: _exerciseType))) as ExerciseType?;
-    if (type != null) {
-      setState(() {
-        _exerciseType = type;
-      });
-    }
+    FocusScope.of(context).unfocus();
+    displayBottomSheet(
+        height: 240,
+        context: context,
+        child: GenericPicker(
+          items: ExerciseType.values,
+          labelBuilder: (type) => type.description,
+          onItemSelected: (value) {
+            Navigator.of(context).pop();
+            setState(() {
+              _exerciseType = value;
+            });
+          },
+        ));
   }
 
   void _createExercise() async {
@@ -257,18 +261,18 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
       return;
     }
 
-      final exercise = ExerciseDto(
-          name: exerciseName,
-          primaryMuscleGroup: _primaryMuscleGroup,
+    final exercise = ExerciseDto(
+        name: exerciseName,
+        primaryMuscleGroup: _primaryMuscleGroup,
         type: _exerciseType);
 
     await Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false)
-          .saveExercise(exerciseDto: exercise);
+        .saveExercise(exerciseDto: exercise);
 
-      logger.i("created exercise ${exercise.toString()}");
-      if (mounted) {
-        context.pop();
+    logger.i("created exercise ${exercise.toString()}");
+    if (mounted) {
+      context.pop();
     }
   }
 

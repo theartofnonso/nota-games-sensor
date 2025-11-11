@@ -1,7 +1,7 @@
 enum ExerciseType {
-  weights("WR", "Weights", "Bench Press, Dumbbell Curls"),
-  bodyWeight("BW", "Bodyweight", "Pull-Ups, Crunches, Burpees"),
-  duration("DR", "Duration", "Planks, Yoga");
+  weights("WR", "Weights", "Log weights and reps"),
+  bodyWeight("BW", "Bodyweight", "Log only reps"),
+  duration("DR", "Duration", "Log duration");
 
   const ExerciseType(this.id, this.name, this.description);
 

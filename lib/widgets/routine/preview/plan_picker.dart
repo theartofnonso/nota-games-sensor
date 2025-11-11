@@ -10,8 +10,15 @@ class PlanPicker extends StatelessWidget {
   final String title;
   final List<RoutinePlanDto> plans;
   final void Function(RoutinePlanDto plan) onSelect;
+  final VoidCallback? onCreatePlan;
 
-  const PlanPicker({super.key, required this.title, required this.plans, required this.onSelect});
+  const PlanPicker({
+    super.key, 
+    required this.title, 
+    required this.plans, 
+    required this.onSelect,
+    this.onCreatePlan,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +43,7 @@ class PlanPicker extends StatelessWidget {
               children: [Text(title, style: Theme.of(context).textTheme.titleMedium), ...listTiles],
             ),
           )
-        : _EmptyState(onPressed: () {});
+        : _EmptyState(onPressed: onCreatePlan ?? () {});
   }
 }
 

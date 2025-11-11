@@ -2,6 +2,7 @@ import 'package:tracker_app/enums/muscle_group_enums.dart';
 
 extension MuscleGroupExtension on MuscleGroup {
   String illustration() {
+    print("Muscle group: $this");
     return switch (this) {
       MuscleGroup.abductors => "abductors",
       MuscleGroup.adductors => "adductors",
