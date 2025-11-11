@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/controllers/exercise_log_controller.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
@@ -25,11 +25,9 @@ import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/general_utils.dart';
-import '../../../utils/one_rep_max_calculator.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
 import '../../weight_plate_calculator.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
@@ -65,32 +63,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   final _selectedSetIndex = ValueNotifier<int>(0);
 
   final _errors = <int, String>{};
-
-  void _show1RMRecommendations() {
-    final pastExerciseLogs = Provider.of<SupabaseExerciseAndRoutineController>(
-                context,
-                listen: false)
-            .exerciseLogsByExerciseId[_exerciseLog.id] ??
-        [];
-    final completedPastExerciseLogs =
-        loggedExercises(exerciseLogs: pastExerciseLogs);
-    if (completedPastExerciseLogs.isNotEmpty) {
-      final previousLog = completedPastExerciseLogs.last;
-      final heaviestSetWeight =
-          heaviestWeightInSetForExerciseLog(exerciseLog: previousLog);
-      final oneRepMax = average1RM(
-          weight: (heaviestSetWeight).weight, reps: (heaviestSetWeight).reps);
-      displayBottomSheet(
-          context: context,
-          child: _OneRepMaxSlider(
-              exercise: _exerciseLog.exercise.name, oneRepMax: oneRepMax));
-    } else {
-      showBottomSheetWithNoAction(
-          context: context,
-          title: _exerciseLog.exercise.name,
-          description: "Keep logging to see recommendations.");
-    }
-  }
 
   void _updateExerciseLogNotes({required String value}) {
     Provider.of<ExerciseLogController>(context, listen: false)
@@ -544,12 +516,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             icon: const FaIcon(FontAwesomeIcons.noteSticky, size: 18),
             tooltip: 'Notes',
           ),
-          if (withWeightsOnly(type: exerciseType))
-            IconButton(
-              onPressed: _show1RMRecommendations,
-              icon: const FaIcon(FontAwesomeIcons.solidLightbulb, size: 18),
-              tooltip: 'Weights and Reps Recommendations',
-            ),
           // Hide "Add Set" button for duration exercises in log mode (sets are added via stopwatch)
           if (!(exerciseType == ExerciseType.duration &&
               widget.editorType == RoutineEditorMode.log))
@@ -682,15 +648,22 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                   ],
                 ),
                 if (exerciseLog.notes.isNotEmpty)
-                  Text(
-                    exerciseLog.notes,
-                    textAlign: TextAlign.start,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 12,
-                        height: 1.8,
-                        color:
-                            isDarkMode ? Colors.white70 : Colors.grey.shade800),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: sapphireDark80,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      exerciseLog.notes,
+                      textAlign: TextAlign.start,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12,
+                          height: 1.8,
+                          color:
+                              isDarkMode ? Colors.white70 : Colors.grey.shade800),
+                    ),
                   )
               ],
             ),
@@ -864,127 +837,5 @@ class _DurationSetListView extends StatelessWidget {
           ),
       ],
     );
-  }
-}
-
-class _OneRepMaxSlider extends StatefulWidget {
-  final String exercise;
-  final double oneRepMax;
-
-  const _OneRepMaxSlider({required this.exercise, required this.oneRepMax});
-
-  @override
-  State<_OneRepMaxSlider> createState() => _OneRepMaxSliderState();
-}
-
-class _OneRepMaxSliderState extends State<_OneRepMaxSlider> {
-  double _weight = 0.0;
-  double _reps = 10;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(widget.exercise,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontSize: 20)),
-        const SizedBox(height: 2),
-        RichText(
-          text: TextSpan(
-            text: "Based on your recent progress, consider:",
-            style: Theme.of(context).textTheme.bodyMedium,
-            children: [
-              TextSpan(
-                text: "\n",
-              ),
-              TextSpan(
-                text: "$_weight${weightUnit()}",
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              TextSpan(
-                text: " ",
-              ),
-              TextSpan(
-                text: "for",
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w500),
-              ),
-              TextSpan(text: " "),
-              TextSpan(
-                text:
-                    "${_reps.toInt()} ${pluralize(word: "rep", count: _reps.toInt())}",
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              )
-            ],
-          ),
-        ),
-        Slider(
-            value: _reps,
-            onChanged: onChanged,
-            min: 1,
-            max: 20,
-            divisions: 19,
-            thumbColor: Theme.of(context).colors.vibrantAccent),
-      ],
-    );
-  }
-
-  void onChanged(double value) {
-    HapticFeedback.heavyImpact();
-    final weight = _weightForPercentage(reps: value.toInt());
-    setState(() {
-      _weight = weightWithConversion(value: weight).roundToDouble();
-      _reps = value;
-    });
-  }
-
-  int _percentageForReps(int reps) {
-    // Define a map of reps to percentages
-    Map<int, int> repToPercentage = {
-      1: 100,
-      2: 97,
-      3: 94,
-      4: 92,
-      5: 89,
-      6: 86,
-      7: 83,
-      8: 81,
-      9: 78,
-      10: 75,
-      11: 73,
-      12: 71,
-      13: 70,
-      14: 68,
-      15: 67,
-      16: 65,
-      17: 64,
-      18: 62,
-      19: 61,
-      20: 60,
-    };
-
-    return repToPercentage[reps] ?? 1;
-  }
-
-  double _weightForPercentage({required int reps}) {
-    return (widget.oneRepMax * (_percentageForReps(reps) / 100))
-        .roundToDouble();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _weight = _weightForPercentage(reps: 10);
   }
 }
