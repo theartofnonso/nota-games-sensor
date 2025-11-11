@@ -6,17 +6,13 @@ import 'duration_set_dto.dart';
 
 abstract class SetDto {
   final bool _isChecked;
-  final bool _isWorkingSet;
   final DateTime _dateTime;
 
-  const SetDto({bool checked = false, isWorkingSet = false, required dateTime})
+  const SetDto({bool checked = false, required dateTime})
       : _isChecked = checked,
-        _isWorkingSet = isWorkingSet,
         _dateTime = dateTime;
 
   bool get checked => _isChecked;
-
-  bool get isWorkingSet => _isWorkingSet;
 
   DateTime get dateTime => _dateTime;
 

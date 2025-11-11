@@ -11,7 +11,6 @@ class WeightAndRepsSetDto extends SetDto {
     required this.weight,
     required this.reps,
     super.checked = false,
-    super.isWorkingSet = false,
     required super.dateTime,
   });
 
@@ -27,7 +26,6 @@ class WeightAndRepsSetDto extends SetDto {
       weight: (json['weight'] as num).toDouble(),
       reps: (json['reps'] as num).toInt(),
       checked: json['isChecked'] as bool,
-      isWorkingSet: json['isWorkingSet'] as bool,
       dateTime: dateTime,
     );
   }
@@ -44,7 +42,6 @@ class WeightAndRepsSetDto extends SetDto {
   @override
   WeightAndRepsSetDto copyWith({
     bool? checked,
-    bool? isWorkingSet,
     DateTime? dateTime,
     double? weight,
     int? reps,
@@ -53,7 +50,6 @@ class WeightAndRepsSetDto extends SetDto {
       weight: weight ?? this.weight,
       reps: reps ?? this.reps,
       checked: checked ?? this.checked,
-      isWorkingSet: isWorkingSet ?? this.isWorkingSet,
       dateTime: dateTime ?? this.dateTime,
     );
   }

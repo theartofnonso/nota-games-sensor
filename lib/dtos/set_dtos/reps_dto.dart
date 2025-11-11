@@ -7,7 +7,6 @@ class RepsSetDto extends SetDto {
   const RepsSetDto({
     required this.reps,
     super.checked = false,
-    super.isWorkingSet = false,
     required super.dateTime,
   });
 
@@ -21,7 +20,6 @@ class RepsSetDto extends SetDto {
     return RepsSetDto(
       reps: (json['reps'] as num).toInt(),
       checked: json['checked'] as bool,
-      isWorkingSet: json['isWorkingSet'] as bool,
       dateTime: dateTime,
     );
   }
@@ -39,13 +37,11 @@ class RepsSetDto extends SetDto {
   RepsSetDto copyWith({
     int? reps,
     bool? checked,
-    bool? isWorkingSet,
     DateTime? dateTime,
   }) {
     return RepsSetDto(
       reps: reps ?? this.reps,
       checked: checked ?? this.checked,
-      isWorkingSet: isWorkingSet ?? this.isWorkingSet,
       dateTime: dateTime ?? this.dateTime,
     );
   }
@@ -65,7 +61,6 @@ class RepsSetDto extends SetDto {
   String toString() => 'RepsSetDto('
       'reps: $reps, '
       'checked: $checked, '
-      'isWorkingSet: $isWorkingSet, '
       'dateTime: $dateTime'
       ')';
 }
