@@ -1,4 +1,4 @@
-/// TRNR
+/// trainware
 const trackrWebUrl = 'https://ware.health/trainer';
 const instagramUrl = 'https://www.instagram.com/ware.trainer';
 

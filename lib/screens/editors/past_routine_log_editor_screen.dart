@@ -146,6 +146,9 @@ class _PastRoutineLogEditorScreenState
             listen: false)
         .saveLog(logDto: updatedLog);
     
+    // Check mounted after async operation
+    if (!mounted) return;
+    
     // Clear cache only if save succeeded
     if (createdLog != null) {
       Provider.of<ExerciseLogController>(context, listen: false).onClear();

@@ -10,6 +10,7 @@ import 'package:tracker_app/widgets/backgrounds/trkr_loading_screen.dart';
 
 import '../../../dtos/exercise_log_dto.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
+import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
@@ -360,7 +361,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   }
 
   void _showPlanPickerForTemplate(
-      {required dynamic log, required List<RoutinePlanDto> plans}) {
+      {required RoutineLogDto log, required List<RoutinePlanDto> plans}) {
     displayBottomSheet(
       context: context,
       child: PlanPicker(
@@ -393,7 +394,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   }
 
   Future<void> _doCreateTemplate(
-      {required dynamic log, required String planId}) async {
+      {required RoutineLogDto log, required String planId}) async {
     _showLoadingScreen();
 
     try {
@@ -403,9 +404,10 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             .toList();
 
         /// [Exercise.duration] exercises do not have sets in templates
-        final sets = withDurationOnly(type: exerciseLog.exercise.type)
-            ? <SetDto>[]
-            : uncheckedSets;
+        final List<SetDto> sets =
+            withDurationOnly(type: exerciseLog.exercise.type)
+                ? <SetDto>[]
+                : uncheckedSets;
         return exerciseLog.copyWith(sets: sets);
       }).toList();
 
@@ -419,20 +421,27 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
           await Provider.of<SupabaseExerciseAndRoutineController>(context,
                   listen: false)
               .saveTemplate(templateDto: templateToCreate);
+
+      _hideLoadingScreen();
+
       if (mounted) {
         if (createdTemplate != null) {
           navigateToRoutineTemplatePreview(
               context: context, template: createdTemplate);
+        } else {
+          showSnackbar(
+              context: context,
+              message: "Oops, we are unable to create template");
         }
       }
-    } catch (_) {
+    } catch (e) {
+      _hideLoadingScreen();
+      debugPrint('Error creating template: $e');
       if (mounted) {
         showSnackbar(
             context: context,
-            message: "Oops, we are unable to create template");
+            message: "Oops, we are unable to create template: $e");
       }
-    } finally {
-      _hideLoadingScreen();
     }
   }
 

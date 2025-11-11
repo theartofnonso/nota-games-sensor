@@ -1,6 +1,6 @@
-# TRNR Theme Implementation Guide
+# trainware Theme Implementation Guide
 
-This document outlines the implementation of the TRNR Theme - a dark, minimalist iOS-inspired glassmorphism design system for the TRACKR app.
+This document outlines the implementation of the trainware Theme - a dark, minimalist iOS-inspired glassmorphism design system for the TRACKR app.
 
 ---
 
@@ -8,7 +8,7 @@ This document outlines the implementation of the TRNR Theme - a dark, minimalist
 
 ### 1. **Core Color Palette** (`lib/colors.dart`)
 
-The complete TRNR color system has been added:
+The complete trainware color system has been added:
 
 #### Backgrounds
 - `bgPrimary` (#0a0a0a) - Near-black OLED-optimized base
@@ -42,7 +42,7 @@ The complete TRNR color system has been added:
 
 ### 2. **Glassmorphism Widgets** (`lib/widgets/glass_container.dart`)
 
-Three reusable components for the TRNR aesthetic:
+Three reusable components for the trainware aesthetic:
 
 #### **GlassContainer**
 ```dart
@@ -97,7 +97,7 @@ StatusIndicator(
 #### **Input Fields** (`lib/utils/theme/input_textfield_theme.dart`)
 - Border radius increased to 16px
 - Dark theme uses `bgSecondary` fill
-- Borders use TRNR border colors
+- Borders use trainware border colors
 - Focus border highlights with success green
 
 #### **App Bar** (`lib/utils/theme/app_bar_theme.dart`)
@@ -115,14 +115,14 @@ StatusIndicator(
 
 #### **List Tiles** (`lib/utils/theme/list_title_theme.dart`)
 - Border radius: 16px (up from 5px)
-- Text colors use TRNR palette
+- Text colors use trainware palette
 - Improved padding and spacing
 
 ---
 
 ### 4. **Auth Screen Update** (`lib/screens/auth/supabase_auth_screen.dart`)
 
-Updated buttons to use TRNR success green (#22c55e) instead of muted green:
+Updated buttons to use trainware success green (#22c55e) instead of muted green:
 - Continue button: Bright success green
 - Verify button: Bright success green
 - Text opacity adjusted to 90% for optimal readability
@@ -297,10 +297,10 @@ AnimatedContainer(
 ### Created:
 - `lib/widgets/glass_container.dart` - Glassmorphism components
 - `lib/widgets/glass_container_example.dart` - Usage examples
-- `TRNR_THEME_IMPLEMENTATION.md` - This documentation
+- `trainware_THEME_IMPLEMENTATION.md` - This documentation
 
 ### Modified:
-- `lib/colors.dart` - Complete TRNR color palette
+- `lib/colors.dart` - Complete trainware color palette
 - `lib/utils/theme/theme.dart` - Dark theme configuration
 - `lib/utils/theme/input_textfield_theme.dart` - Input styling
 - `lib/utils/theme/app_bar_theme.dart` - App bar styling
@@ -335,11 +335,11 @@ AnimatedContainer(
 
 For more patterns and examples, see:
 - `lib/widgets/glass_container_example.dart` - Live examples
-- Original TRNR Theme specification provided by user
+- Original trainware Theme specification provided by user
 
 ---
 
 **Implementation Complete** ✅
 
-All TRNR Theme components are now available throughout the app. Use the glassmorphism widgets to create a consistent, modern, iOS-inspired dark aesthetic.
+All trainware Theme components are now available throughout the app. Use the glassmorphism widgets to create a consistent, modern, iOS-inspired dark aesthetic.
 

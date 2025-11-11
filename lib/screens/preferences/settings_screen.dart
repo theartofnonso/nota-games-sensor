@@ -103,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 InformationContainerWithBackgroundImage(
                   image: 'images/recovery_girl.PNG',
                   subtitle:
-                      "Loving TRNR? Your feedback helps us grow and improve.",
+                      "Loving trainware? Your feedback helps us grow and improve.",
                   color: Colors.black,
                   onTap: _openStoreListing,
                   alignmentGeometry: Alignment.center,
@@ -270,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       scheme: 'mailto',
       path: 'hello@trkr.fit', // Replace with the recipient's email
       queryParameters: {
-        'subject': 'Feedback for TRNR', // Set the email subject
+        'subject': 'Feedback for trainware', // Set the email subject
       },
     );
 
