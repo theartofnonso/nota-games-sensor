@@ -12,15 +12,18 @@ enum MuscleGroup {
   ),
   forearms(
     displayName: "Forearms",
-    description: "Forearms help with grip strength, wrist stability, and support for lifting and pulling movements.",
+    description:
+        "Forearms help with grip strength, wrist stability, and support for lifting and pulling movements.",
   ),
   biceps(
     displayName: "Biceps",
-    description: "Biceps are responsible for elbow flexion, assisting in pulling movements and lifting.",
+    description:
+        "Biceps are responsible for elbow flexion, assisting in pulling movements and lifting.",
   ),
   triceps(
     displayName: "Triceps",
-    description: "Triceps are the primary muscles for elbow extension, playing a key role in pushing movements.",
+    description:
+        "Triceps are the primary muscles for elbow extension, playing a key role in pushing movements.",
   ),
   lats(
     displayName: "Lats",
@@ -34,52 +37,58 @@ enum MuscleGroup {
   ),
   back(
     displayName: "Back",
-    description: "The back muscles support posture, pulling movements, and core stability.",
+    description:
+        "The back muscles support posture, pulling movements, and core stability.",
   ),
   chest(
     displayName: "Chest",
     description:
         "The chest muscles are key for pushing movements like presses and push-ups, and contribute to upper-body strength.",
   ),
-  shoulders(
-    displayName: "Shoulders",
-    description: "Shoulders (deltoids) enable arm rotation and are involved in pushing and lifting movements.",
+  frontShoulders(
+    displayName: "Front Shoulders",
+    description:
+        "Shoulders (deltoids) enable arm rotation and are involved in pushing and lifting movements.",
   ),
-  frontShoulder(
-    displayName: "Front Shoulder",
-    description: "Shoulders (deltoids) enable arm rotation and are involved in pushing and lifting movements.",
-  ),
-  backShoulder(
-    displayName: "Back Shoulder",
-    description: "Shoulders (deltoids) enable arm rotation and are involved in pushing and lifting movements.",
+  rearShoulders(
+    displayName: "Rear Shoulders",
+    description:
+        "Shoulders (deltoids) enable arm rotation and are involved in pushing and lifting movements.",
   ),
   abductors(
     displayName: "Abductors",
-    description: "Abductors move the legs away from the body's midline, essential for lateral movements.",
+    description:
+        "Abductors move the legs away from the body's midline, essential for lateral movements.",
   ),
   adductors(
     displayName: "Adductors",
-    description: "Adductors bring the legs toward the body's midline, supporting stability in squats and lunges.",
+    description:
+        "Adductors bring the legs toward the body's midline, supporting stability in squats and lunges.",
   ),
   glutes(
     displayName: "Glutes",
-    description: "Glutes are powerful muscles for hip extension, key in squats, deadlifts, and explosive movements.",
+    description:
+        "Glutes are powerful muscles for hip extension, key in squats, deadlifts, and explosive movements.",
   ),
   hamstrings(
     displayName: "Hamstrings",
-    description: "Hamstrings handle knee flexion and hip extension, aiding in running, jumping, and lower-body lifts.",
+    description:
+        "Hamstrings handle knee flexion and hip extension, aiding in running, jumping, and lower-body lifts.",
   ),
   quadriceps(
     displayName: "Quadriceps",
-    description: "Quadriceps are key for knee extension, vital for squats, lunges, and running.",
+    description:
+        "Quadriceps are key for knee extension, vital for squats, lunges, and running.",
   ),
   calves(
     displayName: "Calves",
-    description: "Calves enable ankle flexion, essential for running, jumping, and lower-body stability.",
+    description:
+        "Calves enable ankle flexion, essential for running, jumping, and lower-body stability.",
   ),
   fullBody(
     displayName: "Full Body",
-    description: "Engages multiple muscle groups to provide a comprehensive and balanced workout.",
+    description:
+        "Engages multiple muscle groups to provide a comprehensive and balanced workout.",
   );
 
   /// Constructor for the enum's associated values
@@ -113,9 +122,8 @@ enum MuscleGroup {
     MuscleGroup.chest,
     MuscleGroup.back,
     MuscleGroup.lats,
-    MuscleGroup.shoulders,
-    MuscleGroup.frontShoulder,
-    MuscleGroup.backShoulder,
+    MuscleGroup.frontShoulders,
+    MuscleGroup.rearShoulders,
     MuscleGroup.biceps,
     MuscleGroup.triceps,
     MuscleGroup.traps,

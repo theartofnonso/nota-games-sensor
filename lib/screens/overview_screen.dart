@@ -47,7 +47,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
     try {
       final json = jsonDecode(cache);
       final routineLog = RoutineLogDto.fromJson(json: json);
-      
+
       displayBottomSheet(
         context: context,
         child: Padding(
@@ -67,8 +67,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   Text(
                     'Unsaved Workout',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ],
               ),
@@ -92,8 +92,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     Text(
                       routineLog.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -123,10 +123,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
   Future<void> _retryCachedSession(RoutineLogDto routineLog) async {
     Navigator.of(context).pop(); // Close bottom sheet
-    
+
     final controller = context.read<SupabaseExerciseAndRoutineController>();
     final savedLog = await controller.saveLog(logDto: routineLog);
-    
+
     // Clear cache only if save succeeded
     if (savedLog != null) {
       SharedPrefs().remove(key: SharedPrefs().routineLogKey);
@@ -170,7 +170,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
               right: 72, // Position to left of settings icon
               child: Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.5),
+                  color: Theme.of(context)
+                      .colors
+                      .vibrantAccent
+                      .withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Material(
@@ -454,10 +457,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       ),
                       // Create plan button
                       IconButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Close bottom sheet
-                          _createNewPlan(context);
-                        },
+                        onPressed: () => _createNewPlan(context),
                         icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
                         color: isDarkMode ? Colors.white : Colors.black,
                       ),
@@ -510,6 +510,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
   }
 
   void _createNewPlan(BuildContext context) async {
+    // Close bottom sheet first
+    Navigator.pop(context);
+
     final plan = RoutinePlanDto(
       id: "",
       name: "",
