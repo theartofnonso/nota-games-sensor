@@ -252,39 +252,75 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _checkAuthAndInitialize() async {
-    // Check if user is already signed in
-    final session = Supabase.instance.client.auth.currentSession;
-    _isAuthenticated = session != null;
-
-    if (_isAuthenticated) {
-      // Initialize data if user is authenticated after the build is complete
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final controller = context.read<SupabaseExerciseAndRoutineController>();
-        await controller.initialize();
-      });
-    }
-
-    // Listen to auth state changes
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      final session = data.session;
-      setState(() {
-        _isAuthenticated = session != null;
-      });
+    try {
+      // Check if user is already signed in
+      final session = Supabase.instance.client.auth.currentSession;
+      _isAuthenticated = session != null;
 
       if (_isAuthenticated) {
-        // User just signed in, initialize data
-        final controller = context.read<SupabaseExerciseAndRoutineController>();
-        controller.initialize();
-      } else {
-        // User signed out, clear data
-        final controller = context.read<SupabaseExerciseAndRoutineController>();
-        controller.clear();
+        // Initialize data if user is authenticated after the build is complete
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          try {
+            final controller =
+                context.read<SupabaseExerciseAndRoutineController>();
+            await controller.initialize();
+          } catch (e) {
+            debugPrint('[Auth] Error initializing data: $e');
+            // Continue anyway - user can still access cached workout data
+          }
+        });
       }
-    });
 
-    setState(() {
-      _isLoading = false;
-    });
+      // Listen to auth state changes with error handling
+      Supabase.instance.client.auth.onAuthStateChange.listen(
+        (data) {
+          final session = data.session;
+          setState(() {
+            _isAuthenticated = session != null;
+          });
+
+          if (_isAuthenticated) {
+            // User just signed in, initialize data
+            try {
+              final controller =
+                  context.read<SupabaseExerciseAndRoutineController>();
+              controller.initialize();
+            } catch (e) {
+              debugPrint('[Auth] Error loading data after sign in: $e');
+            }
+          } else {
+            // User signed out, clear data
+            try {
+              final controller =
+                  context.read<SupabaseExerciseAndRoutineController>();
+              controller.clear();
+            } catch (e) {
+              debugPrint('[Auth] Error clearing data: $e');
+            }
+          }
+        },
+        onError: (error) {
+          debugPrint('[Auth] Auth state change error: $error');
+          // Don't log user out on network errors - keep them authenticated
+          // Only show error if it's not a retryable fetch exception
+          if (!error.toString().contains('AuthRetryableFetchException')) {
+            setState(() {
+              _isAuthenticated = false;
+            });
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint('[Auth] Error during auth initialization: $e');
+      // If there's an error checking auth, assume not authenticated
+      setState(() {
+        _isAuthenticated = false;
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _completeIntro() {

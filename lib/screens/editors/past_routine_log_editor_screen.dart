@@ -38,8 +38,6 @@ class _PastRoutineLogEditorScreenState
   late TextEditingController _templateNameController;
   late TextEditingController _templateNotesController;
 
-  late Function _onDisposeCallback;
-
   final _minimisedExerciseLogCards = <String>[];
 
   SetDto? _selectedSetDto;
@@ -148,18 +146,13 @@ class _PastRoutineLogEditorScreenState
             listen: false)
         .saveLog(logDto: updatedLog);
     
-    // Only navigate back and clear cache if save succeeded
+    // Clear cache only if save succeeded
     if (createdLog != null) {
-      _navigateBack(log: createdLog);
-    } else {
-      // Save failed - show error, keep cache intact
-      if (mounted) {
-        showSnackbar(
-          context: context,
-          message: "Failed to save session. Check your connection and try again."
-        );
-      }
+      Provider.of<ExerciseLogController>(context, listen: false).onClear();
     }
+    
+    // Always allow user to exit regardless of save success
+    _navigateBack(log: createdLog);
   }
 
   void _checkForUnsavedChanges() {
@@ -396,9 +389,6 @@ class _PastRoutineLogEditorScreenState
 
     _initializeProcedureData();
     _initializeTextControllers();
-
-    _onDisposeCallback =
-        Provider.of<ExerciseLogController>(context, listen: false).onClear;
   }
 
   void _initializeProcedureData() {
@@ -446,7 +436,7 @@ class _PastRoutineLogEditorScreenState
 
   @override
   void dispose() {
-    _onDisposeCallback();
+    // Don't auto-clear cache on dispose - only clear on successful save
     _templateNameController.dispose();
     _templateNotesController.dispose();
     super.dispose();

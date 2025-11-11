@@ -352,17 +352,19 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   /// Additional log helper methods
-  List<RoutineLogDto> whereLogsIsWithinRange({required DateTimeRange dateRange}) {
+  List<RoutineLogDto> whereLogsIsWithinRange(
+      {required DateTimeRange dateRange}) {
     return logs.where((log) {
-      return log.startTime.isAfter(dateRange.start.subtract(const Duration(days: 1))) &&
-             log.startTime.isBefore(dateRange.end.add(const Duration(days: 1)));
+      return log.startTime
+              .isAfter(dateRange.start.subtract(const Duration(days: 1))) &&
+          log.startTime.isBefore(dateRange.end.add(const Duration(days: 1)));
     }).toList();
   }
 
   List<RoutineLogDto> whereLogsIsSameMonth({required DateTime dateTime}) {
     return logs.where((log) {
       return log.startTime.year == dateTime.year &&
-             log.startTime.month == dateTime.month;
+          log.startTime.month == dateTime.month;
     }).toList();
   }
 
@@ -370,11 +372,14 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return whereLogsForTemplate(templateId: templateId);
   }
 
-  List<ExerciseLogDto> whereExerciseLogsBefore({required DateTime dateTime, required ExerciseDto exercise}) {
-    final logsBeforeDate = logs.where((log) => log.startTime.isBefore(dateTime)).toList();
+  List<ExerciseLogDto> whereExerciseLogsBefore(
+      {required DateTime dateTime, required ExerciseDto exercise}) {
+    final logsBeforeDate =
+        logs.where((log) => log.startTime.isBefore(dateTime)).toList();
     final exerciseLogs = <ExerciseLogDto>[];
     for (final log in logsBeforeDate) {
-      exerciseLogs.addAll(log.exerciseLogs.where((el) => el.exercise.id == exercise.id));
+      exerciseLogs.addAll(
+          log.exerciseLogs.where((el) => el.exercise.id == exercise.id));
     }
     return exerciseLogs;
   }
@@ -382,7 +387,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   List<SetDto> whereRecentSetsForExercise({required ExerciseDto exercise}) {
     final exerciseLogs = whereExerciseLogsForExercise(exercise: exercise);
     if (exerciseLogs.isEmpty) return [];
-    
+
     // Get the most recent 3 exercise logs
     final recentLogs = exerciseLogs.take(3).toList();
     final allSets = <SetDto>[];
@@ -395,7 +400,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   List<SetDto> wherePrevSetsForExercise({required ExerciseDto exercise}) {
     final exerciseLogs = whereExerciseLogsForExercise(exercise: exercise);
     if (exerciseLogs.isEmpty) return [];
-    
+
     final allSets = <SetDto>[];
     for (final log in exerciseLogs) {
       allSets.addAll(log.sets);

@@ -44,8 +44,6 @@ class RoutineLogEditorScreen extends StatefulWidget {
 
 class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     with WidgetsBindingObserver {
-  late Function _onDisposeCallback;
-
   void _selectExercisesInLibrary() async {
     final controller =
         Provider.of<ExerciseLogController>(context, listen: false);
@@ -132,18 +130,13 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                   listen: false)
               .saveLog(logDto: routineLogToBeCreated);
 
-      // Only navigate back and clear cache if save succeeded
+      // Clear cache only if save succeeded
       if (createdRoutineLog != null) {
-        _navigateBack(routineLog: createdRoutineLog);
-      } else {
-        // Save failed - show error, keep cache intact
-        if (mounted) {
-          showSnackbar(
-            context: context,
-            message: "Failed to save session. Check your connection and try again."
-          );
-        }
+        Provider.of<ExerciseLogController>(context, listen: false).onClear();
       }
+
+      // Always allow user to exit regardless of save success
+      _navigateBack(routineLog: createdRoutineLog);
     }
   }
 
@@ -155,18 +148,13 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             listen: false)
         .updateLog(log: routineLogToBeUpdated);
 
-    // Only navigate back and clear cache if update succeeded
+    // Clear cache only if update succeeded
     if (success) {
-      _navigateBack(routineLog: routineLogToBeUpdated);
-    } else {
-      // Update failed - show error, keep cache intact
-      if (mounted) {
-        showSnackbar(
-          context: context,
-          message: "Failed to update session. Check your connection and try again."
-        );
-      }
+      Provider.of<ExerciseLogController>(context, listen: false).onClear();
     }
+
+    // Always allow user to exit regardless of update success
+    _navigateBack(routineLog: routineLogToBeUpdated);
   }
 
   bool _isRoutinePartiallyComplete() {
@@ -185,6 +173,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         leftAction: _closeDialog,
         rightAction: () {
           _closeDialog();
+          // Clear cache when user explicitly discards
+          Provider.of<ExerciseLogController>(context, listen: false).onClear();
           _navigateBack();
         },
         leftActionLabel: 'Cancel',
@@ -274,17 +264,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 
   @override
   Widget build(BuildContext context) {
-    final routineLogEditorController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: true);
-
-    if (routineLogEditorController.errorMessage.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showSnackbar(
-            context: context, message: routineLogEditorController.errorMessage);
-      });
-    }
-
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
 
@@ -417,9 +396,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     WidgetsBinding.instance.addObserver(this);
 
     _loadRoutineAndExerciseLogs();
-
-    _onDisposeCallback =
-        Provider.of<ExerciseLogController>(context, listen: false).onClear;
   }
 
   void _loadRoutineAndExerciseLogs() {
@@ -456,7 +432,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _onDisposeCallback();
+    // Don't auto-clear cache on dispose - only clear on successful save
     if (Platform.isIOS) {
       FlutterLocalNotificationsPlugin()
           .cancel(notificationIDLongRunningSession);
