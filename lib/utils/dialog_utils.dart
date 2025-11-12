@@ -9,7 +9,7 @@ import '../widgets/buttons/opacity_button_widget.dart';
 import '../widgets/timers/time_picker.dart';
 
 void showSnackbar({required BuildContext context, required String message}) {
-  Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+  Brightness systemBrightness = Theme.of(context).brightness;
   final isDarkMode = systemBrightness == Brightness.dark;
 
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(

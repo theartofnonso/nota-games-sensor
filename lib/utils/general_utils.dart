@@ -236,7 +236,7 @@ Color setsMilestoneColor({required double progress}) {
 }
 
 LinearGradient themeGradient({required BuildContext context}) {
-  Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+  Brightness systemBrightness = Theme.of(context).brightness;
   final isDarkMode = systemBrightness == Brightness.dark;
 
   return LinearGradient(
@@ -250,7 +250,7 @@ LinearGradient themeGradient({required BuildContext context}) {
 }
 
 Color appBarBackgroundColor({required BuildContext context}) {
-  Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+  Brightness systemBrightness = Theme.of(context).brightness;
   final isDarkMode = systemBrightness == Brightness.dark;
   return isDarkMode ? sapphireDark80 : Colors.white;
 }
@@ -352,7 +352,7 @@ Color _deltaColor(num difference) => difference > 0
         : Colors.yellow;
 
 Widget _weight(num value, String unit, BuildContext context) {
-  Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+  Brightness systemBrightness = Theme.of(context).brightness;
   final isDarkMode = systemBrightness == Brightness.dark;
   return CustomWordMarkIcon("${value.toStringAsFixed(1)} $unit",
       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),

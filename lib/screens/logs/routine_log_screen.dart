@@ -48,7 +48,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
@@ -519,7 +519,7 @@ class _StatisticWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final leading = FaIcon(icon, size: 14);

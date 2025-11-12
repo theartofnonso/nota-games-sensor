@@ -335,8 +335,8 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return MaterialApp(
-        themeMode: ThemeMode.system,
-        theme: TRKRTheme.lightTheme,
+        themeMode: ThemeMode.dark,
+        theme: TRKRTheme.darkTheme,
         darkTheme: TRKRTheme.darkTheme,
         home: Scaffold(
           body: Center(
@@ -346,25 +346,16 @@ class _MyAppState extends State<MyApp> {
       );
     }
 
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp, // Lock orientation to portrait up
+      DeviceOrientation.portraitUp,
     ]);
 
     SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: isDarkMode
-            ? Colors.black
-            : Colors.white, // Fixed: dark mode = black, light mode = white
-        statusBarIconBrightness:
-            isDarkMode ? Brightness.light : Brightness.dark, // Status bar icons
-        systemNavigationBarColor:
-            isDarkMode ? Colors.black : Colors.white, // Navigation bar color
-        systemNavigationBarIconBrightness: isDarkMode
-            ? Brightness.light
-            : Brightness.dark, // Navigation bar icons
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.black,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
 
@@ -377,8 +368,8 @@ class _MyAppState extends State<MyApp> {
     if (!_isAuthenticated) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.system,
-        theme: TRKRTheme.lightTheme,
+        themeMode: ThemeMode.dark,
+        theme: TRKRTheme.darkTheme,
         darkTheme: TRKRTheme.darkTheme,
         home: const SupabaseAuthScreen(),
       );
@@ -387,8 +378,8 @@ class _MyAppState extends State<MyApp> {
     // Show main app if authenticated
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.system,
-      theme: TRKRTheme.lightTheme,
+      themeMode: ThemeMode.dark,
+      theme: TRKRTheme.darkTheme,
       darkTheme: TRKRTheme.darkTheme,
       routerConfig: _router,
     );

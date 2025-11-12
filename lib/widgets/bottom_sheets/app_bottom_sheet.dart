@@ -25,12 +25,10 @@ class AppBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     final decoration = BoxDecoration(
-      color: isDarkMode ? const Color(0xFF1A1F2E) : Colors.white,
+      color: const Color(0xFF1A1F2E),
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      gradient: isDarkMode ? themeGradient(context: context) : null,
+      gradient: themeGradient(context: context),
     );
 
     if (isDraggable) {
@@ -38,20 +36,20 @@ class AppBottomSheet extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () => Navigator.of(context).pop(),
         child: DraggableScrollableSheet(
-          initialChildSize: initialChildSize ?? 0.7,
-          minChildSize: minChildSize ?? 0.5,
-          maxChildSize: maxChildSize ?? 0.9,
-          builder: (context, scrollController) {
+        initialChildSize: initialChildSize ?? 0.7,
+        minChildSize: minChildSize ?? 0.5,
+        maxChildSize: maxChildSize ?? 0.9,
+        builder: (context, scrollController) {
             return GestureDetector(
               onTap: () {}, // Absorb taps on the sheet content
               child: Container(
-                decoration: decoration,
+            decoration: decoration,
                 child: builder != null
                     ? builder!(context, scrollController)
                     : child!,
               ),
-            );
-          },
+          );
+        },
         ),
       );
     }

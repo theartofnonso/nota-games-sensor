@@ -105,7 +105,7 @@ class _CalendarState extends State<Calendar>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       children: [
@@ -272,7 +272,7 @@ class _CalendarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     return SizedBox(

@@ -20,7 +20,7 @@ class InformationContainerLite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = useOpacity && systemBrightness == Brightness.dark;
 
     final trailingWidget = trailing;

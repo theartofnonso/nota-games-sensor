@@ -33,9 +33,6 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     final superSetExerciseDto = superSet;
 
     final children = exerciseLogDto.sets
@@ -61,7 +58,7 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
       child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
+              color: Colors.black12,
               borderRadius: BorderRadius.circular(12)),
           child: Column(spacing: 12, crossAxisAlignment: CrossAxisAlignment.start, children: [
             // Muscle group illustration - centered at top
@@ -74,10 +71,10 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
                     height: 60,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return Icon(
+                      return const Icon(
                         Icons.block,
                         size: 40,
-                        color: isDarkMode ? Colors.white24 : Colors.grey.shade300,
+                        color: Colors.white24,
                       );
                     },
                   ),

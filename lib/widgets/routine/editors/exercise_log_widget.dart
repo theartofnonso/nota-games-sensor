@@ -406,11 +406,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
       isScrollControlled: true,
       child: Builder(
         builder: (context) {
-          // Get theme data from the current context
-          final brightness = MediaQuery.of(context).platformBrightness;
-          final isDarkMode = brightness == Brightness.dark;
-
-          // 1. Pull the current version from provider, not from the parameter
           final currentNotes =
               Provider.of<ExerciseLogController>(context, listen: false)
                   .whereExerciseLog(exerciseId: _exerciseLog.id)
@@ -422,7 +417,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             ),
             child: TextField(
               controller: TextEditingController(text: currentNotes),
-              cursorColor: isDarkMode ? Colors.white : Colors.black,
+              cursorColor: Colors.white,
               onChanged: (value) => _updateExerciseLogNotes(value: value),
               autofocus: true,
               decoration: InputDecoration(
@@ -483,9 +478,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom != 0;
 
     final exerciseLog = context.select<ExerciseLogController, ExerciseLogDto>(
@@ -507,8 +499,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: sapphireDark80,
+                decoration: const BoxDecoration(
+                  color: sapphireDark,
                 ),
                 child: Row(
                   children: [
@@ -655,9 +647,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                       fontWeight: FontWeight.w400,
                                       fontSize: 12,
                                       height: 1.8,
-                                      color: isDarkMode
-                                          ? Colors.white70
-                                          : Colors.grey.shade800),
+                                      color: Colors.white70),
                             ),
                           )
                       ],
@@ -696,7 +686,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                       child: Image.asset(
                         'icons/dumbbells.png',
                         fit: BoxFit.contain,
-                        color: isDarkMode ? Colors.white : Colors.white,
+                        color: Colors.white,
                         height: 24,
                       ),
                     )

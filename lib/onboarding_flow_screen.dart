@@ -21,8 +21,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      themeMode: ThemeMode.system,
-      theme: TRKRTheme.lightTheme,
+      themeMode: ThemeMode.dark,
+      theme: TRKRTheme.darkTheme,
       darkTheme: TRKRTheme.darkTheme,
       home: Builder(
         builder: (context) {
