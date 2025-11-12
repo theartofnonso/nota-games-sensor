@@ -289,11 +289,16 @@ class _MyAppState extends State<MyApp> {
               debugPrint('[Auth] Error loading data after sign in: $e');
             }
           } else {
-            // User signed out, clear data
+            // User signed out, clear data and show onboarding
             try {
               final controller =
                   context.read<SupabaseExerciseAndRoutineController>();
               controller.clear();
+              // Reset to show onboarding screen on sign out
+              setState(() {
+                _isFirstLaunch = true;
+                SharedPrefs().firstLaunch = true;
+              });
             } catch (e) {
               debugPrint('[Auth] Error clearing data: $e');
             }
