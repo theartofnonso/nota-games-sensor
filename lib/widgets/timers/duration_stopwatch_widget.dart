@@ -95,7 +95,9 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
               onPressed: _isRunning ? _pauseStopwatch : _startStopwatch,
               icon: _isRunning ? FontAwesomeIcons.pause : FontAwesomeIcons.play,
               label: _isRunning ? "PAUSE" : "START",
-              color: _isRunning ? Colors.orange : Theme.of(context).colors.vibrantAccent,
+              color: _isRunning
+                  ? Colors.orange
+                  : Theme.of(context).colors.vibrantAccent,
             ),
 
             // Stop Button (only show if timer has started)
@@ -104,7 +106,7 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
                 onPressed: _stopAndLogSet,
                 icon: FontAwesomeIcons.check,
                 label: "LOG SET",
-                color: Theme.of(context).colorScheme.secondary,
+                color: Theme.of(context).colors.vibrantAccent,
               ),
           ],
         ),

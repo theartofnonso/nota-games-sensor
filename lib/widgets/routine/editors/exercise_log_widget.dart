@@ -500,7 +500,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: const BoxDecoration(
-                  color: sapphireDark,
+                  color: sapphireDark80,
                 ),
                 child: Row(
                   children: [
