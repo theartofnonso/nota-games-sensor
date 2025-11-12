@@ -13,6 +13,7 @@ import '../../../utils/dialog_utils.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
+import '../../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../../widgets/empty_states/not_found.dart';
 
 class ExerciseHomeScreen extends StatefulWidget {
@@ -28,6 +29,61 @@ class ExerciseHomeScreen extends StatefulWidget {
 
 class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   ExerciseDto? _exercise;
+
+  void _showMenuBottomSheet() {
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(
+                FontAwesomeIcons.penToSquare,
+                size: 18,
+              ),
+              horizontalTitleGap: 10,
+              title: Text("Edit", style: Theme.of(context).textTheme.bodyLarge),
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToExerciseEditor();
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(
+                FontAwesomeIcons.trash,
+                size: 18,
+                color: Colors.red,
+              ),
+              horizontalTitleGap: 10,
+              title: Text("Delete",
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: Colors.red)),
+              onTap: () {
+                Navigator.of(context).pop();
+                showBottomSheetWithMultiActions(
+                    context: context,
+                    title: "Delete exercise?",
+                    description: "Are you sure you want to delete this exercise?",
+                    leftAction: Navigator.of(context).pop,
+                    rightAction: () => _deleteExercise(context),
+                    leftActionLabel: 'Cancel',
+                    rightActionLabel: 'Delete',
+                    isRightActionDestructive: true);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _deleteExercise(BuildContext context) async {
     context.pop();
@@ -78,27 +134,6 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
     final mostRepsSessionRecord =
         mostRepsInSession(exerciseLogs: completedExerciseLogs);
 
-    final menuActions = [
-      MenuItemButton(
-        onPressed: _navigateToExerciseEditor,
-        child: const Text("Edit"),
-      ),
-      MenuItemButton(
-        onPressed: () {
-          showBottomSheetWithMultiActions(
-              context: context,
-              title: "Delete exercise?",
-              description: "Are you sure you want to delete this exercise?",
-              leftAction: Navigator.of(context).pop,
-              rightAction: () => _deleteExercise(context),
-              leftActionLabel: 'Cancel',
-              rightActionLabel: 'Delete',
-              isRightActionDestructive: true);
-        },
-        child: Text("Delete", style: TextStyle(color: Colors.red)),
-      )
-    ];
-
     return DefaultTabController(
         length: 2,
         child: Scaffold(
@@ -129,25 +164,13 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
               ],
             ),
             actions: [
-              MenuAnchor(
-                builder: (BuildContext context, MenuController controller,
-                    Widget? child) {
-                  return IconButton(
-                    onPressed: () {
-                      if (controller.isOpen) {
-                        controller.close();
-                      } else {
-                        controller.open();
-                      }
-                    },
-                    icon: const Icon(
-                      Icons.more_vert_rounded,
-                      size: 24,
-                    ),
-                    tooltip: 'Show menu',
-                  );
-                },
-                menuChildren: menuActions,
+              IconButton(
+                onPressed: _showMenuBottomSheet,
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  size: 24,
+                ),
+                tooltip: 'Show menu',
               )
             ],
           ),
