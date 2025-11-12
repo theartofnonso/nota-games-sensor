@@ -83,9 +83,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.black12
-                      : Colors.grey.shade100,
+                  color: Colors.black12,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -106,13 +104,24 @@ class _OverviewScreenState extends State<OverviewScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: OpacityButtonWidgetTwo(
-                  label: 'Retry Sync',
-                  buttonColor: Theme.of(context).colors.vibrantAccent,
-                  onPressed: () => _retryCachedSession(routineLog),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: OpacityButtonWidgetTwo(
+                      label: 'Discard',
+                      buttonColor: Colors.red,
+                      onPressed: () => _discardCachedSession(),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OpacityButtonWidgetTwo(
+                      label: 'Retry Sync',
+                      buttonColor: Theme.of(context).colors.vibrantAccent,
+                      onPressed: () => _retryCachedSession(routineLog),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -120,6 +129,21 @@ class _OverviewScreenState extends State<OverviewScreen> {
       );
     } catch (e) {
       debugPrint('[Retry] Error showing retry sheet: $e');
+    }
+  }
+
+  void _discardCachedSession() {
+    Navigator.of(context).pop(); // Close bottom sheet
+    
+    // Clear the cached workout
+    SharedPrefs().remove(key: SharedPrefs().routineLogKey);
+    setState(() {}); // Refresh to hide notification icon
+    
+    if (mounted) {
+      showSnackbar(
+        context: context,
+        message: 'Workout discarded',
+      );
     }
   }
 
