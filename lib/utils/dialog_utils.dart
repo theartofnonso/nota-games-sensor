@@ -36,6 +36,7 @@ void displayTimePicker(
   FocusScope.of(context).unfocus();
   showAppBottomSheet(
       context: context,
+      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: SizedBox(
@@ -56,6 +57,7 @@ void showDateTimePicker(
   FocusScope.of(context).unfocus();
   showAppBottomSheet(
       context: context,
+      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: SizedBox(
@@ -93,9 +95,13 @@ void showBottomSheetWithNoAction(
     TextStyle? textStyle}) {
   showAppBottomSheet(
       context: context,
+      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Text(title,
               style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.start),
@@ -122,6 +128,7 @@ void showBottomSheetWithMultiActions(
     Color? rightActionColor}) {
   showAppBottomSheet(
       context: context,
+      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(

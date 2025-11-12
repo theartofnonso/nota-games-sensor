@@ -246,6 +246,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   void _showExerciseOptionsBottomSheet(ExerciseDto exercise) {
     showAppBottomSheet(
       context: context,
+      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(

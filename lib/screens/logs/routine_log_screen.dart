@@ -238,9 +238,12 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   void _showBottomSheet() {
     showAppBottomSheet(
         context: context,
+        isScrollControlled: false,
         child: Padding(
           padding: const EdgeInsets.all(26),
-          child: Column(children: [
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
@@ -368,6 +371,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       {required RoutineLogDto log, required List<RoutinePlanDto> plans}) {
     showAppBottomSheet(
       context: context,
+      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: PlanPicker(

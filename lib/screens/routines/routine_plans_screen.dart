@@ -100,10 +100,13 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
   void _showMenuBottomSheet() {
     showAppBottomSheet(
         context: context,
-        isScrollControlled: true,
+        isScrollControlled: false,
         child: Padding(
           padding: const EdgeInsets.all(26),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(

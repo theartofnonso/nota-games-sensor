@@ -326,76 +326,55 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     showAppBottomSheet(
       context: context,
-      isDraggable: true,
-      builder: (context, scrollController) {
-        return Column(
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // Header row with date
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    dateLabel,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+            // Header with date
+            Text(
+              dateLabel,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  Text(
-                    DateFormat('MMM d, yyyy').format(date),
+            ),
+            Text(
+              DateFormat('MMM d, yyyy').format(date),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade400,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            // Logs list
+            if (hasLogs)
+              ...logsForDate.map((log) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: RoutineLogWidget(
+                      log: log,
+                      trailing: DateFormat.jm().format(log.startTime),
+                      onTap: () {
+                        Navigator.pop(context);
+                        navigateToRoutineLogPreview(context: context, log: log);
+                      },
+                    ),
+                  ))
+            else
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'No workouts logged on this day',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey.shade400,
                         ),
                   ),
-                ],
+                ),
               ),
-            ),
-            // Logs list
-            Expanded(
-              child: hasLogs
-                  ? ListView.separated(
-                      controller: scrollController,
-                      padding: const EdgeInsets.all(16),
-                      itemCount: logsForDate.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final log = logsForDate[index];
-                        return RoutineLogWidget(
-                          log: log,
-                          trailing: DateFormat.jm().format(log.startTime),
-                          onTap: () {
-                            Navigator.pop(context);
-                            navigateToRoutineLogPreview(
-                                context: context, log: log);
-                          },
-                        );
-                      },
-                    )
-                  : Center(
-                      child: Text(
-                        'No workouts logged on this day',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey.shade400,
-                            ),
-                      ),
-                    ),
-            ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -499,10 +478,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   void _showMenuBottomSheet({required RoutinePlanDto? planDto}) {
     showAppBottomSheet(
         context: context,
-        isScrollControlled: true,
+        isScrollControlled: false,
         child: Padding(
           padding: const EdgeInsets.all(26),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(
@@ -597,6 +579,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     if (template != null) {
       showAppBottomSheet(
         context: context,
+        isScrollControlled: false,
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: PlanPicker(

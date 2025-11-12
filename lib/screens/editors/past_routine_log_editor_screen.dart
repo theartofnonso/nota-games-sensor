@@ -382,6 +382,7 @@ class _PastRoutineLogEditorScreenState
   void _showWeightCalculator() {
     showAppBottomSheet(
         context: context,
+        isScrollControlled: false,
         child: WeightPlateCalculator(
             target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0));
   }

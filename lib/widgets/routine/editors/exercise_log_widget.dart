@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
@@ -465,6 +464,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   void _showWeightCalculator() {
     showAppBottomSheet(
         context: context,
+        isScrollControlled: false,
         child: WeightPlateCalculator(
             target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0));
   }
@@ -497,42 +497,182 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: appBarBackgroundColor(context: context),
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
-          onPressed: context.pop,
-        ),
-        title: GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) =>
-                      ExerciseHomeScreen(exercise: exerciseLog.exercise)));
-            },
-            child: Text(exerciseLog.exercise.name)),
-        actions: [
-          IconButton(
-            onPressed: _toggleNotes,
-            icon: const FaIcon(FontAwesomeIcons.noteSticky, size: 18),
-            tooltip: 'Notes',
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              // Custom header with sapphire background
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: sapphireDark80,
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const FaIcon(FontAwesomeIcons.xmark,
+                          size: 20, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) => ExerciseHomeScreen(
+                                  exercise: exerciseLog.exercise)));
+                        },
+                        child: Text(
+                          exerciseLog.exercise.name,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _toggleNotes,
+                      icon: const FaIcon(FontAwesomeIcons.noteSticky,
+                          size: 18, color: Colors.white),
+                      tooltip: 'Notes',
+                    ),
+                    if (!(exerciseType == ExerciseType.duration &&
+                        widget.editorType == RoutineEditorMode.log))
+                      IconButton(
+                        onPressed: _addSet,
+                        icon: const FaIcon(FontAwesomeIcons.solidSquarePlus,
+                            size: 22, color: Colors.white),
+                        tooltip: 'Add new set',
+                      ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: themeGradient(context: context),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16).copyWith(bottom: 100),
+                    child: Column(
+                      spacing: 20,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Stopwatch UI for duration exercises in log mode
+                        if (exerciseType == ExerciseType.duration &&
+                            widget.editorType == RoutineEditorMode.log)
+                          DurationStopwatchWidget(
+                            key: _durationStopwatchKey,
+                            onLogSet: _onLogDurationSet,
+                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            switch (exerciseType) {
+                              ExerciseType.weights => WeightAndRepsSetHeader(
+                                  editorType: widget.editorType,
+                                  firstLabel: weightUnit().toUpperCase(),
+                                  secondLabel: 'REPS',
+                                ),
+                              ExerciseType.bodyWeight => RepsSetHeader(
+                                  editorType: widget.editorType,
+                                ),
+                              ExerciseType.duration => DurationSetHeader(
+                                  editorType: widget.editorType,
+                                )
+                            },
+                            if (currentSets.isEmpty &&
+                                withReps(type: exerciseType))
+                              Column(
+                                children: [
+                                  const SizedBox(height: 10),
+                                  NoListEmptyState(
+                                      message:
+                                          "Tap the + button to start adding sets to your exercise"),
+                                ],
+                              ),
+                            const SizedBox(height: 20),
+                            switch (exerciseType) {
+                              ExerciseType.weights => _WeightAndRepsSetListView(
+                                  sets: currentSets
+                                      .map((set) => set as WeightAndRepsSetDto)
+                                      .toList(),
+                                  updateSetCheck: _updateSetCheck,
+                                  removeSet: _removeSet,
+                                  updateReps: _updateReps,
+                                  updateWeight: _updateWeight,
+                                  controllers: _weightAndRepsControllers,
+                                  onTapWeightEditor: _onTapWeightEditor,
+                                  onTapRepsEditor: _onTapRepsEditor,
+                                  editorType: widget.editorType,
+                                ),
+                              ExerciseType.bodyWeight => _RepsSetListView(
+                                  sets: currentSets
+                                      .map((set) => set as RepsSetDto)
+                                      .toList(),
+                                  updateSetCheck: _updateSetCheck,
+                                  removeSet: _removeSet,
+                                  updateReps: _updateReps,
+                                  controllers: _repsControllers,
+                                  onTapRepsEditor: _onTapRepsEditor,
+                                  editorType: widget.editorType,
+                                ),
+                              ExerciseType.duration => _DurationSetListView(
+                                  sets: currentSets
+                                      .map((set) => set as DurationSetDto)
+                                      .toList(),
+                                  updateSetCheck: _updateSetCheck,
+                                  removeSet: _removeSet,
+                                  updateDuration: _updateDuration,
+                                  controllers: _durationControllers,
+                                  editorType: widget.editorType,
+                                ),
+                            }
+                          ],
+                        ),
+                        if (exerciseLog.notes.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: sapphireDark80,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              exerciseLog.notes,
+                              textAlign: TextAlign.start,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 12,
+                                      height: 1.8,
+                                      color: isDarkMode
+                                          ? Colors.white70
+                                          : Colors.grey.shade800),
+                            ),
+                          )
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          // Hide "Add Set" button for duration exercises in log mode (sets are added via stopwatch)
-          if (!(exerciseType == ExerciseType.duration &&
-              widget.editorType == RoutineEditorMode.log))
-            IconButton(
-              onPressed: _addSet,
-              icon: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 22),
-              tooltip: 'Add new set',
-            ),
-        ],
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: isKeyboardOpen
-          ? Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          // Floating action buttons overlay
+          if (isKeyboardOpen)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
@@ -543,7 +683,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                     backgroundColor:
                         themeGradient(context: context).colors.first,
                     elevation: 8.0,
-                    child: FaIcon(Icons.keyboard_hide_rounded),
+                    child: const FaIcon(Icons.keyboard_hide_rounded),
                   ),
                   if (_selectedSetDto != null)
                     FloatingActionButton(
@@ -557,122 +697,13 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                         'icons/dumbbells.png',
                         fit: BoxFit.contain,
                         color: isDarkMode ? Colors.white : Colors.white,
-                        height: 24, // Adjust the height as needed
+                        height: 24,
                       ),
                     )
                 ],
               ),
-            )
-          : null,
-      body: Container(
-        padding: const EdgeInsets.only(top: 20),
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: themeGradient(context: context),
-        ),
-        child: SafeArea(
-          bottom: false,
-          minimum: EdgeInsets.symmetric(horizontal: 10),
-          child: SingleChildScrollView(
-            padding: EdgeInsets.only(bottom: 30),
-            child: Column(
-              spacing: 20,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Stopwatch UI for duration exercises in log mode
-                if (exerciseType == ExerciseType.duration &&
-                    widget.editorType == RoutineEditorMode.log)
-                  DurationStopwatchWidget(
-                    key: _durationStopwatchKey,
-                    onLogSet: _onLogDurationSet,
-                  ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    switch (exerciseType) {
-                      ExerciseType.weights => WeightAndRepsSetHeader(
-                          editorType: widget.editorType,
-                          firstLabel: weightUnit().toUpperCase(),
-                          secondLabel: 'REPS',
-                        ),
-                      ExerciseType.bodyWeight => RepsSetHeader(
-                          editorType: widget.editorType,
-                        ),
-                      ExerciseType.duration => DurationSetHeader(
-                          editorType: widget.editorType,
-                        )
-                    },
-                    if (currentSets.isEmpty && withReps(type: exerciseType))
-                      Column(
-                        children: [
-                          const SizedBox(height: 10),
-                          NoListEmptyState(
-                              message:
-                                  "Tap the + button to start adding sets to your exercise"),
-                        ],
-                      ),
-                    const SizedBox(height: 20),
-                    switch (exerciseType) {
-                      ExerciseType.weights => _WeightAndRepsSetListView(
-                          sets: currentSets
-                              .map((set) => set as WeightAndRepsSetDto)
-                              .toList(),
-                          updateSetCheck: _updateSetCheck,
-                          removeSet: _removeSet,
-                          updateReps: _updateReps,
-                          updateWeight: _updateWeight,
-                          controllers: _weightAndRepsControllers,
-                          onTapWeightEditor: _onTapWeightEditor,
-                          onTapRepsEditor: _onTapRepsEditor,
-                          editorType: widget.editorType,
-                        ),
-                      ExerciseType.bodyWeight => _RepsSetListView(
-                          sets: currentSets
-                              .map((set) => set as RepsSetDto)
-                              .toList(),
-                          updateSetCheck: _updateSetCheck,
-                          removeSet: _removeSet,
-                          updateReps: _updateReps,
-                          controllers: _repsControllers,
-                          onTapRepsEditor: _onTapRepsEditor,
-                          editorType: widget.editorType,
-                        ),
-                      ExerciseType.duration => _DurationSetListView(
-                          sets: currentSets
-                              .map((set) => set as DurationSetDto)
-                              .toList(),
-                          updateSetCheck: _updateSetCheck,
-                          removeSet: _removeSet,
-                          updateDuration: _updateDuration,
-                          controllers: _durationControllers,
-                          editorType: widget.editorType,
-                        ),
-                    }
-                  ],
-                ),
-                if (exerciseLog.notes.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: sapphireDark80,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      exerciseLog.notes,
-                      textAlign: TextAlign.start,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w400,
-                          fontSize: 12,
-                          height: 1.8,
-                          color: isDarkMode
-                              ? Colors.white70
-                              : Colors.grey.shade800),
-                    ),
-                  )
-              ],
             ),
-          ),
-        ),
+        ],
       ),
     );
   }

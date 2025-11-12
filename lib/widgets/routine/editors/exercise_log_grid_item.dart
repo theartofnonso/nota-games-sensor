@@ -3,9 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
-import '../../../utils/navigation_utils.dart';
+import '../../../utils/routine_editors_utils.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
-import '../editors/exercise_log_widget.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class ExerciseLogGridItemWidget extends StatelessWidget {
@@ -52,12 +51,11 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        navigateWithSlideTransition(
-            context: context,
-            child: ExerciseLogWidget(
-              exerciseLogId: exerciseLogDto.exercise.id,
-              editorType: editorType,
-            ));
+        showExerciseLogEditor(
+          context: context,
+          exerciseLogId: exerciseLogDto.exercise.id,
+          editorType: editorType,
+        );
       },
       onLongPress: () => _showBottomSheet(context: context),
       child: Container(
@@ -126,9 +124,12 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
   void _showBottomSheet({required BuildContext context}) {
     showAppBottomSheet(
         context: context,
+        isScrollControlled: false,
         child: Padding(
           padding: const EdgeInsets.all(26),
-          child: Column(children: [
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 22),

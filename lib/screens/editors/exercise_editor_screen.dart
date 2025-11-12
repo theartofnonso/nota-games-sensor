@@ -242,6 +242,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     FocusScope.of(context).unfocus();
     showAppBottomSheet(
         context: context,
+        isScrollControlled: false,
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: SizedBox(
