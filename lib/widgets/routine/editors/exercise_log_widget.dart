@@ -662,35 +662,37 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             Positioned(
               left: 16,
               right: 16,
-              bottom: 16,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  FloatingActionButton(
-                    heroTag: UniqueKey(),
-                    onPressed: _dismissKeyboard,
-                    enableFeedback: true,
-                    backgroundColor:
-                        themeGradient(context: context).colors.first,
-                    elevation: 8.0,
-                    child: const FaIcon(Icons.keyboard_hide_rounded),
-                  ),
-                  if (_selectedSetDto != null)
+              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              child: SafeArea(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
                     FloatingActionButton(
                       heroTag: UniqueKey(),
-                      onPressed: _showWeightCalculator,
+                      onPressed: _dismissKeyboard,
                       enableFeedback: true,
                       backgroundColor:
                           themeGradient(context: context).colors.first,
                       elevation: 8.0,
-                      child: Image.asset(
-                        'icons/dumbbells.png',
-                        fit: BoxFit.contain,
-                        color: Colors.white,
-                        height: 24,
-                      ),
-                    )
-                ],
+                      child: const FaIcon(Icons.keyboard_hide_rounded),
+                    ),
+                    if (_selectedSetDto != null)
+                      FloatingActionButton(
+                        heroTag: UniqueKey(),
+                        onPressed: _showWeightCalculator,
+                        enableFeedback: true,
+                        backgroundColor:
+                            themeGradient(context: context).colors.first,
+                        elevation: 8.0,
+                        child: Image.asset(
+                          'icons/dumbbells.png',
+                          fit: BoxFit.contain,
+                          color: Colors.white,
+                          height: 24,
+                        ),
+                      )
+                  ],
+                ),
               ),
             ),
         ],
