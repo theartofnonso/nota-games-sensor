@@ -11,6 +11,7 @@ import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
+import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../dtos/viewmodels/routine_template_arguments.dart';
 import '../../utils/dialog_utils.dart';
@@ -26,6 +27,7 @@ import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
+import '../../widgets/routine/preview/plan_picker.dart';
 import '../../nudges/plans_nudges.dart';
 import '../../widgets/information_containers/transparent_information_container_lite.dart';
 
@@ -78,10 +80,17 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
     final children = routineTemplates
         .mapIndexed(
-          (index, template) => RoutineTemplateGridItemWidget(
+          (index, template) => GestureDetector(
+            onTap: () => navigateToRoutineTemplatePreview(
+                context: context, template: template),
+            onLongPress: () =>
+                _showTemplateMenu(template: template, plan: plan),
+            child: RoutineTemplateGridItemWidget(
               template: template.copyWith(notes: template.notes),
               onTap: () => navigateToRoutineTemplatePreview(
-                  context: context, template: template)),
+                  context: context, template: template),
+            ),
+          ),
         )
         .toList();
 
@@ -317,6 +326,121 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     setState(() {
       _loading = !_loading;
     });
+  }
+
+  void _showTemplateMenu(
+      {required RoutineTemplateDto template, required RoutinePlanDto plan}) {
+    final exerciseAndRoutineController =
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
+    final plans = exerciseAndRoutineController.plans;
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(
+                FontAwesomeIcons.arrowRightArrowLeft,
+                size: 18,
+              ),
+              horizontalTitleGap: 10,
+              title: Text("Move to another plan",
+                  style: Theme.of(context).textTheme.bodyLarge),
+              onTap: () {
+                Navigator.of(context).pop();
+                _showMoveToPlanPicker(template: template, plans: plans);
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(
+                FontAwesomeIcons.trash,
+                size: 18,
+                color: Colors.red,
+              ),
+              horizontalTitleGap: 10,
+              title: Text("Remove from plan",
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: Colors.red)),
+              onTap: () {
+                Navigator.of(context).pop();
+                _removeTemplateFromPlan(template: template);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMoveToPlanPicker(
+      {required RoutineTemplateDto template,
+      required List<RoutinePlanDto> plans}) {
+    // Filter out the current plan
+    final otherPlans = plans.where((p) => p.id != widget.id).toList();
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: PlanPicker(
+          title: "Move ${template.name} to...",
+          plans: otherPlans,
+          onSelect: (selectedPlan) async {
+            Navigator.of(context).pop();
+            await _moveTemplateToPlan(
+                template: template, targetPlan: selectedPlan);
+          },
+          onCreatePlan: () async {
+            Navigator.of(context).pop();
+            final arguments = RoutinePlanArguments(
+                plan: RoutinePlanDto(id: "", name: "", notes: ""));
+            final newPlan = await navigateToRoutinePlanEditor(
+              context: context,
+              arguments: arguments,
+            );
+            if (newPlan != null && mounted) {
+              await _moveTemplateToPlan(
+                  template: template, targetPlan: newPlan);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _removeTemplateFromPlan(
+      {required RoutineTemplateDto template}) async {
+    final templateWithoutPlanId = template.copyWith(planId: "");
+    await Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false)
+        .updateTemplate(template: templateWithoutPlanId);
+  }
+
+  Future<void> _moveTemplateToPlan(
+      {required RoutineTemplateDto template,
+      required RoutinePlanDto targetPlan}) async {
+    final templateWithNewPlanId = template.copyWith(planId: targetPlan.id);
+    await Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false)
+        .updateTemplate(template: templateWithNewPlanId);
+
+    if (mounted) {
+      showSnackbar(
+        context: context,
+        message: 'Moved to ${targetPlan.name}',
+      );
+    }
   }
 
   void _showMenuBottomSheet() {

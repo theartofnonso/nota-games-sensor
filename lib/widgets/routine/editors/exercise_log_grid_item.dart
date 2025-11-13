@@ -116,7 +116,7 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: completedSets == totalSets
+                    color: completedSets == totalSets && totalSets > 0
                         ? Theme.of(context)
                             .colors
                             .vibrantAccent
@@ -127,7 +127,7 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
                   child: Text(
                     progressText,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: completedSets == totalSets
+                          color: completedSets == totalSets && totalSets > 0
                               ? Theme.of(context).colors.vibrantAccent
                               : Colors.white70,
                           fontWeight: FontWeight.w600,

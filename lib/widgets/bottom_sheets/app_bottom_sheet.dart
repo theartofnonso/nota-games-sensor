@@ -36,20 +36,21 @@ class AppBottomSheet extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () => Navigator.of(context).pop(),
         child: DraggableScrollableSheet(
-        initialChildSize: initialChildSize ?? 0.7,
-        minChildSize: minChildSize ?? 0.5,
-        maxChildSize: maxChildSize ?? 0.9,
-        builder: (context, scrollController) {
+          initialChildSize: initialChildSize ?? 0.7,
+          minChildSize: minChildSize ?? 0.5,
+          maxChildSize: maxChildSize ?? 0.9,
+          snap: true,
+          builder: (context, scrollController) {
             return GestureDetector(
               onTap: () {}, // Absorb taps on the sheet content
               child: Container(
-            decoration: decoration,
+                decoration: decoration,
                 child: builder != null
                     ? builder!(context, scrollController)
                     : child!,
               ),
-          );
-        },
+            );
+          },
         ),
       );
     }
@@ -84,9 +85,8 @@ Future<T?> showAppBottomSheet<T>({
     backgroundColor: Colors.transparent,
     isScrollControlled: isScrollControlled,
     isDismissible: isDismissible,
-    enableDrag: !isDraggable, // Only enable drag for non-draggable sheets
-    showDragHandle:
-        false, // No drag handle needed - DraggableScrollableSheet handles its own dragging
+    enableDrag: true,
+    showDragHandle: false,
     useSafeArea: true,
     barrierColor: Colors.black54,
     builder: (context) => AppBottomSheet(
