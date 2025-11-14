@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
 import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
@@ -69,8 +68,6 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   late ChartUnit _chartUnit;
 
   late SummaryType _summaryType;
-
-  final PageController _controller = PageController(initialPage: 0);
 
   void _heaviestWeightPerLog() {
     final sets = widget.exerciseLogs
@@ -246,37 +243,11 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Stack(
-            children: [
-              AspectRatio(
-                aspectRatio: 1.8,
-                child: PageView(
-                    scrollDirection: Axis.vertical,
-                    controller: _controller,
-                    children: muscleGroupsIllustrations),
-              ),
-              Positioned.fill(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 2.0),
-                    child: SmoothPageIndicator(
-                        controller: _controller,
-                        count: muscleGroupsIllustrations.length,
-                        effect: WormEffect(
-                            activeDotColor:
-                                Theme.of(context).colors.vibrantAccent,
-                            dotWidth: 8.0,
-                            dotHeight: 8.0,
-                            dotColor: isDarkMode
-                                ? Colors.white12
-                                : Colors.grey.shade200),
-                        axisDirection: Axis.vertical),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          if (muscleGroupsIllustrations.isNotEmpty)
+            AspectRatio(
+              aspectRatio: 1.8,
+              child: muscleGroupsIllustrations.first,
+            ),
           if (exercise.notes.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
