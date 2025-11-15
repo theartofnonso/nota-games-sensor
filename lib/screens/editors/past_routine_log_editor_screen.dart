@@ -293,12 +293,12 @@ class _PastRoutineLogEditorScreenState
     // Check mounted after async operation
     if (!mounted) return;
 
-    // Clear cache only if save succeeded
+    // Clear cache ONLY if save succeeded
     if (createdLog != null) {
       Provider.of<ExerciseLogController>(context, listen: false).onClear();
     }
 
-    // Always allow user to exit regardless of save success
+    // Always exit regardless of save success/failure
     _navigateBack(log: createdLog);
   }
 

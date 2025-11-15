@@ -179,6 +179,9 @@ class _OverviewScreenState extends State<OverviewScreen>
 
     // Clear the cached workout
     SharedPrefs().remove(key: SharedPrefs().routineLogKey);
+
+    // Update state to reflect cleared cache
+    _lastCachedSessionState = false;
     setState(() {}); // Refresh to hide notification icon
 
     if (mounted) {
@@ -200,7 +203,11 @@ class _OverviewScreenState extends State<OverviewScreen>
     if (existingLog != null) {
       // Log already exists - just clear the cache
       SharedPrefs().remove(key: SharedPrefs().routineLogKey);
+
+      // Update state to reflect cleared cache
+      _lastCachedSessionState = false;
       setState(() {}); // Refresh to hide notification icon
+
       if (mounted) {
         showSnackbar(
           context: context,
@@ -213,10 +220,14 @@ class _OverviewScreenState extends State<OverviewScreen>
     // Try to save the cached workout
     final savedLog = await controller.saveLog(logDto: routineLog);
 
-    // Clear cache only if save succeeded
+    // Clear cache ONLY if save succeeded
     if (savedLog != null) {
       SharedPrefs().remove(key: SharedPrefs().routineLogKey);
+
+      // Update state to reflect cleared cache
+      _lastCachedSessionState = false;
       setState(() {}); // Refresh to hide notification icon
+
       if (mounted) {
         showSnackbar(
           context: context,
@@ -224,6 +235,7 @@ class _OverviewScreenState extends State<OverviewScreen>
         );
       }
     } else {
+      // Save failed - keep cache so user can retry later
       if (mounted) {
         showSnackbar(
           context: context,

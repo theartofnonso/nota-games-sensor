@@ -133,12 +133,12 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
       // Check mounted again after async operation
       if (!mounted) return;
 
-      // Clear cache only if save succeeded
+      // Clear cache ONLY if save succeeded
       if (createdRoutineLog != null) {
         Provider.of<ExerciseLogController>(context, listen: false).onClear();
       }
 
-      // Always allow user to exit regardless of save success
+      // Always exit regardless of save success/failure
       _navigateBack(routineLog: createdRoutineLog);
     }
   }
@@ -151,12 +151,12 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             listen: false)
         .updateLog(log: routineLogToBeUpdated);
 
-    // Clear cache only if update succeeded and widget is still mounted
+    // Clear cache ONLY if update succeeded
     if (success && mounted) {
       Provider.of<ExerciseLogController>(context, listen: false).onClear();
     }
 
-    // Always allow user to exit regardless of update success
+    // Always exit regardless of update success/failure
     if (mounted) {
       _navigateBack(routineLog: routineLogToBeUpdated);
     }
