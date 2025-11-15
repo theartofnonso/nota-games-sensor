@@ -34,8 +34,49 @@ class OverviewScreen extends StatefulWidget {
   State<OverviewScreen> createState() => _OverviewScreenState();
 }
 
-class _OverviewScreenState extends State<OverviewScreen> {
+class _OverviewScreenState extends State<OverviewScreen>
+    with WidgetsBindingObserver {
   bool _loading = false;
+  bool _lastCachedSessionState = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _lastCachedSessionState = _hasCachedSession();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh state when app resumes to check cache status
+    if (state == AppLifecycleState.resumed && mounted) {
+      _checkCacheStatus();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh state when route becomes active to check cache status
+    _checkCacheStatus();
+  }
+
+  void _checkCacheStatus() {
+    if (!mounted) return;
+    final currentCachedSessionState = _hasCachedSession();
+    // Only rebuild if cache status changed
+    if (currentCachedSessionState != _lastCachedSessionState) {
+      _lastCachedSessionState = currentCachedSessionState;
+      setState(() {});
+    }
+  }
 
   bool _hasCachedSession() {
     return SharedPrefs().routineLog.isNotEmpty;

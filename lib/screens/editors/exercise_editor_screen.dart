@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
+import 'package:tracker_app/utils/exercise_utils.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
@@ -269,14 +270,34 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
       return;
     }
 
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(context,
+        listen: false);
+
+    // Check for similar exercises
+    final similarExercises = findSimilarExercises(
+      exerciseName: exerciseName,
+      allExercises: controller.exercises.toList(),
+    );
+
+    // If similar exercises found, show dialog
+    if (similarExercises.isNotEmpty) {
+      final shouldProceed = await showSimilarExercisesDialog(
+        context: context,
+        exerciseName: exerciseName,
+        similarExercises: similarExercises,
+      );
+
+      if (!shouldProceed) {
+        return;
+      }
+    }
+
     final exercise = ExerciseDto(
         name: exerciseName,
         primaryMuscleGroup: _primaryMuscleGroup,
         type: _exerciseType);
 
-    await Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false)
-        .saveExercise(exerciseDto: exercise);
+    await controller.saveExercise(exerciseDto: exercise);
 
     logger.i("created exercise ${exercise.toString()}");
     if (mounted) {
@@ -287,23 +308,43 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
   void _updateExercise() async {
     final exerciseName = _exerciseNameController.text.trim();
 
-    if (exerciseName.isEmpty) return;
-
     if (exerciseName.isEmpty) {
       _showSnackbar("Please provide a name for this exercise");
-    } else {
-      final exercise = widget.exercise;
-      if (exercise == null) return;
+      return;
+    }
 
-      final exerciseToBeUpdated = exercise.copyWith(
-          name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
-      await Provider.of<SupabaseExerciseAndRoutineController>(context,
-              listen: false)
-          .updateExercise(exercise: exerciseToBeUpdated);
+    final exercise = widget.exercise;
+    if (exercise == null) return;
 
-      if (mounted) {
-        context.pop(exerciseToBeUpdated);
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(context,
+        listen: false);
+
+    // Check for similar exercises (excluding the current exercise being updated)
+    final similarExercises = findSimilarExercises(
+      exerciseName: exerciseName,
+      allExercises: controller.exercises.toList(),
+      excludeExercise: exercise,
+    );
+
+    // If similar exercises found, show dialog
+    if (similarExercises.isNotEmpty) {
+      final shouldProceed = await showSimilarExercisesDialog(
+        context: context,
+        exerciseName: exerciseName,
+        similarExercises: similarExercises,
+      );
+
+      if (!shouldProceed) {
+        return;
       }
+    }
+
+    final exerciseToBeUpdated = exercise.copyWith(
+        name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
+    await controller.updateExercise(exercise: exerciseToBeUpdated);
+
+    if (mounted) {
+      context.pop(exerciseToBeUpdated);
     }
   }
 

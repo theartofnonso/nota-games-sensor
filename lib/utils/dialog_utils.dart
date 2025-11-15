@@ -5,6 +5,7 @@ import 'package:tracker_app/widgets/timers/datetime_picker.dart';
 import 'package:tracker_app/widgets/timers/datetime_range_picker.dart';
 
 import '../colors.dart';
+import '../dtos/appsync/exercise_dto.dart';
 import '../widgets/buttons/opacity_button_widget.dart';
 import '../widgets/timers/time_picker.dart';
 
@@ -127,36 +128,132 @@ void showBottomSheetWithMultiActions(
     bool isRightActionDestructive = true,
     Color? rightActionColor}) {
   showAppBottomSheet(
-      context: context,
-      isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(title,
-                style: Theme.of(context).textTheme.titleLarge,
-                textAlign: TextAlign.start),
-            Text(description,
-                style: Theme.of(context).textTheme.titleSmall,
-                textAlign: TextAlign.start),
-            const SizedBox(height: 16),
-            Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+    context: context,
+    isScrollControlled: false,
+    child: Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(title,
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.start),
+          Text(description,
+              style: Theme.of(context).textTheme.titleSmall,
+              textAlign: TextAlign.start),
+          const SizedBox(height: 16),
+          Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+            OpacityButtonWidget(
+                onPressed: leftAction,
+                label: leftActionLabel,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+            const SizedBox(width: 10),
+            OpacityButtonWidget(
+                onPressed: rightAction,
+                label: rightActionLabel,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                buttonColor: vibrantGreen)
+          ])
+        ],
+      ),
+    ));
+}
+
+/// Shows a dialog with similar exercises found
+/// Returns true if user confirms to proceed, false otherwise
+Future<bool> showSimilarExercisesDialog({
+  required BuildContext context,
+  required String exerciseName,
+  required List<ExerciseDto> similarExercises,
+}) async {
+  final result = await showAppBottomSheet<bool>(
+    context: context,
+    isScrollControlled: similarExercises.length > 3,
+    isDraggable: similarExercises.length > 3,
+    isDismissible: false,
+    child: Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Similar exercises found',
+            style: Theme.of(context).textTheme.titleLarge,
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We found ${similarExercises.length} similar ${similarExercises.length == 1 ? 'exercise' : 'exercises'} to "$exerciseName". Do you want to proceed?',
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 16),
+          if (similarExercises.length <= 10)
+            ...similarExercises.map((exercise) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          exercise.name,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                      Text(
+                        exercise.type.description,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          if (similarExercises.length > 10)
+            Text(
+              '${similarExercises.length} similar exercises found. Please check your exercise library.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white70,
+                  ),
+            ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
               OpacityButtonWidget(
-                  onPressed: leftAction,
-                  label: leftActionLabel,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+                label: 'Cancel',
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
               const SizedBox(width: 10),
               OpacityButtonWidget(
-                  onPressed: rightAction,
-                  label: rightActionLabel,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  buttonColor: vibrantGreen)
-            ])
-          ],
-        ),
-      ));
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+                label: 'Proceed',
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                buttonColor: vibrantGreen,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+
+  return result ?? false;
 }
