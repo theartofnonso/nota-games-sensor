@@ -57,9 +57,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
     final exercise = widget.exercise;
 
-    return PopScope(
-        canPop: false,
-        child: Scaffold(
+    return Scaffold(
           appBar: AppBar(
             backgroundColor: appBarBackgroundColor(context: context),
             surfaceTintColor: Colors.transparent,
@@ -208,7 +206,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                   ]),
             ),
           ),
-        ));
+    );
   }
 
   void _showSnackbar(String message) {

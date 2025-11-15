@@ -13,8 +13,13 @@ import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
+import '../../dtos/pb_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
+import '../../dtos/set_dtos/weight_and_reps_dto.dart';
+import '../../dtos/set_dtos/duration_set_dto.dart';
 import '../../dtos/viewmodels/exercise_log_view_model.dart';
+import '../../utils/theme/color_extensions.dart';
+import '../../widgets/pbs/pb_icon.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
@@ -154,10 +159,10 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                         ]),
                   ),
                   SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      spacing: 10,
+                      spacing: 2,
                       children: [
                         _StatisticWidget(
                           title: "${completedExerciseLogs.length}",
@@ -203,6 +208,9 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                               title: "Personal Bests",
                               description:
                                   "Your highest achievement in an exercise, like the heaviest weight lifted, most reps performed, or highest training volume."),
+                          customOnTap: pbs.isNotEmpty
+                              ? () => _showPBsBottomSheet(context, pbs.toList())
+                              : null,
                         ),
                       ],
                     ),
@@ -241,46 +249,45 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         isScrollControlled: false,
         child: Padding(
           padding: const EdgeInsets.all(26),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
-            horizontalTitleGap: 6,
-            title: Text("Edit Log"),
-            onTap: _editLog,
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.solidClock, size: 18),
-            horizontalTitleGap: 6,
-            title: Text("Edit duration"),
-            onTap: _editDuration,
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.download, size: 18),
-            horizontalTitleGap: 6,
-            title: Text("Save as template into..."),
-            onTap: _createTemplate,
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(
-              FontAwesomeIcons.trash,
-              size: 18,
-              color: Colors.red,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading:
+                  const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
+              horizontalTitleGap: 6,
+              title: Text("Edit Log"),
+              onTap: _editLog,
             ),
-            horizontalTitleGap: 6,
-            title: Text("Delete log",
-                style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16)),
-            onTap: _deleteLog,
-          ),
-        ]),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(FontAwesomeIcons.solidClock, size: 18),
+              horizontalTitleGap: 6,
+              title: Text("Edit duration"),
+              onTap: _editDuration,
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(FontAwesomeIcons.download, size: 18),
+              horizontalTitleGap: 6,
+              title: Text("Save as template into..."),
+              onTap: _createTemplate,
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(
+                FontAwesomeIcons.trash,
+                size: 18,
+                color: Colors.red,
+              ),
+              horizontalTitleGap: 6,
+              title: Text("Delete log",
+                  style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16)),
+              onTap: _deleteLog,
+            ),
+          ]),
         ));
   }
 
@@ -375,30 +382,30 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: PlanPicker(
-        title: "Save as template into...",
-        plans: plans,
-        onSelect: (selectedPlan) async {
-          Navigator.of(context).pop();
-          await _doCreateTemplate(log: log, planId: selectedPlan.id);
-        },
-        onCreatePlan: () async {
-          Navigator.of(context).pop(); // Close bottom sheet
-          // Navigate to create a new plan
-          final emptyPlan = RoutinePlanDto(id: "", name: "", notes: "");
-          final arguments = RoutinePlanArguments(plan: emptyPlan);
-          final newPlan = await navigateToRoutinePlanEditor(
-            context: context,
-            arguments: arguments,
-          );
-          // If plan was created, show picker again with the new plan
-          if (newPlan != null && mounted) {
-            final controller =
-                Provider.of<SupabaseExerciseAndRoutineController>(context,
-                    listen: false);
-            _showPlanPickerForTemplate(
-                log: log, plans: controller.plans.toList());
-          }
-        },
+          title: "Save as template into...",
+          plans: plans,
+          onSelect: (selectedPlan) async {
+            Navigator.of(context).pop();
+            await _doCreateTemplate(log: log, planId: selectedPlan.id);
+          },
+          onCreatePlan: () async {
+            Navigator.of(context).pop(); // Close bottom sheet
+            // Navigate to create a new plan
+            final emptyPlan = RoutinePlanDto(id: "", name: "", notes: "");
+            final arguments = RoutinePlanArguments(plan: emptyPlan);
+            final newPlan = await navigateToRoutinePlanEditor(
+              context: context,
+              arguments: arguments,
+            );
+            // If plan was created, show picker again with the new plan
+            if (newPlan != null && mounted) {
+              final controller =
+                  Provider.of<SupabaseExerciseAndRoutineController>(context,
+                      listen: false);
+              _showPlanPickerForTemplate(
+                  log: log, plans: controller.plans.toList());
+            }
+          },
         ),
       ),
     );
@@ -496,6 +503,133 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         rightActionLabel: 'Delete',
         isRightActionDestructive: true);
   }
+
+  void _showPBsBottomSheet(BuildContext context, List<PBDto> pbs) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: pbs.length > 5,
+      isDraggable: pbs.length > 5,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.solidStar,
+                  size: 20,
+                  color: Theme.of(context)
+                          .extension<TRKRColors>()
+                          ?.vibrantAccent ??
+                      Colors.green,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Personal Bests',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            ...pbs.map((pb) {
+              String setDisplay;
+              if (pb.set is WeightAndRepsSetDto) {
+                final weightSet = pb.set as WeightAndRepsSetDto;
+                setDisplay =
+                    '${weightSet.weight}${weightUnit()} × ${weightSet.reps} reps';
+              } else if (pb.set is DurationSetDto) {
+                final durationSet = pb.set as DurationSetDto;
+                setDisplay = durationSet.duration.hmsDigital();
+              } else {
+                final repsSet = pb.set;
+                setDisplay = repsSet.summary();
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDarkMode
+                          ? Colors.white.withOpacity(0.1)
+                          : Colors.grey.shade200,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              pb.exercise.name,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ),
+                          PBIcon(
+                            label: pb.pb.name,
+                            size: 12,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        setDisplay,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: isDarkMode
+                                  ? Colors.white.withOpacity(0.7)
+                                  : Colors.grey.shade700,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        pb.pb.description,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: isDarkMode
+                                  ? Colors.white.withOpacity(0.5)
+                                  : Colors.grey.shade600,
+                              fontSize: 11,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+            if (pbs.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: Text(
+                    'No personal bests achieved in this workout',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: isDarkMode
+                              ? Colors.white.withOpacity(0.5)
+                              : Colors.grey.shade600,
+                        ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _StatisticsInformation {
@@ -510,49 +644,87 @@ class _StatisticWidget extends StatelessWidget {
   final String title;
   final String subtitle;
   final _StatisticsInformation information;
+  final VoidCallback? customOnTap;
 
   const _StatisticWidget(
       {this.icon,
       required this.title,
       required this.subtitle,
-      required this.information});
+      required this.information,
+      this.customOnTap});
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = Theme.of(context).brightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    final leading = FaIcon(icon, size: 14);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () => showBottomSheetWithNoAction(
-          context: context,
-          title: information.title,
-          description: information.description),
+      onTap: customOnTap ??
+          () => showBottomSheetWithNoAction(
+              context: context,
+              title: information.title,
+              description: information.description),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        constraints: const BoxConstraints(minWidth: 120),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(5),
+          color:
+              isDarkMode ? Colors.black.withOpacity(0.3) : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDarkMode
+                ? Colors.white.withOpacity(0.08)
+                : Colors.grey.shade200,
+            width: 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
+            // Icon and label row
+            Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                leading,
-                const SizedBox(
-                  width: 6,
+                if (icon != null) ...[
+                  FaIcon(
+                    icon,
+                    size: 12,
+                    color: isDarkMode
+                        ? Colors.white.withOpacity(0.6)
+                        : Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Text(
+                    subtitle.toUpperCase(),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                          color: isDarkMode
+                              ? Colors.white.withOpacity(0.6)
+                              : Colors.grey.shade600,
+                          fontWeight: FontWeight.w600,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                Text(subtitle.toUpperCase(),
-                    style: Theme.of(context).textTheme.bodySmall)
               ],
             ),
-            const SizedBox(
-              height: 6,
+            const SizedBox(height: 12),
+            // Large number - no overflow for duration
+            Text(
+              title,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                    height: 1.1,
+                  ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
           ],
         ),
       ),

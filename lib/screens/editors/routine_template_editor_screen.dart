@@ -284,9 +284,7 @@ class _RoutineTemplateEditorScreenState
       );
     }).toList();
 
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
+    return Scaffold(
           appBar: AppBar(
             backgroundColor: appBarBackgroundColor(context: context),
             surfaceTintColor: Colors.transparent,
@@ -408,7 +406,7 @@ class _RoutineTemplateEditorScreenState
                 ),
               ),
             ),
-          )),
+          ),
     );
   }
 

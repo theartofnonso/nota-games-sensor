@@ -79,6 +79,7 @@ class _OverviewScreenState extends State<OverviewScreen>
   }
 
   bool _hasCachedSession() {
+    print(SharedPrefs().routineLog);
     return SharedPrefs().routineLog.isNotEmpty;
   }
 
@@ -175,11 +176,11 @@ class _OverviewScreenState extends State<OverviewScreen>
 
   void _discardCachedSession() {
     Navigator.of(context).pop(); // Close bottom sheet
-    
+
     // Clear the cached workout
     SharedPrefs().remove(key: SharedPrefs().routineLogKey);
     setState(() {}); // Refresh to hide notification icon
-    
+
     if (mounted) {
       showSnackbar(
         context: context,

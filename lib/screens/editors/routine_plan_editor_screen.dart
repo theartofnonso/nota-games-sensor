@@ -117,76 +117,72 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
       });
     }
 
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
-          appBar: AppBar(
-              backgroundColor: appBarBackgroundColor(context: context),
-              surfaceTintColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              leading: IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
-                  onPressed: context.pop)),
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: themeGradient(context: context),
-            ),
-            child: SafeArea(
-              bottom: false,
-              minimum:
-                  const EdgeInsets.only(right: 10.0, bottom: 10.0, left: 10.0),
-              child: GestureDetector(
-                onTap: _dismissKeyboard,
-                child: Column(
-                  spacing: 10,
-                  children: [
-                    TextField(
-                      controller: _planNameController,
-                      cursorColor: Colors.white,
-                      decoration: const InputDecoration(
-                        hintText: "Plan name",
-                      ),
-                      keyboardType: TextInputType.text,
-                      textCapitalization: TextCapitalization.words,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white,
-                          fontSize: 14),
-                    ),
-                    TextField(
-                      controller: _planNotesController,
-                      cursorColor: Colors.white,
-                      decoration: const InputDecoration(
-                        hintText: "Notes (optional)",
-                      ),
-                      maxLines: null,
-                      keyboardType: TextInputType.text,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white,
-                          fontSize: 14),
-                    ),
-                    const Spacer(),
-                    SafeArea(
-                      minimum: const EdgeInsets.symmetric(horizontal: 20),
-                      child: SizedBox(
-                          width: double.infinity,
-                          child: OpacityButtonWidgetTwo(
-                              buttonColor:
-                                  Theme.of(context).colors.vibrantAccent,
-                              label: widget.plan?.id.isNotEmpty ?? false
-                                  ? "Update Plan"
-                                  : "Create Plan",
-                              onPressed: widget.plan?.id.isNotEmpty ?? false
-                                  ? _updateRoutinePlan
-                                  : _createRoutinePlan)),
-                    ),
-                  ],
+    return Scaffold(
+      appBar: AppBar(
+          backgroundColor: appBarBackgroundColor(context: context),
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+              icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
+              onPressed: context.pop)),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: themeGradient(context: context),
+        ),
+        child: SafeArea(
+          bottom: false,
+          minimum: const EdgeInsets.only(right: 10.0, bottom: 10.0, left: 10.0),
+          child: GestureDetector(
+            onTap: _dismissKeyboard,
+            child: Column(
+              spacing: 10,
+              children: [
+                TextField(
+                  controller: _planNameController,
+                  cursorColor: Colors.white,
+                  decoration: const InputDecoration(
+                    hintText: "Plan name",
+                  ),
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.words,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      fontSize: 14),
                 ),
-              ),
+                TextField(
+                  controller: _planNotesController,
+                  cursorColor: Colors.white,
+                  decoration: const InputDecoration(
+                    hintText: "Notes (optional)",
+                  ),
+                  maxLines: null,
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      fontSize: 14),
+                ),
+                const Spacer(),
+                SafeArea(
+                  minimum: const EdgeInsets.symmetric(horizontal: 20),
+                  child: SizedBox(
+                      width: double.infinity,
+                      child: OpacityButtonWidgetTwo(
+                          buttonColor: Theme.of(context).colors.vibrantAccent,
+                          label: widget.plan?.id.isNotEmpty ?? false
+                              ? "Update Plan"
+                              : "Create Plan",
+                          onPressed: widget.plan?.id.isNotEmpty ?? false
+                              ? _updateRoutinePlan
+                              : _createRoutinePlan)),
+                ),
+              ],
             ),
-          )),
+          ),
+        ),
+      ),
     );
   }
 
