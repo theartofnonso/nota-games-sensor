@@ -36,21 +36,21 @@ class AppBottomSheet extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () => Navigator.of(context).pop(),
         child: DraggableScrollableSheet(
-          initialChildSize: initialChildSize ?? 0.7,
-          minChildSize: minChildSize ?? 0.5,
-          maxChildSize: maxChildSize ?? 0.9,
+        initialChildSize: initialChildSize ?? 0.7,
+        minChildSize: minChildSize ?? 0.5,
+        maxChildSize: maxChildSize ?? 0.9,
           snap: true,
-          builder: (context, scrollController) {
+        builder: (context, scrollController) {
             return GestureDetector(
               onTap: () {}, // Absorb taps on the sheet content
               child: Container(
-                decoration: decoration,
+            decoration: decoration,
                 child: builder != null
                     ? builder!(context, scrollController)
                     : child!,
               ),
-            );
-          },
+          );
+        },
         ),
       );
     }

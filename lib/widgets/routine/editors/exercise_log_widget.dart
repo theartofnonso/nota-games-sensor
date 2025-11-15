@@ -421,7 +421,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
               onChanged: (value) => _updateExerciseLogNotes(value: value),
               autofocus: true,
               decoration: InputDecoration(
-                hintText: "Enter notes",
+                hintText: "Enter notes (optional)",
                 contentPadding: EdgeInsets.all(16.0),
                 border: InputBorder.none,
                 focusedBorder: InputBorder.none,

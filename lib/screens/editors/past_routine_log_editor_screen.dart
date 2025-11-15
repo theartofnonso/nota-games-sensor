@@ -335,7 +335,7 @@ class _PastRoutineLogEditorScreenState
                           controller: _templateNotesController,
                           cursorColor: isDarkMode ? Colors.white : Colors.black,
                           decoration: InputDecoration(
-                            hintText: "Notes",
+                            hintText: "Notes (optional)",
                           ),
                           maxLines: null,
                           keyboardType: TextInputType.text,

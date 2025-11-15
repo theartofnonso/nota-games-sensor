@@ -313,8 +313,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
       return;
     }
 
-    final exercise = widget.exercise;
-    if (exercise == null) return;
+      final exercise = widget.exercise;
+      if (exercise == null) return;
 
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(context,
         listen: false);
@@ -339,12 +339,12 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
       }
     }
 
-    final exerciseToBeUpdated = exercise.copyWith(
-        name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
+      final exerciseToBeUpdated = exercise.copyWith(
+          name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
     await controller.updateExercise(exercise: exerciseToBeUpdated);
 
-    if (mounted) {
-      context.pop(exerciseToBeUpdated);
+      if (mounted) {
+        context.pop(exerciseToBeUpdated);
     }
   }
 
