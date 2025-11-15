@@ -10,7 +10,7 @@ class TRKRAppBarTheme {
       foregroundColor: Colors.grey.shade900,
       actionsIconTheme: TRKRIconTheme.lightTheme,
       titleTextStyle: const TextStyle(
-          fontFamily: 'Space Mono',
+          fontFamily: 'Grift',
           fontWeight: FontWeight.w700,
           color: Colors.black,
           fontSize: 16));
@@ -20,7 +20,7 @@ class TRKRAppBarTheme {
       foregroundColor: textPrimary,
       actionsIconTheme: TRKRIconTheme.darkTheme,
       titleTextStyle: const TextStyle(
-          fontFamily: 'Space Mono',
+          fontFamily: 'Grift',
           fontWeight: FontWeight.w700,
           color: textPrimary,
           fontSize: 16));

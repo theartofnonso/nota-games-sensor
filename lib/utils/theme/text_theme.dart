@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class TRKRTextTheme {
   TRKRTextTheme._();
 
-  static const String _fontFamily = 'Space Mono';
+  static const String _fontFamily = 'Grift';
 
   static const TextTheme lightTheme = TextTheme(
     displaySmall: TextStyle(

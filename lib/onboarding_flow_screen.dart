@@ -61,7 +61,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                             textAlign: TextAlign.left,
                             text: const TextSpan(
                               style: TextStyle(
-                                fontFamily: 'Space Mono',
+                                fontFamily: 'Grift',
                                 color: Colors.white,
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,

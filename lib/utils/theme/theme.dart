@@ -17,7 +17,7 @@ class TRKRTheme {
   static ThemeData lightTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      fontFamily: 'Space Mono',
+      fontFamily: 'Grift',
       scaffoldBackgroundColor: lightBackground,
       primaryColor: freshGreen,
       colorScheme: ColorScheme(
@@ -63,7 +63,7 @@ class TRKRTheme {
       ),
       useMaterial3: true,
       brightness: Brightness.dark,
-      fontFamily: 'Space Mono',
+      fontFamily: 'Grift',
       scaffoldBackgroundColor: bgPrimary,
       primaryColor: success,
       textTheme: TRKRTextTheme.darkTheme,
