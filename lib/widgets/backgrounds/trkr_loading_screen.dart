@@ -2,8 +2,8 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../colors.dart';
 import '../../strings/loading_screen_messages.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class TRKRLoadingScreen extends StatelessWidget {
   final double opacity;
@@ -13,7 +13,7 @@ class TRKRLoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final children = defaultLoadingMessages
@@ -28,7 +28,7 @@ class TRKRLoadingScreen extends StatelessWidget {
       body: Container(
           width: double.infinity,
           height: double.infinity,
-          color: isDarkMode ? sapphireDark.withValues(alpha:opacity) : Colors.white,
+          color: isDarkMode ? Theme.of(context).colors.sapphireDark.withValues(alpha:opacity) : Colors.white,
           child: Stack(
             children: [
               if (action != null)

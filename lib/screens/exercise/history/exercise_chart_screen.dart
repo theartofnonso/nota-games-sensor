@@ -1,10 +1,8 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
 import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
@@ -15,17 +13,16 @@ import 'package:tracker_app/extensions/muscle_group_extension.dart';
 import 'package:tracker_app/widgets/buttons/opacity_button_widget.dart';
 import 'package:tracker_app/widgets/list_tile.dart';
 
-import '../../../colors.dart';
-import '../../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/graph/chart_point_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../enums/chart_unit_enum.dart';
 import '../../../enums/exercise_type_enums.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
-import '../../../utils/uri_utils.dart';
 import '../../../widgets/chart/line_chart_widget.dart';
 import '../../logs/routine_log_screen.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 enum SummaryType {
   weight("Heaviest Weight"),
@@ -71,8 +68,6 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   late ChartUnit _chartUnit;
 
   late SummaryType _summaryType;
-
-  final PageController _controller = PageController(initialPage: 0);
 
   void _heaviestWeightPerLog() {
     final sets = widget.exerciseLogs
@@ -194,14 +189,15 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   }
 
   Color? _buttonColor({required SummaryType type}) {
-    return _summaryType == type ? vibrantGreen : null;
+    return _summaryType == type ? Theme.of(context).colors.vibrantAccent : null;
   }
 
   void _navigateTo({required String? routineLogId}) {
     if (routineLogId != null) {
-      final routineLog =
-          Provider.of<ExerciseAndRoutineController>(context, listen: false)
-              .logWhereId(id: routineLogId);
+      final routineLog = Provider.of<SupabaseExerciseAndRoutineController>(
+              context,
+              listen: false)
+          .logWhereId(id: routineLogId);
       if (routineLog != null) {
         context.push(RoutineLogScreen.routeName, extra: {
           "log": routineLog,
@@ -214,30 +210,29 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final weightUnitLabel = weightUnit();
 
-    final muscleGroupsIllustrations = [
-      widget.exercise.primaryMuscleGroup,
-      ...widget.exercise.secondaryMuscleGroups
-    ]
-        .where((muscleGroup) => muscleGroup != MuscleGroup.fullBody)
-        .map((muscleGroup) {
-      return Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Image.asset(
-          'muscles_illustration/${muscleGroup.illustration()}.png',
-          fit: BoxFit.contain,
-          height: 120, // Adjust the height as needed
-        ),
-        const SizedBox(
-          height: 6,
-        ),
-        Text(muscleGroup.name.toUpperCase(),
-            style: Theme.of(context).textTheme.bodyMedium)
-      ]);
-    }).toList();
+    final muscleGroup = widget.exercise.primaryMuscleGroup;
+
+    final muscleGroupsIllustrations = muscleGroup != MuscleGroup.fullBody
+        ? [
+            Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Image.asset(
+                'muscles_illustration/${muscleGroup.illustration()}.png',
+                fit: BoxFit.contain,
+                height: 120, // Adjust the height as needed
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Text(muscleGroup.name.toUpperCase(),
+                  style: Theme.of(context).textTheme.bodyMedium)
+            ])
+          ]
+        : <Widget>[];
 
     final exercise = widget.exercise;
 
@@ -248,50 +243,17 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (exercise.video != null)
-            _VideoWidget(
-              videoUrl: exercise.video!.toString(),
-              creditSource: exercise.creditSource?.toString(),
-              credit: exercise.credit,
+          if (muscleGroupsIllustrations.isNotEmpty)
+            AspectRatio(
+              aspectRatio: 1.8,
+              child: muscleGroupsIllustrations.first,
             ),
-          Stack(
-            children: [
-              AspectRatio(
-                aspectRatio: 1.8,
-                child: PageView(
-                    scrollDirection: Axis.vertical,
-                    controller: _controller,
-                    children: muscleGroupsIllustrations),
-              ),
-              Positioned.fill(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 2.0),
-                    child: SmoothPageIndicator(
-                        controller: _controller,
-                        count: muscleGroupsIllustrations.length,
-                        effect: WormEffect(
-                            activeDotColor: vibrantGreen,
-                            dotWidth: 8.0,
-                            dotHeight: 8.0,
-                            dotColor: isDarkMode
-                                ? Colors.white12
-                                : Colors.grey.shade200),
-                        axisDirection: Axis.vertical),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (exercise.description != null)
+          if (exercise.notes.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  exercise.description != null
-                      ? "${exercise.description}."
-                      : "No notes",
+                  exercise.notes.isNotEmpty ? "${exercise.notes}." : "No notes",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 14,
@@ -450,57 +412,6 @@ class _MetricListTile extends StatelessWidget {
         title: Text(title),
         subtitle: Text(subtitle),
         trailing: Text(trailing),
-      ),
-    );
-  }
-}
-
-class _VideoWidget extends StatelessWidget {
-  final String videoUrl;
-  final String? creditSource;
-  final String? credit;
-
-  const _VideoWidget({
-    required this.videoUrl,
-    this.creditSource,
-    this.credit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20.0),
-      child: ListTile(
-        onTap: () => openUrl(url: videoUrl, context: context),
-        leading: FaIcon(
-          FontAwesomeIcons.youtube,
-          color: Colors.red,
-          size: 24,
-        ),
-        title: Text(
-          'Watch Exercise Video',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: credit != null
-            ? Text(
-                'Video by $credit',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDarkMode ? Colors.white70 : Colors.black54,
-                ),
-              )
-            : null,
-        trailing: FaIcon(
-          FontAwesomeIcons.arrowUpRightFromSquare,
-          size: 16,
-          color: isDarkMode ? Colors.white54 : Colors.black54,
-        ),
       ),
     );
   }

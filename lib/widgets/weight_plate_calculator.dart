@@ -23,7 +23,7 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final plates = _PlatesEnum.values

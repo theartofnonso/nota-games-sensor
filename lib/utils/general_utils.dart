@@ -1,12 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tracker_app/enums/muscle_group_enums.dart';
-import 'package:tracker_app/extensions/muscle_group_extension.dart';
 import 'package:tracker_app/screens/preferences/settings_screen.dart';
 import 'package:tracker_app/widgets/icons/custom_wordmark_icon.dart';
 
@@ -15,7 +10,6 @@ import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/viewmodels/routine_log_arguments.dart';
 import '../enums/routine_editor_type_enums.dart';
 import '../shared_prefs.dart';
-import 'data_trend_utils.dart';
 import 'navigation_utils.dart';
 
 bool isDefaultWeightUnit() {
@@ -85,14 +79,11 @@ String timeOfDay({DateTime? datetime}) {
   return 'Evening';
 }
 
-Future<bool> batchDeleteUserData(
-    {required String document, required String documentKey}) async {
-  final operation = Amplify.API.mutate(
-    request: GraphQLRequest<dynamic>(document: document),
-  );
-  final response = await operation.response;
-  final result = jsonDecode(response.data);
-  return result[documentKey];
+Future<bool> batchDeleteUserData({required String tableName}) async {
+  // Note: For Supabase, batch deletes should be done via the repository layer
+  // This is a placeholder that should be implemented in the specific repository
+  throw UnimplementedError(
+      'Batch delete should be implemented in the Supabase repository for $tableName');
 }
 
 Future<NotificationsEnabledOptions> checkIosNotificationPermission() async {
@@ -232,33 +223,6 @@ Color highToLowIntensityColor(double score) {
   }
 }
 
-String recoveryMuscleIllustration(
-    {required double recoveryPercentage, required MuscleGroup muscleGroup}) {
-  if (recoveryPercentage < 0.3) {
-    // Severe DOMS (0–29%)
-    return 'red_muscles_illustration/${muscleGroup.illustration()}.png';
-  } else if (recoveryPercentage < 0.5) {
-    // High soreness (30–49%)
-    return 'yellow_muscles_illustration/${muscleGroup.illustration()}.png';
-  } else if (recoveryPercentage < 0.7) {
-    // Moderate soreness (50–79%)
-    return 'blue_muscles_illustration/${muscleGroup.illustration()}.png';
-  } else {
-    // Mild or no soreness (80–100%)
-    return 'muscles_illustration/${muscleGroup.illustration()}.png';
-  }
-}
-
-Color setsTrendColor({required int sets}) {
-  if (sets >= 12) {
-    return vibrantGreen;
-  } else if (sets >= 6) {
-    return vibrantBlue;
-  } else {
-    return Colors.deepOrangeAccent;
-  }
-}
-
 Color setsMilestoneColor({required double progress}) {
   if (progress >= 0.7) {
     return vibrantGreen;
@@ -271,18 +235,8 @@ Color setsMilestoneColor({required double progress}) {
   }
 }
 
-Color repsTrendColor({required int reps}) {
-  if (reps >= 120) {
-    return vibrantGreen;
-  } else if (reps >= 60) {
-    return vibrantBlue;
-  } else {
-    return Colors.deepOrangeAccent;
-  }
-}
-
 LinearGradient themeGradient({required BuildContext context}) {
-  Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+  Brightness systemBrightness = Theme.of(context).brightness;
   final isDarkMode = systemBrightness == Brightness.dark;
 
   return LinearGradient(
@@ -296,42 +250,11 @@ LinearGradient themeGradient({required BuildContext context}) {
 }
 
 Color appBarBackgroundColor({required BuildContext context}) {
-  Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+  Brightness systemBrightness = Theme.of(context).brightness;
   final isDarkMode = systemBrightness == Brightness.dark;
   return isDarkMode ? sapphireDark80 : Colors.white;
 }
 
-Widget getTrendIcon({required Trend trend}) {
-  return switch (trend) {
-    Trend.up => FaIcon(
-        FontAwesomeIcons.arrowTrendUp,
-        color: vibrantGreen,
-        size: 20,
-      ),
-    Trend.down => FaIcon(
-        FontAwesomeIcons.arrowTrendDown,
-        color: Colors.deepOrange,
-        size: 20,
-      ),
-    Trend.stable => Container(
-        width: 30,
-        height: 30,
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: vibrantGreen.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(3),
-        ),
-        child: Center(
-          child: FaIcon(
-            FontAwesomeIcons.check,
-            size: 14,
-            color: vibrantGreen,
-          ),
-        ),
-      ),
-    Trend.none => const SizedBox.shrink(),
-  };
-}
 
 void logEmptyRoutine({required BuildContext context, String? workoutVideoUrl}) {
   final log = RoutineLogDto(
@@ -341,10 +264,7 @@ void logEmptyRoutine({required BuildContext context, String? workoutVideoUrl}) {
       exerciseLogs: [],
       notes: "",
       startTime: DateTime.now(),
-      endTime: DateTime.now(),
-      owner: "",
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now());
+      endTime: DateTime.now());
 
   final arguments =
       RoutineLogArguments(log: log, editorMode: RoutineEditorMode.log);
@@ -432,7 +352,7 @@ Color _deltaColor(num difference) => difference > 0
         : Colors.yellow;
 
 Widget _weight(num value, String unit, BuildContext context) {
-  Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+  Brightness systemBrightness = Theme.of(context).brightness;
   final isDarkMode = systemBrightness == Brightness.dark;
   return CustomWordMarkIcon("${value.toStringAsFixed(1)} $unit",
       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -449,20 +369,11 @@ Widget summarizeProgression(
   final endWeight = values.last;
   final difference = endWeight - startWeight;
 
-  String trend;
-  if (difference > 0) {
-    trend = "an upward trend ↗";
-  } else if (difference < 0) {
-    trend = "a downward trend ↘";
-  } else {
-    trend = "stable with no change →";
-  }
-
   return Semantics(
     label: 'Starting at ${startWeight.toStringAsFixed(1)} $weightUnit, '
         'currently at ${endWeight.toStringAsFixed(1)} $weightUnit. '
         '${difference.abs().toStringAsFixed(1)} $weightUnit '
-        '${difference > 0 ? 'gained' : 'lost'}. Showing $trend',
+        '${difference > 0 ? 'gained' : 'lost'}',
     child: RichText(
       textAlign: textAlign,
       text: TextSpan(

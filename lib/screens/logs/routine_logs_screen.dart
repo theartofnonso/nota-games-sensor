@@ -4,7 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../utils/general_utils.dart';
 import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
@@ -19,11 +19,11 @@ class RoutineLogsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final routineLogsForMonth =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true)
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: true)
             .whereLogsIsSameMonth(dateTime: dateTime);
 
     final logs = routineLogsForMonth
-        .sorted((a, b) => b.createdAt.compareTo(a.createdAt));
+        .sorted((a, b) => b.startTime.compareTo(a.startTime));
 
     final month = dateTime.formattedFullMonth();
 
@@ -56,7 +56,7 @@ class RoutineLogsScreen extends StatelessWidget {
                             final log = logs[index];
                             return RoutineLogWidget(
                                 log: log,
-                                trailing: log.createdAt.durationSinceOrDate());
+                                trailing: log.startTime.durationSinceOrDate());
                           },
                           separatorBuilder: (BuildContext context, int index) =>
                               Divider(color: Colors.transparent),

@@ -2,27 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
-import '../../../colors.dart';
-import '../../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/routine_plan_dto.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/string_utils.dart';
 import '../../icons/custom_icon.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class RoutinePlanGridItemWidget extends StatelessWidget {
   final RoutinePlanDto plan;
   final double radius;
+  final void Function()? onTap;
 
   const RoutinePlanGridItemWidget(
-      {super.key, required this.plan, this.radius = 12});
+      {super.key, required this.plan, this.radius = 12, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     final routineTemplates = exerciseAndRoutineController.templates
         .where((template) => template.planId == plan.id)
@@ -31,12 +33,13 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
     final exerciseTemplates = routineTemplates
         .expand((routineTemplate) => routineTemplate.exerciseTemplates);
     return GestureDetector(
-      onTap: () => navigateToRoutinePlanPreview(context: context, plan: plan),
+      onTap: onTap ??
+          () => navigateToRoutinePlanPreview(context: context, plan: plan),
       child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-              color: isDarkMode ? sapphireDark80 : Colors.grey.shade200,
+              color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(radius)),
           child: Column(
               spacing: 12,
@@ -57,7 +60,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                       children: [
                         CustomIcon(
                           FontAwesomeIcons.personWalking,
-                          color: vibrantGreen,
+                          color: Theme.of(context).colors.vibrantAccent,
                           width: 20,
                           height: 20,
                           iconSize: 10.5,
@@ -77,7 +80,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                       children: [
                         CustomIcon(
                           FontAwesomeIcons.hashtag,
-                          color: vibrantBlue,
+                          color: Theme.of(context).colorScheme.secondary,
                           width: 20,
                           height: 20,
                           iconSize: 10.5,

@@ -14,8 +14,6 @@ class SharedPrefs {
 
   void clear() {
     remove(key: _weightUnitKey);
-    remove(key: _userIdKey);
-    remove(key: _userEmailKey);
     remove(key: routineLogKey);
   }
 
@@ -45,23 +43,7 @@ class SharedPrefs {
     _sharedPrefs?.setBool(_firstLaunchKey, value);
   }
 
-  /// User
-  final String _userIdKey = "user_id_key";
-
-  String get userId => _sharedPrefs?.getString(_userIdKey) ?? "";
-
-  set userId(String value) {
-    _sharedPrefs?.setString(_userIdKey, value);
-  }
-
-  final String _userEmailKey = "user_email_key";
-
-  String get userEmail => _sharedPrefs?.getString(_userEmailKey) ?? "";
-
-  set userEmail(String value) {
-    _sharedPrefs?.setString(_userEmailKey, value);
-  }
-
+  /// Cached routine log
   final String routineLogKey = "routine_log_key";
 
   String get routineLog => _sharedPrefs?.getString(routineLogKey) ?? "";

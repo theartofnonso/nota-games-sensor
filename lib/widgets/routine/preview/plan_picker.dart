@@ -4,14 +4,20 @@ import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 
 import '../../../../colors.dart';
 import '../../buttons/opacity_button_widget_two.dart';
-import '../../empty_states/list_tile_empty_state.dart';
 
 class PlanPicker extends StatelessWidget {
   final String title;
   final List<RoutinePlanDto> plans;
   final void Function(RoutinePlanDto plan) onSelect;
+  final VoidCallback? onCreatePlan;
 
-  const PlanPicker({super.key, required this.title, required this.plans, required this.onSelect});
+  const PlanPicker({
+    super.key,
+    required this.title,
+    required this.plans,
+    required this.onSelect,
+    this.onCreatePlan,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,10 +39,13 @@ class PlanPicker extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
-              children: [Text(title, style: Theme.of(context).textTheme.titleMedium), ...listTiles],
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                ...listTiles
+              ],
             ),
           )
-        : _EmptyState(onPressed: () {});
+        : _EmptyState(onPressed: onCreatePlan ?? () {});
   }
 }
 
@@ -52,19 +61,27 @@ class _EmptyState extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 16),
-          const Padding(
-            padding: EdgeInsets.only(left: 18.0),
-            child: ListTileEmptyState(),
+          Text(
+            "No workout plans yet",
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
-          const SizedBox(height: 12),
-          const Padding(
-            padding: EdgeInsets.only(left: 18.0),
-            child: ListTileEmptyState(),
+          const SizedBox(height: 8),
+          Text(
+            "Create your first plan to get started",
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white54,
+                ),
           ),
           const SizedBox(height: 24),
           SizedBox(
               width: double.infinity,
-              child: OpacityButtonWidgetTwo(onPressed: onPressed, label: "Create a workout plan", buttonColor: vibrantGreen))
+              child: OpacityButtonWidgetTwo(
+                  onPressed: onPressed,
+                  label: "Create a workout plan",
+                  buttonColor: vibrantGreen))
         ],
       ),
     );

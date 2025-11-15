@@ -1,126 +1,74 @@
-import 'dart:convert';
-
-
-import 'package:tracker_app/models/ModelProvider.dart';
+import 'package:tracker_app/enums/muscle_group_enums.dart';
 
 import '../../enums/exercise_type_enums.dart';
-import '../../enums/muscle_group_enums.dart';
 
 class ExerciseDto {
   final String id;
   final String name;
-  final MuscleGroup primaryMuscleGroup;
-  final List<MuscleGroup> secondaryMuscleGroups;
-  final Uri? video;
-  final String? description;
-  final Uri? creditSource;
-  final String? credit;
   final ExerciseType type;
-  final String owner;
+  final MuscleGroup primaryMuscleGroup;
+  final String notes;
 
-  ExerciseDto(
-      {required this.id,
-      required this.name,
-      required this.primaryMuscleGroup,
-      required this.secondaryMuscleGroups,
-      required this.type,
-      this.description,
-      this.video,
-      this.creditSource,
-      this.credit,
-      required this.owner});
-
-  Map<String, Object> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'primaryMuscleGroup': primaryMuscleGroup.name,
-      'secondaryMuscleGroups': secondaryMuscleGroups.map((muscleGroup) => muscleGroup.name).toList(),
-      'type': type.id,
-      'owner': owner,
-      'description': description ?? "",
-      'video': video?.toString() ?? "",
-      'creditSource': creditSource?.toString() ?? "",
-      'credit': credit ?? ""
-    };
-  }
-
-  factory ExerciseDto.toDto(Exercise exercise) {
-    return ExerciseDto.fromExercise(exercise: exercise);
-  }
-
-  factory ExerciseDto.fromExercise({required Exercise exercise}) {
-    final json = jsonDecode(exercise.data);
-    return ExerciseDto.fromJson(json, owner: exercise.owner, exerciseId: exercise.id);
-  }
-
-  factory ExerciseDto.fromJson(Map<String, dynamic> json, {String? exerciseId, String? owner}) {
-    final id = exerciseId ?? json["id"] ?? "";
-    final name = json["name"] ?? "";
-    final primaryMuscleGroupString = json["primaryMuscleGroup"] ?? "";
-    final primaryMuscleGroup = MuscleGroup.fromString(primaryMuscleGroupString);
-    final secondaryMuscleGroupString = (json["secondaryMuscleGroups"] as List<dynamic>?) ?? [];
-    final secondaryMuscleGroups =
-        secondaryMuscleGroupString.map((muscleGroup) => MuscleGroup.fromString(muscleGroup)).toList();
-    final typeJson = json["type"] ?? "";
-    final type = ExerciseType.fromString(typeJson);
-    final video = json["video"];
-    final description = json["description"] ?? "";
-    final videoUri = video != null ? Uri.parse(video) : null;
-    final creditSource = json["creditSource"];
-    final creditSourceUri = creditSource != null ? Uri.parse(creditSource) : null;
-    final credit = json["credit"] ?? "";
-
-    return ExerciseDto(
-        id: id,
-        name: name,
-        primaryMuscleGroup: primaryMuscleGroup,
-        secondaryMuscleGroups: secondaryMuscleGroups,
-        type: type,
-        video: videoUri,
-        description: description,
-        owner: owner ?? "",
-        creditSource: creditSourceUri,
-        credit: credit);
-  }
+  const ExerciseDto({
+    this.id = "",
+    required this.name,
+    required this.type,
+    required this.primaryMuscleGroup,
+    this.notes = "",
+  });
 
   ExerciseDto copyWith({
     String? id,
     String? name,
-    MuscleGroup? primaryMuscleGroup,
-    List<MuscleGroup>? secondaryMuscleGroups,
     ExerciseType? type,
-    String? owner,
-    String? description,
+    MuscleGroup? primaryMuscleGroup,
+    String? notes,
   }) {
     return ExerciseDto(
       id: id ?? this.id,
       name: name ?? this.name,
-      primaryMuscleGroup: primaryMuscleGroup ?? this.primaryMuscleGroup,
-
-      // Create a new list for secondaryMuscleGroups to avoid referencing the original.
-      secondaryMuscleGroups: secondaryMuscleGroups != null
-          ? List<MuscleGroup>.from(secondaryMuscleGroups)
-          : List<MuscleGroup>.from(this.secondaryMuscleGroups),
-
       type: type ?? this.type,
-      owner: owner ?? this.owner,
-      description: description ?? this.description,
+      primaryMuscleGroup: primaryMuscleGroup ?? this.primaryMuscleGroup,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "name": name,
+      "type": type.id,
+      "primaryMuscleGroup": primaryMuscleGroup.name,
+      "notes": notes,
+    };
+  }
+
+  factory ExerciseDto.fromJson(Map<String, dynamic> json) {
+    final id = json["id"] ?? "";
+    final name = json["name"] ?? "";
+    final type = json["type"] != null
+        ? ExerciseType.fromString(json["type"])
+        : ExerciseType.weights;
+
+    // Handle muscle group with fallback for legacy/invalid values
+    final primaryMuscleGroup = MuscleGroup.values.firstWhere(
+      (e) => e.name == json["primaryMuscleGroup"],
+      orElse: () => MuscleGroup.fullBody, // Default to fullBody if not found
+    );
+
+    final notes = json["notes"] ?? "";
+
+    return ExerciseDto(
+      id: id,
+      name: name,
+      type: type,
+      primaryMuscleGroup: primaryMuscleGroup,
+      notes: notes,
     );
   }
 
   @override
   String toString() {
-    return 'ExerciseDto{id: $id, name: $name, primaryMuscleGroup: ${primaryMuscleGroup.name}, secondaryMuscleGroups: $secondaryMuscleGroups video: $video, description: $description, creditSource: $creditSource, credit: $credit, type: $type, owner: $owner}';
+    return 'ExerciseDto{id: $id, name: $name, type: $type, primaryMuscleGroup: $primaryMuscleGroup, notes: $notes}';
   }
-
-  @override
-  int get hashCode => id.hashCode;
-
-  @override
-  bool operator ==(Object other) {
-    return other is ExerciseDto &&
-        other.id == id;
-  }
-
 }

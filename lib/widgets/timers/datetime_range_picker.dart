@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tracker_app/colors.dart';
+
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/widgets/information_containers/information_container_lite.dart';
@@ -8,6 +8,7 @@ import 'package:tracker_app/widgets/information_containers/information_container
 import '../../strings/datetime_range_picker_strings.dart';
 import '../buttons/opacity_button_widget.dart';
 import '../buttons/opacity_button_widget_two.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class DateTimeRangePicker extends StatefulWidget {
   final DateTimeRange? initialDateTimeRange;
@@ -47,7 +48,7 @@ class _DateTimeRangePickerState extends State<DateTimeRangePicker> {
                         _showEndDateTimeRange = false;
                       });
                     },
-                    buttonColor: _showStartDateTimeRange ? vibrantGreen : null,
+                    buttonColor: _showStartDateTimeRange ? Theme.of(context).colors.vibrantAccent : null,
                     label: _startDateTime.formattedDayMonthTime()),
               )),
           if (_showStartDateTimeRange)
@@ -74,7 +75,7 @@ class _DateTimeRangePickerState extends State<DateTimeRangePicker> {
                         _showEndDateTimeRange = !_showEndDateTimeRange;
                       });
                     },
-                    buttonColor: _showEndDateTimeRange ? vibrantGreen : null,
+                    buttonColor: _showEndDateTimeRange ? Theme.of(context).colors.vibrantAccent : null,
                     label: _endDateTime.formattedDayMonthTime()),
               )),
           if (_showEndDateTimeRange)
@@ -106,7 +107,7 @@ class _DateTimeRangePickerState extends State<DateTimeRangePicker> {
                               widget.onSelectRange(range);
                             },
                             label: "Log ${_calculateDuration().hmsAnalog()} session",
-                            buttonColor: vibrantGreen,),
+                            buttonColor: Theme.of(context).colors.vibrantAccent,),
                       )),
           ),
         ],

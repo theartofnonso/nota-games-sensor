@@ -61,7 +61,7 @@ class _ProgressionHalfAnimatedGaugeState extends State<ProgressionHalfAnimatedGa
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     return Stack(

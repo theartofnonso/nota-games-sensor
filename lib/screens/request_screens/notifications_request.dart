@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import '../../colors.dart';
 import '../../utils/general_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class NotificationsRequestScreen extends StatefulWidget {
   final VoidCallback onRequest;
@@ -60,7 +60,7 @@ class _NotificationsRequestScreenState
                 padding: const EdgeInsets.symmetric(horizontal: 26.0),
                 child: OpacityButtonWidgetTwo(
                   label: "Turn on notifications",
-                  buttonColor: vibrantGreen,
+                  buttonColor: Theme.of(context).colors.vibrantAccent,
                   onPressed: widget.onRequest,
                 ),
               ),

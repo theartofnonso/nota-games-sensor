@@ -5,9 +5,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:tracker_app/dtos/graph/chart_point_dto.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 
-import '../../colors.dart';
 import '../../enums/chart_unit_enum.dart';
 import '../../utils/string_utils.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 enum LineChartSide { left, right }
 
@@ -45,7 +45,7 @@ class LineChartWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     return chartPoints.isNotEmpty
@@ -112,7 +112,7 @@ class LineChartWidget extends StatelessWidget {
                       ])),
             ),
           )
-        : const Center(child: FaIcon(FontAwesomeIcons.chartSimple, color: sapphireDark, size: 120));
+        : Center(child: FaIcon(FontAwesomeIcons.chartSimple, color: Theme.of(context).colors.sapphireDark, size: 120));
   }
 
   Widget _leftTitleWidgets(double value, TitleMeta meta) {

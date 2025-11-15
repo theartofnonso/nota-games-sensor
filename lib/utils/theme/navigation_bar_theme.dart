@@ -6,15 +6,17 @@ class TRKRNavigationBarTheme {
 
   static NavigationBarThemeData lightTheme = NavigationBarThemeData(
     indicatorColor: Colors.transparent,
-    backgroundColor: Colors.grey.shade200,
+    backgroundColor: lightContainer,
     surfaceTintColor: Colors.white,
     overlayColor: WidgetStateColor.resolveWith((states) => Colors.transparent),
+    elevation: 0,
   );
 
   static NavigationBarThemeData darkTheme = NavigationBarThemeData(
     indicatorColor: Colors.transparent,
-    backgroundColor: sapphireDark80,
+    backgroundColor: bgSecondary,
     surfaceTintColor: Colors.black,
     overlayColor: WidgetStateColor.resolveWith((states) => Colors.transparent),
+    elevation: 0,
   );
 }

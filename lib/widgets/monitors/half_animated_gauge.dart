@@ -61,7 +61,7 @@ class _HalfAnimatedGaugeState extends State<HalfAnimatedGauge> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     return Stack(

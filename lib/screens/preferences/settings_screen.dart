@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -10,13 +9,12 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:tracker_app/colors.dart';
-import 'package:tracker_app/graphQL/queries.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tracker_app/screens/request_screens/notifications_request.dart';
 import 'package:tracker_app/shared_prefs.dart';
 import 'package:tracker_app/urls.dart';
 
-import '../../controllers/exercise_and_routine_controller.dart';
+import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
@@ -24,6 +22,8 @@ import '../../utils/uri_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
+import '../exercise/library/exercise_library_screen.dart';
 
 enum WeightUnit {
   kg("kg"),
@@ -72,14 +72,13 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    final userEmail = SharedPrefs().userEmail.isNotEmpty
-        ? SharedPrefs().userEmail
-        : "Apple Sign in";
+    final userEmail =
+        Supabase.instance.client.auth.currentUser?.email ?? "User";
 
     return Scaffold(
       appBar: AppBar(
@@ -104,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 InformationContainerWithBackgroundImage(
                   image: 'images/recovery_girl.PNG',
                   subtitle:
-                      "Loving TRNR? Your feedback helps us grow and improve.",
+                      "Loving trainware? Your feedback helps us grow and improve.",
                   color: Colors.black,
                   onTap: _openStoreListing,
                   alignmentGeometry: Alignment.center,
@@ -125,7 +124,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 label: "Notifications",
                                 labelColor:
                                     isDarkMode ? Colors.white : Colors.black,
-                                dividerColor: sapphireLighter,
+                                dividerColor:
+                                    Theme.of(context).colors.dividerColor,
                                 fontSize: 14,
                               ),
                               const SizedBox(height: 8),
@@ -173,9 +173,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                       style: Theme.of(context).textTheme.titleMedium),
                   subtitle: Text("Choose kg or lbs"),
                   trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
-                    backgroundColor:
-                        isDarkMode ? sapphireDark : Colors.grey.shade400,
-                    thumbColor: isDarkMode ? sapphireDark80 : Colors.white,
+                    backgroundColor: isDarkMode
+                        ? Theme.of(context).colors.sapphireDark
+                        : Colors.grey.shade400,
+                    thumbColor: isDarkMode
+                        ? Theme.of(context).colors.sapphireDark80
+                        : Colors.white,
                     groupValue: _weightUnit,
                     children: {
                       WeightUnit.kg: SizedBox(
@@ -207,12 +210,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                         style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text("help us improve")),
                 ListTile(
-                    onTap: _visitTRKR,
-                    leading: FaIcon(FontAwesomeIcons.instagram,
+                    onTap: () => navigateWithSlideTransition(
+                          context: context,
+                          child: const ExerciseLibraryScreen(readOnly: true),
+                        ),
+                    leading: FaIcon(FontAwesomeIcons.personWalking,
                         color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("TRNR in the wild",
+                    title: Text("Exercise Library",
                         style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text("follow us on socials")),
+                    subtitle: Text("manage your exercises")),
                 ListTile(
                     onTap: _logout,
                     leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
@@ -264,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       scheme: 'mailto',
       path: 'hello@trkr.fit', // Replace with the recipient's email
       queryParameters: {
-        'subject': 'Feedback for TRNR', // Set the email subject
+        'subject': 'Feedback for trainware', // Set the email subject
       },
     );
 
@@ -273,41 +279,12 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _clearAppData() async {
     Posthog().reset();
-    await Amplify.DataStore.clear();
     SharedPrefs().clear();
     await FlutterLocalNotificationsPlugin().cancelAll();
     if (mounted) {
-      Provider.of<ExerciseAndRoutineController>(context, listen: false).clear();
+      Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+          .clear();
     }
-  }
-
-  void _visitTRKR() {
-    displayBottomSheet(
-        context: context,
-        child: Column(children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.globe, size: 18),
-            horizontalTitleGap: 6,
-            title: Text("On the web",
-                style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              openUrl(url: trackrWebUrl, context: context);
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(FontAwesomeIcons.instagram, size: 20),
-            horizontalTitleGap: 6,
-            title: Text("On Instagram",
-                style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              openUrl(url: instagramUrl, context: context);
-            },
-          )
-        ]));
   }
 
   void _turnOnNotification() async {
@@ -344,9 +321,9 @@ class _SettingsScreenState extends State<SettingsScreen>
           Navigator.of(context).pop();
           _showLoadingScreen();
           _clearAppData();
-          await Amplify.Auth.signOut();
+          await Supabase.instance.client.auth.signOut();
           if (mounted) {
-            context.go('/'); // Replace '/welcome' with your initial route
+            context.go('/'); // Navigate to auth screen
           }
         },
         leftActionLabel: 'Cancel',
@@ -365,25 +342,41 @@ class _SettingsScreenState extends State<SettingsScreen>
           Navigator.of(context).pop();
           _showLoadingScreen();
 
-          final deletedExercises = await batchDeleteUserData(
-              document: deleteUserExerciseData,
-              documentKey: "deleteUserExerciseData");
-          final deletedRoutineTemplates = await batchDeleteUserData(
-              document: deleteUserRoutineTemplateData,
-              documentKey: "deleteUserRoutineTemplateData");
-          final deletedRoutineLogs = await batchDeleteUserData(
-              document: deleteUserRoutineLogData,
-              documentKey: "deleteUserRoutineLogData");
-          if (deletedExercises &&
-              deletedRoutineTemplates &&
-              deletedRoutineLogs) {
+          try {
+            final userId = Supabase.instance.client.auth.currentUser?.id;
+            if (userId == null) {
+              throw Exception('User not authenticated');
+            }
+
+            // Delete all user data from Supabase
+            await Supabase.instance.client
+                .from('exercises')
+                .delete()
+                .eq('owner', userId);
+            await Supabase.instance.client
+                .from('routine_templates')
+                .delete()
+                .eq('owner', userId);
+            await Supabase.instance.client
+                .from('routine_plans')
+                .delete()
+                .eq('owner', userId);
+            await Supabase.instance.client
+                .from('routine_logs')
+                .delete()
+                .eq('owner', userId);
+
             _hideLoadingScreen();
             _clearAppData();
-            await Amplify.Auth.deleteUser();
+
+            // Sign out the user (Supabase doesn't have deleteUser on client,
+            // user deletion should be done via dashboard or admin API)
+            await Supabase.instance.client.auth.signOut();
+
             if (mounted) {
-              context.go('/'); // Replace '/welcome' with your initial route
+              context.go('/'); // Navigate to auth screen
             }
-          } else {
+          } catch (e) {
             _hideLoadingScreen();
             if (mounted) {
               showSnackbar(

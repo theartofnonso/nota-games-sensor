@@ -3,12 +3,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-
-import '../../colors.dart';
 import '../../dtos/graph/chart_point_dto.dart';
 import '../../enums/chart_unit_enum.dart';
 import '../../utils/chart_utils.dart';
 import '../../utils/string_utils.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class CustomBarChart extends StatelessWidget {
   final List<ChartPointDto> chartPoints;
@@ -37,7 +36,7 @@ class CustomBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     return chartPoints.isNotEmpty
@@ -65,7 +64,7 @@ class CustomBarChart extends StatelessWidget {
           )
         : Center(
             child: FaIcon(FontAwesomeIcons.chartSimple,
-                color: isDarkMode ? sapphireDark : Colors.grey.shade400, size: 120));
+                color: isDarkMode ? Theme.of(context).colors.sapphireDark : Colors.grey.shade400, size: 120));
   }
 
   BarTouchData get barTouchData => BarTouchData(

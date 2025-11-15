@@ -3,12 +3,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
-import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 
@@ -28,14 +28,11 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
   Widget build(BuildContext context) {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    return Consumer<ExerciseAndRoutineController>(builder: (_, provider, __) {
+    return Consumer<SupabaseExerciseAndRoutineController>(
+        builder: (_, provider, __) {
       final plans = List<RoutinePlanDto>.from(provider.plans);
 
-      final defaultPlanGridItem =
-          RoutinePlanGridItemWidget(plan: RoutinePlanDto.defaultPlan);
-
       final children = [
-        defaultPlanGridItem,
         ...plans.map((plan) => RoutinePlanGridItemWidget(plan: plan))
       ];
 
@@ -83,7 +80,7 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
                                   const EdgeInsets.symmetric(horizontal: 10.0),
                               child: const NoListEmptyState(
                                   message:
-                                      "It might feel quiet now, but tap the + button to create a plan or ask TRNR coach for help."),
+                                      "It might feel quiet now, but tap the + button to create a plan or ask trainware coach for help."),
                             ),
                           ),
                   ]),
@@ -101,10 +98,15 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
   }
 
   void _showMenuBottomSheet() {
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
-        isScrollControlled: true,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        isScrollControlled: false,
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(
@@ -119,6 +121,7 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
               navigateToRoutinePlanEditor(context: context);
             },
           ),
-        ]));
+        ]),
+        ));
   }
 }

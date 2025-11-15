@@ -1,4 +1,3 @@
-
 import 'package:tracker_app/enums/muscle_group_enums.dart';
 
 extension MuscleGroupExtension on MuscleGroup {
@@ -8,13 +7,12 @@ extension MuscleGroupExtension on MuscleGroup {
       MuscleGroup.adductors => "adductors",
       MuscleGroup.abs => "abs",
       MuscleGroup.back => "back",
-      MuscleGroup.backShoulder => "backshoulder",
+      MuscleGroup.rearShoulders => "rearShoulders",
       MuscleGroup.biceps => "biceps",
       MuscleGroup.calves => "calves",
       MuscleGroup.chest => "chest",
       MuscleGroup.forearms => "forearms",
-      MuscleGroup.frontShoulder => "frontshoulder",
-      MuscleGroup.shoulders => "frontshoulder",
+      MuscleGroup.frontShoulders => "frontShoulders",
       MuscleGroup.glutes => "glutes",
       MuscleGroup.hamstrings => "hamstrings",
       MuscleGroup.lats => "lats",

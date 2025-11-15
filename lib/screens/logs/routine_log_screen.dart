@@ -1,73 +1,61 @@
-import 'dart:convert';
-
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
-import 'package:tracker_app/screens/logs/routine_log_summary_screen.dart';
-import 'package:tracker_app/shared_prefs.dart';
-import 'package:tracker_app/utils/https_utils.dart';
 import 'package:tracker_app/utils/navigation_utils.dart';
 import 'package:tracker_app/widgets/backgrounds/trkr_loading_screen.dart';
 
-import '../../../colors.dart';
 import '../../../dtos/exercise_log_dto.dart';
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
+import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/viewmodels/exercise_log_view_model.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
+import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
-import '../../models/RoutineLog.dart';
-import '../../utils/data_trend_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../utils/string_utils.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
 import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/monthly_insights/muscle_groups_family_frequency_widget.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
+import '../../widgets/routine/preview/plan_picker.dart';
 
 class RoutineLogScreen extends StatefulWidget {
   static const routeName = '/routine_log_screen';
 
   final String id;
-  final bool showSummary;
   final bool isEditable;
 
-  const RoutineLogScreen(
-      {super.key,
-      required this.id,
-      required this.showSummary,
-      this.isEditable = true});
+  const RoutineLogScreen({super.key, required this.id, this.isEditable = true});
 
   @override
   State<RoutineLogScreen> createState() => _RoutineLogScreenState();
 }
 
 class _RoutineLogScreenState extends State<RoutineLogScreen> {
-  RoutineLogDto? _log;
-
   bool _loading = false;
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: true);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -77,7 +65,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       });
     }
 
-    final log = _log;
+    // Reload log from controller on every build (in case it was updated)
+    final log = exerciseAndRoutineController.logWhereId(id: widget.id);
 
     if (log == null) return const NotFound();
 
@@ -96,7 +85,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final pbs = updatedLog.exerciseLogs.map((exerciseLog) {
       final pastExerciseLogs =
           exerciseAndRoutineController.whereExerciseLogsBefore(
-              exercise: exerciseLog.exercise, date: exerciseLog.createdAt);
+              exercise: exerciseLog.exercise, dateTime: exerciseLog.createdAt);
 
       return calculatePBs(
           pastExerciseLogs: loggedExercises(exerciseLogs: pastExerciseLogs),
@@ -109,14 +98,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         .map((log) => routineWithLoggedExercises(log: log))
         .toList();
 
-    final allLoggedVolumesForTemplate = logs.map((log) => log.volume).toList();
-
-    final avgVolume = allLoggedVolumesForTemplate.isNotEmpty
-        ? allLoggedVolumesForTemplate.average
-        : 0.0;
-
-    final trendSummary =
-        _analyzeWeeklyTrends(volumes: allLoggedVolumesForTemplate);
+    logs.map((log) => log.volume).toList();
 
     return Scaffold(
         appBar: AppBar(
@@ -128,22 +110,14 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               onPressed: context.pop,
             ),
             title: Text(updatedLog.name),
-            actions: updatedLog.owner == SharedPrefs().userId &&
-                    widget.isEditable
+            actions: widget.isEditable
                 ? [
                     IconButton(
-                        onPressed: () => _onShareLog(log: updatedLog),
-                        icon: const FaIcon(FontAwesomeIcons.arrowUpFromBracket,
-                            size: 18)),
+                        onPressed: _showBottomSheet,
+                        icon: const FaIcon(FontAwesomeIcons.ellipsisVertical,
+                            size: 22))
                   ]
-                : []),
-        floatingActionButton:
-            updatedLog.owner == SharedPrefs().userId && widget.isEditable
-                ? FloatingActionButton(
-                    heroTag: "routine_log_screen",
-                    onPressed: _showBottomSheet,
-                    child: const FaIcon(FontAwesomeIcons.penToSquare))
-                : null,
+                : null),
         body: Container(
           height: double.infinity,
           decoration: BoxDecoration(
@@ -245,63 +219,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                                 "Here's a breakdown of the muscle groups in your ${updatedLog.name} workout session.",
                             muscleGroup: muscleGroupFamilyFrequencies,
                             minimized: false),
-                        if (updatedLog.templateId.isNotEmpty &&
-                            updatedLog.owner == SharedPrefs().userId)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 10,
-                            children: [
-                              Wrap(
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 10,
-                                children: [
-                                  trendSummary.trend == Trend.none
-                                      ? const SizedBox.shrink()
-                                      : getTrendIcon(trend: trendSummary.trend),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      RichText(
-                                        text: TextSpan(
-                                          text: volumeInKOrM(avgVolume),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineSmall,
-                                          children: [
-                                            TextSpan(
-                                              text: " ",
-                                            ),
-                                            TextSpan(
-                                              text: weightUnit().toUpperCase(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Text(
-                                        "Session AVERAGE".toUpperCase(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                              Text(trendSummary.summary,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w400,
-                                          color: isDarkMode
-                                              ? Colors.white70
-                                              : Colors.black)),
-                            ],
-                          ),
                         ExerciseLogListView(
                             exerciseLogs: _exerciseLogsToViewModels(
                                 exerciseLogs: completedExerciseLogs)),
@@ -318,52 +235,15 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         ));
   }
 
-  void _loadData() {
-    final routineLogController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
-    _log = routineLogController.logWhereId(id: widget.id);
-    if (_log == null) {
-      _loading = true;
-      getAPI(endpoint: "/routine-logs/${widget.id}").then((data) {
-        if (data.isNotEmpty) {
-          final json = jsonDecode(data);
-          final body = json["data"];
-          final routineLogJson = body["getRoutineLog"];
-          if (routineLogJson != null) {
-            final log = RoutineLog.fromJson(routineLogJson);
-            setState(() {
-              _loading = false;
-              _log = RoutineLogDto.toDto(log);
-            });
-          } else {
-            setState(() {
-              _loading = false;
-            });
-          }
-        }
-      });
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-    if (widget.showSummary) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final log = _log;
-        if (log != null) {
-          navigateWithSlideTransition(
-              context: context, child: RoutineLogSummaryScreen(log: log));
-        }
-      });
-    }
-  }
-
   void _showBottomSheet() {
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
-        child: Column(children: [
+        isScrollControlled: false,
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
@@ -382,7 +262,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(FontAwesomeIcons.download, size: 18),
             horizontalTitleGap: 6,
-            title: Text("Save as template"),
+            title: Text("Save as template into..."),
             onTap: _createTemplate,
           ),
           ListTile(
@@ -400,11 +280,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                     fontSize: 16)),
             onTap: _deleteLog,
           ),
-        ]));
-  }
-
-  void _onShareLog({required RoutineLogDto log}) {
-    navigateToShareableScreen(context: context, log: log);
+        ]),
+        ));
   }
 
   void _showLoadingScreen() {
@@ -434,24 +311,28 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   void _editLog() async {
     Navigator.of(context).pop();
-    final log = _log;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final log = controller.logWhereId(id: widget.id);
+
     if (log != null) {
       final copyOfLog = log.copyWith();
       final arguments = RoutineLogArguments(
           log: copyOfLog, editorMode: RoutineEditorMode.edit);
-      final updatedLog = await navigateToRoutineEditorAndReturnLog(
+      await navigateToRoutineEditorAndReturnLog(
           context: context, arguments: arguments);
-      if (updatedLog != null && mounted) {
-        setState(() {
-          _log = updatedLog;
-        });
-      }
+      // No need to update state - controller will notify listeners
     }
   }
 
   void _editDuration() {
     Navigator.of(context).pop();
-    final log = _log;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final log = controller.logWhereId(id: widget.id);
+
     if (log != null) {
       showDatetimeRangePicker(
           context: context,
@@ -460,16 +341,11 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
           onChangedDateTimeRange: (DateTimeRange datetimeRange) async {
             Navigator.of(context).pop();
             final updatedLog = log.copyWith(
-                startTime: datetimeRange.start,
-                endTime: datetimeRange.end,
-                createdAt: datetimeRange.start,
-                updatedAt: DateTime.now());
-            await Provider.of<ExerciseAndRoutineController>(context,
+                startTime: datetimeRange.start, endTime: datetimeRange.end);
+            await Provider.of<SupabaseExerciseAndRoutineController>(context,
                     listen: false)
                 .updateLog(log: updatedLog);
-            setState(() {
-              _log = updatedLog;
-            });
+            // No need to update state - controller will notify listeners
           });
     }
   }
@@ -477,61 +353,118 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   void _createTemplate() async {
     Navigator.of(context).pop();
 
-    final log = _log;
-    if (log != null) {
-      _showLoadingScreen();
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final log = controller.logWhereId(id: widget.id);
 
-      try {
-        final exercises = log.exerciseLogs.map((exerciseLog) {
-          final uncheckedSets = exerciseLog.sets
-              .map((set) => set.copyWith(checked: false))
-              .toList();
+    if (log == null) return;
 
-          /// [Exercise.duration] exercises do not have sets in templates
-          /// This is because we only need to store the duration of the exercise in [RoutineEditorType.log] i.e data is log in realtime
-          final sets = withDurationOnly(type: exerciseLog.exercise.type)
-              ? <SetDto>[]
-              : uncheckedSets;
-          return exerciseLog.copyWith(sets: sets);
-        }).toList();
-        final templateToCreate = RoutineTemplateDto(
-            id: "",
-            name: log.name,
-            notes: log.notes,
-            exerciseTemplates: exercises,
-            planId: defaultPlanId,
-            owner: "",
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now());
+    // Get all plans
+    final plans = controller.plans;
 
-        final createdTemplate = await Provider.of<ExerciseAndRoutineController>(
-                context,
-                listen: false)
-            .saveTemplate(templateDto: templateToCreate);
-        if (mounted) {
-          if (createdTemplate != null) {
-            navigateToRoutineTemplatePreview(
-                context: context, template: createdTemplate);
+    // Show plan picker to select which plan to save template into
+    _showPlanPickerForTemplate(log: log, plans: plans.toList());
+  }
+
+  void _showPlanPickerForTemplate(
+      {required RoutineLogDto log, required List<RoutinePlanDto> plans}) {
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: PlanPicker(
+        title: "Save as template into...",
+        plans: plans,
+        onSelect: (selectedPlan) async {
+          Navigator.of(context).pop();
+          await _doCreateTemplate(log: log, planId: selectedPlan.id);
+        },
+        onCreatePlan: () async {
+          Navigator.of(context).pop(); // Close bottom sheet
+          // Navigate to create a new plan
+          final emptyPlan = RoutinePlanDto(id: "", name: "", notes: "");
+          final arguments = RoutinePlanArguments(plan: emptyPlan);
+          final newPlan = await navigateToRoutinePlanEditor(
+            context: context,
+            arguments: arguments,
+          );
+          // If plan was created, show picker again with the new plan
+          if (newPlan != null && mounted) {
+            final controller =
+                Provider.of<SupabaseExerciseAndRoutineController>(context,
+                    listen: false);
+            _showPlanPickerForTemplate(
+                log: log, plans: controller.plans.toList());
           }
-        }
-      } catch (_) {
-        if (mounted) {
+        },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _doCreateTemplate(
+      {required RoutineLogDto log, required String planId}) async {
+    _showLoadingScreen();
+
+    try {
+      final exercises = log.exerciseLogs.map((exerciseLog) {
+        final uncheckedSets = exerciseLog.sets
+            .map((set) => set.copyWith(checked: false))
+            .toList();
+
+        /// [Exercise.duration] exercises do not have sets in templates
+        final List<SetDto> sets =
+            withDurationOnly(type: exerciseLog.exercise.type)
+                ? <SetDto>[]
+                : uncheckedSets;
+        return exerciseLog.copyWith(sets: sets);
+      }).toList();
+
+      final templateToCreate = RoutineTemplateDto(
+          planId: planId,
+          name: log.name,
+          notes: log.notes,
+          exerciseTemplates: exercises);
+
+      final createdTemplate =
+          await Provider.of<SupabaseExerciseAndRoutineController>(context,
+                  listen: false)
+              .saveTemplate(templateDto: templateToCreate);
+
+      _hideLoadingScreen();
+
+      if (mounted) {
+        if (createdTemplate != null) {
+          navigateToRoutineTemplatePreview(
+              context: context, template: createdTemplate);
+        } else {
           showSnackbar(
               context: context,
               message: "Oops, we are unable to create template");
         }
-      } finally {
-        _hideLoadingScreen();
+      }
+    } catch (e) {
+      _hideLoadingScreen();
+      debugPrint('Error creating template: $e');
+      if (mounted) {
+        showSnackbar(
+            context: context,
+            message: "Oops, we are unable to create template: $e");
       }
     }
   }
 
   void _doDeleteLog() async {
-    final log = _log;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final log = controller.logWhereId(id: widget.id);
+
     if (log != null) {
       try {
-        await Provider.of<ExerciseAndRoutineController>(context, listen: false)
-            .removeLog(log: log);
+        await controller.removeLog(log: log);
         if (mounted) {
           context.pop();
         }
@@ -563,91 +496,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         rightActionLabel: 'Delete',
         isRightActionDestructive: true);
   }
-
-  TrendSummary _analyzeWeeklyTrends({required List<double> volumes}) {
-    // 1. Handle the case when there's no volume data at all
-    if (volumes.isEmpty) {
-      return TrendSummary(
-        trend: Trend.none,
-        average: 0,
-        summary:
-            "No training data available yet. Log some sessions to start tracking your progress!",
-      );
-    }
-
-    // 2. Handle the case when there's only one logged volume
-    if (volumes.length == 1) {
-      return TrendSummary(
-        trend: Trend.none,
-        average: volumes.first,
-        summary: "You've logged your first session's volume. "
-            "Great job! Keep logging more data to see trends over time.",
-      );
-    }
-
-    // 3. Now we can safely assume volumes has 2 or more entries
-    final previousVolumes = volumes.sublist(0, volumes.length - 1);
-    final averageOfPrevious =
-        previousVolumes.reduce((a, b) => a + b) / previousVolumes.length;
-    final lastWeekVolume = volumes.last;
-
-    if (lastWeekVolume == 0) {
-      return TrendSummary(
-        trend: Trend.none,
-        average: averageOfPrevious,
-        summary:
-            "No training data available for this session. Log some workouts to continue tracking your progress!",
-      );
-    }
-
-    final difference = lastWeekVolume - averageOfPrevious;
-    final double percentageChange =
-        averageOfPrevious == 0 ? 100.0 : (difference / averageOfPrevious) * 100;
-
-    // Decide the trend
-    const threshold = 5; // threshold for stable vs up/down
-    late final Trend trend;
-
-    if (percentageChange > threshold) {
-      trend = Trend.up;
-    } else if (percentageChange < -threshold) {
-      trend = Trend.down;
-    } else {
-      trend = Trend.stable;
-    }
-
-    final variation = "${percentageChange.abs().toStringAsFixed(1)}%";
-    switch (trend) {
-      case Trend.up:
-        return TrendSummary(
-          trend: Trend.up,
-          average: averageOfPrevious,
-          summary:
-              "🌟🌟 This session's volume is $variation higher than your average. Nice job building momentum!",
-        );
-      case Trend.down:
-        return TrendSummary(
-          trend: Trend.down,
-          average: averageOfPrevious,
-          summary:
-              "📉 This session's volume is $variation lower than your average. Consider extra rest or checking your form.",
-        );
-      case Trend.stable:
-        return TrendSummary(
-          trend: Trend.stable,
-          average: averageOfPrevious,
-          summary:
-              "🔄 Your volume changed by about $variation compared to your session average. "
-              "Stay consistent to see long-term progress.",
-        );
-      case Trend.none:
-        return TrendSummary(
-          trend: Trend.none,
-          average: averageOfPrevious,
-          summary: "🤔 Unable to identify trends.",
-        );
-    }
-  }
 }
 
 class _StatisticsInformation {
@@ -671,7 +519,7 @@ class _StatisticWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final leading = FaIcon(icon, size: 14);
@@ -682,45 +530,31 @@ class _StatisticWidget extends StatelessWidget {
           title: information.title,
           description: information.description),
       child: Container(
-        width: 120,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDarkMode
-              ? sapphireDark80
-              : Colors.grey.shade200, // Background color of the container
-          borderRadius:
-              BorderRadius.circular(5), // Border radius for rounded corners
+          color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(5),
         ),
-        child: Stack(children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  leading,
-                  const SizedBox(
-                    width: 6,
-                  ),
-                  Text(subtitle.toUpperCase(),
-                      style: Theme.of(context).textTheme.bodySmall)
-                ],
-              ),
-              const SizedBox(
-                height: 6,
-              ),
-              Text(title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(
-                height: 16,
-              ),
-            ],
-          ),
-          Positioned.fill(
-            child: const Align(
-                alignment: Alignment.bottomRight,
-                child: FaIcon(FontAwesomeIcons.lightbulb, size: 10)),
-          ),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                leading,
+                const SizedBox(
+                  width: 6,
+                ),
+                Text(subtitle.toUpperCase(),
+                    style: Theme.of(context).textTheme.bodySmall)
+              ],
+            ),
+            const SizedBox(
+              height: 6,
+            ),
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+          ],
+        ),
       ),
     );
   }

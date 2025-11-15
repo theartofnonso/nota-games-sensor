@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tracker_app/colors.dart';
 import 'package:tracker_app/utils/theme/app_bar_theme.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 import 'package:tracker_app/utils/theme/floating_action_button_theme.dart';
 import 'package:tracker_app/utils/theme/input_textfield_theme.dart';
 import 'package:tracker_app/utils/theme/navigation_bar_theme.dart';
@@ -16,18 +17,19 @@ class TRKRTheme {
   static ThemeData lightTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: Colors.white,
-      primaryColor: Colors.white,
+      fontFamily: 'Space Mono',
+      scaffoldBackgroundColor: lightBackground,
+      primaryColor: freshGreen,
       colorScheme: ColorScheme(
         brightness: Brightness.light,
-        primary: Colors.black,
+        primary: freshGreen,
         onPrimary: Colors.white,
-        secondary: Colors.black,
+        secondary: Colors.grey.shade800,
         onSecondary: Colors.white,
-        error: Colors.black,
+        error: Colors.red.shade600,
         onError: Colors.white,
-        surface: Colors.grey.shade200,
-        onSurface: Colors.black,
+        surface: lightContainer,
+        onSurface: Colors.grey.shade900,
       ),
       textTheme: TRKRTextTheme.lightTheme,
       iconTheme: TRKRIconTheme.lightTheme,
@@ -44,24 +46,26 @@ class TRKRTheme {
       ),
       menuBarTheme: TRKRMenuBarTheme.lightTheme,
       textSelectionTheme: TextSelectionThemeData(cursorColor: Colors.white),
-      floatingActionButtonTheme: TRKRFloatingActionButtonTheme.lightTheme);
+      floatingActionButtonTheme: TRKRFloatingActionButtonTheme.lightTheme,
+      extensions: const [TRKRColors.light]);
 
   static ThemeData darkTheme = ThemeData(
       colorScheme: const ColorScheme(
         brightness: Brightness.dark,
-        primary: Colors.white,
-        onPrimary: Colors.black,
-        secondary: Colors.white,
-        onSecondary: Colors.black,
-        error: Colors.black,
+        primary: success,
+        onPrimary: Colors.white,
+        secondary: info,
+        onSecondary: Colors.white,
+        error: error,
         onError: Colors.white,
-        surface: sapphireDark,
-        onSurface: Colors.white,
+        surface: bgSecondary,
+        onSurface: textPrimary,
       ),
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: sapphireDark80,
-      primaryColor: Colors.white,
+      fontFamily: 'Space Mono',
+      scaffoldBackgroundColor: bgPrimary,
+      primaryColor: success,
       textTheme: TRKRTextTheme.darkTheme,
       iconTheme: TRKRIconTheme.darkTheme,
       listTileTheme: TRKRListTileTheme.darkTheme,
@@ -76,5 +80,6 @@ class TRKRTheme {
       ),
       menuBarTheme: TRKRMenuBarTheme.darkTheme,
       textSelectionTheme: TextSelectionThemeData(cursorColor: Colors.white),
-      navigationBarTheme: TRKRNavigationBarTheme.darkTheme);
+      navigationBarTheme: TRKRNavigationBarTheme.darkTheme,
+      extensions: const [TRKRColors.dark]);
 }

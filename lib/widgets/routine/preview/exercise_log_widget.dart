@@ -4,10 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/exercise_type_enums.dart';
 import 'package:tracker_app/widgets/routine/preview/set_headers/single_set_header.dart';
 
-import '../../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/exercise_log_dto.dart';
-import '../../../dtos/set_dtos/set_dto.dart';
-import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
@@ -41,7 +39,7 @@ enum StrengthStatus {
   ),
   insufficient(
       description:
-          "You’ve logged only one training. Great job! Log more sessions to identify trends over time.");
+          "You've logged only one training. Great job! Log more sessions to track your progress.");
 
   const StrengthStatus({required this.description});
 
@@ -52,11 +50,11 @@ enum WeightAndRPE {
   weight(
       name: "Weight",
       description:
-          "Track your heaviest weight lifted. An upward trend highlights your strength gains and consistent improvement over time."),
+          "Track your heaviest weight lifted to monitor your strength gains and consistent improvement over time."),
   rpe(
       name: "Volume and RPE",
       description:
-          "Volume shows how much work you do, while RPE reveals how hard it feels. An upward volume trend shows you’re progressively handling more work. While a downward RPE trend at the same workload suggests the exercises are feeling easier.");
+          "Volume shows how much work you do, while RPE reveals how hard it feels. Progressive volume shows you're handling more work, while lower RPE at the same workload suggests the exercises are feeling easier.");
 
   const WeightAndRPE({required this.name, required this.description});
 
@@ -78,9 +76,6 @@ class ExerciseLogWidget extends StatefulWidget {
 class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     final otherSuperSet = widget.superSet;
 
     final exercise = widget.exerciseLog.exercise;
@@ -88,13 +83,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     final exerciseType = exercise.type;
 
     final routineLogController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
 
     final pastExerciseLogs = routineLogController.whereExerciseLogsBefore(
-        exercise: exercise, date: widget.exerciseLog.createdAt);
-
-    final pastSets =
-        routineLogController.wherePrevSetsForExercise(exercise: exercise);
+        exercise: exercise, dateTime: widget.exerciseLog.createdAt);
 
     final pbs = calculatePBs(
         pastExerciseLogs: pastExerciseLogs,
@@ -134,22 +127,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             Text(widget.exerciseLog.notes,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium),
-          // Show progression summary for weight exercises
-          if (exerciseType == ExerciseType.weights)
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 12),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isDarkMode ? Colors.white10 : Colors.black38,
-                  width: 1.0,
-                ),
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: summarizeProgression(
-                  values: _weightsForExercise(pastSets: pastSets),
-                  context: context,
-                  textAlign: TextAlign.center),
-            ),
           switch (exerciseType) {
             ExerciseType.weights => DoubleSetHeader(
                 firstLabel: weightUnit().toUpperCase(), secondLabel: 'REPS'),
@@ -164,11 +141,5 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         ],
       ),
     );
-  }
-
-  List<num> _weightsForExercise({required List<SetDto> pastSets}) {
-    return pastSets.reversed
-        .map((set) => (set as WeightAndRepsSetDto).weight)
-        .toList();
   }
 }

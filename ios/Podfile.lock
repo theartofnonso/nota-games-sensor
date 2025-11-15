@@ -1,32 +1,10 @@
 PODS:
-  - amplify_auth_cognito (0.0.1):
-    - Flutter
-    - FlutterMacOS
-  - amplify_datastore (0.0.1):
-    - amplify_datastore/Amplify (= 0.0.1)
-    - amplify_datastore/AWSDataStorePlugin (= 0.0.1)
-    - amplify_datastore/AWSPluginsCore (= 0.0.1)
-    - Flutter
-  - amplify_datastore/Amplify (0.0.1):
-    - Flutter
-  - amplify_datastore/AWSDataStorePlugin (0.0.1):
-    - amplify_datastore/Amplify
-    - amplify_datastore/AWSPluginsCore
-    - Flutter
-    - SQLite.swift (= 0.13.2)
-  - amplify_datastore/AWSPluginsCore (0.0.1):
-    - amplify_datastore/Amplify
-    - Flutter
-  - amplify_secure_storage (0.0.1):
-    - Flutter
-  - connectivity_plus (0.0.1):
+  - app_links (6.4.1):
     - Flutter
   - device_info_plus (0.0.1):
     - Flutter
   - Flutter (1.0.0)
   - flutter_local_notifications (0.0.1):
-    - Flutter
-  - image_picker_ios (0.0.1):
     - Flutter
   - in_app_review (2.0.0):
     - Flutter
@@ -37,73 +15,50 @@ PODS:
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - PostHog (3.34.0)
+  - PostHog (3.35.0)
   - posthog_flutter (0.0.1):
     - Flutter
     - FlutterMacOS
     - PostHog (< 4.0.0, >= 3.32.0)
   - Sentry/HybridSDK (8.56.2)
-  - sentry_flutter (9.7.0):
+  - sentry_flutter (9.8.0):
     - Flutter
     - FlutterMacOS
     - Sentry/HybridSDK (= 8.56.2)
-  - share_plus (0.0.1):
-    - Flutter
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - SQLite.swift (0.13.2):
-    - SQLite.swift/standard (= 0.13.2)
-  - SQLite.swift/standard (0.13.2)
   - url_launcher_ios (0.0.1):
     - Flutter
-  - video_player_avfoundation (0.0.1):
-    - Flutter
-    - FlutterMacOS
 
 DEPENDENCIES:
-  - amplify_auth_cognito (from `.symlinks/plugins/amplify_auth_cognito/darwin`)
-  - amplify_datastore (from `.symlinks/plugins/amplify_datastore/ios`)
-  - amplify_secure_storage (from `.symlinks/plugins/amplify_secure_storage/ios`)
-  - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
+  - app_links (from `.symlinks/plugins/app_links/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
-  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - in_app_review (from `.symlinks/plugins/in_app_review/ios`)
   - objective_c (from `.symlinks/plugins/objective_c/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - posthog_flutter (from `.symlinks/plugins/posthog_flutter/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
-  - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
-  - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
 
 SPEC REPOS:
   trunk:
     - PostHog
     - Sentry
-    - SQLite.swift
 
 EXTERNAL SOURCES:
-  amplify_auth_cognito:
-    :path: ".symlinks/plugins/amplify_auth_cognito/darwin"
-  amplify_datastore:
-    :path: ".symlinks/plugins/amplify_datastore/ios"
-  amplify_secure_storage:
-    :path: ".symlinks/plugins/amplify_secure_storage/ios"
-  connectivity_plus:
-    :path: ".symlinks/plugins/connectivity_plus/ios"
+  app_links:
+    :path: ".symlinks/plugins/app_links/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
   Flutter:
     :path: Flutter
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
-  image_picker_ios:
-    :path: ".symlinks/plugins/image_picker_ios/ios"
   in_app_review:
     :path: ".symlinks/plugins/in_app_review/ios"
   objective_c:
@@ -116,37 +71,26 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/posthog_flutter/ios"
   sentry_flutter:
     :path: ".symlinks/plugins/sentry_flutter/ios"
-  share_plus:
-    :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
-  video_player_avfoundation:
-    :path: ".symlinks/plugins/video_player_avfoundation/darwin"
 
 SPEC CHECKSUMS:
-  amplify_auth_cognito: a5d9cb77abfbe05e3501ad0c45dddc81503e7074
-  amplify_datastore: f22d9ef0aeffd42cbcd3fc455f2269cd86cc66e1
-  amplify_secure_storage: 3edc30177ffefbcee786c408a21c02f8ab9f168e
-  connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
+  app_links: 3dbc685f76b1693c66a6d9dd1e9ab6f73d97dc0a
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
-  image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   in_app_review: 7dd1ea365263f834b8464673f9df72c80c17c937
   objective_c: 89e720c30d716b036faf9c9684022048eee1eee2
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
-  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
-  PostHog: bbb7eaecb2f5a286d9da3c833cbb18ae08799655
+  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
+  PostHog: da83ef8bee8c21ccb2b3680054e22c85d352f142
   posthog_flutter: 9535ac2d4ab65ccb9ace3886dcc0b3105198bad5
   Sentry: b53951377b78e21a734f5dc8318e333dbfc682d7
-  sentry_flutter: 7f88e12d1882ec6e648644a7c0ff5b1466f07f99
-  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
-  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
-  SQLite.swift: 4fc2be46c36392e3b87afe6fe7f1801c1daa07ef
-  url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
-  video_player_avfoundation: 2cef49524dd1f16c5300b9cd6efd9611ce03639b
+  sentry_flutter: 4c33648b7e83310aa1fdb1b10c5491027d9643f0
+  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
+  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
 
 PODFILE CHECKSUM: 35349b6b7f6e3e259572f8f552dbeaa658459f53
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/widgets/empty_states/list_view_empty_state.dart';
 
@@ -23,7 +23,7 @@ class ExerciseHistoryLogWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final routineLogController = Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final routineLogController = Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
     final routineLog = routineLogController.logWhereId(id: exerciseLog.routineLogId ?? "");
 
     if (routineLog == null) {

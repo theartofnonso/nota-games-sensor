@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
-import '../../colors.dart';
 import '../buttons/opacity_button_widget_two.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class DatetimePicker extends StatefulWidget {
   final DateTime? initialDateTime;
@@ -36,7 +37,7 @@ class _DatetimePickerState extends State<DatetimePicker> {
           child: OpacityButtonWidgetTwo(
             onPressed: () => widget.onSelect(_dateTime),
             label: "Select date",
-            buttonColor: vibrantGreen,
+            buttonColor: Theme.of(context).colors.vibrantAccent,
           ),
         ),
       ],

@@ -1,21 +1,17 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/exercise_type_enums.dart';
+import 'package:tracker_app/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:tracker_app/widgets/search_bar.dart';
 
-import '../../../colors.dart';
-import '../../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/exercise_dto.dart';
-import '../../../enums/muscle_group_enums.dart';
-import '../../../utils/date_utils.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
-import '../../../widgets/buttons/opacity_button_widget.dart';
 import '../../../widgets/empty_states/no_list_empty_state.dart';
-import '../../../widgets/exercise/exercise_widget.dart';
+import '../../../widgets/exercise/exercise_grid_item.dart';
 import '../../editors/exercise_editor_screen.dart';
 
 class ExerciseLibraryScreen extends StatefulWidget {
@@ -36,15 +32,8 @@ class ExerciseLibraryScreen extends StatefulWidget {
 class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   late TextEditingController _searchController;
 
-  final List<MuscleGroup> _selectedMuscleGroups = [];
-
   /// Holds a list of [ExerciseDto] when filtering through a search
   List<ExerciseDto> _filteredExercises = [];
-
-  /// Holds a list of [ExerciseDto] that has been recently logged
-  late List<ExerciseDto> _recentExercises; // injected
-
-  bool _shouldShowOwnerExercises = false;
 
   /// Search through the list of exercises
   ///
@@ -85,11 +74,13 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         query.split(RegExp(r'[\s-]+')).where((q) => q.isNotEmpty).toList();
 
     // Get the list of all exercises (excluding any you want to filter out by default)
-    final allExercises =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
-            .exercises
-            .where((exercise) => !widget.excludeExercises.contains(exercise))
-            .toList();
+    final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
+    final allExercises = Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false)
+        .exercises
+        .where((exercise) => !excludeExerciseIds.contains(exercise.id))
+        .toList();
 
     // Filter by exercise type if provided
     List<ExerciseDto> filteredExercises;
@@ -98,19 +89,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
           allExercises.where((ex) => ex.type == exerciseType).toList();
     } else {
       filteredExercises = allExercises;
-    }
-
-    // Filter by muscle groups if any are selected
-    if (_selectedMuscleGroups.isNotEmpty) {
-      filteredExercises = filteredExercises
-          .where((ex) => _selectedMuscleGroups.contains(ex.primaryMuscleGroup))
-          .toList();
-    }
-
-    // Filter to owner exercises if needed
-    if (_shouldShowOwnerExercises) {
-      filteredExercises =
-          filteredExercises.where((ex) => ex.owner.isNotEmpty).toList();
     }
 
     // If the user typed nothing, you can simply show the entire filtered list
@@ -175,49 +153,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    final muscleGroups = MuscleGroup.sortedValues
-        .map((muscleGroup) => Padding(
-              padding: const EdgeInsets.only(right: 6.0),
-              child: OpacityButtonWidget(
-                  onPressed: () =>
-                      _onSelectMuscleGroup(newMuscleGroup: muscleGroup),
-                  buttonColor: _getMuscleGroup(muscleGroup: muscleGroup) != null
-                      ? vibrantGreen
-                      : null,
-                  label: muscleGroup.displayName.toUpperCase()),
-            ))
-        .toList();
-
-    final muscleGroupScrollViewHalf = MuscleGroup.values.length ~/ 2;
-
-    // —— Partition list into segments ——
-    final (recents, others) = _partitionExercises();
-
-    // Build the child list with headers
-    final listChildren = <Widget>[];
-    if (recents.isNotEmpty) {
-      listChildren
-        ..add(_buildHeader('Found in recent logs', isDarkMode: isDarkMode))
-        ..addAll(recents.map((e) => ExerciseWidget(
-              exerciseDto: e,
-              onNavigateToExercise: _navigateToExerciseHistory,
-              onSelect:
-                  widget.readOnly ? null : _navigateBackWithSelectedExercise,
-            )));
-    }
-    if (others.isNotEmpty) {
-      listChildren
-        ..add(_buildHeader('All Exercises', isDarkMode: isDarkMode))
-        ..addAll(others.map((e) => ExerciseWidget(
-              exerciseDto: e,
-              onNavigateToExercise: _navigateToExerciseHistory,
-              onSelect:
-                  widget.readOnly ? null : _navigateBackWithSelectedExercise,
-            )));
-    }
+    // Get all exercises for grid
+    final allExercises = _filteredExercises;
 
     return Scaffold(
       appBar: AppBar(
@@ -255,50 +192,28 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                     onClear: _clearSearch,
                     controller: _searchController),
               ),
-              const SizedBox(height: 10),
-              SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  scrollDirection: Axis.horizontal,
-                  child: Row(children: [
-                    OpacityButtonWidget(
-                        onPressed: _toggleOwnerExercises,
-                        buttonColor:
-                            _shouldShowOwnerExercises ? vibrantGreen : null,
-                        label: "Your Exercises".toUpperCase()),
-                    const SizedBox(width: 6),
-                    ...muscleGroups.sublist(0, muscleGroupScrollViewHalf),
-                  ])),
-              SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  scrollDirection: Axis.horizontal,
-                  child: Row(children: [
-                    ...muscleGroups.sublist(muscleGroupScrollViewHalf),
-                  ])),
               const SizedBox(height: 18),
-              listChildren.isNotEmpty
+              allExercises.isNotEmpty
                   ? Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 10.0),
-                        child: ListView.separated(
-                            padding: const EdgeInsets.only(bottom: 250),
-                            keyboardDismissBehavior:
-                                ScrollViewKeyboardDismissBehavior.onDrag,
-                            itemBuilder: (ctx, idx) => listChildren[idx],
-                            separatorBuilder: (ctx, idx) =>
-                                (listChildren[idx] is ExerciseWidget)
-                                    ? Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 14.0),
-                                        child: Divider(
-                                          height: 0.5,
-                                          color: isDarkMode
-                                              ? sapphireLighter
-                                              : Colors.grey.shade200,
-                                        ),
-                                      )
-                                    : const SizedBox.shrink(),
-                            // no separator after headers
-                            itemCount: listChildren.length),
+                      child: GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 250),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.75,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                        ),
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        itemCount: allExercises.length,
+                        itemBuilder: (context, index) {
+                          final exercise = allExercises[index];
+                          return ExerciseGridItem(
+                            exercise: exercise,
+                            onTap: () => _handleExerciseTap(exercise),
+                          );
+                        },
                       ),
                     )
                   : Expanded(
@@ -306,7 +221,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: const NoListEmptyState(
                             message:
-                                "It might feel quiet now, but exercises including yours will soon appear here."),
+                                "No exercises yet. Create your first exercise to get started."),
                       ),
                     ),
             ],
@@ -319,92 +234,83 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   // ────────────────────────────────────────────────────────────────────
   // Helpers
   // ────────────────────────────────────────────────────────────────────
-  /// Returns two lists: `recent` and `others` (order preserved inside each).
-  (List<ExerciseDto> recents, List<ExerciseDto> others) _partitionExercises() {
-    if (_recentExercises.isEmpty) return (<ExerciseDto>[], _filteredExercises);
 
-    final recentIds = _recentExercises.map((e) => e.id).toSet();
-
-    final recent = <ExerciseDto>[];
-    final others = <ExerciseDto>[];
-
-    for (final ex in _filteredExercises) {
-      (recentIds.contains(ex.id) ? recent : others).add(ex);
-    }
-    return (recent, others);
+  /// Handle exercise tap - show bottom sheet with context-aware options
+  /// - If readOnly = false (from session/template): Show "Add to workout" and "View history"
+  /// - If readOnly = true (from settings): Show only "View history"
+  void _handleExerciseTap(ExerciseDto exercise) {
+    _dismissKeyboard(context);
+    _showExerciseOptionsBottomSheet(exercise);
   }
 
-  Widget _buildHeader(String label, {required bool isDarkMode}) => Padding(
-        padding: const EdgeInsets.only(bottom: 20.0),
-        child: Text(
-          label,
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(fontSize: 16)
-              .copyWith(
-                color: isDarkMode ? Colors.white70 : Colors.blueGrey,
+  void _showExerciseOptionsBottomSheet(ExerciseDto exercise) {
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Text(
+                exercise.name,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
+            ),
+            if (!widget.readOnly) ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const FaIcon(FontAwesomeIcons.circlePlus, size: 20),
+                horizontalTitleGap: 6,
+                title: const Text("Add to workout"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateBackWithSelectedExercise(exercise);
+                },
+              ),
+            ],
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(FontAwesomeIcons.clockRotateLeft, size: 20),
+              horizontalTitleGap: 6,
+              title: const Text("View history"),
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToExerciseHistory(exercise);
+              },
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 
   void _loadOrSyncExercises() {
     final exerciseType = widget.type;
+    final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
 
-    _filteredExercises =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
-            .exercises
-            .where((exercise) => !widget.excludeExercises.contains(exercise))
-            .where((exercise) =>
-                exerciseType != null ? exercise.type == widget.type : true)
-            .toList();
+    _filteredExercises = Provider.of<SupabaseExerciseAndRoutineController>(
+            context,
+            listen: false)
+        .exercises
+        .where((exercise) => !excludeExerciseIds.contains(exercise.id))
+        .where((exercise) =>
+            exerciseType != null ? exercise.type == widget.type : true)
+        .toList();
 
     _runSearch();
   }
-
-  void _toggleOwnerExercises() {
-    setState(() {
-      _shouldShowOwnerExercises = !_shouldShowOwnerExercises;
-    });
-    _runSearch();
-  }
-
-  void _onSelectMuscleGroup({required MuscleGroup newMuscleGroup}) {
-    final oldMuscleGroup = _selectedMuscleGroups.firstWhereOrNull(
-        (previousMuscleGroup) => previousMuscleGroup == newMuscleGroup);
-    setState(() {
-      if (oldMuscleGroup != null) {
-        _selectedMuscleGroups.remove(oldMuscleGroup);
-      } else {
-        _selectedMuscleGroups.add(newMuscleGroup);
-      }
-      _runSearch();
-    });
-  }
-
-  MuscleGroup? _getMuscleGroup({required MuscleGroup muscleGroup}) =>
-      _selectedMuscleGroups.firstWhereOrNull(
-          (previousMuscleGroup) => previousMuscleGroup == muscleGroup);
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
     _loadOrSyncExercises();
-
-    final dateRange = lastQuarterDateTimeRange();
-
-    final allRecentExercises =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false)
-            .whereLogsIsWithinRange(range: dateRange)
-            .expand((log) => log.exerciseLogs)
-            .map((exerciseLog) => exerciseLog.exercise);
-
-    // Remove duplicates by converting to Set and back to List based on exercise ID
-    final seenIds = <String>{};
-    _recentExercises = allRecentExercises
-        .where((exercise) => seenIds.add(exercise.id))
-        .toList();
   }
 
   @override

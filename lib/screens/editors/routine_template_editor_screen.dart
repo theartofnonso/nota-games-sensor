@@ -3,14 +3,15 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:tracker_app/controllers/exercise_log_controller.dart';
 import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
 import 'package:tracker_app/enums/routine_editor_type_enums.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
+import 'package:tracker_app/widgets/bottom_sheets/app_bottom_sheet.dart';
 
-import '../../colors.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/set_dtos/weight_and_reps_dto.dart';
@@ -18,7 +19,6 @@ import '../../utils/general_utils.dart';
 import '../../utils/routine_editors_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/routine/editors/exercise_log_grid_item.dart';
 import '../../widgets/weight_plate_calculator.dart';
 
@@ -58,9 +58,10 @@ class _RoutineTemplateEditorScreenState
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
           final onlyExercise = selectedExercises.first;
-          final pastSets =
-              Provider.of<ExerciseAndRoutineController>(context, listen: false)
-                  .whereRecentSetsForExercise(exercise: onlyExercise);
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                  context,
+                  listen: false)
+              .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
   }
@@ -100,7 +101,8 @@ class _RoutineTemplateEditorScreenState
         context: context,
         exercisesToExclude: excludeExercises,
         onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<ExerciseAndRoutineController>(context,
+          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                  context,
                   listen: false)
               .whereRecentSetsForExercise(exercise: selectedExercises.first);
           controller.replaceExerciseLog(
@@ -111,16 +113,8 @@ class _RoutineTemplateEditorScreenState
   }
 
   bool _validateRoutineTemplateInputs() {
-    final exerciseProviders =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final exercises = exerciseProviders.exerciseLogs;
-
     if (_templateNameController.text.isEmpty) {
       _showSnackbar('Please provide a name for this workout');
-      return false;
-    }
-    if (exercises.isEmpty) {
-      _showSnackbar("Workout must have exercise(s)");
       return false;
     }
     return true;
@@ -142,12 +136,10 @@ class _RoutineTemplateEditorScreenState
         name: _templateNameController.text,
         exerciseTemplates: exercises,
         notes: _templateNotesController.text,
-        owner: "",
-        planId: widget.planId,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now());
+        planId: widget.planId);
 
-    await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+    await Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false)
         .saveTemplate(templateDto: template);
     _navigateBack();
   }
@@ -184,14 +176,14 @@ class _RoutineTemplateEditorScreenState
     return template.copyWith(
         name: _templateNameController.text.trim(),
         notes: _templateNotesController.text.trim(),
-        exerciseTemplates: exerciseLogs,
-        updatedAt: DateTime.now());
+        exerciseTemplates: exerciseLogs);
   }
 
   void _doUpdateRoutineTemplate(
       {required RoutineTemplateDto updatedTemplate}) async {
-    final templateProvider =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+    final templateProvider = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
 
     final updatedRoutineTemplate =
         _getUpdatedRoutineTemplate(template: updatedTemplate);
@@ -251,16 +243,15 @@ class _RoutineTemplateEditorScreenState
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
-
-    final template = widget.template;
 
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
 
     final routineTemplateController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: true);
 
     if (routineTemplateController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -374,7 +365,7 @@ class _RoutineTemplateEditorScreenState
                           controller: _templateNotesController,
                           cursorColor: isDarkMode ? Colors.white : Colors.black,
                           decoration: InputDecoration(
-                            hintText: "Notes",
+                            hintText: "Notes (optional)",
                           ),
                           maxLines: null,
                           keyboardType: TextInputType.text,
@@ -398,29 +389,21 @@ class _RoutineTemplateEditorScreenState
                               children: children),
                         ),
                       ),
-                    if (exerciseTemplates.isNotEmpty)
-                      SafeArea(
-                        minimum: EdgeInsets.symmetric(horizontal: 20),
-                        child: SizedBox(
-                            width: double.infinity,
-                            child: OpacityButtonWidgetTwo(
-                                buttonColor: vibrantGreen,
-                                label: template != null
-                                    ? "Update Workout"
-                                    : "Create Workout",
-                                onPressed: template != null
-                                    ? _updateRoutineTemplate
-                                    : _createRoutineTemplate)),
-                      ),
-                    if (exerciseTemplates.isEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: const NoListEmptyState(
-                              message:
-                                  "Tap the + button to start adding exercises to your workout template"),
-                        ),
-                      ),
+                    const SizedBox(height: 10),
+                    SafeArea(
+                      minimum: EdgeInsets.symmetric(horizontal: 20),
+                      child: SizedBox(
+                          width: double.infinity,
+                          child: OpacityButtonWidgetTwo(
+                              buttonColor:
+                                  Theme.of(context).colors.vibrantAccent,
+                              label: widget.template?.id.isNotEmpty ?? false
+                                  ? "Update Workout"
+                                  : "Create Workout",
+                              onPressed: widget.template?.id.isNotEmpty ?? false
+                                  ? _updateRoutineTemplate
+                                  : _createRoutineTemplate)),
+                    ),
                   ],
                 ),
               ),
@@ -430,11 +413,11 @@ class _RoutineTemplateEditorScreenState
   }
 
   void _showWeightCalculator() {
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
+        isScrollControlled: false,
         child: WeightPlateCalculator(
-            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0),
-        padding: EdgeInsets.zero);
+            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0));
   }
 
   @override
@@ -452,9 +435,10 @@ class _RoutineTemplateEditorScreenState
     final exercises = widget.template?.exerciseTemplates;
     if (exercises != null && exercises.isNotEmpty) {
       final updatedExerciseLogs = exercises.map((exerciseLog) {
-        final previousSets =
-            Provider.of<ExerciseAndRoutineController>(context, listen: false)
-                .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
+        final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
+                context,
+                listen: false)
+            .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
         if (previousSets.isNotEmpty) {
           final unCheckedSets = previousSets
               .take(exerciseLog.sets.length)

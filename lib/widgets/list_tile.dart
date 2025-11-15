@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/colors.dart';
 
 class ThemeListTile extends StatelessWidget {
   final Widget child;
@@ -8,13 +7,13 @@ class ThemeListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     return Container(
         decoration: BoxDecoration(
-          color: isDarkMode ? sapphireDark80 : Colors.grey.shade200, // Background color
-          borderRadius: BorderRadius.circular(5), // Rounded corners
+          color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(5),
         ),
         child: child);
   }

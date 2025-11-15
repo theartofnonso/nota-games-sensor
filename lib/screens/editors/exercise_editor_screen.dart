@@ -6,18 +6,20 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
+import 'package:tracker_app/utils/exercise_utils.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
-import '../../colors.dart';
-import '../../controllers/exercise_and_routine_controller.dart';
+import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/exercise_type_enums.dart';
 import '../../logger.dart';
 import '../../utils/general_utils.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/list_tile.dart';
 import '../../widgets/picker.dart';
-import '../exercise/exercise_type_screen.dart';
+import '../../widgets/muscle_group/muscle_group_grid_picker.dart';
 
 class ExerciseEditorScreen extends StatefulWidget {
   static const routeName = '/exercise-editor';
@@ -40,11 +42,12 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final exerciseEditorController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: true);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: true);
 
     if (exerciseEditorController.errorMessage.isNotEmpty) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -109,8 +112,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                       children: [
                         LabelDivider(
                           label: "Select muscle group to train".toUpperCase(),
-                          labelColor: isDarkMode ? Colors.white : Colors.black,
-                          dividerColor: sapphireLighter,
+                          labelColor: Theme.of(context).colorScheme.onSurface,
+                          dividerColor: Theme.of(context).colors.dividerColor,
                           fontSize: 14,
                         ),
                         Text(
@@ -153,9 +156,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                           LabelDivider(
                             label:
                                 "Choose how to log this exercise".toUpperCase(),
-                            labelColor:
-                                isDarkMode ? Colors.white : Colors.black,
-                            dividerColor: sapphireLighter,
+                            labelColor: Theme.of(context).colorScheme.onSurface,
+                            dividerColor: Theme.of(context).colors.dividerColor,
                             fontSize: 14,
                           ),
                           Text(
@@ -170,8 +172,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                                           : Colors.black)),
                           ThemeListTile(
                             child: ListTile(
-                              onTap: _navigateToExerciseTypeScreen,
-                              leading: Text(_exerciseType.name,
+                              onTap: _selectExerciseType,
+                              leading: Text(_exerciseType.description,
                                   textAlign: TextAlign.start,
                                   style: Theme.of(context)
                                       .textTheme
@@ -199,7 +201,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                           child: OpacityButtonWidgetTwo(
                               onPressed: _createExercise,
                               label: "Create Exercise",
-                              buttonColor: vibrantGreen),
+                              buttonColor:
+                                  Theme.of(context).colors.vibrantAccent),
                         ),
                       ),
                   ]),
@@ -214,22 +217,22 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
   void _selectPrimaryMuscleGroup() {
     FocusScope.of(context).unfocus();
-    displayBottomSheet(
-        height: 240,
-        context: context,
-        child: GenericPicker(
-          items: MuscleGroup.sortedValues,
-          labelBuilder: (muscle) => muscle.name,
-          onItemSelected: (value) {
-            Navigator.of(context).pop();
-            setState(() {
-              _primaryMuscleGroup = value;
-            });
-          },
-        ));
+    showAppBottomSheet(
+      context: context,
+      isDraggable: true,
+      child: MuscleGroupGridPicker(
+        selectedMuscleGroup: _primaryMuscleGroup,
+        onSelect: (muscleGroup) {
+          Navigator.of(context).pop();
+          setState(() {
+            _primaryMuscleGroup = muscleGroup;
+          });
+        },
+      ),
+    );
   }
 
-  void _navigateToExerciseTypeScreen() async {
+  void _selectExerciseType() {
     if (widget.exercise != null) {
       showSnackbar(
           context: context,
@@ -237,62 +240,111 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
       return;
     }
 
-    /// We don't want to allow editing of exercise type once created.
-    final type = await Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) =>
-            ExerciseTypeScreen(exerciseType: _exerciseType))) as ExerciseType?;
-    if (type != null) {
-      setState(() {
-        _exerciseType = type;
-      });
-    }
+    FocusScope.of(context).unfocus();
+    showAppBottomSheet(
+        context: context,
+        isScrollControlled: false,
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: SizedBox(
+            height: 240,
+            child: GenericPicker(
+              items: ExerciseType.values,
+              labelBuilder: (type) => type.description,
+              onItemSelected: (value) {
+                Navigator.of(context).pop();
+                setState(() {
+                  _exerciseType = value;
+                });
+              },
+            ),
+          ),
+        ));
   }
 
   void _createExercise() async {
     final exerciseName = _exerciseNameController.text.trim();
 
-    if (exerciseName.isEmpty) return;
-
     if (exerciseName.isEmpty) {
       _showSnackbar("Please provide a name for this exercise");
-    } else {
-      final exercise = ExerciseDto(
-          id: "",
-          name: exerciseName,
-          primaryMuscleGroup: _primaryMuscleGroup,
-          secondaryMuscleGroups: [],
-          type: _exerciseType,
-          owner: "");
+      return;
+    }
 
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
-          .saveExercise(exerciseDto: exercise);
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(context,
+        listen: false);
 
-      logger.i("created exercise ${exercise.toString()}");
-      if (mounted) {
-        context.pop();
+    // Check for similar exercises
+    final similarExercises = findSimilarExercises(
+      exerciseName: exerciseName,
+      allExercises: controller.exercises.toList(),
+    );
+
+    // If similar exercises found, show dialog
+    if (similarExercises.isNotEmpty) {
+      final shouldProceed = await showSimilarExercisesDialog(
+        context: context,
+        exerciseName: exerciseName,
+        similarExercises: similarExercises,
+      );
+
+      if (!shouldProceed) {
+        return;
       }
+    }
+
+    final exercise = ExerciseDto(
+        name: exerciseName,
+        primaryMuscleGroup: _primaryMuscleGroup,
+        type: _exerciseType);
+
+    await controller.saveExercise(exerciseDto: exercise);
+
+    logger.i("created exercise ${exercise.toString()}");
+    if (mounted) {
+      context.pop();
     }
   }
 
   void _updateExercise() async {
     final exerciseName = _exerciseNameController.text.trim();
 
-    if (exerciseName.isEmpty) return;
-
     if (exerciseName.isEmpty) {
       _showSnackbar("Please provide a name for this exercise");
-    } else {
+      return;
+    }
+
       final exercise = widget.exercise;
       if (exercise == null) return;
 
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(context,
+        listen: false);
+
+    // Check for similar exercises (excluding the current exercise being updated)
+    final similarExercises = findSimilarExercises(
+      exerciseName: exerciseName,
+      allExercises: controller.exercises.toList(),
+      excludeExercise: exercise,
+    );
+
+    // If similar exercises found, show dialog
+    if (similarExercises.isNotEmpty) {
+      final shouldProceed = await showSimilarExercisesDialog(
+        context: context,
+        exerciseName: exerciseName,
+        similarExercises: similarExercises,
+      );
+
+      if (!shouldProceed) {
+        return;
+      }
+    }
+
       final exerciseToBeUpdated = exercise.copyWith(
           name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
-          .updateExercise(exercise: exerciseToBeUpdated);
+    await controller.updateExercise(exercise: exerciseToBeUpdated);
 
       if (mounted) {
         context.pop(exerciseToBeUpdated);
-      }
     }
   }
 

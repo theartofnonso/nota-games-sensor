@@ -1,49 +1,37 @@
-import 'dart:convert';
-
-import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
-import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:tracker_app/dtos/graph/chart_point_dto.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
-import 'package:tracker_app/shared_prefs.dart';
+import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
-import '../../colors.dart';
-import '../../controllers/exercise_and_routine_controller.dart';
+import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../dtos/viewmodels/routine_template_arguments.dart';
-import '../../enums/chart_unit_enum.dart';
-import '../../enums/posthog_analytics_event.dart';
 import '../../enums/routine_editor_type_enums.dart';
-import '../../enums/routine_preview_type_enum.dart';
-import '../../models/RoutineTemplate.dart';
-import '../../urls.dart';
-import '../../utils/data_trend_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
-import '../../utils/https_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
-import '../../widgets/calendar/calendar_logs.dart';
-import '../../widgets/chart/line_chart_widget.dart';
 import '../../widgets/chip_one.dart';
+import '../../dtos/appsync/routine_log_dto.dart';
 import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
-import '../../widgets/information_containers/information_container.dart';
 import '../../widgets/monthly_insights/muscle_groups_family_frequency_widget.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
+import '../../widgets/routine/preview/routine_log_widget.dart';
 
 enum _OriginalNewValues {
   originalValues(
@@ -72,25 +60,20 @@ class RoutineTemplateScreen extends StatefulWidget {
 }
 
 class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
-  RoutineTemplateDto? _template;
-
   bool _loading = false;
-
-  RecoveryResult? _selectedMuscleAndRecovery;
 
   _OriginalNewValues _originalNewValues = _OriginalNewValues.newValues;
 
-  DateTime? _selectedCalendarDate;
-
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = MediaQuery.of(context).platformBrightness;
+    Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: true);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -100,7 +83,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       });
     }
 
-    final template = _template;
+    // Reload template from controller on every build (in case it was updated)
+    final template = exerciseAndRoutineController.templateWhere(id: widget.id);
 
     if (template == null) return const NotFound();
 
@@ -114,94 +98,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         .map((log) => routineWithLoggedExercises(log: log))
         .toList();
 
-    final allLoggedVolumesForTemplate =
-        allLogsForTemplate.map((log) => log.volume).toList();
-
-    final avgVolume = allLoggedVolumesForTemplate.isNotEmpty
-        ? allLoggedVolumesForTemplate.average
-        : 0.0;
-
-    final volumeChartPoints = allLoggedVolumesForTemplate
-        .mapIndexed((index, volume) => ChartPointDto(index, volume))
-        .toList();
-
-    final trendSummary =
-        _analyzeWeeklyTrends(volumes: allLoggedVolumesForTemplate);
-
     final muscleGroups = template.exerciseTemplates
         .map((exerciseTemplate) => exerciseTemplate.exercise.primaryMuscleGroup)
         .toSet()
         .map((muscleGroup) => muscleGroup)
         .toList();
-
-    final listOfMuscleAndRecovery = muscleGroups.map((muscleGroup) {
-      final pastExerciseLogs =
-          (Provider.of<ExerciseAndRoutineController>(context, listen: false)
-                  .exerciseLogsByMuscleGroup[muscleGroup] ??
-              []);
-      final lastExerciseLog =
-          pastExerciseLogs.isNotEmpty ? pastExerciseLogs.last : null;
-      final lastTrainingTime = lastExerciseLog?.createdAt;
-      final recovery = lastTrainingTime != null
-          ? _calculateMuscleRecovery(
-              lastTrainingTime: lastTrainingTime, muscleGroup: muscleGroup)
-          : RecoveryResult(
-              recoveryPercentage: 0,
-              muscleGroup: muscleGroup,
-              lastTrainingTime: DateTime.now(),
-              description:
-                  "No recovery data available for $muscleGroup. Please log a $muscleGroup session to see updated recovery.");
-      return recovery;
-    });
-
-    final selectedMuscleAndRecovery = _selectedMuscleAndRecovery ??
-        (listOfMuscleAndRecovery.isNotEmpty
-            ? listOfMuscleAndRecovery.first
-            : null);
-
-    final muscleGroupsIllustrations =
-        listOfMuscleAndRecovery.map((muscleAndRecovery) {
-      final muscleGroup = muscleAndRecovery.muscleGroup;
-      final recovery = muscleAndRecovery.recoveryPercentage;
-
-      return Badge(
-        backgroundColor: lowToHighIntensityColor(recovery),
-        alignment: Alignment.topRight,
-        smallSize: 12,
-        isLabelVisible: muscleGroup == selectedMuscleAndRecovery?.muscleGroup,
-        child: GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedMuscleAndRecovery = muscleAndRecovery;
-            });
-          },
-          child: Stack(alignment: Alignment.center, children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: SizedBox(
-                width: 100,
-                height: 100,
-                child: CircularProgressIndicator(
-                  value: recovery,
-                  strokeWidth: 6,
-                  backgroundColor:
-                      isDarkMode ? Colors.black12 : Colors.grey.shade400,
-                  strokeCap: StrokeCap.round,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                      lowToHighIntensityColor(recovery)),
-                ),
-              ),
-            ),
-            Image.asset(
-              recoveryMuscleIllustration(
-                  recoveryPercentage: recovery, muscleGroup: muscleGroup),
-              fit: BoxFit.contain,
-              height: 50, // Adjust the height as needed
-            )
-          ]),
-        ),
-      );
-    }).toList();
 
     final exerciseTemplates = _originalNewValues == _OriginalNewValues.newValues
         ? template.exerciseTemplates.map((exerciseTemplate) {
@@ -217,12 +118,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     return Scaffold(
         floatingActionButton: FloatingActionButton(
             heroTag: UniqueKey,
-            onPressed: () => template.owner == SharedPrefs().userId
-                ? _launchRoutineLogEditor(muscleGroups: muscleGroups)
-                : _createTemplate(),
-            child: template.owner == SharedPrefs().userId
-                ? const FaIcon(FontAwesomeIcons.play, size: 24)
-                : const FaIcon(FontAwesomeIcons.download)),
+            backgroundColor: themeGradient(context: context).colors.first,
+            elevation: 8.0,
+            onPressed: () =>
+                _launchRoutineLogEditor(muscleGroups: muscleGroups),
+            child: const FaIcon(FontAwesomeIcons.play, size: 24)),
         appBar: AppBar(
           backgroundColor: appBarBackgroundColor(context: context),
           surfaceTintColor: Colors.transparent,
@@ -232,14 +132,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            template.owner == SharedPrefs().userId
-                ? IconButton(
-                    onPressed: () => _showMenuBottomSheet(planDto: plan),
-                    icon: FaIcon(Icons.more_vert_rounded))
-                : const SizedBox.shrink()
+            IconButton(
+                onPressed: () => _showMenuBottomSheet(planDto: plan),
+                icon: const FaIcon(Icons.more_vert_rounded))
           ],
         ),
         body: Container(
+          height: double.infinity,
           decoration: BoxDecoration(
             gradient: themeGradient(context: context),
           ),
@@ -287,7 +186,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                     "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
                                 child: CustomIcon(
                                     FontAwesomeIcons.personWalking,
-                                    color: vibrantGreen)),
+                                    color: Theme.of(context)
+                                        .colors
+                                        .vibrantAccent)),
                             Text(
                               template.notes.isNotEmpty
                                   ? "${template.notes}."
@@ -303,12 +204,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                           ],
                         ),
                         Calendar(
-                          onSelectDate: (date) =>
-                              _onSelectCalendarDateTime(date: date),
+                          onSelectDate: (date) => _showLogsForDate(
+                              context, date, allLogsForTemplate),
                           logs: allLogsForTemplate,
                         ),
-                        CalendarLogs(
-                            dateTime: _selectedCalendarDate ?? DateTime.now()),
                         MuscleGroupSplitChart(
                             title: "Muscle Groups Split",
                             description:
@@ -318,184 +217,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       ],
                     ),
                   ),
-                  if (template.owner == SharedPrefs().userId)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 10,
-                            children: [
-                              Wrap(
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 10,
-                                children: [
-                                  trendSummary.trend == Trend.none
-                                      ? const SizedBox.shrink()
-                                      : getTrendIcon(trend: trendSummary.trend),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      RichText(
-                                        text: TextSpan(
-                                          text: volumeInKOrM(avgVolume),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineSmall,
-                                          children: [
-                                            TextSpan(
-                                              text: " ",
-                                            ),
-                                            TextSpan(
-                                              text: weightUnit().toUpperCase(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Text(
-                                        "Session AVERAGE".toUpperCase(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                              Text(trendSummary.summary,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w400,
-                                          color: isDarkMode
-                                              ? Colors.white70
-                                              : Colors.black)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const SizedBox(height: 16),
-                              LineChartWidget(
-                                chartPoints: volumeChartPoints,
-                                periods: [],
-                                unit: ChartUnit.weight,
-                                aspectRation: 4.5,
-                                lineChartSide: LineChartSide.right,
-                                rightReservedSize: 20,
-                                hasLeftAxisTitles: false,
-                                belowBarData: false,
-                                hasRightAxisTitles: false,
-                              ),
-                            ],
-                          ),
-                          Text(
-                              "Here’s a volume trend of your ${template.name} training over the last ${allLogsForTemplate.length} ${pluralize(word: "session", count: allLogsForTemplate.length)}.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                      color: isDarkMode
-                                          ? Colors.white70
-                                          : Colors.black)),
-                          const SizedBox(height: 12),
-                          InformationContainer(
-                            leadingIcon: FaIcon(FontAwesomeIcons.weightHanging),
-                            title: "Training Volume",
-                            color: isDarkMode
-                                ? sapphireDark80
-                                : Colors.grey.shade200,
-                            description:
-                                "Volume is the total amount of work done, often calculated as sets × reps × weight. Higher volume increases muscle size (hypertrophy).",
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (template.owner == SharedPrefs().userId)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? sapphireDark80
-                                : Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(5)),
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 20,
-                          children: [
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text("Muscle Recovery".toUpperCase(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                      "Delayed Onset Muscle Soreness (DOMS) refers to the muscle pain or stiffness experienced after intense physical activity. It typically develops 24 to 48 hours after exercise and can last for several days.",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                              fontWeight: FontWeight.w400,
-                                              color: isDarkMode
-                                                  ? Colors.white70
-                                                  : Colors.black)),
-                                ],
-                              ),
-                            ),
-                            if (listOfMuscleAndRecovery.isNotEmpty)
-                              Column(
-                                spacing: 10,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          spacing: 20,
-                                          children: [
-                                            SizedBox(width: 2),
-                                            ...muscleGroupsIllustrations,
-                                            SizedBox(width: 2),
-                                          ])),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10.0),
-                                    child: Text(
-                                        selectedMuscleAndRecovery
-                                                ?.description ??
-                                            "",
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                                fontWeight: FontWeight.w400,
-                                                color: isDarkMode
-                                                    ? Colors.white
-                                                    : Colors.black)),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: Column(
@@ -509,10 +230,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             CupertinoSlidingSegmentedControl<
                                 _OriginalNewValues>(
                               backgroundColor: isDarkMode
-                                  ? sapphireDark
+                                  ? Theme.of(context).colors.sapphireDark
                                   : Colors.grey.shade200,
-                              thumbColor:
-                                  isDarkMode ? sapphireDark80 : Colors.white,
+                              thumbColor: isDarkMode
+                                  ? Theme.of(context).colors.sapphireDark80
+                                  : Colors.white,
                               groupValue: _originalNewValues,
                               children: {
                                 _OriginalNewValues.originalValues: SizedBox(
@@ -579,15 +301,87 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     }
   }
 
-  void _onSelectCalendarDateTime({required DateTime date}) {
-    setState(() {
-      _selectedCalendarDate = date;
-    });
+  void _showLogsForDate(
+      BuildContext context, DateTime date, List<RoutineLogDto> allLogs) {
+    final logsForDate =
+        allLogs.where((log) => log.startTime.isSameDayMonthYear(date)).toList();
+    final hasLogs = logsForDate.isNotEmpty;
+
+    // Determine date label
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final selectedDate = DateTime(date.year, date.month, date.day);
+
+    final isToday = selectedDate == today;
+
+    String dateLabel;
+    if (isToday) {
+      dateLabel = 'Today';
+    } else if (selectedDate == yesterday) {
+      dateLabel = 'Yesterday';
+    } else {
+      dateLabel = DateFormat('EEEE, MMM d').format(date);
+    }
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with date
+            Text(
+              dateLabel,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            Text(
+              DateFormat('MMM d, yyyy').format(date),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade400,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            // Logs list
+            if (hasLogs)
+              ...logsForDate.map((log) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: RoutineLogWidget(
+                      log: log,
+                      trailing: DateFormat.jm().format(log.startTime),
+                      onTap: () {
+                        Navigator.pop(context);
+                        navigateToRoutineLogPreview(context: context, log: log);
+                      },
+                    ),
+                  ))
+            else
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'No workouts logged on this day',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey.shade400,
+                        ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _deleteRoutine({required RoutineTemplateDto template}) async {
     try {
-      await Provider.of<ExerciseAndRoutineController>(context, listen: false)
+      await Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false)
           .removeTemplate(template: template);
       if (mounted) {
         context.pop();
@@ -608,23 +402,27 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _navigateToRoutineTemplateEditor() async {
-    final template = _template;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final template = controller.templateWhere(id: widget.id);
+
     if (template != null) {
       final copyOfTemplate = template.copyWith();
       final arguments = RoutineTemplateArguments(
           template: copyOfTemplate, planId: copyOfTemplate.planId);
-      final updatedTemplate = await navigateToRoutineTemplateEditor(
+      await navigateToRoutineTemplateEditor(
           context: context, arguments: arguments);
-      if (updatedTemplate != null) {
-        setState(() {
-          _template = updatedTemplate;
-        });
-      }
+      // No need to update state - controller will notify listeners
     }
   }
 
   void _launchRoutineLogEditor({required List<MuscleGroup> muscleGroups}) {
-    final template = _template;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final template = controller.templateWhere(id: widget.id);
+
     if (template != null) {
       final log = template.toLog();
       final arguments =
@@ -634,7 +432,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _createTemplate({bool copy = false}) async {
-    final template = _template;
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final template = controller.templateWhere(id: widget.id);
     if (template != null) {
       _showLoadingScreen();
 
@@ -650,15 +451,12 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             name: copy ? "Copy of ${template.name}" : template.name,
             notes: template.notes,
             exerciseTemplates: exercises,
-            owner: "",
-            planId: template.planId,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now());
+            planId: template.planId);
 
-        final createdTemplate = await Provider.of<ExerciseAndRoutineController>(
-                context,
-                listen: false)
-            .saveTemplate(templateDto: templateToBeCreated);
+        final createdTemplate =
+            await Provider.of<SupabaseExerciseAndRoutineController>(context,
+                    listen: false)
+                .saveTemplate(templateDto: templateToBeCreated);
         if (mounted) {
           if (createdTemplate != null) {
             navigateToRoutineTemplatePreview(
@@ -677,111 +475,16 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     }
   }
 
-  void _loadData() {
-    final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
-    _template = exerciseAndRoutineController.templateWhere(id: widget.id);
-    if (_template == null) {
-      _loading = true;
-      getAPI(endpoint: "/routine-templates/${widget.id}").then((data) {
-        if (data.isNotEmpty) {
-          final json = jsonDecode(data);
-          final body = json["data"];
-          final routineTemplate = body["getRoutineTemplate"];
-          if (routineTemplate != null) {
-            final template = RoutineTemplate.fromJson(routineTemplate);
-            setState(() {
-              _loading = false;
-              _template = RoutineTemplateDto.toDto(template);
-            });
-          } else {
-            setState(() {
-              _loading = false;
-            });
-          }
-        }
-      });
-    }
-  }
-
-  void _showShareBottomSheet() {
-    final template = _template;
-
-    if (template != null) {
-      final workoutLink = "$shareableRoutineUrl/${template.id}";
-      final workoutText = copyRoutineAsText(
-          routineType: RoutinePreviewType.template,
-          name: template.name,
-          notes: template.notes,
-          exerciseLogs: template.exerciseTemplates);
-
-      displayBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(
-                FontAwesomeIcons.link,
-                size: 18,
-              ),
-              horizontalTitleGap: 10,
-              title: Text(
-                "Copy as Link",
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                maxLines: 1,
-              ),
-              subtitle: Text(workoutLink),
-              onTap: () {
-                Posthog().capture(
-                    eventName: PostHogAnalyticsEvent
-                        .shareRoutineTemplateAsLink.displayName);
-                HapticFeedback.heavyImpact();
-                final data = ClipboardData(text: workoutLink);
-                Clipboard.setData(data).then((_) {
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    showSnackbar(
-                        context: context, message: "Workout link copied");
-                  }
-                });
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(
-                FontAwesomeIcons.copy,
-                size: 18,
-              ),
-              horizontalTitleGap: 6,
-              title: Text("Copy as Text",
-                  style: Theme.of(context).textTheme.titleMedium),
-              subtitle: Text("${template.name}..."),
-              onTap: () {
-                Posthog().capture(
-                    eventName: PostHogAnalyticsEvent
-                        .shareRoutineTemplateAsText.displayName);
-                HapticFeedback.heavyImpact();
-                final data = ClipboardData(text: workoutText);
-                Clipboard.setData(data).then((_) {
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    showSnackbar(context: context, message: "Workout copied");
-                  }
-                });
-              },
-            ),
-          ]));
-    }
-  }
-
   void _showMenuBottomSheet({required RoutinePlanDto? planDto}) {
-    displayBottomSheet(
+    showAppBottomSheet(
         context: context,
-        isScrollControlled: true,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+        isScrollControlled: false,
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const FaIcon(
@@ -806,19 +509,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             onTap: () {
               Navigator.of(context).pop();
               _createTemplate(copy: true);
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(
-              FontAwesomeIcons.share,
-              size: 18,
-            ),
-            horizontalTitleGap: 6,
-            title: Text("Share", style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              _showShareBottomSheet();
             },
           ),
           ListTile(
@@ -851,7 +541,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             onTap: () {
               Navigator.of(context).pop();
 
-              final template = _template;
+              final controller =
+                  Provider.of<SupabaseExerciseAndRoutineController>(context,
+                      listen: false);
+              final template = controller.templateWhere(id: widget.id);
 
               if (template != null) {
                 showBottomSheetWithMultiActions(
@@ -872,28 +565,32 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               }
             },
           )
-        ]));
+        ]),
+        ));
   }
 
   void _showPlanPicker() {
-    final template = _template;
-
     final exerciseAndRoutineController =
-        Provider.of<ExerciseAndRoutineController>(context, listen: false);
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
+    final template = exerciseAndRoutineController.templateWhere(id: widget.id);
     final plans = exerciseAndRoutineController.plans;
 
     if (template != null) {
-      displayBottomSheet(
+      showAppBottomSheet(
         context: context,
-        child: PlanPicker(
+        isScrollControlled: false,
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: PlanPicker(
           title: "Move ${template.name} to . . .",
           plans: plans,
           onSelect: (selectedPlan) async {
             Navigator.of(context).pop();
 
-            final templateProvider = Provider.of<ExerciseAndRoutineController>(
-                context,
-                listen: false);
+            final templateProvider =
+                Provider.of<SupabaseExerciseAndRoutineController>(context,
+                    listen: false);
 
             final updatedRoutineTemplate =
                 template.copyWith(planId: selectedPlan.id);
@@ -907,115 +604,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                   message: "Add ${template.name} to ${selectedPlan.name}");
             }
           },
+          ),
         ),
       );
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  TrendSummary _analyzeWeeklyTrends({required List<double> volumes}) {
-    // 1. If there's no data at all, return immediately
-    if (volumes.isEmpty) {
-      return TrendSummary(
-        trend: Trend.none,
-        average: 0,
-        summary:
-            "No training data available yet. Log some sessions to start tracking your progress!",
-      );
-    }
-
-    // 2. If there's only one logged volume, we can't do sublist(0, volumes.length - 1) safely,
-    // so just return a summary for that single volume.
-    if (volumes.length == 1) {
-      final singleVolume = volumes.first;
-      return TrendSummary(
-        trend: Trend.none,
-        average: singleVolume,
-        summary:
-            "You've logged your first session. Great job! Keep logging more data to see trends over time.",
-      );
-    }
-
-    // From here on, volumes has at least 2 items,
-    // so sublist and reduce are safe.
-    final previousVolumes = volumes.sublist(0, volumes.length - 1);
-    final averageOfPrevious =
-        previousVolumes.reduce((a, b) => a + b) / previousVolumes.length;
-    final lastWeekVolume = volumes.last;
-
-    // If the last session’s volume is 0, treat it as a special case.
-    if (lastWeekVolume == 0) {
-      return TrendSummary(
-        trend: Trend.none,
-        average: averageOfPrevious,
-        summary:
-            "No training data available for this session. Log some workouts to continue tracking your progress!",
-      );
-    }
-
-    // Calculate difference and percentage change
-    final difference = lastWeekVolume - averageOfPrevious;
-    final differenceIsZero = difference == 0;
-    final bool averageIsZero = averageOfPrevious == 0;
-    final double percentageChange =
-        averageIsZero ? 100.0 : (difference / averageOfPrevious) * 100;
-
-    // Decide the trend based on a threshold
-    const threshold = 5; // e.g., ±5%
-    late final Trend trend;
-
-    if (percentageChange > threshold) {
-      trend = Trend.up;
-    } else if (percentageChange < -threshold) {
-      trend = Trend.down;
-    } else {
-      trend = Trend.stable;
-    }
-
-    final variation = "${percentageChange.abs().toStringAsFixed(1)}%";
-
-    switch (trend) {
-      case Trend.up:
-        return TrendSummary(
-          trend: Trend.up,
-          average: averageOfPrevious,
-          summary:
-              "🌟🌟 Last session's volume is $variation higher than your average. "
-              "Awesome job building momentum!",
-        );
-
-      case Trend.down:
-        return TrendSummary(
-          trend: Trend.down,
-          average: averageOfPrevious,
-          summary:
-              "📉 Last session's volume is $variation lower than your average. "
-              "Consider extra rest, checking your technique, or planning a deload.",
-        );
-
-      case Trend.stable:
-        final summary = differenceIsZero
-            ? "🌟 You've matched your session average! Stay consistent to see long-term progress."
-            : "🔄 Your volume changed by about $variation compared to your session average. "
-                "A great chance to refine your form and maintain consistency.";
-        return TrendSummary(
-          trend: Trend.stable,
-          average: averageOfPrevious,
-          summary: summary,
-        );
-
-      case Trend.none:
-        // Fallback, though we typically won't reach this if we've assigned up/down/stable
-        return TrendSummary(
-          trend: Trend.none,
-          average: averageOfPrevious,
-          summary: "🤔 Unable to identify trends",
-        );
     }
   }
 }
@@ -1036,79 +627,4 @@ class RecoveryResult {
   String toString() {
     return 'RecoveryResult{recoveryPercentage: $recoveryPercentage, muscleGroup: $muscleGroup, lastTrainingTime: $lastTrainingTime, desciption: $description}';
   }
-}
-
-/// Calculates muscle recovery percentage based on time since last training.
-/// - 0% means no recovery (extremely fresh DOMS).
-/// - 100% means fully recovered.
-/// - If more than 7 days have passed and soreness remains, we flag overtraining.
-///
-/// You can adjust these time thresholds or percentages as needed.
-RecoveryResult _calculateMuscleRecovery(
-    {required DateTime lastTrainingTime, required MuscleGroup muscleGroup}) {
-  // Calculate hours since last training.
-  final hoursSinceTraining =
-      DateTime.now().difference(lastTrainingTime).inHours;
-
-  // A simple piecewise approach to approximate "percent recovered."
-  // Tweak as needed for your app’s logic.
-  double recoveryPercentage;
-
-  String description;
-
-  if (hoursSinceTraining < 24) {
-    // Within first 24 hours after training — DOMS just starting
-    recoveryPercentage = -0.01;
-    description =
-        "Your $muscleGroup was just trained. Be sure to allow enough recovery time—DOMS can appear within the next day or two";
-  } else if (hoursSinceTraining < 48) {
-    // 24–48 hours: muscle soreness typically peaks
-    // We assume minimal recovery, e.g. up to ~30%
-    final ratio = (hoursSinceTraining - 24) / 24;
-    recoveryPercentage = 0.3 * ratio;
-    description =
-        "Your $muscleGroup is only ${(recoveryPercentage * 100).floor()}% recovered. DOMS is likely high. "
-        "It's best to rest or do very light activity today.";
-  } else if (hoursSinceTraining < 72) {
-    // 48–72 hours: soreness usually starts to fade
-    // Move recovery from ~30% to ~70%
-    final ratio = (hoursSinceTraining - 48) / 24;
-    recoveryPercentage = 0.3 + 0.4 * ratio; // ~30% -> 70%
-    description =
-        "Your $muscleGroup is about ${(recoveryPercentage * 100).floor()}% recovered. Moderate soreness may still be present. "
-        "Light to moderate training can be considered, but monitor how you feel.";
-  } else if (hoursSinceTraining < 96) {
-    // 72–96 hours: typically nearing full recovery
-    // Move recovery from ~70% to ~90%
-    final ratio = (hoursSinceTraining - 72) / 24;
-    recoveryPercentage = 0.7 + 0.2 * ratio; // ~70% -> 90%
-    description =
-        "Your $muscleGroup is ${(recoveryPercentage * 100).floor()}% recovered. Soreness should be minimal. "
-        "Feel free to train, but keep an eye on any lingering tightness.";
-  } else if (hoursSinceTraining < 168) {
-    // 4–7 days: often fully recovered or very close
-    // We treat this range as ~90% -> 100% recovery
-    final ratio = (hoursSinceTraining - 96) / 72;
-    recoveryPercentage = 0.9 + 0.1 * ratio; // ~90% -> 100%
-    description =
-        "Your $muscleGroup is ${(recoveryPercentage * 100).floor()}% recovered. Soreness should be minimal. "
-        "Feel free to train, but keep an eye on any lingering tightness.";
-  } else {
-    // 7+ days of soreness likely indicates overtraining or incomplete recovery
-    // You could set this to 100% and rely on [isOvertrained] for the warning,
-    // or set it to 0% to indicate "inconsistent with normal recovery."
-    // Below, we assume 100% physically, but isOvertrained = true means possible problem.
-    recoveryPercentage = 1.0;
-    description =
-        "Your $muscleGroup is fully recovered at 100%. You're good to train!";
-  }
-
-  // Clamp between 0.0 and 1.0 in case of minor rounding
-  recoveryPercentage = recoveryPercentage.clamp(0.0, 1.0);
-
-  return RecoveryResult(
-      recoveryPercentage: recoveryPercentage,
-      muscleGroup: muscleGroup,
-      lastTrainingTime: lastTrainingTime,
-      description: description);
 }
