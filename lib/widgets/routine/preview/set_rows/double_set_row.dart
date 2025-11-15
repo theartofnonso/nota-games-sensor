@@ -33,12 +33,12 @@ class DoubleSetRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4),
         decoration: BoxDecoration(
           color: pbs.isNotEmpty ? (isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200) : null,
-          borderRadius: BorderRadius.circular(5), // Rounded corners
+          borderRadius: BorderRadius.circular(50), // Fully rounded corners
         ),
         child: Row(spacing: 6, children: pbsForSet),
       ),
       child: Table(
-          border: TableBorder.all(color: color, borderRadius: BorderRadius.circular(5), width: 1),
+          border: TableBorder.all(color: color, borderRadius: BorderRadius.circular(50), width: 1),
           columnWidths: const <int, TableColumnWidth>{
             0: FlexColumnWidth(1),
             1: FlexColumnWidth(1),
