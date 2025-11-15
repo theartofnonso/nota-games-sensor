@@ -384,12 +384,46 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return exerciseLogs;
   }
 
-  List<SetDto> whereRecentSetsForExercise({required ExerciseDto exercise}) {
-    final exerciseLogs = whereExerciseLogsForExercise(exercise: exercise);
-    if (exerciseLogs.isEmpty) return [];
+  List<SetDto> whereRecentSetsForExercise({required ExerciseDto exercise, String? templateId}) {
+    // If templateId is provided, filter logs by template first
+    List<({ExerciseLogDto log, DateTime timestamp})> exerciseLogsWithTimestamps;
+    if (templateId != null && templateId.isNotEmpty) {
+      // Get logs for this specific template only
+      final templateLogs = whereLogsWithTemplateId(templateId: templateId);
+      // Extract exercise logs for this exercise from template logs only, with timestamps
+      exerciseLogsWithTimestamps = <({ExerciseLogDto log, DateTime timestamp})>[];
+      for (final routineLog in templateLogs) {
+        for (final exerciseLog in routineLog.exerciseLogs) {
+          if (exerciseLog.exercise.id == exercise.id) {
+            exerciseLogsWithTimestamps.add((
+              log: exerciseLog,
+              timestamp: routineLog.startTime
+            ));
+          }
+        }
+      }
+    } else {
+      // Original behavior: get all logs for this exercise from any template
+      exerciseLogsWithTimestamps = <({ExerciseLogDto log, DateTime timestamp})>[];
+      for (final routineLog in logs) {
+        for (final exerciseLog in routineLog.exerciseLogs) {
+          if (exerciseLog.exercise.id == exercise.id) {
+            exerciseLogsWithTimestamps.add((
+              log: exerciseLog,
+              timestamp: routineLog.startTime
+            ));
+          }
+        }
+      }
+    }
+    
+    if (exerciseLogsWithTimestamps.isEmpty) return [];
 
+    // Sort by timestamp (most recent first)
+    exerciseLogsWithTimestamps.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    
     // Get the most recent 3 exercise logs
-    final recentLogs = exerciseLogs.take(3).toList();
+    final recentLogs = exerciseLogsWithTimestamps.take(3).map((e) => e.log).toList();
     final allSets = <SetDto>[];
     for (final log in recentLogs) {
       allSets.addAll(log.sets);

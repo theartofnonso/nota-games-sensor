@@ -105,14 +105,39 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         .toList();
 
     final exerciseTemplates = _originalNewValues == _OriginalNewValues.newValues
-        ? template.exerciseTemplates.map((exerciseTemplate) {
-            final pastSets =
-                exerciseAndRoutineController.whereRecentSetsForExercise(
-                    exercise: exerciseTemplate.exercise);
-            final uncheckedSets =
-                pastSets.map((set) => set.copyWith(checked: false)).toList();
-            return exerciseTemplate.copyWith(sets: uncheckedSets);
-          }).toList()
+        ? () {
+            // Find the most recent log for this template
+            final templateLogs = exerciseAndRoutineController
+                .whereLogsWithTemplateId(templateId: template.id);
+            if (templateLogs.isEmpty) {
+              // No previous logs for this template - return original template sets
+              return template.exerciseTemplates;
+            }
+            
+            // Sort logs by startTime (most recent first) and get the most recent one
+            final sortedLogs = List<RoutineLogDto>.from(templateLogs)
+              ..sort((a, b) => b.startTime.compareTo(a.startTime));
+            final mostRecentLog = sortedLogs.first;
+            
+            // Map each exercise template to its sets from the most recent log
+            return template.exerciseTemplates.map((exerciseTemplate) {
+              // Find this exercise in the most recent log
+              final exerciseLogInMostRecentLog = mostRecentLog.exerciseLogs
+                  .where((el) => el.exercise.id == exerciseTemplate.exercise.id)
+                  .firstOrNull;
+              
+              if (exerciseLogInMostRecentLog != null) {
+                // Use sets from the most recent log, unchecked
+                final uncheckedSets = exerciseLogInMostRecentLog.sets
+                    .map((set) => set.copyWith(checked: false))
+                    .toList();
+                return exerciseTemplate.copyWith(sets: uncheckedSets);
+              }
+              
+              // Exercise not found in most recent log - return original template sets
+              return exerciseTemplate;
+            }).toList();
+          }()
         : template.exerciseTemplates;
 
     return Scaffold(

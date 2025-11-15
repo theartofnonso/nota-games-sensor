@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class IntTextField extends StatelessWidget {
   final int value;
@@ -16,7 +17,7 @@ class IntTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
+    final theme = Theme.of(context);
     Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
 
@@ -26,13 +27,23 @@ class IntTextField extends StatelessWidget {
       onChanged: (value) => onChanged(_parseIntOrDefault(value: value)),
       onTap: onTap,
       maxLength: maxLength,
+      style: TextStyle(
+        color: theme.colorScheme.onSurface,
+        fontSize: 15,
+      ),
       decoration: InputDecoration(
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(2), borderSide: const BorderSide(color: Colors.transparent)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(2), borderSide: const BorderSide(color: Colors.transparent)),
-          counterText: "",
-          hintText: "${value > 0 ? value : '-'}"),
+        hintText: "${value > 0 ? value : '-'}",
+        hintStyle: TextStyle(
+          color: theme.extension<TRKRColors>()?.textSecondary,
+          fontSize: 15,
+        ),
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        filled: false,
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        counterText: "",
+      ),
       keyboardType: TextInputType.number,
       maxLines: 1,
       textAlign: TextAlign.center,

@@ -100,19 +100,19 @@ void showBottomSheetWithNoAction(
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          Text(title,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.start),
-          const SizedBox(
-            height: 4,
-          ),
-          Text(description,
-              style: textStyle ?? Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.start)
-        ]),
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textAlign: TextAlign.start),
+              const SizedBox(
+                height: 4,
+              ),
+              Text(description,
+                  style: textStyle ?? Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.start)
+            ]),
       ));
 }
 
@@ -128,38 +128,38 @@ void showBottomSheetWithMultiActions(
     bool isRightActionDestructive = true,
     Color? rightActionColor}) {
   showAppBottomSheet(
-    context: context,
-    isScrollControlled: false,
-    child: Padding(
-      padding: const EdgeInsets.all(26),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(title,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.start),
-          Text(description,
-              style: Theme.of(context).textTheme.titleSmall,
-              textAlign: TextAlign.start),
-          const SizedBox(height: 16),
-          Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-            OpacityButtonWidget(
-                onPressed: leftAction,
-                label: leftActionLabel,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
-            const SizedBox(width: 10),
-            OpacityButtonWidget(
-                onPressed: rightAction,
-                label: rightActionLabel,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                buttonColor: vibrantGreen)
-          ])
-        ],
-      ),
-    ));
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(title,
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.start),
+            Text(description,
+                style: Theme.of(context).textTheme.titleSmall,
+                textAlign: TextAlign.start),
+            const SizedBox(height: 16),
+            Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+              OpacityButtonWidget(
+                  onPressed: leftAction,
+                  label: leftActionLabel,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+              const SizedBox(width: 10),
+              OpacityButtonWidget(
+                  onPressed: rightAction,
+                  label: rightActionLabel,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  buttonColor: vibrantGreen)
+            ])
+          ],
+        ),
+      ));
 }
 
 /// Shows a dialog with similar exercises found
@@ -237,7 +237,8 @@ Future<bool> showSimilarExercisesDialog({
                   Navigator.of(context).pop(false);
                 },
                 label: 'Cancel',
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
               const SizedBox(width: 10),
               OpacityButtonWidget(
@@ -245,7 +246,8 @@ Future<bool> showSimilarExercisesDialog({
                   Navigator.of(context).pop(true);
                 },
                 label: 'Proceed',
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 buttonColor: vibrantGreen,
               ),
             ],

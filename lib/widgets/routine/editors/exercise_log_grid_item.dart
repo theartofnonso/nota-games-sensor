@@ -44,9 +44,9 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         showExerciseLogEditor(
-          context: context,
-          exerciseLogId: exerciseLogDto.exercise.id,
-          editorType: editorType,
+            context: context,
+              exerciseLogId: exerciseLogDto.exercise.id,
+              editorType: editorType,
         );
       },
       onLongPress: () => _showBottomSheet(context: context),
@@ -58,59 +58,59 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
               spacing: 12,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Muscle group illustration - centered at top
-                Expanded(
-                  child: Center(
-                    child: Opacity(
-                      opacity: 0.8,
-                      child: Image.asset(
-                        'muscles_illustration/${exerciseLogDto.exercise.primaryMuscleGroup.name}.png',
-                        height: 60,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
+            // Muscle group illustration - centered at top
+            Expanded(
+              child: Center(
+                child: Opacity(
+                  opacity: 0.8,
+                  child: Image.asset(
+                    'muscles_illustration/${exerciseLogDto.exercise.primaryMuscleGroup.name}.png',
+                    height: 60,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
                           return const Icon(
-                            Icons.block,
-                            size: 40,
+                        Icons.block,
+                        size: 40,
                             color: Colors.white24,
-                          );
-                        },
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
-                // Exercise name at bottom (above checkboxes)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(exerciseLogDto.exercise.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Exercise name at bottom (above checkboxes)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(exerciseLogDto.exercise.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                         style: Theme.of(context)
                             .textTheme
                             .titleSmall
                             ?.copyWith(fontWeight: FontWeight.w600)),
-                    if (superSetExerciseDto != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            FaIcon(
-                              FontAwesomeIcons.link,
-                              size: 10,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                                child: Text(superSetExerciseDto.exercise.name,
+                if (superSetExerciseDto != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        FaIcon(
+                          FontAwesomeIcons.link,
+                          size: 10,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                            child: Text(superSetExerciseDto.exercise.name,
                                     overflow: TextOverflow.ellipsis,
                                     style:
                                         Theme.of(context).textTheme.bodySmall)),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
                 // Progress summary
                 Container(
                   padding:
@@ -134,8 +134,8 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
                           fontSize: 11,
                         ),
                   ),
-                ),
-              ])),
+            ),
+          ])),
     );
   }
 
@@ -146,44 +146,44 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            ListTile(
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 22),
+            horizontalTitleGap: 6,
+            title: Text("Replace"),
+            onTap: () {
+              Navigator.of(context).pop();
+              onReplaceLog();
+            },
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const FaIcon(FontAwesomeIcons.link, size: 18),
+            horizontalTitleGap: 6,
+            title: Text("Superset"),
+            onTap: () {
+              Navigator.of(context).pop();
+              onSuperSet();
+            },
+          ),
+          ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.solidSquarePlus, size: 22),
+              leading: const FaIcon(
+                FontAwesomeIcons.trash,
+                size: 18,
+                color: Colors.red,
+              ),
               horizontalTitleGap: 6,
-              title: Text("Replace"),
-              onTap: () {
-                Navigator.of(context).pop();
-                onReplaceLog();
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.link, size: 18),
-              horizontalTitleGap: 6,
-              title: Text("Superset"),
-              onTap: () {
-                Navigator.of(context).pop();
-                onSuperSet();
-              },
-            ),
-            ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const FaIcon(
-                  FontAwesomeIcons.trash,
-                  size: 18,
-                  color: Colors.red,
-                ),
-                horizontalTitleGap: 6,
-                title: Text("Remove",
+              title: Text("Remove",
                     style: TextStyle(
                         color: Colors.red,
                         fontWeight: FontWeight.w500,
                         fontSize: 16)),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  onRemoveLog();
-                }),
-          ]),
+              onTap: () {
+                Navigator.of(context).pop();
+                onRemoveLog();
+              }),
+        ]),
         ));
   }
 }

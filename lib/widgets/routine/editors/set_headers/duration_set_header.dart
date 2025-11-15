@@ -13,6 +13,7 @@ class DurationSetHeader extends StatelessWidget {
       columnWidths: const <int, TableColumnWidth>{
         0: FixedColumnWidth(50),
         1: FlexColumnWidth(1),
+        2: FixedColumnWidth(60),
       },
       children: <TableRow>[
         TableRow(children: [
@@ -26,6 +27,12 @@ class DurationSetHeader extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
                 textAlign: TextAlign.center),
           ),
+          const TableCell(
+              verticalAlignment: TableCellVerticalAlignment.middle,
+              child: Icon(
+                Icons.check,
+                size: 12,
+              ))
         ]),
       ],
     );
