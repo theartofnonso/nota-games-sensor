@@ -416,16 +416,52 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     final exerciseLogs = widget.mode == RoutineEditorMode.log
         ? widget.log.exerciseLogs.map((exerciseLog) {
             if (!widget.cached) {
-              final pastSets = exerciseAndRoutineController
-                  .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
-              final uncheckedSets =
-                  pastSets.map((set) => set.copyWith(checked: false)).toList();
-
+              // Find the most recent log for this template (excluding the current log if it exists)
+              final templateId = widget.log.templateId;
+              List<RoutineLogDto> templateLogs;
+              if (templateId.isNotEmpty) {
+                templateLogs = exerciseAndRoutineController
+                    .whereLogsWithTemplateId(templateId: templateId)
+                    .where((log) => log.id != widget.log.id) // Exclude current log
+                    .toList();
+              } else {
+                templateLogs = [];
+              }
+              
+              // If we have a template and previous logs, use sets from the most recent log
+              if (templateLogs.isNotEmpty) {
+                // Sort logs by startTime (most recent first)
+                final sortedLogs = List<RoutineLogDto>.from(templateLogs)
+                  ..sort((a, b) => b.startTime.compareTo(a.startTime));
+                final mostRecentLog = sortedLogs.first;
+                
+                // Find this exercise in the most recent log
+                final exerciseLogInMostRecentLog = mostRecentLog.exerciseLogs
+                    .where((el) => el.exercise.id == exerciseLog.exercise.id)
+                    .firstOrNull;
+                
+                if (exerciseLogInMostRecentLog != null) {
+                  // Use sets from the most recent log, unchecked
+                  final uncheckedSets = exerciseLogInMostRecentLog.sets
+                      .map((set) => set.copyWith(checked: false))
+                      .toList();
+                  
+                  /// Don't add any previous set for [ExerciseType.Duration]
+                  /// Duration is captured in realtime from a fresh instance
+                  return exerciseLog.copyWith(
+                      sets: withReps(type: exerciseLog.exercise.type)
+                          ? uncheckedSets
+                          : []);
+                }
+              }
+              
+              // Fallback: no template logs or exercise not found - return original exercise log
+              // (which contains the template's sets from widget.log)
               /// Don't add any previous set for [ExerciseType.Duration]
               /// Duration is captured in realtime from a fresh instance
               return exerciseLog.copyWith(
                   sets: withReps(type: exerciseLog.exercise.type)
-                      ? uncheckedSets
+                      ? exerciseLog.sets.map((set) => set.copyWith(checked: false)).toList()
                       : []);
             }
             return exerciseLog;

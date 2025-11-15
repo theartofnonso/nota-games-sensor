@@ -557,20 +557,49 @@ class _PastRoutineLogEditorScreenState
 
     final exercises = widget.log.exerciseLogs;
     if (exercises.isNotEmpty) {
+      final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+          context,
+          listen: false);
+      
+      // Find the most recent log for this template (excluding the current log if it exists)
+      final templateId = widget.log.templateId;
+      List<RoutineLogDto> templateLogs;
+      if (templateId.isNotEmpty) {
+        templateLogs = controller
+            .whereLogsWithTemplateId(templateId: templateId)
+            .where((log) => log.id != widget.log.id) // Exclude current log
+            .toList();
+      } else {
+        templateLogs = [];
+      }
+      
       final updatedExerciseLogs = exercises.map((exerciseLog) {
-        final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
-                context,
-                listen: false)
-            .whereRecentSetsForExercise(exercise: exerciseLog.exercise);
-        if (previousSets.isNotEmpty) {
-          final unCheckedSets = previousSets
-              .take(exerciseLog.sets.length)
-              .map((set) => set.copyWith(checked: false))
-              .toList();
-          return exerciseLog.copyWith(sets: unCheckedSets);
+        // If we have a template and previous logs, use sets from the most recent log
+        if (templateLogs.isNotEmpty) {
+          // Sort logs by startTime (most recent first)
+          final sortedLogs = List<RoutineLogDto>.from(templateLogs)
+            ..sort((a, b) => b.startTime.compareTo(a.startTime));
+          final mostRecentLog = sortedLogs.first;
+          
+          // Find this exercise in the most recent log
+          final exerciseLogInMostRecentLog = mostRecentLog.exerciseLogs
+              .where((el) => el.exercise.id == exerciseLog.exercise.id)
+              .firstOrNull;
+          
+          if (exerciseLogInMostRecentLog != null) {
+            // Use sets from the most recent log, unchecked, matching the number of sets
+            final unCheckedSets = exerciseLogInMostRecentLog.sets
+                .take(exerciseLog.sets.length)
+                .map((set) => set.copyWith(checked: false))
+                .toList();
+            return exerciseLog.copyWith(sets: unCheckedSets);
+          }
         }
+        
+        // Fallback: no template logs or exercise not found - return original exercise log
         return exerciseLog;
       }).toList();
+      
       Provider.of<ExerciseLogController>(context, listen: false)
           .loadExerciseLogs(exerciseLogs: updatedExerciseLogs);
       _minimiseOrMaximiseCards();
