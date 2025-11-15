@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -15,10 +16,14 @@ import 'package:tracker_app/utils/theme/color_extensions.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/set_dtos/weight_and_reps_dto.dart';
+import '../../extensions/datetime/datetime_extension.dart';
+import '../../extensions/duration_extension.dart';
+import '../../strings/datetime_range_picker_strings.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/routine_editors_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
+import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/routine/editors/exercise_log_grid_item.dart';
 import '../../widgets/weight_plate_calculator.dart';
 
@@ -38,6 +43,9 @@ class _PastRoutineLogEditorScreenState
     extends State<PastRoutineLogEditorScreen> {
   late TextEditingController _templateNameController;
   late TextEditingController _templateNotesController;
+
+  late DateTime _startTime;
+  late DateTime _endTime;
 
   final _minimisedExerciseLogCards = <String>[];
 
@@ -120,9 +128,140 @@ class _PastRoutineLogEditorScreenState
     showSnackbar(context: context, message: message);
   }
 
+  bool _isRoutinePartiallyComplete() {
+    final exerciseLogController =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final exerciseLogs = exerciseLogController.exerciseLogs;
+    return exerciseLogs.isNotEmpty &&
+        exerciseLogs.any(
+            (log) => log.sets.any((set) => set.isNotEmpty() && set.checked));
+  }
+
   void _createLog() async {
     if (!_validateRoutineTemplateInputs()) return;
 
+    // Show duration selector bottom sheet
+    _showDurationSelectorBottomSheet();
+  }
+
+  void _showDurationSelectorBottomSheet() {
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      child: StatefulBuilder(
+        builder:
+            (BuildContext bottomSheetContext, StateSetter setBottomSheetState) {
+          return Padding(
+            padding: const EdgeInsets.all(26.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Select Duration",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Set the start and end times for this session",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white70,
+                      ),
+                ),
+                const SizedBox(height: 24),
+                // Start Time Selector
+                _DurationSelectorRow(
+                  label: "Start Time",
+                  dateTime: _startTime,
+                  onTimeChanged: (DateTime newDateTime) {
+                    setState(() {
+                      _startTime = newDateTime;
+                    });
+                    setBottomSheetState(() {});
+                  },
+                ),
+                const SizedBox(height: 16),
+                // End Time Selector
+                _DurationSelectorRow(
+                  label: "End Time",
+                  dateTime: _endTime,
+                  onTimeChanged: (DateTime newDateTime) {
+                    setState(() {
+                      _endTime = newDateTime;
+                    });
+                    setBottomSheetState(() {});
+                  },
+                ),
+                const SizedBox(height: 24),
+                // Log Session Button with validation state
+                Builder(
+                  builder: (context) {
+                    final errorMessage = _validateDuration();
+                    final duration = _endTime.difference(_startTime);
+                    final isValid = errorMessage == null;
+
+                    return OpacityButtonWidgetTwo(
+                      buttonColor: isValid
+                          ? Theme.of(context).colors.vibrantAccent
+                          : Colors.grey,
+                      label: isValid
+                          ? "Log ${duration.hmsAnalog()} session"
+                          : "Log Session",
+                      onPressed: isValid
+                          ? () {
+                              Navigator.of(context).pop();
+                              _saveLogWithDuration();
+                            }
+                          : null, // Disable button when invalid
+                    );
+                  },
+                )
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String? _validateDuration() {
+    // Check if start and end times are the same (zero duration)
+    if (_startTime.millisecondsSinceEpoch == _endTime.millisecondsSinceEpoch) {
+      return editZeroDurationRestriction;
+    }
+
+    if (_startTime.isAfter(_endTime)) {
+      return editStartDateMustBeBeforeEndDate;
+    }
+
+    if (_endTime.isBefore(_startTime)) {
+      return editEndDateMustBeAfterStartDate;
+    }
+
+    if (_endTime.millisecondsSinceEpoch >
+        DateTime.now().millisecondsSinceEpoch) {
+      return editFutureDateRestriction;
+    }
+
+    Duration difference = _endTime.difference(_startTime);
+
+    if (difference.inHours > 24) {
+      return edit24HourRestriction;
+    }
+
+    return null;
+  }
+
+  void _saveLogWithDuration() async {
+    // Validate before saving
+    final errorMessage = _validateDuration();
+    if (errorMessage != null) {
+      _showSnackbar(errorMessage);
+      return;
+    }
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
 
@@ -140,21 +279,25 @@ class _PastRoutineLogEditorScreenState
         : widget.log.notes;
 
     final updatedLog = widget.log.copyWith(
-        name: routineName, notes: routineNotes, exerciseLogs: exerciseLogs);
+        name: routineName,
+        notes: routineNotes,
+        exerciseLogs: exerciseLogs,
+        startTime: _startTime,
+        endTime: _endTime);
 
     final createdLog = await Provider.of<SupabaseExerciseAndRoutineController>(
             context,
             listen: false)
         .saveLog(logDto: updatedLog);
-    
+
     // Check mounted after async operation
     if (!mounted) return;
-    
+
     // Clear cache only if save succeeded
     if (createdLog != null) {
       Provider.of<ExerciseLogController>(context, listen: false).onClear();
     }
-    
+
     // Always allow user to exit regardless of save success
     _navigateBack(log: createdLog);
   }
@@ -174,12 +317,17 @@ class _PastRoutineLogEditorScreenState
           leftActionLabel: 'Cancel',
           rightAction: () {
             _closeDialog();
+            // Clear controller when user explicitly discards
+            Provider.of<ExerciseLogController>(context, listen: false)
+                .onClear();
             _navigateBack();
           },
           rightActionLabel: 'Discard',
           isRightActionDestructive: true,
           title: "Discard changes");
     } else {
+      // Clear controller even when no changes (to ensure clean state)
+      Provider.of<ExerciseLogController>(context, listen: false).onClear();
       _navigateBack();
     }
   }
@@ -359,8 +507,16 @@ class _PastRoutineLogEditorScreenState
                               children: children),
                         ),
                       ),
-                    const SizedBox(height: 10),
-                    if (exerciseLogs.isNotEmpty)
+                    if (exerciseLogs.isEmpty)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                          child: const NoListEmptyState(
+                              message:
+                                  "Tap the + button to start adding exercises to your workout session"),
+                        ),
+                      ),
+                    if (_isRoutinePartiallyComplete())
                       SafeArea(
                         minimum: EdgeInsets.symmetric(horizontal: 20),
                         child: SizedBox(
@@ -396,6 +552,9 @@ class _PastRoutineLogEditorScreenState
   }
 
   void _initializeProcedureData() {
+    // Clear controller first to ensure clean state when opening a new past session
+    Provider.of<ExerciseLogController>(context, listen: false).onClear();
+
     final exercises = widget.log.exerciseLogs;
     if (exercises.isNotEmpty) {
       final updatedExerciseLogs = exercises.map((exerciseLog) {
@@ -422,6 +581,38 @@ class _PastRoutineLogEditorScreenState
     final log = widget.log;
     _templateNameController = TextEditingController(text: log.name);
     _templateNotesController = TextEditingController(text: log.notes);
+
+    // Initialize start and end times: default to 1 hour ago from current time
+    // If startTime == endTime, it's the initial state (both set to the selected date)
+    // In that case, use default times: 1 hour ago to now, preserving the selected date
+    if (log.startTime == log.endTime) {
+      // Initial state - use default times (1 hour duration from current time)
+      // But preserve the date portion from the log
+      final now = DateTime.now();
+      final defaultStartTime = now.subtract(const Duration(hours: 1));
+      final selectedDate =
+          DateTime(log.startTime.year, log.startTime.month, log.startTime.day);
+
+      // Set times on the selected date, but with current time - 1 hour and current time
+      _startTime = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        defaultStartTime.hour,
+        defaultStartTime.minute,
+      );
+      _endTime = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        now.hour,
+        now.minute,
+      );
+    } else {
+      // User has already set times - use them
+      _startTime = log.startTime;
+      _endTime = log.endTime;
+    }
   }
 
   void _minimiseOrMaximiseCards() {
@@ -444,5 +635,122 @@ class _PastRoutineLogEditorScreenState
     _templateNameController.dispose();
     _templateNotesController.dispose();
     super.dispose();
+  }
+}
+
+// Widget for duration selector row in the bottom sheet with embedded time picker
+class _DurationSelectorRow extends StatefulWidget {
+  final String label;
+  final DateTime dateTime;
+  final void Function(DateTime newDateTime) onTimeChanged;
+
+  const _DurationSelectorRow({
+    required this.label,
+    required this.dateTime,
+    required this.onTimeChanged,
+  });
+
+  @override
+  State<_DurationSelectorRow> createState() => _DurationSelectorRowState();
+}
+
+class _DurationSelectorRowState extends State<_DurationSelectorRow> {
+  late DateTime _currentDateTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentDateTime = widget.dateTime;
+  }
+
+  @override
+  void didUpdateWidget(_DurationSelectorRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.dateTime != oldWidget.dateTime) {
+      _currentDateTime = widget.dateTime;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label and Date/Time Display
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        "${_currentDateTime.day} ${_currentDateTime.abbreviatedMonth()}",
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "${_currentDateTime.hour.toString().padLeft(2, '0')}:${_currentDateTime.minute.toString().padLeft(2, '0')}",
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colors.vibrantAccent,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Embedded Time Picker - always visible, compact height
+        Container(
+          height: 120,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.1),
+              width: 1,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: CupertinoDatePicker(
+            mode: CupertinoDatePickerMode.time,
+            use24hFormat: true,
+            initialDateTime: _currentDateTime,
+            itemExtent: 40,
+            onDateTimeChanged: (DateTime value) {
+              setState(() {
+                // Keep the same date, only update time
+                _currentDateTime = DateTime(
+                  _currentDateTime.year,
+                  _currentDateTime.month,
+                  _currentDateTime.day,
+                  value.hour,
+                  value.minute,
+                );
+              });
+              widget.onTimeChanged(_currentDateTime);
+            },
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -555,12 +555,12 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: isDarkMode
-                        ? Colors.black.withOpacity(0.3)
+                        ? Colors.black.withValues(alpha: 0.3)
                         : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isDarkMode
-                          ? Colors.white.withOpacity(0.1)
+                          ? Colors.white.withValues(alpha: 0.1)
                           : Colors.grey.shade200,
                       width: 1,
                     ),
@@ -592,7 +592,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                         setDisplay,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: isDarkMode
-                                  ? Colors.white.withOpacity(0.7)
+                                  ? Colors.white.withValues(alpha: 0.7)
                                   : Colors.grey.shade700,
                             ),
                       ),
@@ -601,7 +601,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                         pb.pb.description,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: isDarkMode
-                                  ? Colors.white.withOpacity(0.5)
+                                  ? Colors.white.withValues(alpha: 0.5)
                                   : Colors.grey.shade600,
                               fontSize: 11,
                             ),
@@ -610,7 +610,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
             if (pbs.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32),
@@ -619,7 +619,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                     'No personal bests achieved in this workout',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: isDarkMode
-                              ? Colors.white.withOpacity(0.5)
+                              ? Colors.white.withValues(alpha: 0.5)
                               : Colors.grey.shade600,
                         ),
                   ),
@@ -667,12 +667,13 @@ class _StatisticWidget extends StatelessWidget {
         constraints: const BoxConstraints(minWidth: 120),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         decoration: BoxDecoration(
-          color:
-              isDarkMode ? Colors.black.withOpacity(0.3) : Colors.grey.shade50,
+          color: isDarkMode
+              ? Colors.black.withValues(alpha: 0.3)
+              : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDarkMode
-                ? Colors.white.withOpacity(0.08)
+                ? Colors.white.withValues(alpha: 0.08)
                 : Colors.grey.shade200,
             width: 1,
           ),
@@ -690,7 +691,7 @@ class _StatisticWidget extends StatelessWidget {
                     icon,
                     size: 12,
                     color: isDarkMode
-                        ? Colors.white.withOpacity(0.6)
+                        ? Colors.white.withValues(alpha: 0.6)
                         : Colors.grey.shade600,
                   ),
                   const SizedBox(width: 6),
@@ -702,7 +703,7 @@ class _StatisticWidget extends StatelessWidget {
                           fontSize: 10,
                           letterSpacing: 0.5,
                           color: isDarkMode
-                              ? Colors.white.withOpacity(0.6)
+                              ? Colors.white.withValues(alpha: 0.6)
                               : Colors.grey.shade600,
                           fontWeight: FontWeight.w600,
                         ),

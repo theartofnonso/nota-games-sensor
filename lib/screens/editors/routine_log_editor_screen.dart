@@ -166,8 +166,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
     final exerciseLogs = exerciseLogController.exerciseLogs;
-    return exerciseLogs
-        .any((log) => log.sets.any((set) => set.isNotEmpty() && set.checked));
+    return exerciseLogs.isNotEmpty &&
+        exerciseLogs.any((log) => log.sets.any((set) => set.isNotEmpty() && set.checked));
   }
 
   void _discardLog() {
@@ -363,7 +363,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                               children: children),
                         ),
                       ),
-                    if (exerciseLogs.isNotEmpty)
+                    if (_isRoutinePartiallyComplete())
                       SafeArea(
                         minimum: EdgeInsets.symmetric(horizontal: 20),
                         child: SizedBox(
