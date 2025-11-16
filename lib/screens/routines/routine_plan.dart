@@ -133,7 +133,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                       final msg = PlansNudges.build(controller: controller);
                       if (msg == null) return const SizedBox.shrink();
                       return TransparentInformationContainerLite(
-                        content: msg,
+                        content: "msg",
                         useOpacity: true,
                       );
                     }),

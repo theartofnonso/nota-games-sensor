@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 class InformationContainerLite extends StatelessWidget {
   final String content;
@@ -20,8 +20,9 @@ class InformationContainerLite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = Theme.of(context).brightness;
-    final isDarkMode = useOpacity && systemBrightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colors = theme.extension<TRKRColors>();
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     final trailingWidget = trailing;
 
@@ -29,22 +30,60 @@ class InformationContainerLite extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-            color: isDarkMode ? color?.withValues(alpha: 0.1) : color, borderRadius: BorderRadius.circular(5)),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-        child: Row(
-          spacing: 20,
-          children: [
-            Expanded(
-                child: richText ??
-                    Text(content,
-                        style: TextStyle(
-                            fontSize: 12,
-                            height: 1.5,
-                            color: isDarkMode ? color : Colors.black,
-                            fontWeight: FontWeight.w600))),
-            if(trailingWidget != null) trailingWidget
-          ],
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color:
+                (colors?.borderLight ?? Colors.white.withValues(alpha: 0.15)),
+            width: 1,
+          ),
+          color: () {
+            if (useOpacity) {
+              // Subtle tinted background
+              final base =
+                  color ?? (colors?.containerBackground ?? Colors.black);
+              return isDarkMode
+                  ? base.withValues(alpha: 0.08)
+                  : base.withValues(alpha: 0.08);
+            }
+            // Neutral subtle background
+            return isDarkMode
+                ? Colors.white.withValues(alpha: 0.04)
+                : Colors.grey.shade50;
+          }(),
+          boxShadow: isDarkMode
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Row(spacing: 16, children: [
+          Expanded(
+            child: richText ??
+                Text(
+                  content,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: useOpacity && color != null
+                        ? (isDarkMode ? color : theme.colorScheme.onSurface)
+                        : (theme.colorScheme.onSurface),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+          ),
+          if (trailingWidget != null) trailingWidget
+        ]),
       ),
     );
   }
