@@ -13,13 +13,8 @@ import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
-import '../../dtos/pb_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
-import '../../dtos/set_dtos/weight_and_reps_dto.dart';
-import '../../dtos/set_dtos/duration_set_dto.dart';
 import '../../dtos/viewmodels/exercise_log_view_model.dart';
-import '../../utils/theme/color_extensions.dart';
-import '../../widgets/pbs/pb_icon.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
@@ -97,16 +92,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final muscleGroupFamilyFrequencies =
         muscleGroupFrequency(exerciseLogs: completedExerciseLogs);
 
-    final pbs = updatedLog.exerciseLogs.map((exerciseLog) {
-      final pastExerciseLogs =
-          exerciseAndRoutineController.whereExerciseLogsBefore(
-              exercise: exerciseLog.exercise, dateTime: exerciseLog.createdAt);
-
-      return calculatePBs(
-          pastExerciseLogs: loggedExercises(exerciseLogs: pastExerciseLogs),
-          exerciseType: exerciseLog.exercise.type,
-          exerciseLog: exerciseLog);
-    }).expand((pbs) => pbs);
+    // PBs removed from project
 
     final logs = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: updatedLog.templateId)
@@ -210,18 +196,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                               description:
                                   "The total time you spent on your workout session, from start to finish."),
                         ),
-                        _StatisticWidget(
-                          title: "${pbs.length}",
-                          subtitle: "PBs",
-                          icon: FontAwesomeIcons.solidStar,
-                          information: _StatisticsInformation(
-                              title: "Personal Bests",
-                              description:
-                                  "Your highest achievement in an exercise, like the heaviest weight lifted, most reps performed, or highest training volume."),
-                          customOnTap: pbs.isNotEmpty
-                              ? () => _showPBsBottomSheet(context, pbs.toList())
-                              : null,
-                        ),
+                        // PBs card removed
                       ],
                     ),
                   ),
@@ -514,132 +489,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         isRightActionDestructive: true);
   }
 
-  void _showPBsBottomSheet(BuildContext context, List<PBDto> pbs) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    showAppBottomSheet(
-      context: context,
-      isScrollControlled: pbs.length > 5,
-      isDraggable: pbs.length > 5,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.solidStar,
-                  size: 20,
-                  color: Theme.of(context)
-                          .extension<TRKRColors>()
-                          ?.vibrantAccent ??
-                      Colors.green,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Personal Bests',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            ...pbs.map((pb) {
-              String setDisplay;
-              if (pb.set is WeightAndRepsSetDto) {
-                final weightSet = pb.set as WeightAndRepsSetDto;
-                setDisplay =
-                    '${weightSet.weight}${weightUnit()} × ${weightSet.reps} reps';
-              } else if (pb.set is DurationSetDto) {
-                final durationSet = pb.set as DurationSetDto;
-                setDisplay = durationSet.duration.hmsDigital();
-              } else {
-                final repsSet = pb.set;
-                setDisplay = repsSet.summary();
-              }
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? Colors.black.withValues(alpha: 0.3)
-                        : Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.grey.shade200,
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              pb.exercise.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ),
-                          PBIcon(
-                            label: pb.pb.name,
-                            size: 12,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        setDisplay,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.7)
-                                  : Colors.grey.shade700,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        pb.pb.description,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.5)
-                                  : Colors.grey.shade600,
-                              fontSize: 11,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-            if (pbs.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Center(
-                  child: Text(
-                    'No personal bests achieved in this workout',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.5)
-                              : Colors.grey.shade600,
-                        ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+  // PBs bottom sheet removed
 }
 
 class _StatisticsInformation {

@@ -1,18 +1,16 @@
 import 'dart:collection';
 
-import 'package:collection/collection.dart';
+// import removed
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/exercise_log_dto.dart';
-import '../dtos/pb_dto.dart';
 import '../dtos/set_dtos/duration_set_dto.dart';
 import '../dtos/set_dtos/reps_dto.dart';
 import '../dtos/set_dtos/set_dto.dart';
 import '../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../enums/exercise_type_enums.dart';
 import '../enums/muscle_group_enums.dart';
-import '../enums/pb_enums.dart';
 import '../enums/template_changes_type_message_enums.dart';
 
 /// Highest value per [ExerciseLogDto]
@@ -191,53 +189,7 @@ WeightAndRepsSetDto heaviestSetVolumeForExerciseLog({required ExerciseLogDto exe
   return (logId, longestDuration);
 }
 
-List<PBDto> calculatePBs(
-    {required List<ExerciseLogDto> pastExerciseLogs,
-    required ExerciseType exerciseType,
-    required ExerciseLogDto exerciseLog}) {
-  List<PBDto> pbs = [];
-
-  if (pastExerciseLogs.isNotEmpty && exerciseLog.sets.isNotEmpty) {
-    if (withWeightsOnly(type: exerciseType)) {
-      final pastHeaviestWeight = pastExerciseLogs
-          .map((log) => heaviestWeightInSetForExerciseLog(exerciseLog: log))
-          .map((set) => set.weight)
-          .max;
-
-      final currentHeaviestWeightSets =
-          exerciseLog.sets.whereType<WeightAndRepsSetDto>().where((set) => (set).weight > pastHeaviestWeight);
-      if (currentHeaviestWeightSets.isNotEmpty) {
-        final heaviestWeightSet =
-            currentHeaviestWeightSets.reduce((curr, next) => ((curr).volume()) > ((next).volume()) ? curr : next);
-        pbs.add(PBDto(set: heaviestWeightSet, exercise: exerciseLog.exercise, pb: PBType.weight));
-      }
-
-      final pastHeaviestSetVolume = pastExerciseLogs.map((log) => heaviestVolumeForExerciseLog(exerciseLog: log)).max;
-
-      final currentHeaviestVolumeSets =
-          exerciseLog.sets.where((set) => ((set as WeightAndRepsSetDto).volume()) > pastHeaviestSetVolume);
-      if (currentHeaviestVolumeSets.isNotEmpty) {
-        final heaviestVolumeSet = currentHeaviestVolumeSets.reduce((curr, next) =>
-            ((curr as WeightAndRepsSetDto).volume()) > ((next as WeightAndRepsSetDto).volume()) ? curr : next);
-        pbs.add(PBDto(set: heaviestVolumeSet, exercise: exerciseLog.exercise, pb: PBType.volume));
-      }
-    }
-
-    if (withDurationOnly(type: exerciseType)) {
-      final pastLongestDuration = pastExerciseLogs.map((log) => longestDurationForExerciseLog(exerciseLog: log)).max;
-
-      final currentLongestDurations =
-          exerciseLog.sets.whereType<DurationSetDto>().where((set) => (set).duration > pastLongestDuration);
-      if (currentLongestDurations.isNotEmpty) {
-        final longestDurationSet =
-            currentLongestDurations.reduce((curr, next) => (curr).duration > (next).duration ? curr : next);
-        pbs.add(PBDto(set: longestDurationSet, exercise: exerciseLog.exercise, pb: PBType.duration));
-      }
-    }
-  }
-
-  return pbs;
-}
+// Personal bests removed from project
 
 TemplateChange? hasDifferentExerciseLogsLength(
     {required List<ExerciseLogDto> exerciseLogs1, required List<ExerciseLogDto> exerciseLogs2}) {

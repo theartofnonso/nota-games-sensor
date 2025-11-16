@@ -331,25 +331,13 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return _logRepository.whereExerciseLogsForExercise(exercise: exercise);
   }
 
-  Map<String, dynamic> calculatePersonalBests(ExerciseDto exercise) {
-    return _logRepository.calculatePersonalBests(exercise);
-  }
+  // Personal bests removed from project
 
   /// Workout Stats
 
   Map<String, dynamic> get workoutStats => _logRepository.workoutStats;
 
-  /// Get personal records for an exercise
-  List<SetDto> wherePersonalRecords({required ExerciseDto exercise}) {
-    final pbs = calculatePersonalBests(exercise);
-    final List<SetDto> records = [];
-
-    if (pbs['bestSet'] != null) {
-      records.add(pbs['bestSet'] as SetDto);
-    }
-
-    return records;
-  }
+  // Personal bests removed from project
 
   /// Additional log helper methods
   List<RoutineLogDto> whereLogsIsWithinRange(

@@ -13,7 +13,8 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
   final RoutinePlanDto? plan;
   final void Function()? onTap;
 
-  const RoutineTemplateGridItemWidget({super.key, required this.template, this.onTap, this.plan});
+  const RoutineTemplateGridItemWidget(
+      {super.key, required this.template, this.onTap, this.plan});
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +22,9 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
     final isDarkMode = systemBrightness == Brightness.dark;
 
     final exercises = template.exerciseTemplates;
+    final totalSets = exercises
+        .map((e) => e.sets.length)
+        .fold<int>(0, (sum, len) => sum + len);
 
     return GestureDetector(
       onTap: onTap,
@@ -30,7 +34,8 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
           decoration: BoxDecoration(
               color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12)),
-          child: Column(spacing: 14, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (plan != null)
               Text("In ${plan?.name}",
                   overflow: TextOverflow.ellipsis,
@@ -47,20 +52,42 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               maxLines: plan != null ? 1 : 3,
             ),
-            Wrap(
-              children: [
-                CustomIcon(FontAwesomeIcons.personWalking, color: Theme.of(context).colors.vibrantAccent, width: 20, height: 20, iconSize: 10.5,),
-                const SizedBox(
-                  width: 6,
-                ),
-                Text(
-                  "${exercises.length} ${pluralize(word: "Exercise", count: exercises.length)}",
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
-                ),
-              ],
-            ),
+            // Exercises line
+            const SizedBox(height: 14),
+            Wrap(children: [
+              CustomIcon(
+                FontAwesomeIcons.personWalking,
+                color: Theme.of(context).colors.vibrantAccent,
+                width: 20,
+                height: 20,
+                iconSize: 10.5,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                "${exercises.length} ${pluralize(word: 'Exercise', count: exercises.length)}",
+                style: Theme.of(context).textTheme.bodyMedium,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ]),
+            const SizedBox(height: 8),
+            // Sets line
+            Wrap(children: [
+              CustomIcon(
+                FontAwesomeIcons.hashtag,
+                color: Theme.of(context).colors.vibrantAccent,
+                width: 20,
+                height: 20,
+                iconSize: 10.5,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                "$totalSets ${pluralize(word: 'set', count: totalSets)}",
+                style: Theme.of(context).textTheme.bodyMedium,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ]),
           ])),
     );
   }

@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../../dtos/pb_dto.dart';
-import '../../../pbs/pb_icon.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+// import removed
 
 class DoubleSetRow extends StatelessWidget {
   final String first;
   final String second;
-  final List<PBDto> pbs;
-
-  const DoubleSetRow({super.key, required this.first, required this.second, this.pbs = const []});
+  const DoubleSetRow({super.key, required this.first, required this.second});
 
   @override
   Widget build(BuildContext context) {
@@ -18,26 +14,7 @@ class DoubleSetRow extends StatelessWidget {
 
     final color = isDarkMode ? Colors.white10 : Colors.black38;
 
-    final pbsForSet = pbs
-        .map((pb) => PBIcon(
-              label: pb.pb.name,
-              size: 8,
-      textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
-            ))
-        .toList();
-
-    return Badge(
-      alignment: Alignment.topLeft,
-      backgroundColor: Colors.transparent,
-      label: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4),
-        decoration: BoxDecoration(
-          color: pbs.isNotEmpty ? (isDarkMode ? Theme.of(context).colors.sapphireDark80 : Colors.grey.shade200) : null,
-          borderRadius: BorderRadius.circular(50), // Fully rounded corners
-        ),
-        child: Row(spacing: 6, children: pbsForSet),
-      ),
-      child: Table(
+    return Table(
           border: TableBorder.all(color: color, borderRadius: BorderRadius.circular(50), width: 1),
           columnWidths: const <int, TableColumnWidth>{
             0: FlexColumnWidth(1),
@@ -59,7 +36,6 @@ class DoubleSetRow extends StatelessWidget {
                     child: Text(second, style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
                   ))
             ]),
-          ]),
-    );
+          ]);
   }
 }

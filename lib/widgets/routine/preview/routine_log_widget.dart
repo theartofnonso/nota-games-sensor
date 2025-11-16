@@ -20,6 +20,9 @@ class RoutineLogWidget extends StatelessWidget {
   Widget build(BuildContext context) {
 
     final completedExerciseLogsAndSets = loggedExercises(exerciseLogs: log.exerciseLogs);
+    final totalCompletedSets = completedExerciseLogsAndSets
+        .map((e) => e.sets.length)
+        .fold<int>(0, (sum, len) => sum + len);
 
     return ThemeListTile(
       child: ListTile(
@@ -31,7 +34,7 @@ class RoutineLogWidget extends StatelessWidget {
         ),
         title: Text(log.name, overflow: TextOverflow.ellipsis),
         subtitle: Text(
-            "${completedExerciseLogsAndSets.length} ${pluralize(word: "exercise", count: completedExerciseLogsAndSets.length)}"),
+            "${completedExerciseLogsAndSets.length} ${pluralize(word: "exercise", count: completedExerciseLogsAndSets.length)} • $totalCompletedSets ${pluralize(word: "set", count: totalCompletedSets)}"),
         trailing: Text(trailing),
       ),
     );

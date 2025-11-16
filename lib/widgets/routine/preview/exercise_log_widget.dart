@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart';
 import 'package:tracker_app/enums/exercise_type_enums.dart';
 import 'package:tracker_app/widgets/routine/preview/set_headers/single_set_header.dart';
 
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
-import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
 import 'set_headers/double_set_header.dart';
 import 'sets_listview.dart';
@@ -82,18 +79,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     final exerciseType = exercise.type;
 
-    final routineLogController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
-
-    final pastExerciseLogs = routineLogController.whereExerciseLogsBefore(
-        exercise: exercise, dateTime: widget.exerciseLog.createdAt);
-
-    final pbs = calculatePBs(
-        pastExerciseLogs: pastExerciseLogs,
-        exerciseType: exerciseType,
-        exerciseLog: widget.exerciseLog);
-
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(MaterialPageRoute(
@@ -135,8 +120,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
           },
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: SetsListview(
-                type: exerciseType, sets: widget.exerciseLog.sets, pbs: pbs),
+            child: SetsListview(type: exerciseType, sets: widget.exerciseLog.sets),
           )
         ],
       ),
