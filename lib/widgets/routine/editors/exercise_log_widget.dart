@@ -24,7 +24,6 @@ import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/general_utils.dart';
-import '../../../utils/theme/color_extensions.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
@@ -34,13 +33,11 @@ class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
 
   final String exerciseLogId;
-  final ExerciseLogDto? superSet;
 
   const ExerciseLogWidget(
       {super.key,
       this.editorType = RoutineEditorMode.edit,
-      required this.exerciseLogId,
-      this.superSet});
+      required this.exerciseLogId});
 
   @override
   State<ExerciseLogWidget> createState() => _ExerciseLogWidgetState();
@@ -54,16 +51,15 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   List<TextEditingController> _repsControllers = [];
   List<DateTime> _durationControllers = [];
 
-  bool _showNotes = false;
-
   SetDto? _selectedSetDto;
 
   final GlobalKey<DurationStopwatchWidgetState> _durationStopwatchKey =
       GlobalKey();
 
-  final _selectedSetIndex = ValueNotifier<int>(0);
-
   final _errors = <int, String>{};
+
+  late TextEditingController _notesController;
+  final FocusNode _notesFocusNode = FocusNode();
 
   void _updateExerciseLogNotes({required String value}) {
     Provider.of<ExerciseLogController>(context, listen: false)
@@ -109,9 +105,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   void _disposeControllers() {
     final exerciseLog = _exerciseLog;
 
-    if (withDurationOnly(type: exerciseLog.exercise.type)) {
-      // Duration does not have any controller to dispose
-    }
     if (withWeightsOnly(type: exerciseLog.exercise.type)) {
       for (final controllerPair in _weightAndRepsControllers) {
         controllerPair.$1.dispose();
@@ -397,55 +390,12 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     });
   }
 
-  void _toggleNotes() {
-    setState(() {
-      _showNotes = !_showNotes;
-    });
-
-    showAppBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      child: Builder(
-        builder: (context) {
-          final currentNotes =
-              Provider.of<ExerciseLogController>(context, listen: false)
-                  .whereExerciseLog(exerciseId: _exerciseLog.id)
-                  .notes;
-
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(50),
-                border: Border.all(
-                  color: Theme.of(context).extension<TRKRColors>()!.borderLight,
-                  width: 1,
-                ),
-              ),
-              padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
-              child: TextField(
-                controller: TextEditingController(text: currentNotes),
-                cursorColor: Colors.white,
-                onChanged: (value) => _updateExerciseLogNotes(value: value),
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: "Enter notes (optional)",
-                  contentPadding: EdgeInsets.symmetric(vertical: 12),
-                  border: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                ),
-                maxLines: null,
-                keyboardType: TextInputType.multiline,
-                textCapitalization: TextCapitalization.sentences,
-              ),
-            ),
-          );
-        },
-      ),
-    );
+  void _updateNotesController(String value) {
+    _updateExerciseLogNotes(value: value);
+    // Update the controller to reflect changes from external updates
+    if (_notesController.text != value) {
+      _notesController.text = value;
+    }
   }
 
   @override
@@ -453,13 +403,15 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     super.initState();
     _exerciseLog = Provider.of<ExerciseLogController>(context, listen: false)
         .whereExerciseLog(exerciseId: widget.exerciseLogId);
+    _notesController = TextEditingController(text: _exerciseLog.notes);
     _loadControllers();
   }
 
   @override
   void dispose() {
     _disposeControllers();
-    _selectedSetIndex.dispose();
+    _notesController.dispose();
+    _notesFocusNode.dispose();
     super.dispose();
   }
 
@@ -493,6 +445,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     final exerciseLog = context.select<ExerciseLogController, ExerciseLogDto>(
         (c) => c.whereExerciseLog(exerciseId: _exerciseLog.exercise.id));
+
+    // Update notes controller if exercise log notes changed externally
+    if (_notesController.text != exerciseLog.notes) {
+      _notesController.text = exerciseLog.notes;
+    }
 
     final exerciseType = exerciseLog.exercise.type;
 
@@ -539,12 +496,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                   ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      onPressed: _toggleNotes,
-                      icon: const FaIcon(FontAwesomeIcons.noteSticky,
-                          size: 18, color: Colors.white),
-                      tooltip: 'Notes',
                     ),
                     if (!(exerciseType == ExerciseType.duration &&
                         widget.editorType == RoutineEditorMode.log))
@@ -644,26 +595,48 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                             }
                           ],
                         ),
-                        if (exerciseLog.notes.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: sapphireDark80,
-                              borderRadius: BorderRadius.circular(8),
+                        // Notes section - always shown
+                        const SizedBox(height: 2),
+                        // Notes label
+                        Text(
+                          'Notes',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white70,
+                                  ),
+                        ),
+                        // Notes input field (no borders)
+                        TextField(
+                          controller: _notesController,
+                          focusNode: _notesFocusNode,
+                          cursorColor: Colors.white,
+                          onChanged: _updateNotesController,
+                          decoration: InputDecoration(
+                            hintText: "Enter notes (optional)",
+                            hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 14,
                             ),
-                            child: Text(
-                              exerciseLog.notes,
-                              textAlign: TextAlign.start,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 12,
-                                      height: 1.8,
-                                      color: Colors.white70),
-                            ),
-                          )
+                            border: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            focusedErrorBorder: InputBorder.none,
+                            filled: false,
+                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    height: 1.5,
+                                  ),
+                          maxLines: null,
+                          minLines: 3,
+                          keyboardType: TextInputType.multiline,
+                          textCapitalization: TextCapitalization.sentences,
+                        ),
                       ],
                     ),
                   ),

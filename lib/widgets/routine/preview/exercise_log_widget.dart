@@ -9,56 +9,6 @@ import '../../../utils/general_utils.dart';
 import 'set_headers/double_set_header.dart';
 import 'sets_listview.dart';
 
-enum StrengthStatus {
-  improving(
-    description:
-        "🌟 You're getting stronger! Handling more volume with less effort shows fantastic adaptation. "
-        "Keep that momentum going and consider increasing the challenge next session—just remember to watch your recovery.",
-  ),
-  declining(
-    description:
-        "📉 You're feeling a dip in strength. Double-check your sleep, nutrition, and stress levels—"
-        "a little extra rest or a small load reduction can help you bounce back stronger!",
-  ),
-  maintaining(
-    description:
-        "🔄 Solid consistency! You've maintained performance levels well. "
-        "Focus on refining technique and mind-muscle connection to build a perfect foundation for future gains.",
-  ),
-  potentialOvertraining(
-    description:
-        "⚠️ Easy there—your body might be on the verge of overtraining. "
-        "Consider a short deload or reduce your training volume for a week to fully recover, then ramp back up gradually.",
-  ),
-  none(
-    description: "🤔 We don't have enough data yet to analyze your progress. "
-        "Keep logging sessions, and we'll give you tailored feedback as you go!",
-  ),
-  insufficient(
-      description:
-          "You've logged only one training. Great job! Log more sessions to track your progress.");
-
-  const StrengthStatus({required this.description});
-
-  final String description;
-}
-
-enum WeightAndRPE {
-  weight(
-      name: "Weight",
-      description:
-          "Track your heaviest weight lifted to monitor your strength gains and consistent improvement over time."),
-  rpe(
-      name: "Volume and RPE",
-      description:
-          "Volume shows how much work you do, while RPE reveals how hard it feels. Progressive volume shows you're handling more work, while lower RPE at the same workload suggests the exercises are feeling easier.");
-
-  const WeightAndRPE({required this.name, required this.description});
-
-  final String name;
-  final String description;
-}
-
 class ExerciseLogWidget extends StatefulWidget {
   final ExerciseLogDto exerciseLog;
   final ExerciseLogDto? superSet;
@@ -120,7 +70,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
           },
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: SetsListview(type: exerciseType, sets: widget.exerciseLog.sets),
+            child:
+                SetsListview(type: exerciseType, sets: widget.exerciseLog.sets),
           )
         ],
       ),
