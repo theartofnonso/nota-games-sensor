@@ -541,9 +541,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: FaIcon(
-                    FontAwesomeIcons.circlePlus,
+                    FontAwesomeIcons.arrowRightArrowLeft,
                     size: 18,
-                    color: Theme.of(context).colors.vibrantAccent,
+                    color: Colors.white,
                   ),
                   horizontalTitleGap: 6,
                   title: Text("Move to another plan",
