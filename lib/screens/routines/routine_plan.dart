@@ -23,7 +23,6 @@ import '../../widgets/calendar/calendar.dart';
 import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../widgets/empty_states/no_list_empty_state.dart';
-import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
@@ -59,7 +58,18 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     // Reload plan from controller on every build (in case it was updated)
     final plan = exerciseAndRoutineController.planWhere(id: widget.id);
 
-    if (plan == null) return const NotFound();
+    // If deleted while visible, quietly exit instead of flashing "Not Found"
+    if (plan == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final navigator = Navigator.maybeOf(context);
+          if (navigator != null && navigator.canPop()) {
+            context.pop();
+          }
+        }
+      });
+      return const SizedBox.shrink();
+    }
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

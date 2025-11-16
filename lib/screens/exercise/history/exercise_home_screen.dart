@@ -14,7 +14,6 @@ import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../widgets/bottom_sheets/app_bottom_sheet.dart';
-import '../../../widgets/empty_states/not_found.dart';
 
 class ExerciseHomeScreen extends StatefulWidget {
   static const routeName = "/exercise_home_screen";
@@ -107,7 +106,18 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   Widget build(BuildContext context) {
     final exercise = _exercise;
 
-    if (exercise == null) return const NotFound();
+    // If deleted while visible, quietly exit instead of flashing "Not Found"
+    if (exercise == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final navigator = Navigator.maybeOf(context);
+          if (navigator != null && navigator.canPop()) {
+            context.pop();
+          }
+        }
+      });
+      return const SizedBox.shrink();
+    }
 
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,

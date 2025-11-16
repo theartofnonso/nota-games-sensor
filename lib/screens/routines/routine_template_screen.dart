@@ -26,7 +26,6 @@ import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
-import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/monthly_insights/muscle_groups_family_frequency_widget.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
@@ -86,7 +85,18 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     // Reload template from controller on every build (in case it was updated)
     final template = exerciseAndRoutineController.templateWhere(id: widget.id);
 
-    if (template == null) return const NotFound();
+    // If deleted while visible, quietly exit instead of flashing "Not Found"
+    if (template == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final navigator = Navigator.maybeOf(context);
+          if (navigator != null && navigator.canPop()) {
+            context.pop();
+          }
+        }
+      });
+      return const SizedBox.shrink();
+    }
 
     final plan = exerciseAndRoutineController.planWhere(id: template.planId);
 
