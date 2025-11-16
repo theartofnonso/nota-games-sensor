@@ -149,7 +149,7 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: FaIcon(
-                FontAwesomeIcons.circlePlus,
+                FontAwesomeIcons.arrowRightArrowLeft,
                 size: 22,
               ),
               horizontalTitleGap: 6,

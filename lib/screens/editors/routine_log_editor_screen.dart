@@ -10,18 +10,15 @@ import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/exercise_log_controller.dart';
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/dtos/exercise_log_dto.dart';
-import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/utils/exercise_logs_utils.dart';
 import 'package:tracker_app/utils/routine_editors_utils.dart';
 import 'package:tracker_app/widgets/routine/editors/exercise_log_grid_item.dart';
-import 'package:tracker_app/widgets/timers/stopwatch_timer.dart';
 
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/routine_editor_type_enums.dart';
-import '../../utils/date_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/routine_utils.dart';
@@ -228,44 +225,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     Navigator.of(context).pop();
   }
 
-  void _reOrderExerciseLogs(
-      {required List<ExerciseLogDto> exerciseLogs}) async {
-    final orderedList =
-        await reOrderExerciseLogs(context: context, exerciseLogs: exerciseLogs);
-    if (mounted) {
-      if (orderedList != null) {
-        Provider.of<ExerciseLogController>(context, listen: false)
-            .reOrderExerciseLogs(reOrderedList: orderedList);
-      }
-    }
-  }
-
   void _navigateBack({RoutineLogDto? routineLog}) async {
     context.pop(routineLog);
-  }
-
-  int _averageWorkoutDuration() {
-    final dateRange = lastQuarterDateTimeRange();
-    final weeksInLastQuarter =
-        generateWeeksInRange(range: dateRange).toList(); // chronological order
-
-    final List<int> allDurations = <int>[]; // in minutes
-
-    final exerciseLogController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
-
-    for (final week in weeksInLastQuarter) {
-      final weekLogs =
-          exerciseLogController.whereLogsIsWithinRange(dateRange: week);
-      allDurations.addAll(weekLogs.map((log) => log.duration().inMinutes));
-    }
-
-    int safeAverage(List<int> values) => values.isEmpty
-        ? 0
-        : (values.reduce((a, b) => a + b) / values.length).round();
-
-    return safeAverage(allDurations);
   }
 
   @override
@@ -277,8 +238,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         .select((ExerciseLogController controller) => controller.exerciseLogs);
 
     final log = widget.log;
-
-    final avgWorkoutDuration = _averageWorkoutDuration();
 
     final children = exerciseLogs.map((exerciseLog) {
       return ExerciseLogGridItemWidget(
@@ -318,11 +277,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                     key: const Key('select_exercises_in_library_btn'),
                     onPressed: _selectExercisesInLibrary,
                     icon: const FaIcon(FontAwesomeIcons.circlePlus)),
-                if (exerciseLogs.length > 1)
-                  IconButton(
-                      onPressed: () =>
-                          _reOrderExerciseLogs(exerciseLogs: exerciseLogs),
-                      icon: const FaIcon(FontAwesomeIcons.barsStaggered))
               ],
             ),
             body: Container(
@@ -334,24 +288,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                 child: Column(
                   spacing: 20,
                   children: [
-                    if (widget.mode == RoutineEditorMode.log)
-                      GestureDetector(
-                        onTap: avgWorkoutDuration > 0
-                            ? _showRoutineTimerInfo
-                            : null,
-                        child: Center(
-                          child: StopwatchTimer(
-                            digital: true,
-                            startTime: widget.log.startTime,
-                            textStyle:
-                                Theme.of(context).textTheme.headlineLarge,
-                            maxDuration: avgWorkoutDuration > 0
-                                ? Duration(minutes: avgWorkoutDuration)
-                                : null,
-                            warningThreshold: const Duration(minutes: 15),
-                          ),
-                        ),
-                      ),
                     if (exerciseLogs.isNotEmpty)
                       Expanded(
                         child: Padding(
@@ -512,44 +448,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             androidScheduleMode: AndroidScheduleMode.exact);
       }
     }
-  }
-
-  void _showRoutineTimerInfo() {
-    // ── 1.  Gather data ────────────────────────────────────────────────────────────
-    final Duration elapsed = DateTime.now().difference(widget.log.startTime);
-    final Duration average = Duration(minutes: _averageWorkoutDuration());
-
-    // ── 2.  Calculate differences ─────────────────────────────────────────────────
-    final Duration overTime = elapsed - average; // positive  ⇒ exceeded
-    final Duration remaining = average - elapsed; // positive  ⇒ still within
-
-    // Short local helper for h:m:s; keeps later lines compact.
-    String fmt(Duration d) => d.hmsDigital();
-
-    // ── 3.  Decide colour & message ───────────────────────────────────────────────
-    late final String infoText;
-
-    if (overTime >= Duration.zero) {
-      // Exceeded the average
-      infoText =
-          "You're training ${fmt(overTime)} longer than your average session.";
-    } else if (remaining <= const Duration(minutes: 15)) {
-      // Inside the last 15-minute window
-      infoText = "You'll reach your average session time in ${fmt(remaining)}.";
-    } else {
-      // Comfortably within the average
-      infoText = "Your average training duration is ${fmt(average)}.";
-    }
-
-    final textInfoTextStyle = TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
-    );
-    showBottomSheetWithNoAction(
-        context: context,
-        title: "Workout Timer",
-        description: infoText,
-        textStyle: textInfoTextStyle);
   }
 }
 
