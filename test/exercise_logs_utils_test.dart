@@ -7,7 +7,6 @@ import 'package:tracker_app/dtos/set_dtos/set_dto.dart';
 import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
 import 'package:tracker_app/enums/exercise_type_enums.dart';
 import 'package:tracker_app/enums/muscle_group_enums.dart';
-import 'package:tracker_app/enums/pb_enums.dart';
 import 'package:tracker_app/enums/template_changes_type_message_enums.dart';
 import 'package:tracker_app/utils/exercise_logs_utils.dart';
 
@@ -191,42 +190,7 @@ void main() {
     });
   });
 
-  group('PB Calculations', () {
-    test('calculatePBs returns PB for heavier weight than any past log', () {
-      final pastLogs = [
-        makeLog(weightExercise, [weightSet(weight: 50, reps: 10)],
-            routineLogId: 'oldLog'),
-      ];
-      final currentLog = makeLog(
-          weightExercise, [weightSet(weight: 60, reps: 5)],
-          routineLogId: 'newLog');
-
-      final pbs = calculatePBs(
-          pastExerciseLogs: pastLogs,
-          exerciseType: weightExercise.type,
-          exerciseLog: currentLog);
-      expect(pbs.length, 1);
-      expect(pbs.first.pb, PBType.weight);
-    });
-
-    test('calculatePBs returns PB for longer duration than any past log', () {
-      final pastLogs = [
-        makeLog(
-            durationExercise, [durationSet(duration: Duration(seconds: 30))],
-            routineLogId: 'oldLog'),
-      ];
-      final currentLog = makeLog(
-          durationExercise, [durationSet(duration: Duration(seconds: 45))],
-          routineLogId: 'newLog');
-
-      final pbs = calculatePBs(
-          pastExerciseLogs: pastLogs,
-          exerciseType: durationExercise.type,
-          exerciseLog: currentLog);
-      expect(pbs.length, 1);
-      expect(pbs.first.pb, PBType.duration);
-    });
-  });
+  // PB Calculations tests removed (feature descoped)
 
   group('Template Changes', () {
     final logs1 = [
