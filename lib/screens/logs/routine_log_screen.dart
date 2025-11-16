@@ -30,7 +30,6 @@ import '../../utils/routine_utils.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
-import '../../widgets/empty_states/not_found.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/monthly_insights/muscle_groups_family_frequency_widget.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
@@ -73,7 +72,15 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     // Reload log from controller on every build (in case it was updated)
     final log = exerciseAndRoutineController.logWhereId(id: widget.id);
 
-    if (log == null) return const NotFound();
+    // If the log was deleted while this screen is visible, navigate back quietly
+    if (log == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.pop();
+        }
+      });
+      return const SizedBox.shrink();
+    }
 
     // We only want to see all logged exercises and sets
     final completedExerciseLogs =
