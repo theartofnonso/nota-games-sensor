@@ -318,7 +318,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     }
   }
 
-  void _navigateToRoutinePlanEditor() async {
+  Future<void> _navigateToRoutinePlanEditor() async {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
@@ -477,12 +477,15 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                     horizontalTitleGap: 6,
                     title: Text("Add new workout",
                         style: Theme.of(context).textTheme.bodyLarge),
-                    onTap: () {
+                    onTap: () async {
                       Navigator.of(context).pop();
                       final arguments =
                           RoutineTemplateArguments(planId: plan?.id ?? "");
-                      navigateToRoutineTemplateEditor(
+                      await navigateToRoutineTemplateEditor(
                           context: context, arguments: arguments);
+                      if (mounted) {
+                        _showMenuBottomSheet();
+                      }
                     }),
                 ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -493,9 +496,12 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                     horizontalTitleGap: 6,
                     title: Text("Edit",
                         style: Theme.of(context).textTheme.bodyLarge),
-                    onTap: () {
+                    onTap: () async {
                       Navigator.of(context).pop();
-                      _navigateToRoutinePlanEditor();
+                      await _navigateToRoutinePlanEditor();
+                      if (mounted) {
+                        _showMenuBottomSheet();
+                      }
                     }),
                 ListTile(
                   contentPadding: EdgeInsets.zero,

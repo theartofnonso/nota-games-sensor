@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
@@ -421,7 +422,6 @@ class _OverviewScreenState extends State<OverviewScreen>
                             log: log,
                             trailing: log.duration().hmsAnalog(),
                             onTap: () {
-                              Navigator.pop(context); // Close bottom sheet
                               navigateToRoutineLogPreview(
                                 context: context,
                                 log: log,

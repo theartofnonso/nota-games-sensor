@@ -12,7 +12,9 @@ class ExerciseLogHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final reversed = exerciseLogs.reversed.toList();
+    // Sort descending by creation time
+    final sorted = List<ExerciseLogDto>.from(exerciseLogs)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return Padding(
       padding: const EdgeInsets.only(top: 2, right: 10.0, bottom: 10, left: 10),
       child: Column(
@@ -21,9 +23,9 @@ class ExerciseLogHistoryScreen extends StatelessWidget {
           exerciseLogs.isNotEmpty
               ? Expanded(
             child: ListView.separated(
-                itemBuilder: (BuildContext context, int index) => ExerciseHistoryLogWidget(exerciseLog: reversed[index]),
+                itemBuilder: (BuildContext context, int index) => ExerciseHistoryLogWidget(exerciseLog: sorted[index]),
                 separatorBuilder: (BuildContext context, int index) => const SizedBox(height: 22),
-                itemCount: exerciseLogs.length),
+                itemCount: sorted.length),
           )
               : Expanded(
                 child: Padding(

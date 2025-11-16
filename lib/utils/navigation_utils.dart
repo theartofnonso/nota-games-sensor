@@ -100,11 +100,11 @@ void navigateToRoutinePlanPreview(
   context.push(RoutinePlanScreen.routeName, extra: plan);
 }
 
-void navigateToRoutineLogPreview(
+Future<void> navigateToRoutineLogPreview(
     {required BuildContext context,
     required RoutineLogDto log,
     bool isEditable = true}) {
-  navigateWithSlideTransition(
+  return navigateWithSlideTransition(
     context: context,
     child: RoutineLogScreen(id: log.id, isEditable: isEditable),
   );

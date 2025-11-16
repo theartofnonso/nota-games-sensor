@@ -47,9 +47,12 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
               ),
               horizontalTitleGap: 10,
               title: Text("Edit", style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
+              onTap: () async {
                 Navigator.of(context).pop();
-                _navigateToExerciseEditor();
+                await _navigateToExerciseEditor();
+                if (mounted) {
+                  _showMenuBottomSheet();
+                }
               },
             ),
             ListTile(
@@ -70,7 +73,8 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
                 showBottomSheetWithMultiActions(
                     context: context,
                     title: "Delete exercise?",
-                    description: "Are you sure you want to delete this exercise?",
+                    description:
+                        "Are you sure you want to delete this exercise?",
                     leftAction: Navigator.of(context).pop,
                     rightAction: () => _deleteExercise(context),
                     leftActionLabel: 'Cancel',
@@ -210,7 +214,7 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
         ));
   }
 
-  void _navigateToExerciseEditor() async {
+  Future<void> _navigateToExerciseEditor() async {
     final exercise = _exercise;
     if (exercise != null) {
       final updatedExercise = await navigateWithSlideTransition(

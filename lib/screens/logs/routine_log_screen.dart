@@ -315,6 +315,9 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       await navigateToRoutineEditorAndReturnLog(
           context: context, arguments: arguments);
       // No need to update state - controller will notify listeners
+      if (mounted) {
+        _showBottomSheet();
+      }
     }
   }
 
@@ -338,6 +341,9 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                     listen: false)
                 .updateLog(log: updatedLog);
             // No need to update state - controller will notify listeners
+            if (mounted) {
+              _showBottomSheet();
+            }
           });
     }
   }
@@ -357,6 +363,15 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     // Show plan picker to select which plan to save template into
     _showPlanPickerForTemplate(log: log, plans: plans.toList());
+    // When the plan picker closes without selection, re-open this sheet
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        // Delay to ensure the plan picker has closed
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted) _showBottomSheet();
+        });
+      }
+    });
   }
 
   void _showPlanPickerForTemplate(
@@ -372,6 +387,9 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
           onSelect: (selectedPlan) async {
             Navigator.of(context).pop();
             await _doCreateTemplate(log: log, planId: selectedPlan.id);
+            if (mounted) {
+              _showBottomSheet();
+            }
           },
           onCreatePlan: () async {
             Navigator.of(context).pop(); // Close bottom sheet

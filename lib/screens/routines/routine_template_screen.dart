@@ -436,7 +436,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     });
   }
 
-  void _navigateToRoutineTemplateEditor() async {
+  Future<void> _navigateToRoutineTemplateEditor() async {
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
         listen: false);
@@ -466,7 +466,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     }
   }
 
-  void _createTemplate({bool copy = false}) async {
+  Future<void> _createTemplate({bool copy = false}) async {
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
         listen: false);
@@ -529,9 +529,12 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                   horizontalTitleGap: 10,
                   title: Text("Edit",
                       style: Theme.of(context).textTheme.bodyLarge),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.of(context).pop();
-                    _navigateToRoutineTemplateEditor();
+                    await _navigateToRoutineTemplateEditor();
+                    if (mounted) {
+                      _showMenuBottomSheet(planDto: planDto);
+                    }
                   },
                 ),
                 ListTile(
@@ -543,9 +546,12 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                   horizontalTitleGap: 6,
                   title: Text("Copy",
                       style: Theme.of(context).textTheme.bodyLarge),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.of(context).pop();
-                    _createTemplate(copy: true);
+                    await _createTemplate(copy: true);
+                    if (mounted) {
+                      _showMenuBottomSheet(planDto: planDto);
+                    }
                   },
                 ),
                 ListTile(
@@ -558,9 +564,17 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                   horizontalTitleGap: 6,
                   title: Text("Move to another plan",
                       style: Theme.of(context).textTheme.bodyLarge),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.of(context).pop();
                     _showPlanPicker();
+                    // Re-open this menu after the plan picker closes
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        Future.delayed(const Duration(milliseconds: 200), () {
+                          if (mounted) _showMenuBottomSheet(planDto: planDto);
+                        });
+                      }
+                    });
                   },
                 ),
                 ListTile(
