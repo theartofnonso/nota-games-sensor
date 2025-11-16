@@ -76,7 +76,10 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     if (log == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          context.pop();
+          final navigator = Navigator.maybeOf(context);
+          if (navigator != null && navigator.canPop()) {
+            context.pop();
+          }
         }
       });
       return const SizedBox.shrink();
