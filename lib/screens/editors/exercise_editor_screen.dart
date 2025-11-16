@@ -91,18 +91,31 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                   spacing: 20,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextField(
-                      controller: _exerciseNameController,
-                      decoration: InputDecoration(
-                        hintText: "Exercise Name",
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(
+                          color: Theme.of(context).extension<TRKRColors>()!.borderLight,
+                          width: 1,
+                        ),
                       ),
-                      cursorColor: isDarkMode ? Colors.white : Colors.black,
-                      keyboardType: TextInputType.text,
-                      textCapitalization: TextCapitalization.words,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w400,
-                          color: isDarkMode ? Colors.white : Colors.black,
-                          fontSize: 14),
+                      padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
+                      child: TextField(
+                        controller: _exerciseNameController,
+                        decoration: InputDecoration(
+                          hintText: "Exercise Name",
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                        cursorColor: isDarkMode ? Colors.white : Colors.black,
+                        keyboardType: TextInputType.text,
+                        textCapitalization: TextCapitalization.words,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                            fontSize: 14),
+                      ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

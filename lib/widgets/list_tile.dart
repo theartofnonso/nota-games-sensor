@@ -11,9 +11,10 @@ class ThemeListTile extends StatelessWidget {
     final isDarkMode = systemBrightness == Brightness.dark;
 
     return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: child);
   }

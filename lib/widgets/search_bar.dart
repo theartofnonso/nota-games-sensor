@@ -32,7 +32,7 @@ class CSearchBar extends StatelessWidget {
         textStyle: WidgetStatePropertyAll<TextStyle>(TextStyle(color: Colors.white)),
         backgroundColor: WidgetStatePropertyAll<Color>(Theme.of(context).colors.sapphireDark),
         shape: WidgetStatePropertyAll<OutlinedBorder>(RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(5.0),
+          borderRadius: BorderRadius.circular(50),
         )));
   }
 }

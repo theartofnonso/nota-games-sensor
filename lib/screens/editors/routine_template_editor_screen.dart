@@ -285,128 +285,158 @@ class _RoutineTemplateEditorScreenState
     }).toList();
 
     return Scaffold(
-          appBar: AppBar(
-            backgroundColor: appBarBackgroundColor(context: context),
-            surfaceTintColor: Colors.transparent,
-            scrolledUnderElevation: 0,
-            leading: IconButton(
-                icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
-                onPressed: _checkForUnsavedChanges),
-            actions: [
-              IconButton(
-                  onPressed: _selectExercisesInLibrary,
-                  icon: const FaIcon(FontAwesomeIcons.solidSquarePlus)),
-              if (exerciseTemplates.length > 1)
-                IconButton(
-                    onPressed: () =>
-                        _reOrderExerciseLogs(exerciseLogs: exerciseTemplates),
-                    icon: const FaIcon(FontAwesomeIcons.barsStaggered)),
-            ],
-          ),
-          floatingActionButton: isKeyboardOpen
-              ? SafeArea(
-                  minimum: EdgeInsets.only(left: 32),
-                  child: Row(children: [
-                    FloatingActionButton(
-                      heroTag: UniqueKey(),
-                      onPressed: _dismissKeyboard,
-                      enableFeedback: true,
-                      child: FaIcon(Icons.keyboard_hide_rounded),
-                    ),
-                    Spacer(),
-                    _selectedSetDto != null
-                        ? FloatingActionButton(
-                            heroTag: UniqueKey(),
-                            onPressed: _showWeightCalculator,
-                            enableFeedback: true,
-                            child: Image.asset(
-                              'icons/dumbbells.png',
-                              fit: BoxFit.contain,
-                              color: isDarkMode ? Colors.white : Colors.white,
-                              height: 24, // Adjust the height as needed
-                            ),
-                          )
-                        : SizedBox.shrink()
-                  ]),
-                )
-              : null,
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: themeGradient(context: context),
-            ),
-            child: SafeArea(
-              bottom: false,
-              minimum:
-                  const EdgeInsets.only(right: 10.0, bottom: 10.0, left: 10.0),
-              child: GestureDetector(
-                onTap: _dismissKeyboard,
-                child: Column(
-                  spacing: 20,
+      appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+            icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
+            onPressed: _checkForUnsavedChanges),
+        actions: [
+          IconButton(
+              onPressed: _selectExercisesInLibrary,
+              icon: const FaIcon(FontAwesomeIcons.circlePlus)),
+          if (exerciseTemplates.length > 1)
+            IconButton(
+                onPressed: () =>
+                    _reOrderExerciseLogs(exerciseLogs: exerciseTemplates),
+                icon: const FaIcon(FontAwesomeIcons.barsStaggered)),
+        ],
+      ),
+      floatingActionButton: isKeyboardOpen
+          ? SafeArea(
+              minimum: EdgeInsets.only(left: 32),
+              child: Row(children: [
+                FloatingActionButton(
+                  heroTag: UniqueKey(),
+                  onPressed: _dismissKeyboard,
+                  enableFeedback: true,
+                  child: FaIcon(Icons.keyboard_hide_rounded),
+                ),
+                Spacer(),
+                _selectedSetDto != null
+                    ? FloatingActionButton(
+                        heroTag: UniqueKey(),
+                        onPressed: _showWeightCalculator,
+                        enableFeedback: true,
+                        child: Image.asset(
+                          'icons/dumbbells.png',
+                          fit: BoxFit.contain,
+                          color: isDarkMode ? Colors.white : Colors.white,
+                          height: 24, // Adjust the height as needed
+                        ),
+                      )
+                    : SizedBox.shrink()
+              ]),
+            )
+          : null,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: themeGradient(context: context),
+        ),
+        child: SafeArea(
+          bottom: false,
+          minimum: const EdgeInsets.only(right: 10.0, bottom: 10.0, left: 10.0),
+          child: GestureDetector(
+            onTap: _dismissKeyboard,
+            child: Column(
+              spacing: 20,
+              children: [
+                Column(
+                  spacing: 10,
                   children: [
-                    Column(
-                      spacing: 10,
-                      children: [
-                        TextField(
-                          controller: _templateNameController,
-                          cursorColor: isDarkMode ? Colors.white : Colors.black,
-                          decoration: InputDecoration(
-                            hintText: "New workout",
-                          ),
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.words,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w400,
-                              color: isDarkMode ? Colors.white : Colors.black,
-                              fontSize: 14),
-                        ),
-                        TextField(
-                          controller: _templateNotesController,
-                          cursorColor: isDarkMode ? Colors.white : Colors.black,
-                          decoration: InputDecoration(
-                            hintText: "Notes (optional)",
-                          ),
-                          maxLines: null,
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.sentences,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w400,
-                              color: isDarkMode ? Colors.white : Colors.black,
-                              fontSize: 14),
-                        ),
-                      ],
-                    ),
-                    if (exerciseTemplates.isNotEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: GridView.count(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1,
-                              mainAxisSpacing: 10.0,
-                              crossAxisSpacing: 10.0,
-                              children: children),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(
+                          color: Theme.of(context)
+                              .extension<TRKRColors>()!
+                              .borderLight,
+                          width: 1,
                         ),
                       ),
-                    const SizedBox(height: 10),
-                    SafeArea(
-                      minimum: EdgeInsets.symmetric(horizontal: 20),
-                      child: SizedBox(
-                          width: double.infinity,
-                          child: OpacityButtonWidgetTwo(
-                              buttonColor:
-                                  Theme.of(context).colors.vibrantAccent,
-                              label: widget.template?.id.isNotEmpty ?? false
-                                  ? "Update Workout"
-                                  : "Create Workout",
-                              onPressed: widget.template?.id.isNotEmpty ?? false
-                                  ? _updateRoutineTemplate
-                                  : _createRoutineTemplate)),
+                      padding: const EdgeInsets.only(
+                          left: 20, top: 6, bottom: 6, right: 6),
+                      child: TextField(
+                        controller: _templateNameController,
+                        cursorColor: isDarkMode ? Colors.white : Colors.black,
+                        decoration: InputDecoration(
+                          hintText: "New workout",
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                        keyboardType: TextInputType.text,
+                        textCapitalization: TextCapitalization.words,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                            fontSize: 14),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(50),
+                        border: Border.all(
+                          color: Theme.of(context)
+                              .extension<TRKRColors>()!
+                              .borderLight,
+                          width: 1,
+                        ),
+                      ),
+                      padding: const EdgeInsets.only(
+                          left: 20, top: 6, bottom: 6, right: 6),
+                      child: TextField(
+                        controller: _templateNotesController,
+                        cursorColor: isDarkMode ? Colors.white : Colors.black,
+                        decoration: InputDecoration(
+                          hintText: "Notes (optional)",
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                        maxLines: null,
+                        keyboardType: TextInputType.text,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                            fontSize: 14),
+                      ),
                     ),
                   ],
                 ),
-              ),
+                if (exerciseTemplates.isNotEmpty)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: GridView.count(
+                          crossAxisCount: 2,
+                          childAspectRatio: 1,
+                          mainAxisSpacing: 10.0,
+                          crossAxisSpacing: 10.0,
+                          children: children),
+                    ),
+                  ),
+                const SizedBox(height: 10),
+                SafeArea(
+                  minimum: EdgeInsets.symmetric(horizontal: 20),
+                  child: SizedBox(
+                      width: double.infinity,
+                      child: OpacityButtonWidgetTwo(
+                          buttonColor: Theme.of(context).colors.vibrantAccent,
+                          label: widget.template?.id.isNotEmpty ?? false
+                              ? "Update Workout"
+                              : "Create Workout",
+                          onPressed: widget.template?.id.isNotEmpty ?? false
+                              ? _updateRoutineTemplate
+                              : _createRoutineTemplate)),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
     );
   }
 

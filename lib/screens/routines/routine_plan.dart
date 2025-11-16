@@ -461,7 +461,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                 ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(
-                      FontAwesomeIcons.solidSquarePlus,
+                      FontAwesomeIcons.circlePlus,
                       size: 18,
                     ),
                     horizontalTitleGap: 6,

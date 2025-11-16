@@ -113,19 +113,19 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               // No previous logs for this template - return original template sets
               return template.exerciseTemplates;
             }
-            
+
             // Sort logs by startTime (most recent first) and get the most recent one
             final sortedLogs = List<RoutineLogDto>.from(templateLogs)
               ..sort((a, b) => b.startTime.compareTo(a.startTime));
             final mostRecentLog = sortedLogs.first;
-            
+
             // Map each exercise template to its sets from the most recent log
             return template.exerciseTemplates.map((exerciseTemplate) {
               // Find this exercise in the most recent log
               final exerciseLogInMostRecentLog = mostRecentLog.exerciseLogs
                   .where((el) => el.exercise.id == exerciseTemplate.exercise.id)
                   .firstOrNull;
-              
+
               if (exerciseLogInMostRecentLog != null) {
                 // Use sets from the most recent log, unchecked
                 final uncheckedSets = exerciseLogInMostRecentLog.sets
@@ -133,7 +133,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                     .toList();
                 return exerciseTemplate.copyWith(sets: uncheckedSets);
               }
-              
+
               // Exercise not found in most recent log - return original template sets
               return exerciseTemplate;
             }).toList();
@@ -507,90 +507,94 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(
-              FontAwesomeIcons.penToSquare,
-              size: 18,
-            ),
-            horizontalTitleGap: 10,
-            title: Text("Edit", style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              _navigateToRoutineTemplateEditor();
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(
-              FontAwesomeIcons.copy,
-              size: 18,
-            ),
-            horizontalTitleGap: 6,
-            title: Text("Copy", style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              _createTemplate(copy: true);
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(
-              FontAwesomeIcons.solidSquarePlus,
-              size: 18,
-            ),
-            horizontalTitleGap: 6,
-            title: Text("Move to another plan",
-                style: Theme.of(context).textTheme.bodyLarge),
-            onTap: () {
-              Navigator.of(context).pop();
-              _showPlanPicker();
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const FaIcon(
-              FontAwesomeIcons.trash,
-              size: 16,
-              color: Colors.redAccent,
-            ),
-            horizontalTitleGap: 6,
-            title: Text("Delete",
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(color: Colors.red)),
-            onTap: () {
-              Navigator.of(context).pop();
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const FaIcon(
+                    FontAwesomeIcons.penToSquare,
+                    size: 18,
+                  ),
+                  horizontalTitleGap: 10,
+                  title: Text("Edit",
+                      style: Theme.of(context).textTheme.bodyLarge),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _navigateToRoutineTemplateEditor();
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const FaIcon(
+                    FontAwesomeIcons.copy,
+                    size: 18,
+                  ),
+                  horizontalTitleGap: 6,
+                  title: Text("Copy",
+                      style: Theme.of(context).textTheme.bodyLarge),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _createTemplate(copy: true);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: FaIcon(
+                    FontAwesomeIcons.circlePlus,
+                    size: 18,
+                    color: Theme.of(context).colors.vibrantAccent,
+                  ),
+                  horizontalTitleGap: 6,
+                  title: Text("Move to another plan",
+                      style: Theme.of(context).textTheme.bodyLarge),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _showPlanPicker();
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const FaIcon(
+                    FontAwesomeIcons.trash,
+                    size: 16,
+                    color: Colors.redAccent,
+                  ),
+                  horizontalTitleGap: 6,
+                  title: Text("Delete",
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge
+                          ?.copyWith(color: Colors.red)),
+                  onTap: () {
+                    Navigator.of(context).pop();
 
-              final controller =
-                  Provider.of<SupabaseExerciseAndRoutineController>(context,
-                      listen: false);
-              final template = controller.templateWhere(id: widget.id);
+                    final controller =
+                        Provider.of<SupabaseExerciseAndRoutineController>(
+                            context,
+                            listen: false);
+                    final template = controller.templateWhere(id: widget.id);
 
-              if (template != null) {
-                showBottomSheetWithMultiActions(
-                    context: context,
-                    title: "Delete workout?",
-                    description: planDto != null
-                        ? "Are you sure you want to delete this workout and remove it from ${planDto.name}?"
-                        : "Are you sure you want to delete this workout?",
-                    leftAction: Navigator.of(context).pop,
-                    rightAction: () {
-                      context.pop();
-                      _toggleLoadingState();
-                      _deleteRoutine(template: template);
-                    },
-                    leftActionLabel: 'Cancel',
-                    rightActionLabel: 'Delete',
-                    isRightActionDestructive: true);
-              }
-            },
-          )
-        ]),
+                    if (template != null) {
+                      showBottomSheetWithMultiActions(
+                          context: context,
+                          title: "Delete workout?",
+                          description: planDto != null
+                              ? "Are you sure you want to delete this workout and remove it from ${planDto.name}?"
+                              : "Are you sure you want to delete this workout?",
+                          leftAction: Navigator.of(context).pop,
+                          rightAction: () {
+                            context.pop();
+                            _toggleLoadingState();
+                            _deleteRoutine(template: template);
+                          },
+                          leftActionLabel: 'Cancel',
+                          rightActionLabel: 'Delete',
+                          isRightActionDestructive: true);
+                    }
+                  },
+                )
+              ]),
         ));
   }
 
@@ -608,27 +612,27 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: PlanPicker(
-          title: "Move ${template.name} to . . .",
-          plans: plans,
-          onSelect: (selectedPlan) async {
-            Navigator.of(context).pop();
+            title: "Move ${template.name} to . . .",
+            plans: plans,
+            onSelect: (selectedPlan) async {
+              Navigator.of(context).pop();
 
-            final templateProvider =
-                Provider.of<SupabaseExerciseAndRoutineController>(context,
-                    listen: false);
+              final templateProvider =
+                  Provider.of<SupabaseExerciseAndRoutineController>(context,
+                      listen: false);
 
-            final updatedRoutineTemplate =
-                template.copyWith(planId: selectedPlan.id);
+              final updatedRoutineTemplate =
+                  template.copyWith(planId: selectedPlan.id);
 
-            await templateProvider.updateTemplate(
-                template: updatedRoutineTemplate);
+              await templateProvider.updateTemplate(
+                  template: updatedRoutineTemplate);
 
-            if (mounted) {
-              showSnackbar(
-                  context: context,
-                  message: "Add ${template.name} to ${selectedPlan.name}");
-            }
-          },
+              if (mounted) {
+                showSnackbar(
+                    context: context,
+                    message: "Add ${template.name} to ${selectedPlan.name}");
+              }
+            },
           ),
         ),
       );

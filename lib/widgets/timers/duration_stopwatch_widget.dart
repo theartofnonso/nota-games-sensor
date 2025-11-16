@@ -102,8 +102,9 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
                     color: _isRunning
                         ? Colors.orange.withValues(alpha: 0.15)
                         : colors.vibrantAccent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(50),
+                    shape: BoxShape.circle,
                   ),
+                  clipBehavior: Clip.antiAlias,
                   child: FaIcon(
                     _isRunning ? FontAwesomeIcons.pause : FontAwesomeIcons.play,
                     color: _isRunning ? Colors.orange : colors.vibrantAccent,
@@ -138,8 +139,9 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: colors.vibrantAccent,
-                    borderRadius: BorderRadius.circular(50),
+                    shape: BoxShape.circle,
                   ),
+                  clipBehavior: Clip.antiAlias,
                   child: FaIcon(
                     FontAwesomeIcons.play,
                     color: Colors.black,
@@ -160,8 +162,9 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: colors.vibrantAccent,
-                    borderRadius: BorderRadius.circular(50),
+                    shape: BoxShape.circle,
                   ),
+                  clipBehavior: Clip.antiAlias,
                   child: FaIcon(
                     FontAwesomeIcons.check,
                     color: Colors.black,

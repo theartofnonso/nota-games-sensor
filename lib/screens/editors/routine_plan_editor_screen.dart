@@ -137,32 +137,58 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
             child: Column(
               spacing: 10,
               children: [
-                TextField(
-                  controller: _planNameController,
-                  cursorColor: Colors.white,
-                  decoration: const InputDecoration(
-                    hintText: "Plan name",
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(
+                      color: Theme.of(context).extension<TRKRColors>()!.borderLight,
+                      width: 1,
+                    ),
                   ),
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white,
-                      fontSize: 14),
+                  padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
+                  child: TextField(
+                    controller: _planNameController,
+                    cursorColor: Colors.white,
+                    decoration: const InputDecoration(
+                      hintText: "Plan name",
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                    ),
+                    keyboardType: TextInputType.text,
+                    textCapitalization: TextCapitalization.words,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                        fontSize: 14),
+                  ),
                 ),
-                TextField(
-                  controller: _planNotesController,
-                  cursorColor: Colors.white,
-                  decoration: const InputDecoration(
-                    hintText: "Notes (optional)",
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(
+                      color: Theme.of(context).extension<TRKRColors>()!.borderLight,
+                      width: 1,
+                    ),
                   ),
-                  maxLines: null,
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.sentences,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white,
-                      fontSize: 14),
+                  padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
+                  child: TextField(
+                    controller: _planNotesController,
+                    cursorColor: Colors.white,
+                    decoration: const InputDecoration(
+                      hintText: "Notes (optional)",
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                    ),
+                    maxLines: null,
+                    keyboardType: TextInputType.text,
+                    textCapitalization: TextCapitalization.sentences,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                        fontSize: 14),
+                  ),
                 ),
                 const Spacer(),
                 SafeArea(

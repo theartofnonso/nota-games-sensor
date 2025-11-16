@@ -40,7 +40,7 @@ class DurationSetRow extends StatelessWidget {
       padding: const EdgeInsets.only(left: 6, top: 6, bottom: 6, right: 6),
       child: Row(
         children: [
-          // Delete button on left (rounded)
+          // Delete button on left (fully rounded)
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -50,8 +50,9 @@ class DurationSetRow extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(50),
+                  shape: BoxShape.circle,
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: FaIcon(
                   FontAwesomeIcons.xmark,
                   color: Colors.red.withValues(alpha: 0.9),
@@ -75,7 +76,7 @@ class DurationSetRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Check button on right (rounded)
+          // Check button on right (fully rounded)
           Material(
             color: Colors.transparent,
             child: InkWell(
@@ -88,7 +89,9 @@ class DurationSetRow extends StatelessWidget {
                       ? colors.vibrantAccent
                       : colors.vibrantAccent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(50),
+                  shape: BoxShape.circle,
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: FaIcon(
                   FontAwesomeIcons.check,
                   color: setDto.checked ? Colors.black : colors.vibrantAccent,

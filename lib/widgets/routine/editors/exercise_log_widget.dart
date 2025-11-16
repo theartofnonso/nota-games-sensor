@@ -24,6 +24,7 @@ import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/general_utils.dart';
+import '../../../utils/theme/color_extensions.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
@@ -415,21 +416,31 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
-            child: TextField(
-              controller: TextEditingController(text: currentNotes),
-              cursorColor: Colors.white,
-              onChanged: (value) => _updateExerciseLogNotes(value: value),
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: "Enter notes (optional)",
-                contentPadding: EdgeInsets.all(16.0),
-                border: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                enabledBorder: InputBorder.none,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(
+                  color: Theme.of(context).extension<TRKRColors>()!.borderLight,
+                  width: 1,
+                ),
               ),
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              textCapitalization: TextCapitalization.sentences,
+              padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
+              child: TextField(
+                controller: TextEditingController(text: currentNotes),
+                cursorColor: Colors.white,
+                onChanged: (value) => _updateExerciseLogNotes(value: value),
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: "Enter notes (optional)",
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                ),
+                maxLines: null,
+                keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
+              ),
             ),
           );
         },
@@ -539,8 +550,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                         widget.editorType == RoutineEditorMode.log))
                       IconButton(
                         onPressed: _addSet,
-                        icon: const FaIcon(FontAwesomeIcons.solidSquarePlus,
-                            size: 22, color: Colors.white),
+                        icon: const FaIcon(
+                          FontAwesomeIcons.circlePlus,
+                          size: 22,
+                          color: Colors.white,
+                        ),
                         tooltip: 'Add new set',
                       ),
                   ],

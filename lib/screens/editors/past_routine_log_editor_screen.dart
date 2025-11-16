@@ -414,7 +414,7 @@ class _PastRoutineLogEditorScreenState
             actions: [
               IconButton(
                   onPressed: _selectExercisesInLibrary,
-                  icon: const FaIcon(FontAwesomeIcons.solidSquarePlus)),
+                  icon: const FaIcon(FontAwesomeIcons.circlePlus)),
               if (exerciseLogs.length > 1)
                 IconButton(
                     onPressed: () =>
@@ -466,32 +466,66 @@ class _PastRoutineLogEditorScreenState
                       spacing: 10,
                       children: [
                         const SizedBox(height: 10),
-                        TextField(
-                          controller: _templateNameController,
-                          cursorColor: isDarkMode ? Colors.white : Colors.black,
-                          decoration: InputDecoration(
-                            hintText: "New workout",
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(50),
+                            border: Border.all(
+                              color: Theme.of(context)
+                                  .extension<TRKRColors>()!
+                                  .borderLight,
+                              width: 1,
+                            ),
                           ),
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.words,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w400,
-                              color: isDarkMode ? Colors.white : Colors.black,
-                              fontSize: 14),
+                          padding: const EdgeInsets.only(
+                              left: 20, top: 6, bottom: 6, right: 6),
+                          child: TextField(
+                            controller: _templateNameController,
+                            cursorColor:
+                                isDarkMode ? Colors.white : Colors.black,
+                            decoration: InputDecoration(
+                              hintText: "New workout",
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                            ),
+                            keyboardType: TextInputType.text,
+                            textCapitalization: TextCapitalization.words,
+                            style: TextStyle(
+                                fontWeight: FontWeight.w400,
+                                color: isDarkMode ? Colors.white : Colors.black,
+                                fontSize: 14),
+                          ),
                         ),
-                        TextField(
-                          controller: _templateNotesController,
-                          cursorColor: isDarkMode ? Colors.white : Colors.black,
-                          decoration: InputDecoration(
-                            hintText: "Notes (optional)",
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(50),
+                            border: Border.all(
+                              color: Theme.of(context)
+                                  .extension<TRKRColors>()!
+                                  .borderLight,
+                              width: 1,
+                            ),
                           ),
-                          maxLines: null,
-                          keyboardType: TextInputType.text,
-                          textCapitalization: TextCapitalization.sentences,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w400,
-                              color: isDarkMode ? Colors.white : Colors.black,
-                              fontSize: 14),
+                          padding: const EdgeInsets.only(
+                              left: 20, top: 6, bottom: 6, right: 6),
+                          child: TextField(
+                            controller: _templateNotesController,
+                            cursorColor:
+                                isDarkMode ? Colors.white : Colors.black,
+                            decoration: InputDecoration(
+                              hintText: "Notes (optional)",
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                            ),
+                            maxLines: null,
+                            keyboardType: TextInputType.text,
+                            textCapitalization: TextCapitalization.sentences,
+                            style: TextStyle(
+                                fontWeight: FontWeight.w400,
+                                color: isDarkMode ? Colors.white : Colors.black,
+                                fontSize: 14),
+                          ),
                         ),
                       ],
                     ),
@@ -560,7 +594,7 @@ class _PastRoutineLogEditorScreenState
       final controller = Provider.of<SupabaseExerciseAndRoutineController>(
           context,
           listen: false);
-      
+
       // Find the most recent log for this template (excluding the current log if it exists)
       final templateId = widget.log.templateId;
       List<RoutineLogDto> templateLogs;
@@ -572,7 +606,7 @@ class _PastRoutineLogEditorScreenState
       } else {
         templateLogs = [];
       }
-      
+
       final updatedExerciseLogs = exercises.map((exerciseLog) {
         // If we have a template and previous logs, use sets from the most recent log
         if (templateLogs.isNotEmpty) {
@@ -580,12 +614,12 @@ class _PastRoutineLogEditorScreenState
           final sortedLogs = List<RoutineLogDto>.from(templateLogs)
             ..sort((a, b) => b.startTime.compareTo(a.startTime));
           final mostRecentLog = sortedLogs.first;
-          
+
           // Find this exercise in the most recent log
           final exerciseLogInMostRecentLog = mostRecentLog.exerciseLogs
               .where((el) => el.exercise.id == exerciseLog.exercise.id)
               .firstOrNull;
-          
+
           if (exerciseLogInMostRecentLog != null) {
             // Use sets from the most recent log, unchecked, matching the number of sets
             final unCheckedSets = exerciseLogInMostRecentLog.sets
@@ -595,11 +629,11 @@ class _PastRoutineLogEditorScreenState
             return exerciseLog.copyWith(sets: unCheckedSets);
           }
         }
-        
+
         // Fallback: no template logs or exercise not found - return original exercise log
         return exerciseLog;
       }).toList();
-      
+
       Provider.of<ExerciseLogController>(context, listen: false)
           .loadExerciseLogs(exerciseLogs: updatedExerciseLogs);
       _minimiseOrMaximiseCards();

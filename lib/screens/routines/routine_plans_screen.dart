@@ -7,6 +7,7 @@ import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
+import '../../utils/theme/color_extensions.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/empty_states/no_list_empty_state.dart';
@@ -109,9 +110,10 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
               children: [
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const FaIcon(
-                    FontAwesomeIcons.plus,
+                  leading: FaIcon(
+                    FontAwesomeIcons.circlePlus,
                     size: 18,
+                    color: Theme.of(context).colors.vibrantAccent,
                   ),
                   horizontalTitleGap: 6,
                   title: Text("Create new workout plan",

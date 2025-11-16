@@ -170,7 +170,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         actions: [
           IconButton(
               onPressed: _navigateToExerciseEditor,
-              icon: const FaIcon(FontAwesomeIcons.solidSquarePlus)),
+              icon: const FaIcon(FontAwesomeIcons.circlePlus)),
         ],
       ),
       body: Container(

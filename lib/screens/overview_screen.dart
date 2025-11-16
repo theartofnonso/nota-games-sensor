@@ -397,8 +397,11 @@ class _OverviewScreenState extends State<OverviewScreen>
                           _logPastSessionForDate(context, date);
                         }
                       },
-                      icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                      color: isDarkMode ? Colors.white : Colors.black,
+                      icon: FaIcon(
+                        FontAwesomeIcons.circlePlus,
+                        size: 18,
+                        color: isDarkMode ? Colors.white : Colors.black,
+                      ),
                     ),
                 ],
               ),
@@ -506,8 +509,11 @@ class _OverviewScreenState extends State<OverviewScreen>
                   // Create plan button
                   IconButton(
                     onPressed: () => _createNewPlan(context),
-                    icon: const FaIcon(FontAwesomeIcons.plus, size: 18),
-                    color: isDarkMode ? Colors.white : Colors.black,
+                    icon: FaIcon(
+                      FontAwesomeIcons.circlePlus,
+                      size: 18,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
                   ),
                 ],
               ),
