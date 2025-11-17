@@ -414,16 +414,14 @@ class _DateCellState extends State<_DateCell>
 
     Color textColor;
     if (isToday) {
-      // Today: use predicted color if predicted, otherwise white
-      textColor = widget.isPredicted
-          ? Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.5)
-          : Colors.white;
+      // Today: always white
+      textColor = Colors.white;
     } else if (widget.hasLog) {
       textColor =
           isDarkMode ? Theme.of(context).colors.vibrantAccent : Colors.black;
     } else if (widget.isPredicted) {
-      // Predicted days: muted accent color (probability, not actual log)
-      textColor = Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.5);
+      // Predicted days: white text (badge will show green indicator)
+      textColor = Colors.white;
     } else if (widget.showMonthLabel) {
       textColor = Colors.white;
     } else {
@@ -433,7 +431,7 @@ class _DateCellState extends State<_DateCell>
 
     Border? border;
     if (widget.isSelected) {
-      if (widget.hasLog || widget.isPredicted) {
+      if (widget.hasLog) {
         border = Border.all(
           color: isDarkMode
               ? Theme.of(context).colors.vibrantAccent
@@ -457,44 +455,65 @@ class _DateCellState extends State<_DateCell>
             border: border,
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (widget.showMonthLabel)
-                  Text(
-                    DateFormat('MMM').format(widget.date),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: widget.hasLog || widget.isPredicted
-                              ? textColor
-                              : Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 8,
-                        ),
-                  ),
-                SizedBox(
-                  width: 32,
-                  child: Text(
-                    '${widget.date.day}',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: textColor,
-                          fontWeight: widget.hasLog || widget.isPredicted
-                              ? FontWeight.bold
-                              : FontWeight.w500,
-                          fontSize: 16,
-                        ),
+          child: Stack(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.showMonthLabel)
+                      Text(
+                        DateFormat('MMM').format(widget.date),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: widget.hasLog || widget.isPredicted
+                                  ? textColor
+                                  : Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 8,
+                            ),
+                      ),
+                    SizedBox(
+                      width: 32,
+                      child: Text(
+                        '${widget.date.day}',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              color: textColor,
+                              fontWeight: widget.hasLog || widget.isPredicted
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              fontSize: 16,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Green badge for predicted days
+              if (widget.isPredicted && !widget.hasLog)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colors.vibrantAccent,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
