@@ -36,7 +36,7 @@ class ExerciseLogController extends ChangeNotifier {
     logger.i("load exercise logs");
   }
 
-  ExerciseLogDto whereExerciseLog({required String exerciseId}) {
+  ExerciseLogDto? whereExerciseLog({required String exerciseId}) {
     return _exerciseLogRepository.whereExerciseLog(exerciseId: exerciseId);
   }
 

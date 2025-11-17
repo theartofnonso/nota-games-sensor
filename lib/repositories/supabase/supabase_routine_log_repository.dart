@@ -120,17 +120,17 @@ class SupabaseRoutineLogRepository {
       // Insert into Supabase
       await _client.from('routine_logs').insert(updatedLog.toJson());
 
+      // Analytics
+      await Posthog().capture(
+        eventName: PostHogAnalyticsEvent.logRoutine.displayName,
+      );
+
       // Add to in-memory list
       _logs = [updatedLog, ..._logs];
       _groupExerciseLogsById();
       _groupExerciseLogsByMuscleGroup();
 
       logger.i('Saved log: ${updatedLog.id}');
-
-      // Analytics
-      await Posthog().capture(
-        eventName: PostHogAnalyticsEvent.logRoutine.displayName,
-      );
 
       return updatedLog;
     } catch (e) {

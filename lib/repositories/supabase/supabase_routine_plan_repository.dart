@@ -55,15 +55,15 @@ class SupabaseRoutinePlanRepository {
       // Insert into Supabase
       await _client.from('routine_plans').insert(planWithId.toJson());
 
-      // Add to in-memory list
-      _plans.add(planWithId);
-
-      logger.i('Saved plan: ${planWithId.id}');
-
       // Analytics
       await Posthog().capture(
         eventName: PostHogAnalyticsEvent.createRoutinePlan.displayName,
       );
+
+      // Add to in-memory list
+      _plans.add(planWithId);
+
+      logger.i('Saved plan: ${planWithId.id}');
 
       return planWithId;
     } catch (e) {

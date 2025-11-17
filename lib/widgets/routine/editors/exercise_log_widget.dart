@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/colors.dart';
@@ -44,7 +45,7 @@ class ExerciseLogWidget extends StatefulWidget {
 }
 
 class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
-  late ExerciseLogDto _exerciseLog;
+  ExerciseLogDto? _exerciseLog;
 
   List<(TextEditingController, TextEditingController)>
       _weightAndRepsControllers = [];
@@ -61,18 +62,31 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   late TextEditingController _notesController;
   final FocusNode _notesFocusNode = FocusNode();
 
+  /// Get the current exercise log, throwing if it doesn't exist
+  /// This should only be called after null checks in build method
+  ExerciseLogDto get _currentExerciseLog {
+    if (_exerciseLog == null) {
+      throw StateError('Exercise log not found');
+    }
+    return _exerciseLog!;
+  }
+
   void _updateExerciseLogNotes({required String value}) {
+    if (_exerciseLog == null) return;
     Provider.of<ExerciseLogController>(context, listen: false)
-        .updateExerciseLogNotes(exerciseLogId: _exerciseLog.id, value: value);
+        .updateExerciseLogNotes(
+            exerciseLogId: _currentExerciseLog.id, value: value);
   }
 
   void _loadControllers() {
+    if (_exerciseLog == null) return;
     _clearControllers();
 
     final exerciseLog =
         Provider.of<ExerciseLogController>(context, listen: false)
-            .whereExerciseLog(exerciseId: _exerciseLog.exercise.id);
+            .whereExerciseLog(exerciseId: _currentExerciseLog.exercise.id);
 
+    if (exerciseLog == null) return;
     final sets = exerciseLog.sets;
 
     if (withDurationOnly(type: exerciseLog.exercise.type)) {
@@ -87,7 +101,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _clearControllers() {
-    final exerciseLog = _exerciseLog;
+    if (_exerciseLog == null) return;
+    final exerciseLog = _currentExerciseLog;
 
     if (withDurationOnly(type: exerciseLog.exercise.type)) {
       _durationControllers = [];
@@ -103,7 +118,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _disposeControllers() {
-    final exerciseLog = _exerciseLog;
+    if (_exerciseLog == null) return;
+    final exerciseLog = _currentExerciseLog;
 
     if (withWeightsOnly(type: exerciseLog.exercise.type)) {
       for (final controllerPair in _weightAndRepsControllers) {
@@ -119,26 +135,30 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _addSet() {
+    if (_exerciseLog == null) return;
     final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false)
-        .whereRecentSetsForExercise(exercise: _exerciseLog.exercise);
+        .whereRecentSetsForExercise(exercise: _currentExerciseLog.exercise);
     Provider.of<ExerciseLogController>(context, listen: false)
-        .addSet(exerciseLogId: _exerciseLog.id, pastSets: pastSets);
+        .addSet(exerciseLogId: _currentExerciseLog.id, pastSets: pastSets);
     _loadControllers();
   }
 
   void _removeSet({required int index}) {
+    if (_exerciseLog == null) return;
     Provider.of<ExerciseLogController>(context, listen: false)
-        .removeSetForExerciseLog(exerciseLogId: _exerciseLog.id, index: index);
+        .removeSetForExerciseLog(
+            exerciseLogId: _currentExerciseLog.id, index: index);
     _loadControllers();
   }
 
   void _updateWeight(
       {required int index, required double weight, required SetDto setDto}) {
+    if (_exerciseLog == null) return;
     final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
             context,
             listen: false)
-        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+        .wherePrevSetsForExercise(exercise: _currentExerciseLog.exercise);
 
     final previousWeights =
         previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
@@ -155,18 +175,21 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     final updatedSet = (setDto as WeightAndRepsSetDto).copyWith(weight: weight);
     Provider.of<ExerciseLogController>(context, listen: false).updateWeight(
-        exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
+        exerciseLogId: _currentExerciseLog.id,
+        index: index,
+        setDto: updatedSet);
   }
 
   void _updateReps(
       {required int index, required int reps, required SetDto setDto}) {
+    if (_exerciseLog == null) return;
     final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
             context,
             listen: false)
-        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+        .wherePrevSetsForExercise(exercise: _currentExerciseLog.exercise);
 
     final previousReps = previousSets
-        .map((set) => switch (_exerciseLog.exercise.type) {
+        .map((set) => switch (_currentExerciseLog.exercise.type) {
               ExerciseType.weights => (set as WeightAndRepsSetDto).reps,
               ExerciseType.bodyWeight => (set as RepsSetDto).reps,
               ExerciseType.duration => throw UnimplementedError(),
@@ -188,7 +211,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         ? setDto.copyWith(reps: reps)
         : (setDto as RepsSetDto).copyWith(reps: reps);
     Provider.of<ExerciseLogController>(context, listen: false).updateReps(
-        exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
+        exerciseLogId: _currentExerciseLog.id,
+        index: index,
+        setDto: updatedSet);
   }
 
   void _updateDuration(
@@ -196,39 +221,52 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
       required Duration duration,
       required SetDto setDto,
       required bool shouldCheck}) {
+    if (_exerciseLog == null) return;
     SetDto updatedSet = (setDto as DurationSetDto)
         .copyWith(duration: duration, checked: shouldCheck);
     Provider.of<ExerciseLogController>(context, listen: false).updateDuration(
-        exerciseLogId: _exerciseLog.id,
+        exerciseLogId: _currentExerciseLog.id,
         index: index,
         setDto: updatedSet,
         notify: true);
   }
 
   void _updateSetCheck({required int index}) async {
+    if (_exerciseLog == null) return;
     // 1. Pull the current version from provider, not from the parameter
-    final currentSet =
+    final exerciseLog =
         Provider.of<ExerciseLogController>(context, listen: false)
-            .whereExerciseLog(exerciseId: _exerciseLog.id)
-            .sets[index];
+            .whereExerciseLog(exerciseId: _currentExerciseLog.exercise.id);
+
+    if (exerciseLog == null || index >= exerciseLog.sets.length) return;
+    final currentSet = exerciseLog.sets[index];
 
     if (currentSet.isEmpty()) {
       showSnackbar(
           context: context,
           message:
-              "Mind taking a look at the set values and confirming they’re correct?");
+              "Mind taking a look at the set values and confirming they're correct?");
       return;
     }
 
     final checked = !currentSet.checked;
+
+    // Vibrate when logging a set
+    if (checked) {
+      HapticFeedback.mediumImpact();
+    }
+
     final updatedSet = currentSet.copyWith(checked: checked);
     Provider.of<ExerciseLogController>(context, listen: false).updateSetCheck(
-        exerciseLogId: _exerciseLog.id, index: index, setDto: updatedSet);
+        exerciseLogId: _currentExerciseLog.id,
+        index: index,
+        setDto: updatedSet);
 
     _loadControllers();
   }
 
   void _onLogDurationSet() {
+    if (_exerciseLog == null) return;
     final stopwatchState = _durationStopwatchKey.currentState;
     if (stopwatchState != null &&
         stopwatchState.currentDuration.inSeconds > 0) {
@@ -240,10 +278,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
       // Wait for the widget to rebuild with the new set, then update it
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          final exerciseLog =
-              Provider.of<ExerciseLogController>(context, listen: false)
-                  .whereExerciseLog(exerciseId: _exerciseLog.exercise.id);
+        if (mounted && _exerciseLog != null) {
+          final exerciseLog = Provider.of<ExerciseLogController>(context,
+                  listen: false)
+              .whereExerciseLog(exerciseId: _currentExerciseLog.exercise.id);
+          if (exerciseLog == null) return;
           final sets = exerciseLog.sets;
 
           if (sets.isNotEmpty) {
@@ -254,9 +293,13 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             // Update its duration and auto-check it
             final updatedSet =
                 setDto.copyWith(duration: duration, checked: true);
+
+            // Vibrate when logging a duration set
+            HapticFeedback.mediumImpact();
+
             Provider.of<ExerciseLogController>(context, listen: false)
                 .updateSetCheck(
-                    exerciseLogId: _exerciseLog.id,
+                    exerciseLogId: _currentExerciseLog.id,
                     index: newSetIndex,
                     setDto: updatedSet);
           }
@@ -290,10 +333,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _loadWeightAndRepsControllers({required List<SetDto> sets}) {
+    if (_exerciseLog == null) return;
     final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
             context,
             listen: false)
-        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+        .wherePrevSetsForExercise(exercise: _currentExerciseLog.exercise);
 
     final previousWeights =
         previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
@@ -326,13 +370,14 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _loadRepsControllers({required List<SetDto> sets}) {
+    if (_exerciseLog == null) return;
     final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
             context,
             listen: false)
-        .wherePrevSetsForExercise(exercise: _exerciseLog.exercise);
+        .wherePrevSetsForExercise(exercise: _currentExerciseLog.exercise);
 
     final previousReps = previousSets
-        .map((set) => switch (_exerciseLog.exercise.type) {
+        .map((set) => switch (_currentExerciseLog.exercise.type) {
               ExerciseType.weights => (set as WeightAndRepsSetDto).reps,
               ExerciseType.bodyWeight => (set as RepsSetDto).reps,
               ExerciseType.duration => throw UnimplementedError(),
@@ -341,7 +386,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     List<TextEditingController> controllers = [];
     for (final (index, set) in sets.indexed) {
-      final reps = switch (_exerciseLog.exercise.type) {
+      final reps = switch (_currentExerciseLog.exercise.type) {
         ExerciseType.weights => (set as WeightAndRepsSetDto).reps,
         ExerciseType.bodyWeight => (set as RepsSetDto).reps,
         ExerciseType.duration => throw UnimplementedError(),
@@ -403,7 +448,13 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     super.initState();
     _exerciseLog = Provider.of<ExerciseLogController>(context, listen: false)
         .whereExerciseLog(exerciseId: widget.exerciseLogId);
-    _notesController = TextEditingController(text: _exerciseLog.notes);
+
+    // If exercise log doesn't exist, return early (widget will show empty state)
+    if (_exerciseLog == null) {
+      return;
+    }
+
+    _notesController = TextEditingController(text: _exerciseLog!.notes);
     _loadControllers();
   }
 
@@ -441,10 +492,52 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // If exercise log doesn't exist, show empty state
+    if (_exerciseLog == null) {
+      return ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: themeGradient(context: context),
+          ),
+          child: const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Text(
+                'Exercise log not found',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom != 0;
 
-    final exerciseLog = context.select<ExerciseLogController, ExerciseLogDto>(
-        (c) => c.whereExerciseLog(exerciseId: _exerciseLog.exercise.id));
+    final exerciseLog = context.select<ExerciseLogController, ExerciseLogDto?>(
+        (c) => c.whereExerciseLog(exerciseId: _exerciseLog!.exercise.id));
+
+    // If exercise log was removed, show empty state
+    if (exerciseLog == null) {
+      return ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: themeGradient(context: context),
+          ),
+          child: const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Text(
+                'Exercise log not found',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     // Update notes controller if exercise log notes changed externally
     if (_notesController.text != exerciseLog.notes) {

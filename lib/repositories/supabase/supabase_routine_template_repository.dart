@@ -55,15 +55,15 @@ class SupabaseRoutineTemplateRepository {
       // Insert into Supabase
       await _client.from('routine_templates').insert(templateWithId.toJson());
 
-      // Add to in-memory list
-      _templates.add(templateWithId);
-
-      logger.i('Saved template: ${templateWithId.id}');
-
       // Analytics
       await Posthog().capture(
         eventName: PostHogAnalyticsEvent.createRoutineTemplate.displayName,
       );
+
+      // Add to in-memory list
+      _templates.add(templateWithId);
+
+      logger.i('Saved template: ${templateWithId.id}');
 
       return templateWithId;
     } catch (e) {

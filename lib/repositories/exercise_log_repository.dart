@@ -38,9 +38,10 @@ class ExerciseLogRepository {
     _exerciseLogs = reOrderedList;
   }
 
-  ExerciseLogDto whereExerciseLog({required String exerciseId}) {
-    return _exerciseLogs
-        .firstWhere((exerciseLog) => exerciseLog.id == exerciseId);
+  ExerciseLogDto? whereExerciseLog({required String exerciseId}) {
+    // Search by exercise ID (not exercise log ID) since callers pass exercise.id
+    return _exerciseLogs.firstWhereOrNull(
+        (exerciseLog) => exerciseLog.exercise.id == exerciseId);
   }
 
   void removeExerciseLog({required String logId}) {
@@ -70,7 +71,7 @@ class ExerciseLogRepository {
     final oldExerciseLogIndex =
         _indexWhereExerciseLog(exerciseLogId: oldExerciseId);
     final oldExerciseLog = _whereExerciseLog(exerciseLogId: oldExerciseId);
-    if (oldExerciseLogIndex == -1) {
+    if (oldExerciseLogIndex == -1 || oldExerciseLog == null) {
       return;
     }
 
@@ -377,9 +378,9 @@ class ExerciseLogRepository {
         .indexWhere((exerciseLog) => exerciseLog.id == exerciseLogId);
   }
 
-  ExerciseLogDto _whereExerciseLog({required String exerciseLogId}) {
+  ExerciseLogDto? _whereExerciseLog({required String exerciseLogId}) {
     return _exerciseLogs
-        .firstWhere((exerciseLog) => exerciseLog.id == exerciseLogId);
+        .firstWhereOrNull((exerciseLog) => exerciseLog.id == exerciseLogId);
   }
 
   List<ExerciseLogDto> _copyExerciseLogs() {

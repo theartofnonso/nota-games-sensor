@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tracker_app/utils/dummy_mode_utils.dart';
 import 'package:tracker_app/utils/general_utils.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 
@@ -44,6 +45,42 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           backgroundColor: Colors.orange,
         ),
       );
+      return;
+    }
+
+    // Check if this is the test account - completely bypass auth and auto-login
+    if (isTestAccountEmail(email)) {
+      setState(() => _isLoading = true);
+
+      try {
+        // For test account, automatically sign in with password (no OTP needed)
+        // The test account must exist in Supabase with password: 'testaccount123'
+        await Supabase.instance.client.auth.signInWithPassword(
+          email: testAccountEmail,
+          password: 'testaccount123',
+        );
+
+        // Success! User will be automatically navigated by the auth state listener
+        // No need to show snackbar or OTP screen - just silently log in
+      } catch (error) {
+        // If login fails, show error but don't fall back to OTP
+        debugPrint('[Test Account] Login failed: $error');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                  'Test account login failed. Please ensure the account exists in Supabase.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
       return;
     }
 
@@ -93,7 +130,10 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   }
 
   Future<void> _verifyOTP() async {
-    if (_otpController.text.trim().length != 6) {
+    final email = _emailController.text.trim();
+    final otp = _otpController.text.trim();
+
+    if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a valid 6-digit code'),
@@ -106,9 +146,11 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Normal OTP verification for regular users
+      // (Test account should never reach here as it bypasses in _sendOTP)
       await Supabase.instance.client.auth.verifyOTP(
-        email: _emailController.text.trim(),
-        token: _otpController.text.trim(),
+        email: email,
+        token: otp,
         type: OtpType.email,
       );
 

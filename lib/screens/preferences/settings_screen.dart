@@ -18,7 +18,6 @@ import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
-import '../../utils/uri_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
@@ -203,13 +202,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                 ),
                 ListTile(
-                    onTap: _sendFeedback,
-                    leading: FaIcon(FontAwesomeIcons.solidPaperPlane,
-                        color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("Feedback",
-                        style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text("help us improve")),
-                ListTile(
                     onTap: () => navigateWithSlideTransition(
                           context: context,
                           child: const ExerciseLibraryScreen(readOnly: true),
@@ -263,18 +255,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     final InAppReview inAppReview = InAppReview.instance;
 
     inAppReview.openStoreListing(appStoreId: appStoreId);
-  }
-
-  void _sendFeedback() async {
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: 'hello@trkr.fit', // Replace with the recipient's email
-      queryParameters: {
-        'subject': 'Feedback for trainware', // Set the email subject
-      },
-    );
-
-    await openUrl(url: emailUri.toString(), context: context);
   }
 
   void _clearAppData() async {

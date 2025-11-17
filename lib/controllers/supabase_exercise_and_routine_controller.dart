@@ -80,13 +80,14 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         _planRepository.loadPlans(),
         _logRepository.loadLogs(),
       ]);
-      
+
       // Schedule training reminders based on historic log data
-      final historicLogTimes = _logRepository.logs.map((log) => log.startTime).toList();
+      final historicLogTimes =
+          _logRepository.logs.map((log) => log.startTime).toList();
       if (historicLogTimes.isNotEmpty) {
         schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
       }
-      
+
       notifyListeners();
     } catch (e) {
       logger.e("Error loading user data", error: e);
@@ -243,9 +244,10 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       savedLog = await _logRepository.saveLog(logDto);
-      
+
       // Reschedule training reminders based on updated log data
-      final historicLogTimes = _logRepository.logs.map((log) => log.startTime).toList();
+      final historicLogTimes =
+          _logRepository.logs.map((log) => log.startTime).toList();
       if (historicLogTimes.isNotEmpty) {
         schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
       }
@@ -386,46 +388,47 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return exerciseLogs;
   }
 
-  List<SetDto> whereRecentSetsForExercise({required ExerciseDto exercise, String? templateId}) {
+  List<SetDto> whereRecentSetsForExercise(
+      {required ExerciseDto exercise, String? templateId}) {
     // If templateId is provided, filter logs by template first
     List<({ExerciseLogDto log, DateTime timestamp})> exerciseLogsWithTimestamps;
     if (templateId != null && templateId.isNotEmpty) {
       // Get logs for this specific template only
       final templateLogs = whereLogsWithTemplateId(templateId: templateId);
       // Extract exercise logs for this exercise from template logs only, with timestamps
-      exerciseLogsWithTimestamps = <({ExerciseLogDto log, DateTime timestamp})>[];
+      exerciseLogsWithTimestamps =
+          <({ExerciseLogDto log, DateTime timestamp})>[];
       for (final routineLog in templateLogs) {
         for (final exerciseLog in routineLog.exerciseLogs) {
           if (exerciseLog.exercise.id == exercise.id) {
-            exerciseLogsWithTimestamps.add((
-              log: exerciseLog,
-              timestamp: routineLog.startTime
-            ));
+            exerciseLogsWithTimestamps
+                .add((log: exerciseLog, timestamp: routineLog.startTime));
           }
         }
       }
     } else {
       // Original behavior: get all logs for this exercise from any template
-      exerciseLogsWithTimestamps = <({ExerciseLogDto log, DateTime timestamp})>[];
+      exerciseLogsWithTimestamps =
+          <({ExerciseLogDto log, DateTime timestamp})>[];
       for (final routineLog in logs) {
         for (final exerciseLog in routineLog.exerciseLogs) {
           if (exerciseLog.exercise.id == exercise.id) {
-            exerciseLogsWithTimestamps.add((
-              log: exerciseLog,
-              timestamp: routineLog.startTime
-            ));
+            exerciseLogsWithTimestamps
+                .add((log: exerciseLog, timestamp: routineLog.startTime));
           }
         }
       }
     }
-    
+
     if (exerciseLogsWithTimestamps.isEmpty) return [];
 
     // Sort by timestamp (most recent first)
-    exerciseLogsWithTimestamps.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    
+    exerciseLogsWithTimestamps
+        .sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
     // Get the most recent 3 exercise logs
-    final recentLogs = exerciseLogsWithTimestamps.take(3).map((e) => e.log).toList();
+    final recentLogs =
+        exerciseLogsWithTimestamps.take(3).map((e) => e.log).toList();
     final allSets = <SetDto>[];
     for (final log in recentLogs) {
       allSets.addAll(log.sets);

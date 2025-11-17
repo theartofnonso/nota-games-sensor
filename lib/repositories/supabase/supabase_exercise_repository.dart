@@ -54,15 +54,15 @@ class SupabaseExerciseRepository {
       // Insert into Supabase
       await _client.from('exercises').insert(exerciseWithId.toJson());
 
-      // Add to in-memory list
-      _userExercises.add(exerciseWithId);
-
-      logger.i('Saved exercise: ${exerciseWithId.id}');
-
       // Analytics
       await Posthog().capture(
         eventName: PostHogAnalyticsEvent.createExercise.displayName,
       );
+
+      // Add to in-memory list
+      _userExercises.add(exerciseWithId);
+
+      logger.i('Saved exercise: ${exerciseWithId.id}');
 
       return exerciseWithId;
     } catch (e) {
