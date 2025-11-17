@@ -80,7 +80,6 @@ class _OverviewScreenState extends State<OverviewScreen>
   }
 
   bool _hasCachedSession() {
-    print(SharedPrefs().routineLog);
     return SharedPrefs().routineLog.isNotEmpty;
   }
 
