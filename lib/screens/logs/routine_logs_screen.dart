@@ -34,7 +34,7 @@ class RoutineLogsScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
         title: Text("$month Strength Training".toUpperCase()),
         leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
+            icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
             onPressed: Navigator.of(context).pop),
         centerTitle: true,
       ),

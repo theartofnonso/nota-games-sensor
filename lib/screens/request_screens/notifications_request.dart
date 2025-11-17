@@ -25,7 +25,7 @@ class _NotificationsRequestScreenState
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
+            icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
             onPressed: Navigator.of(context).pop),
       ),
       body: Container(

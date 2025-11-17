@@ -228,7 +228,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     subtitle: Text(userEmail)),
                 ListTile(
                     onTap: _delete,
-                    leading: FaIcon(FontAwesomeIcons.xmark,
+                    leading: FaIcon(FontAwesomeIcons.solidCircleXmark,
                         color: isDarkMode ? Colors.white70 : Colors.black38),
                     title: Text("Delete Account",
                         style: Theme.of(context).textTheme.titleMedium),

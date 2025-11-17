@@ -64,7 +64,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
             scrolledUnderElevation: 0,
             leading: IconButton(
               icon: const FaIcon(
-                FontAwesomeIcons.squareXmark,
+                FontAwesomeIcons.solidCircleXmark,
               ),
               onPressed: context.pop,
             ),

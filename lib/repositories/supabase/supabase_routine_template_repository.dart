@@ -31,7 +31,7 @@ class SupabaseRoutineTemplateRepository {
           .from('routine_templates')
           .select()
           .eq('owner', userId)
-          .order('createdAt', ascending: false);
+          .order('createdAt', ascending: true);
 
       _templates = (response as List<dynamic>).map((item) {
         final data = Map<String, dynamic>.from(item);

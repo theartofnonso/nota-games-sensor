@@ -107,7 +107,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             surfaceTintColor: Colors.transparent,
             scrolledUnderElevation: 0,
             leading: IconButton(
-              icon: const FaIcon(FontAwesomeIcons.squareXmark, size: 28),
+              icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
               onPressed: context.pop,
             ),
             title: Text(updatedLog.name),
