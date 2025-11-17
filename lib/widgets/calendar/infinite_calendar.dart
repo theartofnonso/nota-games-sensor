@@ -6,6 +6,7 @@ import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller
 import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
 import 'package:tracker_app/utils/general_utils.dart';
+import 'package:tracker_app/utils/notifications_utils.dart';
 import 'package:tracker_app/utils/theme/color_extensions.dart';
 
 /// Infinite scrollable calendar with continuous date flow
@@ -136,10 +137,19 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
                       });
                     }
 
+                    // Get predicted training dates for next 14 days
+                    final historicDates =
+                        controller.logs.map((log) => log.startTime).toList();
+                    final predictedDates = getPredictedTrainingDates(
+                      historicDateTimes: historicDates,
+                      daysAhead: 14,
+                    );
+
                     return _ContinuousCalendarGrid(
                       scrollController: _scrollController,
                       selectedDate: _selectedDate,
                       logs: controller.logs,
+                      predictedDates: predictedDates,
                       onDateTap: (date) {
                         setState(() => _selectedDate = date);
                         widget.onDateTap?.call(date);
@@ -238,12 +248,14 @@ class _ContinuousCalendarGrid extends StatelessWidget {
   final ScrollController scrollController;
   final DateTime selectedDate;
   final List<RoutineLogDto> logs;
+  final Set<DateTime> predictedDates;
   final void Function(DateTime date) onDateTap;
 
   const _ContinuousCalendarGrid({
     required this.scrollController,
     required this.selectedDate,
     required this.logs,
+    required this.predictedDates,
     required this.onDateTap,
   });
 
@@ -281,6 +293,9 @@ class _ContinuousCalendarGrid extends StatelessWidget {
 
           final hasLog =
               logs.any((log) => log.startTime.isSameDayMonthYear(cellDate));
+          final cellDateNormalized =
+              DateTime(cellDate.year, cellDate.month, cellDate.day);
+          final isPredicted = predictedDates.contains(cellDateNormalized);
           final isSelected = cellDate.isSameDayMonthYear(selectedDate);
           final isToday = cellDate.isSameDayMonthYear(DateTime.now());
           final isFirstOfMonth = cellDate.day == 1;
@@ -288,6 +303,7 @@ class _ContinuousCalendarGrid extends StatelessWidget {
           return _DateCell(
             date: cellDate,
             hasLog: hasLog,
+            isPredicted: isPredicted,
             isSelected: isSelected,
             isToday: isToday,
             showMonthLabel: isFirstOfMonth,
@@ -304,9 +320,10 @@ class _ContinuousCalendarGrid extends StatelessWidget {
   }
 }
 
-class _DateCell extends StatelessWidget {
+class _DateCell extends StatefulWidget {
   final DateTime date;
   final bool hasLog;
+  final bool isPredicted;
   final bool isSelected;
   final bool isToday;
   final bool showMonthLabel;
@@ -315,6 +332,7 @@ class _DateCell extends StatelessWidget {
   const _DateCell({
     required this.date,
     required this.hasLog,
+    required this.isPredicted,
     required this.isSelected,
     required this.isToday,
     required this.showMonthLabel,
@@ -322,40 +340,100 @@ class _DateCell extends StatelessWidget {
   });
 
   @override
+  State<_DateCell> createState() => _DateCellState();
+}
+
+class _DateCellState extends State<_DateCell>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _pulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // Only animate if predicted and not hasLog
+    if (widget.isPredicted && !widget.hasLog) {
+      _animationController.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_DateCell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPredicted != oldWidget.isPredicted ||
+        widget.hasLog != oldWidget.hasLog) {
+      if (widget.isPredicted && !widget.hasLog) {
+        _animationController.repeat(reverse: true);
+      } else {
+        _animationController.stop();
+        _animationController.reset();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    final backgroundColor = hasLog
-        ? (isDarkMode
-            ? Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.1)
-            : Theme.of(context).colors.vibrantAccent)
-        : Colors.transparent;
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final thisDate = DateTime(date.year, date.month, date.day);
-    final daysDifference = thisDate.difference(today).inDays;
-
-    double opacity;
-    if (hasLog) {
-      opacity = 1.0;
-    } else if (showMonthLabel) {
-      opacity = 1.0;
-    } else if (daysDifference == 0) {
-      opacity = 1.0;
-    } else if (daysDifference > 0 && daysDifference <= 7) {
-      opacity = 0.9 - (daysDifference * 0.6 / 7);
+    Color backgroundColor;
+    if (widget.hasLog) {
+      backgroundColor = isDarkMode
+          ? Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.1)
+          : Theme.of(context).colors.vibrantAccent;
     } else {
-      opacity = 0.3;
+      backgroundColor = Colors.transparent;
     }
 
-    final textColor = hasLog
-        ? (isDarkMode ? Theme.of(context).colors.vibrantAccent : Colors.black)
-        : Colors.white.withValues(alpha: opacity);
+    // Check if this is today
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final thisDate =
+        DateTime(widget.date.year, widget.date.month, widget.date.day);
+    final isToday = thisDate.isAtSameMomentAs(today);
+
+    Color textColor;
+    if (isToday) {
+      // Today: use predicted color if predicted, otherwise white
+      textColor = widget.isPredicted
+          ? Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.5)
+          : Colors.white;
+    } else if (widget.hasLog) {
+      textColor =
+          isDarkMode ? Theme.of(context).colors.vibrantAccent : Colors.black;
+    } else if (widget.isPredicted) {
+      // Predicted days: muted accent color (probability, not actual log)
+      textColor = Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.5);
+    } else if (widget.showMonthLabel) {
+      textColor = Colors.white;
+    } else {
+      // Past/future dates: reduced opacity
+      textColor = Colors.white.withValues(alpha: 0.3);
+    }
 
     Border? border;
-    if (isSelected) {
-      if (hasLog) {
+    if (widget.isSelected) {
+      if (widget.hasLog || widget.isPredicted) {
         border = Border.all(
           color: isDarkMode
               ? Theme.of(context).colors.vibrantAccent
@@ -364,17 +442,17 @@ class _DateCell extends StatelessWidget {
         );
       } else {
         border = Border.all(
-          color: Colors.white.withValues(alpha: opacity),
+          color: Colors.white,
           width: 2,
         );
       }
     }
 
-    return GestureDetector(
-      onTap: onTap,
+    Widget dateCell = GestureDetector(
+      onTap: widget.onTap,
       child: Center(
         child: Container(
-          padding: isSelected ? const EdgeInsets.all(2) : null,
+          padding: widget.isSelected ? const EdgeInsets.all(2) : null,
           decoration: BoxDecoration(
             border: border,
             borderRadius: BorderRadius.circular(6),
@@ -390,11 +468,13 @@ class _DateCell extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (showMonthLabel)
+                if (widget.showMonthLabel)
                   Text(
-                    DateFormat('MMM').format(date),
+                    DateFormat('MMM').format(widget.date),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: hasLog ? textColor : Colors.white,
+                          color: widget.hasLog || widget.isPredicted
+                              ? textColor
+                              : Colors.white,
                           fontWeight: FontWeight.w600,
                           fontSize: 8,
                         ),
@@ -402,12 +482,13 @@ class _DateCell extends StatelessWidget {
                 SizedBox(
                   width: 32,
                   child: Text(
-                    '${date.day}',
+                    '${widget.date.day}',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: textColor,
-                          fontWeight:
-                              hasLog ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: widget.hasLog || widget.isPredicted
+                              ? FontWeight.bold
+                              : FontWeight.w500,
                           fontSize: 16,
                         ),
                   ),
@@ -418,5 +499,23 @@ class _DateCell extends StatelessWidget {
         ),
       ),
     );
+
+    // Apply pulse animation for predicted days
+    if (widget.isPredicted && !widget.hasLog) {
+      return AnimatedBuilder(
+        animation: _pulseAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _pulseAnimation.value,
+            child: Opacity(
+              opacity: 0.7 + (_pulseAnimation.value - 0.8) * 0.3,
+              child: dateCell,
+            ),
+          );
+        },
+      );
+    }
+
+    return dateCell;
   }
 }

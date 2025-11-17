@@ -53,8 +53,67 @@ List<_ReminderTime> _getExerciseReminders(List<DateTime> logDates) {
   return reminders;
 }
 
+/// Get likely training weekdays based on historic log patterns
+/// Returns a Set of weekdays (1-7, where 1 is Monday) that the user typically trains on
+Set<int> getLikelyTrainingWeekdays({required List<DateTime> historicDateTimes}) {
+  if (historicDateTimes.isEmpty) return {};
+
+  // Group logs by weekday
+  final Map<int, int> weekdayCounts = {};
+  for (final logDate in historicDateTimes) {
+    final weekday = logDate.weekday;
+    weekdayCounts[weekday] = (weekdayCounts[weekday] ?? 0) + 1;
+  }
+
+  if (weekdayCounts.isEmpty) return {};
+
+  // Calculate average count per weekday
+  final totalCount = weekdayCounts.values.reduce((a, b) => a + b);
+  final averageCount = totalCount / weekdayCounts.length;
+
+  // Include weekdays that have at least 50% of the average count (indicating a pattern)
+  final likelyWeekdays = <int>{};
+  weekdayCounts.forEach((weekday, count) {
+    if (count >= (averageCount * 0.5)) {
+      likelyWeekdays.add(weekday);
+    }
+  });
+
+  return likelyWeekdays;
+}
+
+/// Get predicted training dates in the next N days based on weekday patterns
+/// Includes today if today matches a likely training weekday
+Set<DateTime> getPredictedTrainingDates({
+  required List<DateTime> historicDateTimes,
+  int daysAhead = 14,
+}) {
+  final likelyWeekdays = getLikelyTrainingWeekdays(historicDateTimes: historicDateTimes);
+  if (likelyWeekdays.isEmpty) return {};
+
+  final today = DateTime.now();
+  final predictedDates = <DateTime>{};
+
+  // Include today (i = 0) and next N days
+  for (int i = 0; i <= daysAhead; i++) {
+    final date = today.add(Duration(days: i));
+    final dateNormalized = DateTime(date.year, date.month, date.day);
+    if (likelyWeekdays.contains(date.weekday)) {
+      predictedDates.add(dateNormalized);
+    }
+  }
+
+  return predictedDates;
+}
+
 void schedulePreferredTrainingReminders({required List<DateTime> historicDateTimes}) {
   if (Platform.isIOS) {
+    // Cancel existing training reminders (IDs 1-7 for weekdays) before rescheduling
+    // This prevents duplicate notifications when reminders are rescheduled
+    for (int weekday = 1; weekday <= 7; weekday++) {
+      FlutterLocalNotificationsPlugin().cancel(weekday);
+    }
+
     final trainingTimes = _getExerciseReminders(historicDateTimes);
 
     for (final trainingTime in trainingTimes) {

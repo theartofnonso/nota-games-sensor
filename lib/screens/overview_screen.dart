@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
@@ -15,6 +14,7 @@ import 'package:tracker_app/shared_prefs.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
 import 'package:tracker_app/utils/general_utils.dart';
 import 'package:tracker_app/utils/navigation_utils.dart';
+import 'package:tracker_app/utils/notifications_utils.dart';
 import 'package:tracker_app/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:tracker_app/widgets/buttons/opacity_button_widget_two.dart';
 import 'package:tracker_app/widgets/routine/preview/routine_log_widget.dart';
@@ -336,6 +336,17 @@ class _OverviewScreenState extends State<OverviewScreen>
     final isPast = selectedDate.isBefore(today);
     final isFuture = selectedDate.isAfter(today);
 
+    // Check if this is a predicted training day
+    final historicDates = controller.logs.map((log) => log.startTime).toList();
+    final predictedDates = getPredictedTrainingDates(
+      historicDateTimes: historicDates,
+      daysAhead: 14,
+    );
+    // Check if this is a predicted training day (today or future, no existing log)
+    final isPredicted = (isToday || isFuture) &&
+        predictedDates.contains(selectedDate) &&
+        !hasLogs;
+
     String dateLabel;
     if (isToday) {
       dateLabel = 'Today';
@@ -434,7 +445,10 @@ class _OverviewScreenState extends State<OverviewScreen>
                     )
                   : Center(
                       child: Text(
-                        'No workouts logged this date',
+                        isPredicted
+                            ? 'This is a day you\'re likely to train based on your previous workout history.'
+                            : 'No workouts logged this date',
+                        textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               color: Colors.grey.shade400,
                             ),

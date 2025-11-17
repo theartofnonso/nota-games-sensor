@@ -15,6 +15,7 @@ import '../logger.dart';
 import '../repositories/supabase/supabase_exercise_repository.dart';
 import '../repositories/supabase/supabase_routine_plan_repository.dart';
 import '../repositories/supabase/supabase_routine_template_repository.dart';
+import '../utils/notifications_utils.dart';
 
 class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   bool isLoading = false;
@@ -79,6 +80,13 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         _planRepository.loadPlans(),
         _logRepository.loadLogs(),
       ]);
+      
+      // Schedule training reminders based on historic log data
+      final historicLogTimes = _logRepository.logs.map((log) => log.startTime).toList();
+      if (historicLogTimes.isNotEmpty) {
+        schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
+      }
+      
       notifyListeners();
     } catch (e) {
       logger.e("Error loading user data", error: e);
@@ -235,6 +243,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       savedLog = await _logRepository.saveLog(logDto);
+      
+      // Reschedule training reminders based on updated log data
+      final historicLogTimes = _logRepository.logs.map((log) => log.startTime).toList();
+      if (historicLogTimes.isNotEmpty) {
+        schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
+      }
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving log", error: e);
