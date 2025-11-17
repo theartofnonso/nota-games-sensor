@@ -137,12 +137,12 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
                       });
                     }
 
-                    // Get predicted training dates for next 14 days
+                    // Get predicted training dates for next 7 days
                     final historicDates =
                         controller.logs.map((log) => log.startTime).toList();
                     final predictedDates = getPredictedTrainingDates(
                       historicDateTimes: historicDates,
-                      daysAhead: 14,
+                      daysAhead: 7,
                     );
 
                     return _ContinuousCalendarGrid(

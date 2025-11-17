@@ -340,7 +340,7 @@ class _OverviewScreenState extends State<OverviewScreen>
     final historicDates = controller.logs.map((log) => log.startTime).toList();
     final predictedDates = getPredictedTrainingDates(
       historicDateTimes: historicDates,
-      daysAhead: 14,
+      daysAhead: 7,
     );
     // Check if this is a predicted training day (today or future, no existing log)
     final isPredicted = (isToday || isFuture) &&
