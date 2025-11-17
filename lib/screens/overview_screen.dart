@@ -549,7 +549,6 @@ class _OverviewScreenState extends State<OverviewScreen>
                         return RoutinePlanGridItemWidget(
                           plan: plan,
                           onTap: () {
-                            Navigator.pop(context); // Close bottom sheet
                             navigateWithSlideTransition(
                               context: context,
                               child: RoutinePlanScreen(id: plan.id),
