@@ -249,7 +249,20 @@ class _OverviewScreenState extends State<OverviewScreen>
   Widget build(BuildContext context) {
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
-    final hasCachedSession = _hasCachedSession();
+    // Check cache status and update state if it changed
+    // This ensures the notification icon updates when navigating back from editor
+    final currentCachedSessionState = _hasCachedSession();
+    if (currentCachedSessionState != _lastCachedSessionState) {
+      // Update state in post-frame callback to avoid setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _lastCachedSessionState = currentCachedSessionState;
+          setState(() {});
+        }
+      });
+    }
+
+    final hasCachedSession = currentCachedSessionState;
 
     return Scaffold(
       backgroundColor: appBarBackgroundColor(context: context),
