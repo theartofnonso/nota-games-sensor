@@ -9,6 +9,8 @@ import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
 import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
 import 'package:tracker_app/dtos/viewmodels/past_routine_log_arguments.dart';
 import 'package:tracker_app/dtos/viewmodels/routine_plan_arguments.dart';
+import 'package:tracker_app/dtos/viewmodels/routine_log_arguments.dart';
+import 'package:tracker_app/enums/routine_editor_type_enums.dart';
 import 'package:tracker_app/extensions/duration_extension.dart';
 import 'package:tracker_app/shared_prefs.dart';
 import 'package:tracker_app/utils/dialog_utils.dart';
@@ -165,6 +167,15 @@ class _OverviewScreenState extends State<OverviewScreen>
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  label: 'Continue Training',
+                  buttonColor: Theme.of(context).colors.vibrantAccent,
+                  onPressed: () => _continueTraining(routineLog),
+                ),
+              ),
             ],
           ),
         ),
@@ -243,6 +254,18 @@ class _OverviewScreenState extends State<OverviewScreen>
         );
       }
     }
+  }
+
+  void _continueTraining(RoutineLogDto routineLog) {
+    Navigator.of(context).pop(); // Close bottom sheet
+
+    // Navigate to routine log editor with cached workout
+    final arguments = RoutineLogArguments(
+      log: routineLog,
+      editorMode: RoutineEditorMode.log,
+      cached: true,
+    );
+    navigateToRoutineLogEditor(context: context, arguments: arguments);
   }
 
   @override

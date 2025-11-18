@@ -88,135 +88,157 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
             child: SafeArea(
               minimum: const EdgeInsets.all(10),
               child: Column(
-                  spacing: 20,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(50),
-                        border: Border.all(
-                          color: Theme.of(context).extension<TRKRColors>()!.borderLight,
-                          width: 1,
-                        ),
-                      ),
-                      padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
-                      child: TextField(
-                        controller: _exerciseNameController,
-                        decoration: InputDecoration(
-                          hintText: "Exercise Name",
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                        ),
-                        cursorColor: isDarkMode ? Colors.white : Colors.black,
-                        keyboardType: TextInputType.text,
-                        textCapitalization: TextCapitalization.words,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w400,
-                            color: isDarkMode ? Colors.white : Colors.black,
-                            fontSize: 14),
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 8,
-                      children: [
-                        LabelDivider(
-                          label: "Select muscle group to train".toUpperCase(),
-                          labelColor: Theme.of(context).colorScheme.onSurface,
-                          dividerColor: Theme.of(context).colors.dividerColor,
-                          fontSize: 14,
-                        ),
-                        Text(
-                            "Choose from a list of muscle groups to train for this custom exercise.",
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                    fontWeight: FontWeight.w400,
-                                    color: isDarkMode
-                                        ? Colors.white70
-                                        : Colors.black)),
-                        ThemeListTile(
-                          child: ListTile(
-                            onTap: _selectPrimaryMuscleGroup,
-                            leading: Text(_primaryMuscleGroup.name,
-                                textAlign: TextAlign.start,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black)),
-                            trailing: FaIcon(
-                              FontAwesomeIcons.arrowRightLong,
-                              size: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (exercise == null)
-                      Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      child: Column(
+                        spacing: 20,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 8,
                         children: [
-                          LabelDivider(
-                            label:
-                                "Choose how to log this exercise".toUpperCase(),
-                            labelColor: Theme.of(context).colorScheme.onSurface,
-                            dividerColor: Theme.of(context).colors.dividerColor,
-                            fontSize: 14,
-                          ),
-                          Text(
-                              "You can log this exercise using reps only, reps and weights or duration.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                      color: isDarkMode
-                                          ? Colors.white70
-                                          : Colors.black)),
-                          ThemeListTile(
-                            child: ListTile(
-                              onTap: _selectExerciseType,
-                              leading: Text(_exerciseType.description,
-                                  textAlign: TextAlign.start,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: isDarkMode
-                                              ? Colors.white
-                                              : Colors.black)),
-                              trailing: FaIcon(
-                                FontAwesomeIcons.arrowRightLong,
-                                size: 14,
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(50),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .extension<TRKRColors>()!
+                                    .borderLight,
+                                width: 1,
                               ),
                             ),
+                            padding: const EdgeInsets.only(
+                                left: 20, top: 6, bottom: 6, right: 6),
+                            child: TextField(
+                              controller: _exerciseNameController,
+                              decoration: const InputDecoration(
+                                hintText: "Exercise Name",
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                              ),
+                              cursorColor:
+                                  isDarkMode ? Colors.white : Colors.black,
+                              keyboardType: TextInputType.text,
+                              textCapitalization: TextCapitalization.words,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w400,
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
+                                  fontSize: 14),
+                            ),
                           ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            spacing: 8,
+                            children: [
+                              LabelDivider(
+                                label: "Select muscle group to train"
+                                    .toUpperCase(),
+                                labelColor:
+                                    Theme.of(context).colorScheme.onSurface,
+                                dividerColor:
+                                    Theme.of(context).colors.dividerColor,
+                                fontSize: 14,
+                              ),
+                              Text(
+                                  "Choose from a list of muscle groups to train for this custom exercise.",
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                          fontWeight: FontWeight.w400,
+                                          color: isDarkMode
+                                              ? Colors.white70
+                                              : Colors.black)),
+                              ThemeListTile(
+                                child: ListTile(
+                                  onTap: _selectPrimaryMuscleGroup,
+                                  leading: Text(_primaryMuscleGroup.name,
+                                      textAlign: TextAlign.start,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                              color: isDarkMode
+                                                  ? Colors.white
+                                                  : Colors.black)),
+                                  trailing: const FaIcon(
+                                    FontAwesomeIcons.arrowRightLong,
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (exercise == null)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              spacing: 8,
+                              children: [
+                                LabelDivider(
+                                  label: "Choose how to log this exercise"
+                                      .toUpperCase(),
+                                  labelColor:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  dividerColor:
+                                      Theme.of(context).colors.dividerColor,
+                                  fontSize: 14,
+                                ),
+                                Text(
+                                    "You can log this exercise using reps only, reps and weights or duration.",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                            fontWeight: FontWeight.w400,
+                                            color: isDarkMode
+                                                ? Colors.white70
+                                                : Colors.black)),
+                                ThemeListTile(
+                                  child: ListTile(
+                                    onTap: _selectExerciseType,
+                                    leading: Text(_exerciseType.description,
+                                        textAlign: TextAlign.start,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black)),
+                                    trailing: const FaIcon(
+                                      FontAwesomeIcons.arrowRightLong,
+                                      size: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          const SizedBox(height: 20),
                         ],
                       ),
-                    const Spacer(),
-                    if (exercise == null)
-                      SafeArea(
-                        minimum: EdgeInsets.all(10),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: OpacityButtonWidgetTwo(
-                              onPressed: _createExercise,
-                              label: "Create Exercise",
-                              buttonColor:
-                                  Theme.of(context).colors.vibrantAccent),
-                        ),
+                    ),
+                  ),
+                  if (exercise == null)
+                    SafeArea(
+                      top: false,
+                      minimum: const EdgeInsets.all(10),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OpacityButtonWidgetTwo(
+                            onPressed: _createExercise,
+                            label: "Create Exercise",
+                            buttonColor:
+                                Theme.of(context).colors.vibrantAccent),
                       ),
-                  ]),
+                    ),
+                ],
+              ),
             ),
           ),
     );
