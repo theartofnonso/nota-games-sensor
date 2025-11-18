@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/colors.dart';
+import 'package:trainware/colors.dart';
 
 class TRKRNavigationBarTheme {
   TRKRNavigationBarTheme._();

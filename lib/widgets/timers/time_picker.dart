@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../buttons/opacity_button_widget_two.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class TimePicker extends StatefulWidget {
   final Duration? initialDuration;
@@ -11,7 +11,8 @@ class TimePicker extends StatefulWidget {
 
   const TimePicker(
       {super.key,
-      required this.onDurationChanged, this.initialDuration,
+      required this.onDurationChanged,
+      this.initialDuration,
       this.mode = CupertinoTimerPickerMode.ms});
 
   @override
@@ -41,9 +42,10 @@ class _TimerPickerState extends State<TimePicker> {
         SizedBox(
           width: double.infinity,
           child: OpacityButtonWidgetTwo(
-              onPressed: () => widget.onDurationChanged(_duration),
-              label: "Select duration",
-              buttonColor: Theme.of(context).colors.vibrantAccent,),
+            onPressed: () => widget.onDurationChanged(_duration),
+            label: "Select duration",
+            buttonColor: Theme.of(context).colors.vibrantAccent,
+          ),
         )
       ],
     );

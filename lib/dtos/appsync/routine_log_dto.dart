@@ -1,6 +1,6 @@
 import 'package:collection/collection.dart';
-import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
-import 'package:tracker_app/enums/exercise_type_enums.dart';
+import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
+import 'package:trainware/enums/exercise_type_enums.dart';
 
 import '../exercise_log_dto.dart';
 

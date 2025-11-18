@@ -3,13 +3,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/extensions/duration_extension.dart';
-import 'package:tracker_app/utils/navigation_utils.dart';
-import 'package:tracker_app/widgets/backgrounds/trkr_loading_screen.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/extensions/duration_extension.dart';
+import 'package:trainware/utils/navigation_utils.dart';
+import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
 import '../../../dtos/exercise_log_dto.dart';
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';

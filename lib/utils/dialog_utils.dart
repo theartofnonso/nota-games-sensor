@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tracker_app/widgets/bottom_sheets/app_bottom_sheet.dart';
-import 'package:tracker_app/widgets/timers/datetime_picker.dart';
-import 'package:tracker_app/widgets/timers/datetime_range_picker.dart';
+import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
+import 'package:trainware/widgets/timers/datetime_picker.dart';
+import 'package:trainware/widgets/timers/datetime_range_picker.dart';
 
 import '../colors.dart';
 import '../dtos/appsync/exercise_dto.dart';

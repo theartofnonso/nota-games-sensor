@@ -1,12 +1,12 @@
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
-import 'package:tracker_app/dtos/exercise_log_dto.dart';
-import 'package:tracker_app/dtos/set_dtos/duration_set_dto.dart';
-import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
-import 'package:tracker_app/enums/exercise_type_enums.dart';
-import 'package:tracker_app/enums/muscle_group_enums.dart';
-import 'package:tracker_app/repositories/exercise_log_repository.dart';
+import 'package:trainware/dtos/appsync/exercise_dto.dart';
+import 'package:trainware/dtos/exercise_log_dto.dart';
+import 'package:trainware/dtos/set_dtos/duration_set_dto.dart';
+import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
+import 'package:trainware/enums/exercise_type_enums.dart';
+import 'package:trainware/enums/muscle_group_enums.dart';
+import 'package:trainware/repositories/exercise_log_repository.dart';
 
 void main() {
   // Mock exercises

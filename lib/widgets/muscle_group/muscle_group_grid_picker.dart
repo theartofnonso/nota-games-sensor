@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/enums/muscle_group_enums.dart';
-import 'package:tracker_app/extensions/muscle_group_extension.dart';
+import 'package:trainware/enums/muscle_group_enums.dart';
+import 'package:trainware/extensions/muscle_group_extension.dart';
 
 class MuscleGroupGridPicker extends StatelessWidget {
   final MuscleGroup selectedMuscleGroup;

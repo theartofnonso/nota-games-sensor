@@ -1,4 +1,4 @@
-import 'package:tracker_app/dtos/set_dtos/set_dto.dart';
+import 'package:trainware/dtos/set_dtos/set_dto.dart';
 import '../../enums/exercise_type_enums.dart';
 
 class RepsSetDto extends SetDto {

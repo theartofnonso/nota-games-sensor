@@ -3,7 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';

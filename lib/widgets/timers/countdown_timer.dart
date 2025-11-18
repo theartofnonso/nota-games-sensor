@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:tracker_app/extensions/duration_extension.dart';
+import 'package:trainware/extensions/duration_extension.dart';
 
 class CountdownTimer extends StatefulWidget {
   /// Total duration to count down from.
@@ -48,7 +48,8 @@ class _CountdownTimerState extends State<CountdownTimer> {
             _timer.cancel();
           } else {
             // Decrement by one second
-            _remainingDuration = _remainingDuration - const Duration(seconds: 1);
+            _remainingDuration =
+                _remainingDuration - const Duration(seconds: 1);
           }
         });
 
@@ -65,8 +66,8 @@ class _CountdownTimerState extends State<CountdownTimer> {
           ? _remainingDuration.hmsDigital()
           : _remainingDuration.hmsAnalog(),
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: widget.forceLightMode ? Colors.white : null,
-      ),
+            color: widget.forceLightMode ? Colors.white : null,
+          ),
     );
   }
 

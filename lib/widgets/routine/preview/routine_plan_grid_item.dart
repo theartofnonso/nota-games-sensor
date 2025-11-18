@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/routine_plan_dto.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/string_utils.dart';
 import '../../icons/custom_icon.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class RoutinePlanGridItemWidget extends StatelessWidget {
   final RoutinePlanDto plan;

@@ -1,20 +1,21 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/extensions/duration_extension.dart';
-import 'package:tracker_app/widgets/information_containers/information_container_lite.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/extensions/duration_extension.dart';
+import 'package:trainware/widgets/information_containers/information_container_lite.dart';
 
 import '../../strings/datetime_range_picker_strings.dart';
 import '../buttons/opacity_button_widget.dart';
 import '../buttons/opacity_button_widget_two.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class DateTimeRangePicker extends StatefulWidget {
   final DateTimeRange? initialDateTimeRange;
   final void Function(DateTimeRange range) onSelectRange;
 
-  const DateTimeRangePicker({super.key, required this.onSelectRange, this.initialDateTimeRange});
+  const DateTimeRangePicker(
+      {super.key, required this.onSelectRange, this.initialDateTimeRange});
 
   @override
   State<DateTimeRangePicker> createState() => _DateTimeRangePickerState();
@@ -29,7 +30,6 @@ class _DateTimeRangePickerState extends State<DateTimeRangePicker> {
 
   @override
   Widget build(BuildContext context) {
-
     final errorMessage = _validateDate();
 
     return SingleChildScrollView(
@@ -48,7 +48,9 @@ class _DateTimeRangePickerState extends State<DateTimeRangePicker> {
                         _showEndDateTimeRange = false;
                       });
                     },
-                    buttonColor: _showStartDateTimeRange ? Theme.of(context).colors.vibrantAccent : null,
+                    buttonColor: _showStartDateTimeRange
+                        ? Theme.of(context).colors.vibrantAccent
+                        : null,
                     label: _startDateTime.formattedDayMonthTime()),
               )),
           if (_showStartDateTimeRange)
@@ -75,7 +77,9 @@ class _DateTimeRangePickerState extends State<DateTimeRangePicker> {
                         _showEndDateTimeRange = !_showEndDateTimeRange;
                       });
                     },
-                    buttonColor: _showEndDateTimeRange ? Theme.of(context).colors.vibrantAccent : null,
+                    buttonColor: _showEndDateTimeRange
+                        ? Theme.of(context).colors.vibrantAccent
+                        : null,
                     label: _endDateTime.formattedDayMonthTime()),
               )),
           if (_showEndDateTimeRange)
@@ -97,17 +101,23 @@ class _DateTimeRangePickerState extends State<DateTimeRangePicker> {
                 child: errorMessage != null
                     ? Padding(
                         padding: const EdgeInsets.all(10.0),
-                        child: InformationContainerLite(content: errorMessage, color: Colors.orange, useOpacity: true),
+                        child: InformationContainerLite(
+                            content: errorMessage,
+                            color: Colors.orange,
+                            useOpacity: true),
                       )
                     : SizedBox(
                         width: double.infinity,
                         child: OpacityButtonWidgetTwo(
-                            onPressed: () {
-                              final range = DateTimeRange(start: _startDateTime, end: _endDateTime);
-                              widget.onSelectRange(range);
-                            },
-                            label: "Log ${_calculateDuration().hmsAnalog()} session",
-                            buttonColor: Theme.of(context).colors.vibrantAccent,),
+                          onPressed: () {
+                            final range = DateTimeRange(
+                                start: _startDateTime, end: _endDateTime);
+                            widget.onSelectRange(range);
+                          },
+                          label:
+                              "Log ${_calculateDuration().hmsAnalog()} session",
+                          buttonColor: Theme.of(context).colors.vibrantAccent,
+                        ),
                       )),
           ),
         ],
@@ -124,7 +134,8 @@ class _DateTimeRangePickerState extends State<DateTimeRangePicker> {
       return editEndDateMustBeAfterStartDate;
     }
 
-    if (_endDateTime.millisecondsSinceEpoch > DateTime.now().millisecondsSinceEpoch) {
+    if (_endDateTime.millisecondsSinceEpoch >
+        DateTime.now().millisecondsSinceEpoch) {
       return editFutureDateRestriction;
     }
 
@@ -144,7 +155,8 @@ class _DateTimeRangePickerState extends State<DateTimeRangePicker> {
   @override
   void initState() {
     super.initState();
-    _startDateTime = widget.initialDateTimeRange?.start ?? DateTime.now().subtract(const Duration(hours: 1));
+    _startDateTime = widget.initialDateTimeRange?.start ??
+        DateTime.now().subtract(const Duration(hours: 1));
     _endDateTime = widget.initialDateTimeRange?.end ?? DateTime.now();
   }
 }

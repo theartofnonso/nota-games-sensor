@@ -4,11 +4,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/utils/date_utils.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/dtos/appsync/routine_log_dto.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/utils/date_utils.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class _DateViewModel {
   final DateTime dateTime;
@@ -27,12 +27,16 @@ const int _kMonthOrigin = 1000;
 /// to a month grid on tap of the header. No external [DateTime] dependency required.
 class Calendar extends StatefulWidget {
   const Calendar(
-      {super.key, this.onSelectDate, this.logs, this.onMonthChanged, this.initiallyExpanded = false});
+      {super.key,
+      this.onSelectDate,
+      this.logs,
+      this.onMonthChanged,
+      this.initiallyExpanded = false});
 
   /// Fired whenever the user selects a day.
   final void Function(DateTime dateTime)? onSelectDate;
   final void Function(DateTimeRange range)? onMonthChanged;
-  
+
   /// Whether the calendar should start in expanded (month) view
   final bool initiallyExpanded;
 

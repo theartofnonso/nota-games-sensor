@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class IntTextField extends StatelessWidget {
   final int value;
@@ -9,7 +9,12 @@ class IntTextField extends StatelessWidget {
   final int? maxLength;
 
   const IntTextField(
-      {super.key, required this.value, required this.controller, required this.onChanged, required this.onTap, this.maxLength});
+      {super.key,
+      required this.value,
+      required this.controller,
+      required this.onChanged,
+      required this.onTap,
+      this.maxLength});
 
   int _parseIntOrDefault({required String value}) {
     return int.tryParse(value) ?? 0;

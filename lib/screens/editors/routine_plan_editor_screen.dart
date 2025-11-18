@@ -3,13 +3,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:tracker_app/utils/dialog_utils.dart';
+import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/utils/dialog_utils.dart';
 
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../utils/general_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class RoutinePlanEditorScreen extends StatefulWidget {
   static const routeName = '/routine-plan-editor';
@@ -141,11 +141,14 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(50),
                     border: Border.all(
-                      color: Theme.of(context).extension<TRKRColors>()!.borderLight,
+                      color: Theme.of(context)
+                          .extension<TRKRColors>()!
+                          .borderLight,
                       width: 1,
                     ),
                   ),
-                  padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
+                  padding: const EdgeInsets.only(
+                      left: 20, top: 6, bottom: 6, right: 6),
                   child: TextField(
                     controller: _planNameController,
                     cursorColor: Colors.white,
@@ -167,11 +170,14 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(50),
                     border: Border.all(
-                      color: Theme.of(context).extension<TRKRColors>()!.borderLight,
+                      color: Theme.of(context)
+                          .extension<TRKRColors>()!
+                          .borderLight,
                       width: 1,
                     ),
                   ),
-                  padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
+                  padding: const EdgeInsets.only(
+                      left: 20, top: 6, bottom: 6, right: 6),
                   child: TextField(
                     controller: _planNotesController,
                     cursorColor: Colors.white,

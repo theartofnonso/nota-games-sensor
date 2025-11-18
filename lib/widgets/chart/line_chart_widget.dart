@@ -2,12 +2,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:tracker_app/dtos/graph/chart_point_dto.dart';
-import 'package:tracker_app/extensions/duration_extension.dart';
+import 'package:trainware/dtos/graph/chart_point_dto.dart';
+import 'package:trainware/extensions/duration_extension.dart';
 
 import '../../enums/chart_unit_enum.dart';
 import '../../utils/string_utils.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 enum LineChartSide { left, right }
 
@@ -22,7 +22,7 @@ class LineChartWidget extends StatelessWidget {
   final double rightReservedSize;
   final LineChartSide lineChartSide;
   final bool hasLeftAxisTitles;
-    final bool hasRightAxisTitles;
+  final bool hasRightAxisTitles;
   final double? maxY;
   final Color Function(double value)? leftAxisTitlesColor;
   final Color Function(double value)? rightAxisTitlesColor;
@@ -33,15 +33,17 @@ class LineChartWidget extends StatelessWidget {
       required this.periods,
       required this.unit,
       this.interval = 10,
-        this.maxY,
+      this.maxY,
       this.aspectRation,
       this.lineChartSide = LineChartSide.left,
       this.colors = const [],
-        this.hasRightAxisTitles = false,
-        this.hasLeftAxisTitles = true,
-        this.leftAxisTitlesColor,
-        this.rightAxisTitlesColor,
-      this.leftReservedSize = 40, this.rightReservedSize = 40, this.belowBarData = true});
+      this.hasRightAxisTitles = false,
+      this.hasLeftAxisTitles = true,
+      this.leftAxisTitlesColor,
+      this.rightAxisTitlesColor,
+      this.leftReservedSize = 40,
+      this.rightReservedSize = 40,
+      this.belowBarData = true});
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +59,8 @@ class LineChartWidget extends StatelessWidget {
                   LineChartData(
                       gridData: FlGridData(
                           drawVerticalLine: false,
-                          getDrawingHorizontalLine: (_) =>
-                              FlLine(strokeWidth: 0.5, color: Colors.transparent)),
+                          getDrawingHorizontalLine: (_) => FlLine(
+                              strokeWidth: 0.5, color: Colors.transparent)),
                       minY: 0,
                       maxY: maxY,
                       titlesData: FlTitlesData(
@@ -84,7 +86,9 @@ class LineChartWidget extends StatelessWidget {
                           sideTitles: SideTitles(
                             showTitles: true,
                             interval: interval,
-                            getTitlesWidget: periods.isNotEmpty ? _bottomTitleWidgets : (_, __) => SizedBox.shrink(),
+                            getTitlesWidget: periods.isNotEmpty
+                                ? _bottomTitleWidgets
+                                : (_, __) => SizedBox.shrink(),
                           ),
                         ),
                       ),
@@ -94,48 +98,70 @@ class LineChartWidget extends StatelessWidget {
                       lineBarsData: [
                         LineChartBarData(
                             spots: chartPoints.map((point) {
-                              return FlSpot(point.x.toDouble(), point.y.toDouble());
+                              return FlSpot(
+                                  point.x.toDouble(), point.y.toDouble());
                             }).toList(),
                             dotData: FlDotData(show: false),
-                            color: isDarkMode ? Colors.white70 : Colors.grey.shade600,
-                            gradient: colors.length >= 2 ? LinearGradient(colors: colors) : null,
+                            color: isDarkMode
+                                ? Colors.white70
+                                : Colors.grey.shade600,
+                            gradient: colors.length >= 2
+                                ? LinearGradient(colors: colors)
+                                : null,
                             belowBarData: BarAreaData(
                               show: belowBarData,
                               gradient: LinearGradient(
                                 colors: [
                                   isDarkMode ? Colors.white : Colors.black,
                                   isDarkMode ? Colors.white : Colors.black
-                                ].map((color) => color.withValues(alpha: isDarkMode ? 0.02 : 0.05)).toList(),
+                                ]
+                                    .map((color) => color.withValues(
+                                        alpha: isDarkMode ? 0.02 : 0.05))
+                                    .toList(),
                               ),
                             ),
                             isCurved: true)
                       ])),
             ),
           )
-        : Center(child: FaIcon(FontAwesomeIcons.chartSimple, color: Theme.of(context).colors.sapphireDark, size: 120));
+        : Center(
+            child: FaIcon(FontAwesomeIcons.chartSimple,
+                color: Theme.of(context).colors.sapphireDark, size: 120));
   }
 
   Widget _leftTitleWidgets(double value, TitleMeta meta) {
     final colorFunction = leftAxisTitlesColor;
     final color = colorFunction != null ? colorFunction(value) : null;
-    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 9, color: color ?? Colors.grey.shade600);
+    final style = TextStyle(
+        fontWeight: FontWeight.w500,
+        fontSize: 9,
+        color: color ?? Colors.grey.shade600);
 
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.fromTitleMeta(meta, enabled: false),
       meta: meta,
-      child: Text(lineChartSide == LineChartSide.left ? _weightTitle(value: value) : "", style: style),
+      child: Text(
+          lineChartSide == LineChartSide.left ? _weightTitle(value: value) : "",
+          style: style),
     );
   }
 
   Widget _rightTitleWidgets(double value, TitleMeta meta) {
     final colorFunction = rightAxisTitlesColor;
     final color = colorFunction != null ? colorFunction(value) : null;
-    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 9, color: color ?? Colors.grey.shade600);
+    final style = TextStyle(
+        fontWeight: FontWeight.w500,
+        fontSize: 9,
+        color: color ?? Colors.grey.shade600);
 
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.fromTitleMeta(meta, enabled: false),
       meta: meta,
-      child: Text(lineChartSide == LineChartSide.right ? _weightTitle(value: value) : "", style: style),
+      child: Text(
+          lineChartSide == LineChartSide.right
+              ? _weightTitle(value: value)
+              : "",
+          style: style),
     );
   }
 
@@ -150,8 +176,10 @@ class LineChartWidget extends StatelessWidget {
   }
 
   Widget _bottomTitleWidgets(double value, TitleMeta meta) {
-    final modifiedDateTimes = periods.length == 1 ? [...periods, ...periods] : periods;
-    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 7, color: Colors.grey.shade600);
+    final modifiedDateTimes =
+        periods.length == 1 ? [...periods, ...periods] : periods;
+    final style = TextStyle(
+        fontWeight: FontWeight.w500, fontSize: 7, color: Colors.grey.shade600);
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.fromTitleMeta(meta),
       meta: meta,

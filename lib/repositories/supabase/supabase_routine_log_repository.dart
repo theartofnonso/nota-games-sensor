@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
-import 'package:tracker_app/enums/muscle_group_enums.dart';
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/utils/routine_utils.dart';
+import 'package:trainware/dtos/appsync/routine_log_dto.dart';
+import 'package:trainware/enums/muscle_group_enums.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/utils/routine_utils.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../dtos/appsync/exercise_dto.dart';

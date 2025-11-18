@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'package:tracker_app/utils/progressive_overload_utils.dart';
+import 'package:trainware/utils/progressive_overload_utils.dart';
 
 /// A semicircular gauge whose gradient colors rotate slowly with the gauge
 /// positioned above the label.
@@ -41,16 +41,20 @@ class ProgressionHalfAnimatedGauge extends StatefulWidget {
   final TrainingIntensityReport report; // New parameter
 
   @override
-  State<ProgressionHalfAnimatedGauge> createState() => _ProgressionHalfAnimatedGaugeState();
+  State<ProgressionHalfAnimatedGauge> createState() =>
+      _ProgressionHalfAnimatedGaugeState();
 }
 
-class _ProgressionHalfAnimatedGaugeState extends State<ProgressionHalfAnimatedGauge> with SingleTickerProviderStateMixin {
+class _ProgressionHalfAnimatedGaugeState
+    extends State<ProgressionHalfAnimatedGauge>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: widget.rotationPeriod)..repeat();
+    _ctrl = AnimationController(vsync: this, duration: widget.rotationPeriod)
+      ..repeat();
   }
 
   @override
@@ -97,7 +101,9 @@ class _ProgressionHalfAnimatedGaugeState extends State<ProgressionHalfAnimatedGa
             const SizedBox(
               height: 20,
             ),
-            Text("${widget.value}", style: TextStyle(fontSize: 30, height: 1.5, fontWeight: FontWeight.w900)),
+            Text("${widget.value}",
+                style: TextStyle(
+                    fontSize: 30, height: 1.5, fontWeight: FontWeight.w900)),
             Text(widget.label,
                 style: TextStyle(
                     fontSize: 14,
@@ -130,7 +136,8 @@ class _GaugePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final radius = (size.width - stroke) / 2;
     final center = Offset(size.width / 2, size.height - stroke / 2);
-    final Rect sweepRect = Rect.fromCircle(center: center, radius: radius + stroke / 2);
+    final Rect sweepRect =
+        Rect.fromCircle(center: center, radius: radius + stroke / 2);
 
     // Draw background track (gray arc)
     final backgroundPaint = Paint()
@@ -214,8 +221,8 @@ class _GaugePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _GaugePainter old) =>
       old.report != report || // Check progression
-          old.gradientRotation != gradientRotation ||
-          old.value != value ||
-          old.min != min ||
-          old.max != max;
+      old.gradientRotation != gradientRotation ||
+      old.value != value ||
+      old.min != min ||
+      old.max != max;
 }

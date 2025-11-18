@@ -6,7 +6,7 @@ import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/string_utils.dart';
 import '../../list_tile.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class RoutineLogWidget extends StatelessWidget {
   final RoutineLogDto log;
@@ -14,19 +14,26 @@ class RoutineLogWidget extends StatelessWidget {
   final bool isEditable;
   final void Function()? onTap;
 
-  const RoutineLogWidget({super.key, required this.log, required this.trailing, this.isEditable = true, this.onTap});
+  const RoutineLogWidget(
+      {super.key,
+      required this.log,
+      required this.trailing,
+      this.isEditable = true,
+      this.onTap});
 
   @override
   Widget build(BuildContext context) {
-
-    final completedExerciseLogsAndSets = loggedExercises(exerciseLogs: log.exerciseLogs);
+    final completedExerciseLogsAndSets =
+        loggedExercises(exerciseLogs: log.exerciseLogs);
     final totalCompletedSets = completedExerciseLogsAndSets
         .map((e) => e.sets.length)
         .fold<int>(0, (sum, len) => sum + len);
 
     return ThemeListTile(
       child: ListTile(
-        onTap: onTap ?? () => navigateToRoutineLogPreview(context: context, log: log, isEditable: isEditable),
+        onTap: onTap ??
+            () => navigateToRoutineLogPreview(
+                context: context, log: log, isEditable: isEditable),
         leading: FaIcon(
           FontAwesomeIcons.personWalking,
           color: Theme.of(context).colors.vibrantAccent,

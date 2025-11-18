@@ -1,5 +1,5 @@
-import 'package:tracker_app/dtos/set_dtos/set_dto.dart';
-import 'package:tracker_app/extensions/duration_extension.dart';
+import 'package:trainware/dtos/set_dtos/set_dto.dart';
+import 'package:trainware/extensions/duration_extension.dart';
 import '../../enums/exercise_type_enums.dart';
 
 class DurationSetDto extends SetDto {
@@ -12,11 +12,12 @@ class DurationSetDto extends SetDto {
   });
 
   factory DurationSetDto.defaultSet() => DurationSetDto(
-    duration: Duration.zero,
-    dateTime: DateTime.now(),
-  );
+        duration: Duration.zero,
+        dateTime: DateTime.now(),
+      );
 
-  factory DurationSetDto.fromJson(Map<String, dynamic> json, {required DateTime dateTime}) {
+  factory DurationSetDto.fromJson(Map<String, dynamic> json,
+      {required DateTime dateTime}) {
     return DurationSetDto(
       duration: Duration(milliseconds: (json['duration'] as num).toInt()),
       checked: json['checked'] as bool,

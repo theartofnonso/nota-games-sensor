@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
+import 'package:trainware/dtos/appsync/routine_plan_dto.dart';
 
 import '../../../../colors.dart';
 import '../../buttons/opacity_button_widget_two.dart';

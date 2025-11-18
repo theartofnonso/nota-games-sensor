@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../strings/loading_screen_messages.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class TRKRLoadingScreen extends StatelessWidget {
   final double opacity;
@@ -28,7 +28,9 @@ class TRKRLoadingScreen extends StatelessWidget {
       body: Container(
           width: double.infinity,
           height: double.infinity,
-          color: isDarkMode ? Theme.of(context).colors.sapphireDark.withValues(alpha:opacity) : Colors.white,
+          color: isDarkMode
+              ? Theme.of(context).colors.sapphireDark.withValues(alpha: opacity)
+              : Colors.white,
           child: Stack(
             children: [
               if (action != null)
@@ -38,7 +40,8 @@ class TRKRLoadingScreen extends StatelessWidget {
                     child: SafeArea(
                       minimum: const EdgeInsets.all(10.0),
                       child: IconButton(
-                        icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
+                        icon: const FaIcon(FontAwesomeIcons.solidCircleXmark,
+                            size: 28),
                         onPressed: action,
                       ),
                     ),

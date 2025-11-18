@@ -1,6 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:tracker_app/enums/muscle_group_enums.dart';
+import 'package:trainware/enums/muscle_group_enums.dart';
 
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/exercise_log_dto.dart';

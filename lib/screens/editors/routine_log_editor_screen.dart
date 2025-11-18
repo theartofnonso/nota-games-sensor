@@ -7,15 +7,15 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/exercise_log_controller.dart';
-import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
-import 'package:tracker_app/dtos/exercise_log_dto.dart';
-import 'package:tracker_app/utils/dialog_utils.dart';
-import 'package:tracker_app/utils/exercise_logs_utils.dart';
-import 'package:tracker_app/utils/routine_editors_utils.dart';
-import 'package:tracker_app/widgets/routine/editors/exercise_log_grid_item.dart';
+import 'package:trainware/controllers/exercise_log_controller.dart';
+import 'package:trainware/dtos/appsync/routine_log_dto.dart';
+import 'package:trainware/dtos/exercise_log_dto.dart';
+import 'package:trainware/utils/dialog_utils.dart';
+import 'package:trainware/utils/exercise_logs_utils.dart';
+import 'package:trainware/utils/routine_editors_utils.dart';
+import 'package:trainware/widgets/routine/editors/exercise_log_grid_item.dart';
 
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/routine_editor_type_enums.dart';

@@ -1,4 +1,4 @@
-import 'package:tracker_app/enums/muscle_group_enums.dart';
+import 'package:trainware/enums/muscle_group_enums.dart';
 
 extension MuscleGroupExtension on MuscleGroup {
   String illustration() {

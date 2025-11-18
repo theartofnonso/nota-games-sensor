@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tracker_app/utils/dummy_mode_utils.dart';
-import 'package:tracker_app/utils/general_utils.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/dummy_mode_utils.dart';
+import 'package:trainware/utils/general_utils.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});

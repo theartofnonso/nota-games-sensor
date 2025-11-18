@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:tracker_app/utils/general_utils.dart';
+import 'package:trainware/utils/general_utils.dart';
 
 import '../../dtos/exercise_log_dto.dart';
 

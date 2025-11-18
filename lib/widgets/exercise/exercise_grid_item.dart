@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
+import 'package:trainware/dtos/appsync/exercise_dto.dart';
 
 class ExerciseGridItem extends StatelessWidget {
   final ExerciseDto exercise;

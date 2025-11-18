@@ -1,5 +1,5 @@
 import 'package:collection/collection.dart';
-import 'package:tracker_app/dtos/set_dtos/duration_set_dto.dart';
+import 'package:trainware/dtos/set_dtos/duration_set_dto.dart';
 
 import '../dtos/exercise_log_dto.dart';
 import '../dtos/set_dtos/reps_dto.dart';

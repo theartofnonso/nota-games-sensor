@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:tracker_app/utils/timezone_utils.dart';
+import 'package:trainware/utils/timezone_utils.dart';
 
 const int notificationIDLongRunningSession = 999;
 
@@ -55,7 +55,8 @@ List<_ReminderTime> _getExerciseReminders(List<DateTime> logDates) {
 
 /// Get likely training weekdays based on historic log patterns
 /// Returns a Set of weekdays (1-7, where 1 is Monday) that the user typically trains on
-Set<int> getLikelyTrainingWeekdays({required List<DateTime> historicDateTimes}) {
+Set<int> getLikelyTrainingWeekdays(
+    {required List<DateTime> historicDateTimes}) {
   if (historicDateTimes.isEmpty) return {};
 
   // Group logs by weekday
@@ -88,7 +89,8 @@ Set<DateTime> getPredictedTrainingDates({
   required List<DateTime> historicDateTimes,
   int daysAhead = 14,
 }) {
-  final likelyWeekdays = getLikelyTrainingWeekdays(historicDateTimes: historicDateTimes);
+  final likelyWeekdays =
+      getLikelyTrainingWeekdays(historicDateTimes: historicDateTimes);
   if (likelyWeekdays.isEmpty) return {};
 
   final today = DateTime.now();
@@ -106,7 +108,8 @@ Set<DateTime> getPredictedTrainingDates({
   return predictedDates;
 }
 
-void schedulePreferredTrainingReminders({required List<DateTime> historicDateTimes}) {
+void schedulePreferredTrainingReminders(
+    {required List<DateTime> historicDateTimes}) {
   if (Platform.isIOS) {
     // Cancel existing training reminders (IDs 1-7 for weekdays) before rescheduling
     // This prevents duplicate notifications when reminders are rescheduled
@@ -124,8 +127,10 @@ void schedulePreferredTrainingReminders({required List<DateTime> historicDateTim
   }
 }
 
-Future<void> _scheduleNotification({required Duration duration, required int weekday}) async {
-  final tzDateTime = nextInstanceOfHourAndWeekDay(hours: duration.inHours, weekday: weekday);
+Future<void> _scheduleNotification(
+    {required Duration duration, required int weekday}) async {
+  final tzDateTime =
+      nextInstanceOfHourAndWeekDay(hours: duration.inHours, weekday: weekday);
 
   const matchDateTimeComponents = DateTimeComponents.dayOfWeekAndTime;
 

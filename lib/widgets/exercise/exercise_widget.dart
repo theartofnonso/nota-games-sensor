@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:tracker_app/extensions/muscle_group_extension.dart';
+import 'package:trainware/extensions/muscle_group_extension.dart';
 
 import '../../dtos/appsync/exercise_dto.dart';
 

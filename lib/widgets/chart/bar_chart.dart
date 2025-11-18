@@ -7,7 +7,7 @@ import '../../dtos/graph/chart_point_dto.dart';
 import '../../enums/chart_unit_enum.dart';
 import '../../utils/chart_utils.dart';
 import '../../utils/string_utils.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class CustomBarChart extends StatelessWidget {
   final List<ChartPointDto> chartPoints;
@@ -53,7 +53,9 @@ class CustomBarChart extends StatelessWidget {
                 drawVerticalLine: false,
                 checkToShowHorizontalLine: (value) => true,
                 getDrawingHorizontalLine: (value) => FlLine(
-                  color: isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade200,
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.grey.shade200,
                   strokeWidth: 0.5,
                 ),
               ),
@@ -64,7 +66,10 @@ class CustomBarChart extends StatelessWidget {
           )
         : Center(
             child: FaIcon(FontAwesomeIcons.chartSimple,
-                color: isDarkMode ? Theme.of(context).colors.sapphireDark : Colors.grey.shade400, size: 120));
+                color: isDarkMode
+                    ? Theme.of(context).colors.sapphireDark
+                    : Colors.grey.shade400,
+                size: 120));
   }
 
   BarTouchData get barTouchData => BarTouchData(
@@ -119,7 +124,8 @@ class CustomBarChart extends StatelessWidget {
         show: false,
       );
 
-  List<BarChartGroupData> barGroups({required bool isDarkMode}) => chartPoints.mapIndexed((index, point) {
+  List<BarChartGroupData> barGroups({required bool isDarkMode}) =>
+      chartPoints.mapIndexed((index, point) {
         return BarChartGroupData(
           x: point.x.toInt(),
           barRods: [
@@ -127,14 +133,16 @@ class CustomBarChart extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
                 width: barWidth(length: chartPoints.length),
                 toY: point.y.toDouble(),
-                color: barColors?[index] ?? (isDarkMode ? Colors.white : Colors.black))
+                color: barColors?[index] ??
+                    (isDarkMode ? Colors.white : Colors.black))
           ],
           showingTooltipIndicators: showTopTitles ? [0] : null,
         );
       }).toList();
 
   Widget _leftTitleWidgets(double value, TitleMeta meta) {
-    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 9, color: Colors.grey.shade600);
+    final style = TextStyle(
+        fontWeight: FontWeight.w500, fontSize: 9, color: Colors.grey.shade600);
 
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.fromTitleMeta(meta, enabled: false),
@@ -151,8 +159,10 @@ class CustomBarChart extends StatelessWidget {
   }
 
   Widget _bottomTitleWidgets(double value, TitleMeta meta) {
-    final modifiedDateTimes = periods.length == 1 ? [...periods, ...periods] : periods;
-    final style = TextStyle(fontWeight: FontWeight.w500, fontSize: 9, color: Colors.grey.shade600);
+    final modifiedDateTimes =
+        periods.length == 1 ? [...periods, ...periods] : periods;
+    final style = TextStyle(
+        fontWeight: FontWeight.w500, fontSize: 9, color: Colors.grey.shade600);
     return SideTitleWidget(
       fitInside: SideTitleFitInsideData.disable(),
       meta: meta,

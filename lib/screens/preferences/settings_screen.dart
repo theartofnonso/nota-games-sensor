@@ -10,9 +10,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tracker_app/screens/request_screens/notifications_request.dart';
-import 'package:tracker_app/shared_prefs.dart';
-import 'package:tracker_app/urls.dart';
+import 'package:trainware/screens/request_screens/notifications_request.dart';
+import 'package:trainware/shared_prefs.dart';
+import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../utils/dialog_utils.dart';
@@ -21,7 +21,7 @@ import '../../utils/navigation_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 import '../exercise/library/exercise_library_screen.dart';
 
 enum WeightUnit {

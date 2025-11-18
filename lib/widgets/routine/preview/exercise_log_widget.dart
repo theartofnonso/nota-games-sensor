@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tracker_app/enums/exercise_type_enums.dart';
-import 'package:tracker_app/widgets/routine/preview/set_headers/single_set_header.dart';
+import 'package:trainware/enums/exercise_type_enums.dart';
+import 'package:trainware/widgets/routine/preview/set_headers/single_set_header.dart';
 
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../screens/exercise/history/exercise_home_screen.dart';

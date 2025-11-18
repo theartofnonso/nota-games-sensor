@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'overview_screen.dart';

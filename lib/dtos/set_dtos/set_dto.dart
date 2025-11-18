@@ -1,5 +1,5 @@
-import 'package:tracker_app/dtos/set_dtos/reps_dto.dart';
-import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
+import 'package:trainware/dtos/set_dtos/reps_dto.dart';
+import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
 
 import '../../enums/exercise_type_enums.dart';
 import 'duration_set_dto.dart';
@@ -47,16 +47,23 @@ abstract class SetDto {
     }
   }
 
-  factory SetDto.fromJson(Map<String, dynamic> json, {required ExerciseType exerciseType, required DateTime datetime}) {
+  factory SetDto.fromJson(Map<String, dynamic> json,
+      {required ExerciseType exerciseType, required DateTime datetime}) {
     final value1 = json["value1"] as num;
     final value2 = json["value2"] as num;
     final checked = json["checked"] as bool;
     return switch (exerciseType) {
-      ExerciseType.weights =>
-          WeightAndRepsSetDto(weight: value1.toDouble(), reps: value2.toInt(), checked: checked, dateTime: datetime),
-      ExerciseType.bodyWeight => RepsSetDto(reps: value2.toInt(), checked: checked, dateTime: datetime),
-      ExerciseType.duration =>
-          DurationSetDto(duration: Duration(milliseconds: value2.toInt()), checked: checked, dateTime: datetime),
+      ExerciseType.weights => WeightAndRepsSetDto(
+          weight: value1.toDouble(),
+          reps: value2.toInt(),
+          checked: checked,
+          dateTime: datetime),
+      ExerciseType.bodyWeight =>
+        RepsSetDto(reps: value2.toInt(), checked: checked, dateTime: datetime),
+      ExerciseType.duration => DurationSetDto(
+          duration: Duration(milliseconds: value2.toInt()),
+          checked: checked,
+          dateTime: datetime),
     };
   }
 

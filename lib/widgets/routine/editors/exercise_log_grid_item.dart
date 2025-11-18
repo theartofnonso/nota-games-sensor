@@ -5,7 +5,7 @@ import '../../../dtos/exercise_log_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../utils/routine_editors_utils.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class ExerciseLogGridItemWidget extends StatelessWidget {
   final RoutineEditorMode editorType;

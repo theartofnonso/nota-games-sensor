@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:tracker_app/extensions/duration_extension.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/extensions/duration_extension.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class DurationStopwatchWidget extends StatefulWidget {
   final VoidCallback onLogSet;

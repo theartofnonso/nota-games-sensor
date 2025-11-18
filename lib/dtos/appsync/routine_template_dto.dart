@@ -1,4 +1,4 @@
-import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
+import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 
 import '../exercise_log_dto.dart';
 

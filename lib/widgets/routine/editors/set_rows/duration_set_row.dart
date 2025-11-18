@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tracker_app/dtos/set_dtos/duration_set_dto.dart';
-import 'package:tracker_app/extensions/duration_extension.dart';
+import 'package:trainware/dtos/set_dtos/duration_set_dto.dart';
+import 'package:trainware/extensions/duration_extension.dart';
 
 import '../../../../enums/routine_editor_type_enums.dart';
 import '../../../../utils/theme/color_extensions.dart';

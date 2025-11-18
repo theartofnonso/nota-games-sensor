@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
+import 'package:trainware/dtos/appsync/routine_plan_dto.dart';
 
 import '../../../dtos/appsync/routine_template_dto.dart';
 import '../../../utils/string_utils.dart';
 import '../../icons/custom_icon.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class RoutineTemplateGridItemWidget extends StatelessWidget {
   final RoutineTemplateDto template;

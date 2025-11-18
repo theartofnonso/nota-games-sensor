@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
 
 DateTimeRange yearToDateTimeRange({required DateTime datetime}) {
   final now = datetime.withoutTime();
@@ -93,7 +93,8 @@ List<DateTimeRange> generateMonthsInRange({required DateTimeRange range}) {
 
   while (!currentStartDate.isAfter(range.end)) {
     // Get the last day of the current month
-    DateTime currentEndDate = DateTime(currentStartDate.year, currentStartDate.month + 1, 0);
+    DateTime currentEndDate =
+        DateTime(currentStartDate.year, currentStartDate.month + 1, 0);
 
     /// Adjust currentEndDate if it's beyond range.end
     /// Only uncomment this if you want last day to be current date
@@ -104,7 +105,8 @@ List<DateTimeRange> generateMonthsInRange({required DateTimeRange range}) {
     months.add(DateTimeRange(start: currentStartDate, end: currentEndDate));
 
     // Move currentStartDate to the first day of the next month
-    currentStartDate = DateTime(currentStartDate.year, currentStartDate.month + 1, 1);
+    currentStartDate =
+        DateTime(currentStartDate.year, currentStartDate.month + 1, 1);
   }
 
   return months;
@@ -114,6 +116,7 @@ DateTimeRange thisMonthDateRange({DateTime? endDate}) {
   final now = DateTime.now();
   final currentWeekDate = DateTime(now.year, now.month, now.day);
   final startOfMonth = DateTime(currentWeekDate.year, currentWeekDate.month, 1);
-  final endOfMonth = endDate ?? DateTime(currentWeekDate.year, currentWeekDate.month + 1, 0);
+  final endOfMonth =
+      endDate ?? DateTime(currentWeekDate.year, currentWeekDate.month + 1, 0);
   return DateTimeRange(start: startOfMonth, end: endOfMonth);
 }

@@ -3,10 +3,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:tracker_app/screens/editors/exercise_editor_screen.dart';
-import 'package:tracker_app/screens/exercise/history/exercise_chart_screen.dart';
-import 'package:tracker_app/screens/exercise/history/history_screen.dart';
+import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/screens/editors/exercise_editor_screen.dart';
+import 'package:trainware/screens/exercise/history/exercise_chart_screen.dart';
+import 'package:trainware/screens/exercise/history/history_screen.dart';
 
 import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../utils/dialog_utils.dart';

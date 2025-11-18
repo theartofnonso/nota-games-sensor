@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class DoubleTextField extends StatelessWidget {
   final num value;
@@ -10,7 +10,13 @@ class DoubleTextField extends StatelessWidget {
   final int? maxLength;
 
   const DoubleTextField(
-      {super.key, required this.value, required this.controller, required this.onChanged, this.onTap, this.textAlign, this.maxLength});
+      {super.key,
+      required this.value,
+      required this.controller,
+      required this.onChanged,
+      this.onTap,
+      this.textAlign,
+      this.maxLength});
 
   double _parseDoubleOrDefault({required String value}) {
     return double.tryParse(value) ?? 0;

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tracker_app/dtos/appsync/routine_plan_dto.dart';
+import 'package:trainware/dtos/appsync/routine_plan_dto.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../enums/posthog_analytics_event.dart';

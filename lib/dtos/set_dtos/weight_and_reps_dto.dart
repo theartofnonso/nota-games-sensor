@@ -1,5 +1,5 @@
-import 'package:tracker_app/dtos/set_dtos/set_dto.dart';
-import 'package:tracker_app/utils/general_utils.dart';
+import 'package:trainware/dtos/set_dtos/set_dto.dart';
+import 'package:trainware/utils/general_utils.dart';
 
 import '../../enums/exercise_type_enums.dart';
 

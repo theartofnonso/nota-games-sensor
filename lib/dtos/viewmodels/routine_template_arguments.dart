@@ -1,4 +1,4 @@
-import 'package:tracker_app/dtos/appsync/routine_template_dto.dart';
+import 'package:trainware/dtos/appsync/routine_template_dto.dart';
 
 class RoutineTemplateArguments {
   final RoutineTemplateDto? template;

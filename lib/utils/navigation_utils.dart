@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tracker_app/screens/editors/exercise_editor_screen.dart';
-import 'package:tracker_app/screens/exercise/history/exercise_home_screen.dart';
-import 'package:tracker_app/screens/preferences/settings_screen.dart';
+import 'package:trainware/screens/editors/exercise_editor_screen.dart';
+import 'package:trainware/screens/exercise/history/exercise_home_screen.dart';
+import 'package:trainware/screens/preferences/settings_screen.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/utils/general_utils.dart';
-import 'package:tracker_app/utils/notifications_utils.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/dtos/appsync/routine_log_dto.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/utils/general_utils.dart';
+import 'package:trainware/utils/notifications_utils.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 /// Infinite scrollable calendar with continuous date flow
 /// Dates flow across month boundaries without line breaks

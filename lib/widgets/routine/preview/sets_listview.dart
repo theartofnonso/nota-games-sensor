@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/dtos/set_dtos/duration_set_dto.dart';
-import 'package:tracker_app/dtos/set_dtos/reps_dto.dart';
-import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
-import 'package:tracker_app/extensions/duration_extension.dart';
-import 'package:tracker_app/widgets/buttons/opacity_button_widget.dart';
-import 'package:tracker_app/widgets/routine/preview/set_rows/double_set_row.dart';
-import 'package:tracker_app/widgets/routine/preview/set_rows/single_set_row.dart';
+import 'package:trainware/dtos/set_dtos/duration_set_dto.dart';
+import 'package:trainware/dtos/set_dtos/reps_dto.dart';
+import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
+import 'package:trainware/extensions/duration_extension.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget.dart';
+import 'package:trainware/widgets/routine/preview/set_rows/double_set_row.dart';
+import 'package:trainware/widgets/routine/preview/set_rows/single_set_row.dart';
 
 import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../enums/exercise_type_enums.dart';

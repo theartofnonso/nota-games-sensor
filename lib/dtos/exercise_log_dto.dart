@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:tracker_app/dtos/set_dtos/set_dto.dart';
+import 'package:trainware/dtos/set_dtos/set_dto.dart';
 
 import 'appsync/exercise_dto.dart';
 
@@ -49,17 +49,23 @@ class ExerciseLogDto {
 
       // If a new ExerciseDto is provided, copy it deeply.
       // Otherwise, copy the existing ExerciseDto if it is not null.
-      exercise: exercise != null ? exercise.copyWith() : this.exercise.copyWith(),
+      exercise:
+          exercise != null ? exercise.copyWith() : this.exercise.copyWith(),
       notes: notes ?? this.notes,
 
       // Deep copy for the list of SetDto items.
-      sets: sets != null ? sets.map((s) => s.copyWith()).toList() : this.sets.map((s) => s.copyWith()).toList(),
+      sets: sets != null
+          ? sets.map((s) => s.copyWith()).toList()
+          : this.sets.map((s) => s.copyWith()).toList(),
 
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
-  factory ExerciseLogDto.fromJson({String? routineLogId, DateTime? createdAt, required Map<String, dynamic> json}) {
+  factory ExerciseLogDto.fromJson(
+      {String? routineLogId,
+      DateTime? createdAt,
+      required Map<String, dynamic> json}) {
     final superSetId = json["superSetId"] ?? "";
     final exerciseJson = json["exercise"];
     final exercise = ExerciseDto.fromJson(exerciseJson);
@@ -67,9 +73,17 @@ class ExerciseLogDto {
     final setsInJsons = json["sets"] as List<dynamic>;
     List<SetDto> sets = [];
     if (setsInJsons.isNotEmpty && setsInJsons.first is String) {
-      sets = setsInJsons.map((json) => SetDto.fromJson(jsonDecode(json), exerciseType: exercise.type, datetime: createdAt ?? DateTime.now())).toList();
+      sets = setsInJsons
+          .map((json) => SetDto.fromJson(jsonDecode(json),
+              exerciseType: exercise.type,
+              datetime: createdAt ?? DateTime.now()))
+          .toList();
     } else {
-      sets = setsInJsons.map((json) => SetDto.fromJson(json, exerciseType: exercise.type, datetime: createdAt ?? DateTime.now())).toList();
+      sets = setsInJsons
+          .map((json) => SetDto.fromJson(json,
+              exerciseType: exercise.type,
+              datetime: createdAt ?? DateTime.now()))
+          .toList();
     }
 
     final exerciseLog = ExerciseLogDto(

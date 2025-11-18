@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'package:tracker_app/widgets/buttons/opacity_button_widget.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class DoubleGenericPicker<T> extends StatefulWidget {
   /// The initially selected item (optional).
@@ -47,26 +47,30 @@ class _DoubleGenericPickerState<T> extends State<DoubleGenericPicker<T>> {
 
     // If initialValue is provided and exists in the item list, use it;
     // otherwise, default to the first item (if the list isn't empty).
-    if (widget.firstInitialValue != null && widget.firstItems.contains(widget.firstInitialValue)) {
+    if (widget.firstInitialValue != null &&
+        widget.firstItems.contains(widget.firstInitialValue)) {
       _firstSelectedItem = widget.firstInitialValue as T;
     } else if (widget.firstItems.isNotEmpty) {
       _firstSelectedItem = widget.firstItems.first;
     } else {
       // Handle empty items list scenario here if needed.
       // For demonstration, we'll just throw:
-      throw ArgumentError('GenericPicker cannot be built with an empty items list.');
+      throw ArgumentError(
+          'GenericPicker cannot be built with an empty items list.');
     }
 
     // If initialValue is provided and exists in the item list, use it;
     // otherwise, default to the first item (if the list isn't empty).
-    if (widget.secondInitialValue != null && widget.secondItems.contains(widget.secondInitialValue)) {
+    if (widget.secondInitialValue != null &&
+        widget.secondItems.contains(widget.secondInitialValue)) {
       _secondSelectedItem = widget.secondInitialValue as T;
     } else if (widget.secondItems.isNotEmpty) {
       _secondSelectedItem = widget.secondItems.first;
     } else {
       // Handle empty items list scenario here if needed.
       // For demonstration, we'll just throw:
-      throw ArgumentError('GenericPicker cannot be built with an empty items list.');
+      throw ArgumentError(
+          'GenericPicker cannot be built with an empty items list.');
     }
   }
 
@@ -138,7 +142,8 @@ class _DoubleGenericPickerState<T> extends State<DoubleGenericPicker<T>> {
           },
           buttonColor: Theme.of(context).colors.vibrantAccent,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          label: "Select ${widget.firstLabelBuilder(_firstSelectedItem)} ${widget.secondLabelBuilder(_secondSelectedItem)}",
+          label:
+              "Select ${widget.firstLabelBuilder(_firstSelectedItem)} ${widget.secondLabelBuilder(_secondSelectedItem)}",
         ),
       ],
     );

@@ -1,4 +1,4 @@
-import 'package:tracker_app/enums/muscle_group_enums.dart';
+import 'package:trainware/enums/muscle_group_enums.dart';
 
 import '../../enums/exercise_type_enums.dart';
 

@@ -1,7 +1,7 @@
-import 'package:tracker_app/dtos/appsync/routine_log_dto.dart';
-import 'package:tracker_app/enums/muscle_group_enums.dart';
-import 'package:tracker_app/enums/training_archetype.dart';
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/dtos/appsync/routine_log_dto.dart';
+import 'package:trainware/enums/muscle_group_enums.dart';
+import 'package:trainware/enums/training_archetype.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
 
 import 'date_utils.dart';
 

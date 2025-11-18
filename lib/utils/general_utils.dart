@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:tracker_app/screens/preferences/settings_screen.dart';
-import 'package:tracker_app/widgets/icons/custom_wordmark_icon.dart';
+import 'package:trainware/screens/preferences/settings_screen.dart';
+import 'package:trainware/widgets/icons/custom_wordmark_icon.dart';
 
 import '../colors.dart';
 import '../dtos/appsync/routine_log_dto.dart';
@@ -254,7 +254,6 @@ Color appBarBackgroundColor({required BuildContext context}) {
   final isDarkMode = systemBrightness == Brightness.dark;
   return isDarkMode ? sapphireDark80 : Colors.white;
 }
-
 
 void logEmptyRoutine({required BuildContext context, String? workoutVideoUrl}) {
   final log = RoutineLogDto(

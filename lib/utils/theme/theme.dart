@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:tracker_app/colors.dart';
-import 'package:tracker_app/utils/theme/app_bar_theme.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
-import 'package:tracker_app/utils/theme/floating_action_button_theme.dart';
-import 'package:tracker_app/utils/theme/input_textfield_theme.dart';
-import 'package:tracker_app/utils/theme/navigation_bar_theme.dart';
-import 'package:tracker_app/utils/theme/text_theme.dart';
+import 'package:trainware/colors.dart';
+import 'package:trainware/utils/theme/app_bar_theme.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/floating_action_button_theme.dart';
+import 'package:trainware/utils/theme/input_textfield_theme.dart';
+import 'package:trainware/utils/theme/navigation_bar_theme.dart';
+import 'package:trainware/utils/theme/text_theme.dart';
 
 import 'icon_theme.dart';
 import 'list_title_theme.dart';

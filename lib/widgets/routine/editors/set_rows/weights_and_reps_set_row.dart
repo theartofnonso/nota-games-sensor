@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
-import 'package:tracker_app/widgets/routine/editors/textfields/double_textfield.dart';
-import 'package:tracker_app/widgets/routine/editors/textfields/int_textfield.dart';
+import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
+import 'package:trainware/widgets/routine/editors/textfields/double_textfield.dart';
+import 'package:trainware/widgets/routine/editors/textfields/int_textfield.dart';
 
 import '../../../../enums/routine_editor_type_enums.dart';
 import '../../../../utils/theme/color_extensions.dart';

@@ -1,4 +1,4 @@
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
 
 class NotificationDto {
   final DateTime dateTime;
@@ -14,7 +14,9 @@ class NotificationDto {
   factory NotificationDto.fromJson(Map<String, dynamic> json) {
     final dateTimeString = json["dateTime"];
     final now = DateTime.now().withoutTime();
-    DateTime dateTime = dateTimeString != null ? DateTime.parse(dateTimeString).withoutTime() : now;
+    DateTime dateTime = dateTimeString != null
+        ? DateTime.parse(dateTimeString).withoutTime()
+        : now;
     if (dateTime.isBefore(now)) {
       dateTime = now;
     }

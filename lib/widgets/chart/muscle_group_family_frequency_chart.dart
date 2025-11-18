@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../enums/muscle_group_enums.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 class MuscleGroupFamilyFrequencyChart extends StatelessWidget {
   final Map<MuscleGroup, double> frequencyData;

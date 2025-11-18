@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
-import 'package:tracker_app/dtos/exercise_log_dto.dart';
-import 'package:tracker_app/dtos/set_dtos/weight_and_reps_dto.dart';
-import 'package:tracker_app/enums/muscle_group_enums.dart';
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/extensions/duration_extension.dart';
-import 'package:tracker_app/extensions/muscle_group_extension.dart';
-import 'package:tracker_app/widgets/buttons/opacity_button_widget.dart';
-import 'package:tracker_app/widgets/list_tile.dart';
+import 'package:trainware/dtos/appsync/exercise_dto.dart';
+import 'package:trainware/dtos/exercise_log_dto.dart';
+import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
+import 'package:trainware/enums/muscle_group_enums.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/extensions/duration_extension.dart';
+import 'package:trainware/extensions/muscle_group_extension.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget.dart';
+import 'package:trainware/widgets/list_tile.dart';
 
-import 'package:tracker_app/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/graph/chart_point_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../enums/chart_unit_enum.dart';
@@ -22,7 +22,7 @@ import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
 import '../../../widgets/chart/line_chart_widget.dart';
 import '../../logs/routine_log_screen.dart';
-import 'package:tracker_app/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 
 enum SummaryType {
   weight("Heaviest Weight"),

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-import 'package:tracker_app/extensions/duration_extension.dart';
+import 'package:trainware/extensions/duration_extension.dart';
 
 class StopwatchTimer extends StatefulWidget {
   final DateTime startTime;
@@ -43,23 +43,29 @@ class _StopwatchTimerState extends State<StopwatchTimer> {
 
     _elapsedDuration = DateTime.now().difference(widget.startTime);
 
-    String elapsedDisplayText = widget.digital ? _elapsedDuration.hmsDigital() : _elapsedDuration.hmsAnalog();
+    String elapsedDisplayText = widget.digital
+        ? _elapsedDuration.hmsDigital()
+        : _elapsedDuration.hmsAnalog();
 
     final Color? elapsedColor = widget.forceLightMode ? Colors.white : null;
     final TextStyle? elapsedStyle =
-        (widget.textStyle ?? Theme.of(context).textTheme.bodyMedium)?.copyWith(color: elapsedColor);
+        (widget.textStyle ?? Theme.of(context).textTheme.bodyMedium)
+            ?.copyWith(color: elapsedColor);
 
     if (maxDuration != null) {
       final Duration remainingTime = maxDuration - _elapsedDuration;
 
       // Check if elapsed exceeds max or remaining time is within warning threshold
-      if (_elapsedDuration > maxDuration || remainingTime <= widget.warningThreshold) {
+      if (_elapsedDuration > maxDuration ||
+          remainingTime <= widget.warningThreshold) {
         final Duration difference = _elapsedDuration - maxDuration;
         final bool isNegative = difference.isNegative;
         final Duration absoluteDifference = difference.abs();
-        final String differenceTimeString =
-            widget.digital ? absoluteDifference.hmsDigital() : absoluteDifference.hmsAnalog();
-        final String differenceDisplayText = '${isNegative ? '-' : '+'}$differenceTimeString';
+        final String differenceTimeString = widget.digital
+            ? absoluteDifference.hmsDigital()
+            : absoluteDifference.hmsAnalog();
+        final String differenceDisplayText =
+            '${isNegative ? '-' : '+'}$differenceTimeString';
 
         Color? differenceColor;
         if (_elapsedDuration >= maxDuration) {
@@ -71,7 +77,8 @@ class _StopwatchTimerState extends State<StopwatchTimer> {
           }
         }
 
-        final Color? finalDifferenceColor = differenceColor ?? (widget.forceLightMode ? Colors.white : null);
+        final Color? finalDifferenceColor =
+            differenceColor ?? (widget.forceLightMode ? Colors.white : null);
         final TextStyle differenceStyle = TextStyle(
           color: finalDifferenceColor,
           fontSize: 14,
@@ -83,10 +90,17 @@ class _StopwatchTimerState extends State<StopwatchTimer> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(elapsedDisplayText, style: elapsedStyle),
-            Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 4, children: [
-              Text(differenceDisplayText, style: differenceStyle),
-              FaIcon(Icons.info_rounded, size: 12, color: differenceColor,)
-            ]),
+            Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                children: [
+                  Text(differenceDisplayText, style: differenceStyle),
+                  FaIcon(
+                    Icons.info_rounded,
+                    size: 12,
+                    color: differenceColor,
+                  )
+                ]),
           ],
         );
       }

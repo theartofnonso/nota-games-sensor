@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tracker_app/extensions/datetime/datetime_extension.dart';
-import 'package:tracker_app/utils/date_utils.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/utils/date_utils.dart';
 
 void main() {
   group('yearToDateTimeRange', () {
@@ -51,8 +51,8 @@ void main() {
     // 2023-01-01 is a Sunday, Monday of that week is 2022-12-26
     final start = DateTime(2023, 1, 1);
     final end = DateTime(2023, 1, 31);
-    final weeks = generateWeeksInRange(range: DateTimeRange(start: start, end: end));
-
+    final weeks =
+        generateWeeksInRange(range: DateTimeRange(start: start, end: end));
 
     // The first week should start Monday, December 26, 2022 and run to Sunday, January 1, 2023
     expect(weeks.first.start, DateTime(2022, 12, 26));
@@ -78,7 +78,8 @@ void main() {
 
     final start = DateTime(2023, 1, 15);
     final end = DateTime(2023, 3, 10);
-    final months = generateMonthsInRange(range: DateTimeRange(start: start, end: end));
+    final months =
+        generateMonthsInRange(range: DateTimeRange(start: start, end: end));
 
     // months should include:
     // 2023-01-01 to 2023-01-31
@@ -101,7 +102,8 @@ void main() {
     test('Returns date range for this month', () {
       final now = DateTime.now();
       final startOfThisMonth = DateTime(now.year, now.month, 1);
-      final endOfThisMonth = DateTime(now.year, now.month + 1, 0); // last day of this month
+      final endOfThisMonth =
+          DateTime(now.year, now.month + 1, 0); // last day of this month
 
       final range = thisMonthDateRange();
 

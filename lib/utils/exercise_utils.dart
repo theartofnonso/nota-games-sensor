@@ -1,12 +1,12 @@
-import 'package:tracker_app/dtos/appsync/exercise_dto.dart';
+import 'package:trainware/dtos/appsync/exercise_dto.dart';
 
 /// Finds similar exercises using regex pattern matching
-/// 
+///
 /// The regex matches exercises that:
 /// - Have the same name (case-insensitive)
 /// - Contain the search name as a substring (case-insensitive)
 /// - Have similar spelling (within 1-2 character differences)
-/// 
+///
 /// Returns a list of similar exercises, excluding the current exercise if provided.
 List<ExerciseDto> findSimilarExercises({
   required String exerciseName,
@@ -47,15 +47,15 @@ List<ExerciseDto> findSimilarExercises({
     final words = normalizedName.split(RegExp(r'\s+'));
     if (words.length > 1) {
       // For multi-word names, check if all words are present
-      final allWordsPresent = words.every((word) =>
-          normalizedExerciseName.contains(word) || word.length <= 2);
-      
+      final allWordsPresent = words.every(
+          (word) => normalizedExerciseName.contains(word) || word.length <= 2);
+
       // Also check if exercise name contains significant words from the search
       final significantWords = words.where((w) => w.length > 2).toList();
       if (significantWords.isNotEmpty) {
-        final significantWordsPresent = significantWords.every((word) =>
-            normalizedExerciseName.contains(word));
-        
+        final significantWordsPresent = significantWords
+            .every((word) => normalizedExerciseName.contains(word));
+
         if (significantWordsPresent && allWordsPresent) {
           similarExercises.add(exercise);
           continue;
@@ -69,7 +69,7 @@ List<ExerciseDto> findSimilarExercises({
     int minLength = normalizedName.length < normalizedExerciseName.length
         ? normalizedName.length
         : normalizedExerciseName.length;
-    
+
     for (int i = 0; i < minLength; i++) {
       if (normalizedName[i] == normalizedExerciseName[i]) {
         matchingChars++;
@@ -79,7 +79,8 @@ List<ExerciseDto> findSimilarExercises({
     // If more than 70% of characters match in sequence, consider it similar
     if (minLength > 0 && (matchingChars / minLength) > 0.7) {
       // Additional check: the length difference shouldn't be too large
-      final lengthDiff = (normalizedName.length - normalizedExerciseName.length).abs();
+      final lengthDiff =
+          (normalizedName.length - normalizedExerciseName.length).abs();
       if (lengthDiff <= 3) {
         similarExercises.add(exercise);
       }
@@ -96,4 +97,3 @@ List<ExerciseDto> findSimilarExercises({
     return true;
   }).toList();
 }
-
