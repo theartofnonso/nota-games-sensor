@@ -11,6 +11,7 @@ import '../dtos/viewmodels/routine_log_arguments.dart';
 import '../enums/routine_editor_type_enums.dart';
 import '../shared_prefs.dart';
 import 'navigation_utils.dart';
+import 'unsaved_workout_utils.dart';
 
 bool isDefaultWeightUnit() {
   final weightString = SharedPrefs().weightUnit;
@@ -256,6 +257,12 @@ Color appBarBackgroundColor({required BuildContext context}) {
 }
 
 void logEmptyRoutine({required BuildContext context, String? workoutVideoUrl}) {
+  // Prevent starting a new live session when there's an unsaved one
+  if (SharedPrefs().routineLog.isNotEmpty) {
+    showUnsavedWorkoutBottomSheet(context);
+    return;
+  }
+
   final log = RoutineLogDto(
       id: "",
       templateId: "",

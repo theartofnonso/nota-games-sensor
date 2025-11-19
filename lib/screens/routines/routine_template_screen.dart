@@ -20,6 +20,8 @@ import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/routine_utils.dart';
+import '../../utils/unsaved_workout_utils.dart';
+import '../../shared_prefs.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -453,6 +455,12 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _launchRoutineLogEditor({required List<MuscleGroup> muscleGroups}) {
+    // Prevent starting a new live session when there's an unsaved one
+    if (SharedPrefs().routineLog.isNotEmpty) {
+      showUnsavedWorkoutBottomSheet(context);
+      return;
+    }
+
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
         listen: false);
