@@ -39,6 +39,7 @@ class OverviewScreen extends StatefulWidget {
 
 class _OverviewScreenState extends State<OverviewScreen>
     with WidgetsBindingObserver {
+  final SharedPrefs _sharedPrefs = SharedPrefs();
   bool _loading = false;
   bool _lastCachedSessionState = false;
 
@@ -47,11 +48,13 @@ class _OverviewScreenState extends State<OverviewScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _lastCachedSessionState = _hasCachedSession();
+    _sharedPrefs.routineLogRevision.addListener(_handleRoutineLogChanged);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _sharedPrefs.routineLogRevision.removeListener(_handleRoutineLogChanged);
     super.dispose();
   }
 
@@ -79,6 +82,10 @@ class _OverviewScreenState extends State<OverviewScreen>
       _lastCachedSessionState = currentCachedSessionState;
       setState(() {});
     }
+  }
+
+  void _handleRoutineLogChanged() {
+    _checkCacheStatus();
   }
 
   bool _hasCachedSession() {

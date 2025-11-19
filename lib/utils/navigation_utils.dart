@@ -69,8 +69,11 @@ Future<void> navigateToRoutineLogEditor(
     required RoutineLogArguments arguments}) async {
   final log = await navigateWithSlideTransition(
     context: context,
-    child:
-        RoutineLogEditorScreen(log: arguments.log, mode: arguments.editorMode),
+    child: RoutineLogEditorScreen(
+      log: arguments.log,
+      mode: arguments.editorMode,
+      cached: arguments.cached,
+    ),
   ) as RoutineLogDto?;
   if (log != null) {
     if (context.mounted) {

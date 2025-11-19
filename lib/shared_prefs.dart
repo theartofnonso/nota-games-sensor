@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 
 class SharedPrefs {
   static SharedPreferences? _sharedPrefs;
+  static final ValueNotifier<int> _routineLogRevision = ValueNotifier(0);
 
   factory SharedPrefs() => SharedPrefs._internal();
 
@@ -19,6 +21,9 @@ class SharedPrefs {
 
   void remove({required String key}) {
     _sharedPrefs?.remove(key);
+    if (key == routineLogKey) {
+      _bumpRoutineLogRevision();
+    }
   }
 
   Future<void> reload() async {
@@ -51,5 +56,12 @@ class SharedPrefs {
 
   set routineLog(String value) {
     _sharedPrefs?.setString(routineLogKey, value);
+    _bumpRoutineLogRevision();
+  }
+
+  ValueListenable<int> get routineLogRevision => _routineLogRevision;
+
+  void _bumpRoutineLogRevision() {
+    _routineLogRevision.value++;
   }
 }

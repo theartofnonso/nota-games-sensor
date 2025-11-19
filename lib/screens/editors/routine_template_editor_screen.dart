@@ -376,7 +376,7 @@ class _RoutineTemplateEditorScreenState
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(50),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: Theme.of(context)
                               .extension<TRKRColors>()!
@@ -385,7 +385,7 @@ class _RoutineTemplateEditorScreenState
                         ),
                       ),
                       padding: const EdgeInsets.only(
-                          left: 20, top: 6, bottom: 6, right: 6),
+                          left: 20, top: 6, bottom: 6, right: 20),
                       child: TextField(
                         controller: _templateNotesController,
                         cursorColor: isDarkMode ? Colors.white : Colors.black,
@@ -396,6 +396,7 @@ class _RoutineTemplateEditorScreenState
                           focusedBorder: InputBorder.none,
                         ),
                         maxLines: null,
+                        minLines: 4,
                         keyboardType: TextInputType.text,
                         textCapitalization: TextCapitalization.sentences,
                         style: TextStyle(

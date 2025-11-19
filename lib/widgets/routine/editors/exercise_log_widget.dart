@@ -726,7 +726,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                     height: 1.5,
                                   ),
                           maxLines: null,
-                          minLines: 3,
+                          minLines: 4,
                           keyboardType: TextInputType.multiline,
                           textCapitalization: TextCapitalization.sentences,
                         ),

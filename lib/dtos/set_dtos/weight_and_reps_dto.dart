@@ -34,7 +34,7 @@ class WeightAndRepsSetDto extends SetDto {
   ExerciseType get type => ExerciseType.weights;
 
   @override
-  bool isEmpty() => weight == 0 && reps == 0;
+  bool isEmpty() => weight <= 0 || reps <= 0;
 
   @override
   bool isNotEmpty() => weight > 0 && reps > 0;

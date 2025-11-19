@@ -28,7 +28,7 @@ class RepsSetDto extends SetDto {
   ExerciseType get type => ExerciseType.bodyWeight;
 
   @override
-  bool isEmpty() => reps == 0;
+  bool isEmpty() => reps <= 0;
 
   @override
   bool isNotEmpty() => reps > 0;
