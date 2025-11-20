@@ -403,57 +403,91 @@ class _RoutineTemplateEditorScreenState
                           ),
                           const SizedBox(height: 16),
                           Expanded(
-                            child: ListView.separated(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              itemCount: exerciseTemplates.length + 1,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                if (index == exerciseTemplates.length) {
-                                  return AddExerciseListItem(
-                                    onTap: _selectExercisesInLibrary,
-                                  );
-                                }
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: ReorderableListView.builder(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    itemCount: exerciseTemplates.length,
+                                    onReorder: (oldIndex, newIndex) {
+                                      if (newIndex > oldIndex) {
+                                        newIndex -= 1;
+                                      }
 
-                                final exerciseLog = exerciseTemplates[index];
-                                final superSet = whereOtherExerciseInSuperSet(
-                                    firstExercise: exerciseLog,
-                                    exercises: exerciseTemplates);
+                                      final updated =
+                                          exerciseTemplates.toList();
+                                      final item = updated.removeAt(oldIndex);
+                                      updated.insert(newIndex, item);
 
-                                return ExerciseLogListItem(
-                                  exerciseLogDto: exerciseLog,
-                                  superSet: superSet,
-                                  onTap: () {
-                                    showExerciseLogEditor(
-                                      context: context,
-                                      exerciseLogId: exerciseLog.exercise.id,
-                                      editorType: RoutineEditorMode.edit,
-                                    );
-                                  },
-                                  onMenuTap: () {
-                                    _showExerciseActionsBottomSheet(
-                                      exerciseLog: exerciseLog,
-                                      onRemoveLog: () {
-                                        exerciseLogController.removeExerciseLog(
-                                            logId: exerciseLog.id);
-                                      },
-                                      onReplaceLog: () {
-                                        _showReplaceExercisePicker(
-                                            oldExerciseLog: exerciseLog);
-                                      },
-                                      onSuperSet: () {
-                                        _showSuperSetExercisePicker(
-                                            firstExerciseLog: exerciseLog);
-                                      },
-                                      onRemoveSuperSet: (String superSetId) {
-                                        exerciseLogController.removeSuperSet(
-                                            superSetId: exerciseLog.superSetId);
-                                      },
-                                    );
-                                  },
-                                );
-                              },
+                                      exerciseLogController.reOrderExerciseLogs(
+                                        reOrderedList: updated,
+                                      );
+                                    },
+                                    itemBuilder: (context, index) {
+                                      final exerciseLog =
+                                          exerciseTemplates[index];
+                                      final superSet =
+                                          whereOtherExerciseInSuperSet(
+                                              firstExercise: exerciseLog,
+                                              exercises: exerciseTemplates);
+
+                                      return Column(
+                                        key: ValueKey(exerciseLog.id),
+                                        children: [
+                                          ExerciseLogListItem(
+                                            exerciseLogDto: exerciseLog,
+                                            superSet: superSet,
+                                            onTap: () {
+                                              showExerciseLogEditor(
+                                                context: context,
+                                                exerciseLogId:
+                                                    exerciseLog.exercise.id,
+                                                editorType:
+                                                    RoutineEditorMode.edit,
+                                              );
+                                            },
+                                            onMenuTap: () {
+                                              _showExerciseActionsBottomSheet(
+                                                exerciseLog: exerciseLog,
+                                                onRemoveLog: () {
+                                                  exerciseLogController
+                                                      .removeExerciseLog(
+                                                          logId:
+                                                              exerciseLog.id);
+                                                },
+                                                onReplaceLog: () {
+                                                  _showReplaceExercisePicker(
+                                                      oldExerciseLog:
+                                                          exerciseLog);
+                                                },
+                                                onSuperSet: () {
+                                                  _showSuperSetExercisePicker(
+                                                      firstExerciseLog:
+                                                          exerciseLog);
+                                                },
+                                                onRemoveSuperSet:
+                                                    (String superSetId) {
+                                                  exerciseLogController
+                                                      .removeSuperSet(
+                                                          superSetId:
+                                                              exerciseLog
+                                                                  .superSetId);
+                                                },
+                                              );
+                                            },
+                                          ),
+                                          const SizedBox(height: 12),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                AddExerciseListItem(
+                                  onTap: _selectExercisesInLibrary,
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 90),
