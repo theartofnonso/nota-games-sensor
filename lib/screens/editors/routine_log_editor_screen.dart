@@ -13,7 +13,9 @@ import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/routine_editors_utils.dart';
-import 'package:trainware/widgets/routine/editors/exercise_log_grid_item.dart';
+import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
+import 'package:trainware/widgets/routine/editors/exercise_log_list_item.dart';
+import 'package:trainware/screens/editors/_add_exercise_list_item.dart';
 
 import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
@@ -23,7 +25,6 @@ import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/routine-log-editor';
@@ -237,98 +238,217 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     final exerciseLogs = context
         .select((ExerciseLogController controller) => controller.exerciseLogs);
 
-    final log = widget.log;
-
-    final children = exerciseLogs.map((exerciseLog) {
-      return ExerciseLogGridItemWidget(
-        editorType: widget.mode,
-        exerciseLogDto: exerciseLog,
-        superSet: whereOtherExerciseInSuperSet(
-            firstExercise: exerciseLog, exercises: exerciseLogs),
-        onRemoveSuperSet: (String superSetId) {
-          exerciseLogController.removeSuperSet(
-              superSetId: exerciseLog.superSetId);
-        },
-        onRemoveLog: () {
-          exerciseLogController.removeExerciseLog(logId: exerciseLog.id);
-        },
-        onSuperSet: () =>
-            _showSuperSetExercisePicker(firstExerciseLog: exerciseLog),
-        onReplaceLog: () =>
-            _showReplaceExercisePicker(oldExerciseLog: exerciseLog),
-      );
-    }).toList();
-
     return PopScope(
         canPop: false,
         child: Scaffold(
-            appBar: AppBar(
-              backgroundColor: appBarBackgroundColor(context: context),
-              surfaceTintColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              leading: IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
-                  onPressed: _discardLog),
-              title: Text(
-                log.name,
-              ),
-              actions: [
-                IconButton(
-                    key: const Key('select_exercises_in_library_btn'),
-                    onPressed: _selectExercisesInLibrary,
-                    icon: const FaIcon(FontAwesomeIcons.circlePlus)),
+            body: Container(
+          decoration: BoxDecoration(
+            gradient: themeGradient(context: context),
+          ),
+          child: SafeArea(
+            minimum: EdgeInsets.symmetric(vertical: 10),
+            child: Stack(
+              children: [
+                // Main content: header + list + "Add exercises"
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 0),
+                    child: Column(
+                      children: [
+                        // Header: routine name
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              widget.log.name,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.2,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            itemCount: exerciseLogs.length + 1,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              if (index == exerciseLogs.length) {
+                                return AddExerciseListItem(
+                                  onTap: _selectExercisesInLibrary,
+                                );
+                              }
+
+                              final exerciseLog = exerciseLogs[index];
+                              final superSet = whereOtherExerciseInSuperSet(
+                                  firstExercise: exerciseLog,
+                                  exercises: exerciseLogs);
+
+                              return ExerciseLogListItem(
+                                exerciseLogDto: exerciseLog,
+                                superSet: superSet,
+                                onTap: () {
+                                  showExerciseLogEditor(
+                                    context: context,
+                                    exerciseLogId: exerciseLog.exercise.id,
+                                    editorType: widget.mode,
+                                  );
+                                },
+                                onMenuTap: () {
+                                  _showExerciseActionsBottomSheet(
+                                    exerciseLog: exerciseLog,
+                                    onRemoveLog: () {
+                                      exerciseLogController.removeExerciseLog(
+                                          logId: exerciseLog.id);
+                                    },
+                                    onReplaceLog: () {
+                                      _showReplaceExercisePicker(
+                                          oldExerciseLog: exerciseLog);
+                                    },
+                                    onSuperSet: () {
+                                      _showSuperSetExercisePicker(
+                                          firstExerciseLog: exerciseLog);
+                                    },
+                                    onRemoveSuperSet: (String superSetId) {
+                                      exerciseLogController.removeSuperSet(
+                                          superSetId: exerciseLog.superSetId);
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 90),
+                      ],
+                    ),
+                  ),
+                ),
+                // Top overlay controls (back + add), matching Overview style
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 8,
+                  left: 16,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: IconButton(
+                        icon: const FaIcon(FontAwesomeIcons.arrowLeftLong,
+                            size: 18),
+                        onPressed: _discardLog,
+                        color: Colors.white,
+                        padding: const EdgeInsets.all(12),
+                        constraints: const BoxConstraints(),
+                      ),
+                    ),
+                  ),
+                ),
+                // Bottom fixed CTA (does not scroll) – vertically aligned similar to Overview FAB
+                if (_isRoutinePartiallyComplete())
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: SafeArea(
+                      minimum: const EdgeInsets.only(
+                          left: 20, right: 20, bottom: 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OpacityButtonWidgetTwo(
+                          buttonColor: Theme.of(context).colors.vibrantAccent,
+                          label: widget.mode == RoutineEditorMode.log
+                              ? "Finish Session"
+                              : "Update Session",
+                          onPressed: widget.mode == RoutineEditorMode.log
+                              ? _saveLog
+                              : _updateLog,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: themeGradient(context: context),
+          ),
+        )));
+  }
+
+  void _showExerciseActionsBottomSheet({
+    required ExerciseLogDto exerciseLog,
+    required VoidCallback onRemoveLog,
+    required VoidCallback onReplaceLog,
+    required VoidCallback onSuperSet,
+    required void Function(String superSetId) onRemoveSuperSet,
+  }) {
+    showAppBottomSheet(
+        context: context,
+        isScrollControlled: false,
+        child: Padding(
+          padding: const EdgeInsets.all(26),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(
+                FontAwesomeIcons.arrowRightArrowLeft,
+                size: 18,
               ),
-              child: SafeArea(
-                minimum: EdgeInsets.symmetric(vertical: 10),
-                child: Column(
-                  spacing: 20,
-                  children: [
-                    if (exerciseLogs.isNotEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: GridView.count(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1,
-                              mainAxisSpacing: 10.0,
-                              crossAxisSpacing: 10.0,
-                              children: children),
-                        ),
-                      ),
-                    if (_isRoutinePartiallyComplete())
-                      SafeArea(
-                        minimum: EdgeInsets.symmetric(horizontal: 20),
-                        child: SizedBox(
-                            width: double.infinity,
-                            child: OpacityButtonWidgetTwo(
-                              buttonColor:
-                                  Theme.of(context).colors.vibrantAccent,
-                              label: widget.mode == RoutineEditorMode.log
-                                  ? "Finish Session"
-                                  : "Update Session",
-                              onPressed: widget.mode == RoutineEditorMode.log
-                                  ? _saveLog
-                                  : _updateLog,
-                            )),
-                      ),
-                    if (exerciseLogs.isEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: const NoListEmptyState(
-                              message:
-                                  "Tap the + button to start adding exercises to your workout session"),
-                        ),
-                      ),
-                  ],
+              horizontalTitleGap: 6,
+              title: const Text("Replace"),
+              onTap: () {
+                Navigator.of(context).pop();
+                onReplaceLog();
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(FontAwesomeIcons.link, size: 18),
+              horizontalTitleGap: 6,
+              title: const Text("Superset"),
+              onTap: () {
+                Navigator.of(context).pop();
+                onSuperSet();
+              },
+            ),
+            if (exerciseLog.superSetId.isNotEmpty)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const FaIcon(FontAwesomeIcons.linkSlash, size: 18),
+                horizontalTitleGap: 6,
+                title: const Text("Remove from superset"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  onRemoveSuperSet(exerciseLog.superSetId);
+                },
+              ),
+            ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const FaIcon(
+                  FontAwesomeIcons.trash,
+                  size: 18,
+                  color: Colors.red,
                 ),
-              ),
-            )));
+                horizontalTitleGap: 6,
+                title: const Text("Remove",
+                    style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16)),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  onRemoveLog();
+                }),
+          ]),
+        ));
   }
 
   @override

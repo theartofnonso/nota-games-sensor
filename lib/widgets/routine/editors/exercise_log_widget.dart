@@ -611,124 +611,168 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                     gradient: themeGradient(context: context),
                   ),
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16).copyWith(bottom: 100),
+                    padding: EdgeInsets.only(
+                      top: 16,
+                      bottom: 100 + MediaQuery.of(context).viewInsets.bottom,
+                    ),
                     child: Column(
-                      spacing: 20,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Stopwatch UI for duration exercises in log mode
-                        if (exerciseType == ExerciseType.duration &&
-                            widget.editorType == RoutineEditorMode.log)
-                          DurationStopwatchWidget(
-                            key: _durationStopwatchKey,
-                            onLogSet: _onLogDurationSet,
-                          ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            switch (exerciseType) {
-                              ExerciseType.weights => WeightAndRepsSetHeader(
-                                  editorType: widget.editorType,
-                                  firstLabel: weightUnit().toUpperCase(),
-                                  secondLabel: 'REPS',
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            spacing: 20,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Stopwatch UI for duration exercises in log mode
+                              if (exerciseType == ExerciseType.duration &&
+                                  widget.editorType == RoutineEditorMode.log)
+                                DurationStopwatchWidget(
+                                  key: _durationStopwatchKey,
+                                  onLogSet: _onLogDurationSet,
                                 ),
-                              ExerciseType.bodyWeight => RepsSetHeader(
-                                  editorType: widget.editorType,
-                                ),
-                              ExerciseType.duration => DurationSetHeader(
-                                  editorType: widget.editorType,
-                                )
-                            },
-                            if (currentSets.isEmpty &&
-                                withReps(type: exerciseType))
                               Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const SizedBox(height: 10),
-                                  NoListEmptyState(
-                                      message:
-                                          "Tap the + button to start adding sets to your exercise"),
+                                  switch (exerciseType) {
+                                    ExerciseType.weights =>
+                                      WeightAndRepsSetHeader(
+                                        editorType: widget.editorType,
+                                        firstLabel: weightUnit().toUpperCase(),
+                                        secondLabel: 'REPS',
+                                      ),
+                                    ExerciseType.bodyWeight => RepsSetHeader(
+                                        editorType: widget.editorType,
+                                      ),
+                                    ExerciseType.duration => DurationSetHeader(
+                                        editorType: widget.editorType,
+                                      )
+                                  },
+                                  if (currentSets.isEmpty &&
+                                      withReps(type: exerciseType))
+                                    Column(
+                                      children: [
+                                        const SizedBox(height: 10),
+                                        NoListEmptyState(
+                                          message:
+                                              "Tap the + button to start adding sets to your exercise",
+                                        ),
+                                      ],
+                                    ),
+                                  const SizedBox(height: 20),
+                                  switch (exerciseType) {
+                                    ExerciseType.weights =>
+                                      _WeightAndRepsSetListView(
+                                        sets: currentSets
+                                            .map((set) =>
+                                                set as WeightAndRepsSetDto)
+                                            .toList(),
+                                        updateSetCheck: _updateSetCheck,
+                                        removeSet: _removeSet,
+                                        updateReps: _updateReps,
+                                        updateWeight: _updateWeight,
+                                        controllers: _weightAndRepsControllers,
+                                        onTapWeightEditor: _onTapWeightEditor,
+                                        onTapRepsEditor: _onTapRepsEditor,
+                                        editorType: widget.editorType,
+                                      ),
+                                    ExerciseType.bodyWeight => _RepsSetListView(
+                                        sets: currentSets
+                                            .map((set) => set as RepsSetDto)
+                                            .toList(),
+                                        updateSetCheck: _updateSetCheck,
+                                        removeSet: _removeSet,
+                                        updateReps: _updateReps,
+                                        controllers: _repsControllers,
+                                        onTapRepsEditor: _onTapRepsEditor,
+                                        editorType: widget.editorType,
+                                      ),
+                                    ExerciseType.duration =>
+                                      _DurationSetListView(
+                                        sets: currentSets
+                                            .map((set) => set as DurationSetDto)
+                                            .toList(),
+                                        updateSetCheck: _updateSetCheck,
+                                        removeSet: _removeSet,
+                                        updateDuration: _updateDuration,
+                                        controllers: _durationControllers,
+                                        editorType: widget.editorType,
+                                      ),
+                                  }
                                 ],
                               ),
-                            const SizedBox(height: 20),
-                            switch (exerciseType) {
-                              ExerciseType.weights => _WeightAndRepsSetListView(
-                                  sets: currentSets
-                                      .map((set) => set as WeightAndRepsSetDto)
-                                      .toList(),
-                                  updateSetCheck: _updateSetCheck,
-                                  removeSet: _removeSet,
-                                  updateReps: _updateReps,
-                                  updateWeight: _updateWeight,
-                                  controllers: _weightAndRepsControllers,
-                                  onTapWeightEditor: _onTapWeightEditor,
-                                  onTapRepsEditor: _onTapRepsEditor,
-                                  editorType: widget.editorType,
-                                ),
-                              ExerciseType.bodyWeight => _RepsSetListView(
-                                  sets: currentSets
-                                      .map((set) => set as RepsSetDto)
-                                      .toList(),
-                                  updateSetCheck: _updateSetCheck,
-                                  removeSet: _removeSet,
-                                  updateReps: _updateReps,
-                                  controllers: _repsControllers,
-                                  onTapRepsEditor: _onTapRepsEditor,
-                                  editorType: widget.editorType,
-                                ),
-                              ExerciseType.duration => _DurationSetListView(
-                                  sets: currentSets
-                                      .map((set) => set as DurationSetDto)
-                                      .toList(),
-                                  updateSetCheck: _updateSetCheck,
-                                  removeSet: _removeSet,
-                                  updateDuration: _updateDuration,
-                                  controllers: _durationControllers,
-                                  editorType: widget.editorType,
-                                ),
-                            }
-                          ],
+                            ],
+                          ),
                         ),
                         // Notes section - always shown
-                        const SizedBox(height: 2),
-                        // Notes label
-                        Text(
-                          'Notes',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white70,
-                                  ),
-                        ),
-                        // Notes input field (no borders)
-                        TextField(
-                          controller: _notesController,
-                          focusNode: _notesFocusNode,
-                          cursorColor: Colors.white,
-                          onChanged: _updateNotesController,
-                          decoration: InputDecoration(
-                            hintText: "Enter notes (optional)",
-                            hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              fontSize: 14,
+                        Builder(builder: (context) {
+                          final isDark =
+                              Theme.of(context).brightness == Brightness.dark;
+                          final color = isDark
+                              ? Colors.white.withValues(alpha: 0.12)
+                              : Colors.black.withValues(alpha: 0.06);
+                          // Full-bleed divider: cancel out the 16px horizontal padding
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Divider(
+                              thickness: 0.5,
+                              color: color,
+                              height: 16,
                             ),
-                            border: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            errorBorder: InputBorder.none,
-                            focusedErrorBorder: InputBorder.none,
-                            filled: false,
-                          ),
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white,
+                          );
+                        }),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Notes label
+                              Text(
+                                'Notes',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white70,
+                                    ),
+                              ),
+                              // Notes input field (no borders)
+                              TextField(
+                                controller: _notesController,
+                                focusNode: _notesFocusNode,
+                                cursorColor: Colors.white,
+                                onChanged: _updateNotesController,
+                                decoration: InputDecoration(
+                                  hintText: "Enter notes (optional)",
+                                  hintStyle: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.4),
                                     fontSize: 14,
-                                    height: 1.5,
                                   ),
-                          maxLines: null,
-                          minLines: 4,
-                          keyboardType: TextInputType.multiline,
-                          textCapitalization: TextCapitalization.sentences,
+                                  border: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  errorBorder: InputBorder.none,
+                                  focusedErrorBorder: InputBorder.none,
+                                  filled: false,
+                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      height: 1.5,
+                                    ),
+                                maxLines: null,
+                                minLines: 4,
+                                keyboardType: TextInputType.multiline,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

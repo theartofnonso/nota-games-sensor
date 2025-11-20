@@ -13,7 +13,6 @@ import 'package:trainware/controllers/supabase_exercise_and_routine_controller.d
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
-import '../../dtos/viewmodels/routine_template_arguments.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
@@ -29,6 +28,7 @@ import '../../widgets/routine/preview/routine_template_grid_item.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
 import '../../nudges/plans_nudges.dart';
 import '../../widgets/information_containers/transparent_information_container_lite.dart';
+import '../../widgets/buttons/opacity_button_widget_two.dart';
 
 class RoutinePlanScreen extends StatefulWidget {
   static const routeName = '/routine_plan_screen';
@@ -96,7 +96,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             onLongPress: () =>
                 _showTemplateMenu(template: template, plan: plan),
             child: RoutineTemplateGridItemWidget(
-              template: template.copyWith(notes: template.notes),
+              template: template,
               onTap: () => navigateToRoutineTemplatePreview(
                   context: context, template: template),
             ),
@@ -453,6 +453,96 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     }
   }
 
+  void _showCreateWorkoutBottomSheet({required RoutinePlanDto plan}) {
+    final nameController = TextEditingController();
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      child: Builder(
+        builder: (context) {
+          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 26,
+              right: 26,
+              top: 26,
+              bottom: 26 + bottomInset,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Create workout",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  cursorColor: isDark ? Colors.white : Colors.black,
+                  decoration: const InputDecoration(
+                    hintText: "Workout name",
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.words,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: OpacityButtonWidgetTwo(
+                    buttonColor: Theme.of(context).colors.vibrantAccent,
+                    label: "Create Workout",
+                    onPressed: () async {
+                      final name = nameController.text.trim();
+                      if (name.isEmpty) {
+                        showSnackbar(
+                          context: context,
+                          message:
+                              'Please provide a name for this workout',
+                        );
+                        return;
+                      }
+
+                      final template = RoutineTemplateDto(
+                        id: "",
+                        name: name,
+                        exerciseTemplates: const [],
+                        planId: plan.id,
+                      );
+
+                      await Provider.of<SupabaseExerciseAndRoutineController>(
+                              context,
+                              listen: false)
+                          .saveTemplate(templateDto: template);
+
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _showMenuBottomSheet() {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -479,12 +569,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                         style: Theme.of(context).textTheme.bodyLarge),
                     onTap: () async {
                       Navigator.of(context).pop();
-                      final arguments =
-                          RoutineTemplateArguments(planId: plan?.id ?? "");
-                      await navigateToRoutineTemplateEditor(
-                          context: context, arguments: arguments);
-                      if (mounted) {
-                        _showMenuBottomSheet();
+                      if (plan != null) {
+                        _showCreateWorkoutBottomSheet(plan: plan);
                       }
                     }),
                 ListTile(

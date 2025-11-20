@@ -268,7 +268,6 @@ void logEmptyRoutine({required BuildContext context, String? workoutVideoUrl}) {
       templateId: "",
       name: "${timeOfDay()} Session",
       exerciseLogs: [],
-      notes: "",
       startTime: DateTime.now(),
       endTime: DateTime.now());
 

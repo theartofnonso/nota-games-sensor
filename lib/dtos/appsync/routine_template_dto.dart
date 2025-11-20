@@ -6,7 +6,6 @@ class RoutineTemplateDto {
   final String id;
   final String planId;
   final String name;
-  final String notes;
   final List<ExerciseLogDto> exerciseTemplates;
 
   RoutineTemplateDto({
@@ -14,7 +13,6 @@ class RoutineTemplateDto {
     this.planId = "",
     required this.name,
     required this.exerciseTemplates,
-    required this.notes,
   });
 
   Map<String, dynamic> toJson() {
@@ -22,7 +20,6 @@ class RoutineTemplateDto {
       'id': id,
       'planId': planId,
       'name': name,
-      'notes': notes,
       'exercises':
           exerciseTemplates.map((exercise) => exercise.toJson()).toList(),
     };
@@ -32,7 +29,6 @@ class RoutineTemplateDto {
     final id = json["id"] ?? "";
     final planId = json["planId"] ?? "";
     final name = json["name"] ?? "";
-    final notes = json["notes"] ?? "";
 
     final rawExerciseTemplates = json["exercises"] as List<dynamic>;
     final exerciseTemplates = rawExerciseTemplates.map((exerciseJson) {
@@ -48,7 +44,6 @@ class RoutineTemplateDto {
       planId: planId,
       name: name,
       exerciseTemplates: exerciseTemplates,
-      notes: notes,
     );
   }
 
@@ -58,7 +53,6 @@ class RoutineTemplateDto {
         templateId: id,
         name: name,
         exerciseLogs: List.from(exerciseTemplates),
-        notes: notes,
         startTime: DateTime.now(),
         endTime: DateTime.now());
   }
@@ -67,14 +61,12 @@ class RoutineTemplateDto {
     String? id,
     String? planId,
     String? name,
-    String? notes,
     List<ExerciseLogDto>? exerciseTemplates,
   }) {
     return RoutineTemplateDto(
       id: id ?? this.id,
       planId: planId ?? this.planId,
       name: name ?? this.name,
-      notes: notes ?? this.notes,
       exerciseTemplates: exerciseTemplates != null
           ? exerciseTemplates.map((e) => e.copyWith()).toList()
           : this.exerciseTemplates.map((e) => e.copyWith()).toList(),
@@ -83,6 +75,6 @@ class RoutineTemplateDto {
 
   @override
   String toString() {
-    return 'RoutineTemplateDto{id: $id, planId: $planId, name: $name, notes: $notes, exerciseTemplates: $exerciseTemplates}';
+    return 'RoutineTemplateDto{id: $id, planId: $planId, name: $name, exerciseTemplates: $exerciseTemplates}';
   }
 }

@@ -1,22 +1,11 @@
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
 import 'package:trainware/enums/muscle_group_enums.dart';
 
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/exercise_log_dto.dart';
 import '../dtos/viewmodels/exercise_log_view_model.dart';
 import '../enums/template_changes_type_message_enums.dart';
-import '../screens/exercise/reorder_exercises_screen.dart';
 import 'exercise_logs_utils.dart';
-
-Future<List<ExerciseLogDto>?> reOrderExerciseLogs(
-    {required BuildContext context,
-    required List<ExerciseLogDto> exerciseLogs}) async {
-  return await Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) =>
-              ReOrderExercisesScreen(exercises: exerciseLogs)))
-      as List<ExerciseLogDto>?;
-}
 
 List<ExerciseLogDto> whereOtherExerciseLogsExcept(
     {required ExerciseLogDto exerciseLog,

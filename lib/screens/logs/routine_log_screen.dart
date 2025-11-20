@@ -47,9 +47,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = Theme.of(context).brightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final exerciseAndRoutineController =
@@ -141,17 +138,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                               label: updatedLog.endTime.formattedDayMonthTime(),
                               child: CustomIcon(FontAwesomeIcons.calendarDay,
                                   color: Colors.deepOrange)),
-                          Text(
-                            updatedLog.notes.isNotEmpty
-                                ? "${updatedLog.notes}."
-                                : "No notes",
-                            style: TextStyle(
-                                fontSize: 14,
-                                color:
-                                    isDarkMode ? Colors.white70 : Colors.black,
-                                height: 1.8,
-                                fontWeight: FontWeight.w400),
-                          )
+                          // Removed routine-level notes; rely on per-exercise notes instead
                         ]),
                   ),
                   SingleChildScrollView(
@@ -433,10 +420,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       }).toList();
 
       final templateToCreate = RoutineTemplateDto(
-          planId: planId,
-          name: log.name,
-          notes: log.notes,
-          exerciseTemplates: exercises);
+          planId: planId, name: log.name, exerciseTemplates: exercises);
 
       final createdTemplate =
           await Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -522,25 +506,22 @@ class _StatisticWidget extends StatelessWidget {
   final String title;
   final String subtitle;
   final _StatisticsInformation information;
-  final VoidCallback? customOnTap;
 
   const _StatisticWidget(
       {this.icon,
       required this.title,
       required this.subtitle,
-      required this.information,
-      this.customOnTap});
+      required this.information});
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: customOnTap ??
-          () => showBottomSheetWithNoAction(
-              context: context,
-              title: information.title,
-              description: information.description),
+      onTap: () => showBottomSheetWithNoAction(
+          context: context,
+          title: information.title,
+          description: information.description),
       child: Container(
         constraints: const BoxConstraints(minWidth: 120),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
