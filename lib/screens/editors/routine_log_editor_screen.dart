@@ -26,7 +26,6 @@ import '../../utils/notifications_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../extensions/duration_extension.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/routine-log-editor';
@@ -410,10 +409,16 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                             children: [
                               Expanded(
                                 child: exerciseLogs.isEmpty
-                                    ? const Center(
-                                        child: NoListEmptyState(
-                                          message:
-                                              "It might feel quiet now, but tap the + button below to start adding exercises to this session.",
+                                    ? Center(
+                                        child: Text(
+                                          'No exercises yet.\nTap + to add exercises and start logging.',
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: Colors.white70,
+                                              ),
                                         ),
                                       )
                                     : ReorderableListView.builder(
@@ -453,7 +458,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                                   showExerciseLogEditor(
                                                     context: context,
                                                     exerciseLogId:
-                                                        exerciseLog.exercise.id,
+                                                        exerciseLog
+                                                            .exercise.id,
                                                     editorType: widget.mode,
                                                   );
                                                 },

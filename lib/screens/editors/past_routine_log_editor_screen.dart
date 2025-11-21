@@ -26,7 +26,6 @@ import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/routine/editors/exercise_log_list_item.dart';
 import '../../widgets/weight_plate_calculator.dart';
 import '_add_exercise_list_item.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
 
 class PastRoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/past-routine-log-editor';
@@ -405,10 +404,16 @@ class _PastRoutineLogEditorScreenState
                                 children: [
                                   Expanded(
                                     child: exerciseLogs.isEmpty
-                                        ? const Center(
-                                            child: NoListEmptyState(
-                                              message:
-                                                  "It might feel quiet now, but tap the + button below to add exercises to this past session.",
+                                        ? Center(
+                                            child: Text(
+                                              'No exercises in this log yet.\nTap + to add exercises.',
+                                              textAlign: TextAlign.center,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    color: Colors.white70,
+                                                  ),
                                             ),
                                           )
                                         : ReorderableListView.builder(
@@ -504,7 +509,6 @@ class _PastRoutineLogEditorScreenState
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 90),
                           ],
                         ),
                       ),

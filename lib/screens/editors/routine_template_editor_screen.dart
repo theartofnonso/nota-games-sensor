@@ -22,7 +22,6 @@ import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/routine/editors/exercise_log_list_item.dart';
 import '_add_exercise_list_item.dart';
 import '../../widgets/weight_plate_calculator.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
 
 class RoutineTemplateEditorScreen extends StatefulWidget {
   static const routeName = '/routine-template-editor';
@@ -381,10 +380,16 @@ class _RoutineTemplateEditorScreenState
                               children: [
                                 Expanded(
                                   child: exerciseTemplates.isEmpty
-                                      ? const Center(
-                                          child: NoListEmptyState(
-                                            message:
-                                                "It might feel quiet now, but tap the + button below to add exercises to this workout template.",
+                                      ? Center(
+                                          child: Text(
+                                            'No exercises in this workout yet.\nTap + to add exercises.',
+                                            textAlign: TextAlign.center,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.copyWith(
+                                                  color: Colors.white70,
+                                                ),
                                           ),
                                         )
                                       : ReorderableListView.builder(
@@ -426,9 +431,8 @@ class _RoutineTemplateEditorScreenState
                                                   onTap: () {
                                                     showExerciseLogEditor(
                                                       context: context,
-                                                      exerciseLogId:
-                                                          exerciseLog
-                                                              .exercise.id,
+                                                      exerciseLogId: exerciseLog
+                                                          .exercise.id,
                                                       editorType:
                                                           RoutineEditorMode
                                                               .edit,
@@ -476,10 +480,10 @@ class _RoutineTemplateEditorScreenState
                                 AddExerciseListItem(
                                   onTap: _selectExercisesInLibrary,
                                 ),
+                                const SizedBox(height: 90),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 90),
                         ],
                       ),
                     ),

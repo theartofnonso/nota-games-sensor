@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/colors.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/viewmodels/routine_log_arguments.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
@@ -156,7 +157,7 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
                 Expanded(
                   child: OpacityButtonWidgetTwo(
                     label: 'Retry Sync',
-                    buttonColor: Theme.of(context).colors.vibrantAccent,
+                    buttonColor: vibrantBlue,
                     onPressed: retryCachedSession,
                   ),
                 ),
