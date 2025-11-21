@@ -9,6 +9,7 @@ class ExerciseLogListItem extends StatelessWidget {
   final ExerciseLogDto? superSet;
   final VoidCallback onTap;
   final VoidCallback onMenuTap;
+  final bool showOnlyTotalSets;
 
   const ExerciseLogListItem({
     super.key,
@@ -16,6 +17,7 @@ class ExerciseLogListItem extends StatelessWidget {
     this.superSet,
     required this.onTap,
     required this.onMenuTap,
+    this.showOnlyTotalSets = false,
   });
 
   @override
@@ -25,7 +27,9 @@ class ExerciseLogListItem extends StatelessWidget {
         exerciseLogDto.sets.where((set) => set.checked).length;
     final isCompleted = totalSets > 0 && completedSets == totalSets;
 
-    final progressText = '$completedSets/$totalSets sets';
+    final progressText = showOnlyTotalSets
+        ? '$totalSets sets'
+        : '$completedSets/$totalSets sets';
 
     return ThemeListTile(
       child: ListTile(
@@ -145,23 +149,14 @@ class ExerciseLogListItem extends StatelessWidget {
     required String progressText,
     required bool isCompleted,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(top: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isCompleted
-            ? Theme.of(context).colors.vibrantAccent.withOpacity(0.2)
-            : Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
       child: Text(
         progressText,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: isCompleted
-                  ? Theme.of(context).colors.vibrantAccent
-                  : Colors.white70,
+              color: Colors.white70,
               fontWeight: FontWeight.w600,
               fontSize: 11,
             ),

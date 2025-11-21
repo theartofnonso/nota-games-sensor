@@ -5,7 +5,6 @@ import '../../../dtos/exercise_log_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../utils/routine_editors_utils.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
-import 'package:trainware/utils/theme/color_extensions.dart';
 
 class ExerciseLogGridItemWidget extends StatelessWidget {
   final RoutineEditorMode editorType;
@@ -111,25 +110,13 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
                       ),
                   ],
                 ),
-                // Progress summary
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: completedSets == totalSets && totalSets > 0
-                        ? Theme.of(context)
-                            .colors
-                            .vibrantAccent
-                            .withOpacity(0.2)
-                        : Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                // Progress summary – match list item styling
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
                   child: Text(
                     progressText,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: completedSets == totalSets && totalSets > 0
-                              ? Theme.of(context).colors.vibrantAccent
-                              : Colors.white70,
+                          color: Colors.white70,
                           fontWeight: FontWeight.w600,
                           fontSize: 11,
                         ),

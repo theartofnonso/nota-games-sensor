@@ -36,6 +36,7 @@ void showExerciseLogEditor({
   required BuildContext context,
   required String exerciseLogId,
   required RoutineEditorMode editorType,
+  bool showSetCheck = true,
 }) {
   showAppBottomSheet(
     context: context,
@@ -47,6 +48,7 @@ void showExerciseLogEditor({
       return ExerciseLogWidget(
         exerciseLogId: exerciseLogId,
         editorType: editorType,
+        showSetCheck: showSetCheck,
       );
     },
   );

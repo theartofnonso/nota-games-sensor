@@ -37,8 +37,17 @@ Future<ExerciseDto?> navigateToExerciseEditor(
 Future<RoutineTemplateDto?> navigateToRoutineTemplateEditor(
     {required BuildContext context,
     required RoutineTemplateArguments arguments}) async {
-  final template = await context.push(RoutineTemplateEditorScreen.routeName,
-      extra: arguments) as RoutineTemplateDto?;
+  final template = await showAppBottomSheet<RoutineTemplateDto>(
+    context: context,
+    isDraggable: true,
+    initialChildSize: 0.9,
+    minChildSize: 0.6,
+    maxChildSize: 0.98,
+    child: RoutineTemplateEditorScreen(
+      template: arguments.template,
+      planId: arguments.planId,
+    ),
+  );
   return template;
 }
 
@@ -201,32 +210,37 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
 void navigateToPastRoutineLogEditor(
     {required BuildContext context,
     required PastRoutineLogArguments arguments}) async {
-  final log = await navigateWithSlideTransition(
+  final log = await showAppBottomSheet<RoutineLogDto>(
     context: context,
+    isDraggable: true,
+    initialChildSize: 0.9,
+    minChildSize: 0.6,
+    maxChildSize: 0.98,
     child: PastRoutineLogEditorScreen(log: arguments.log),
   );
-  if (log != null) {
-    if (context.mounted) {
-      navigateWithSlideTransition(
-        context: context,
-        child:
-            RoutineLogScreen(id: (log as RoutineLogDto).id, isEditable: true),
-      );
-    }
+  if (log != null && context.mounted) {
+    navigateWithSlideTransition(
+      context: context,
+      child: RoutineLogScreen(id: log.id, isEditable: true),
+    );
   }
 }
 
 Future<void> navigateToRoutineLogEditor(
     {required BuildContext context,
     required RoutineLogArguments arguments}) async {
-  final log = await navigateWithSlideTransition(
+  final log = await showAppBottomSheet<RoutineLogDto>(
     context: context,
+    isDraggable: true,
+    initialChildSize: 0.9,
+    minChildSize: 0.6,
+    maxChildSize: 0.98,
     child: RoutineLogEditorScreen(
       log: arguments.log,
       mode: arguments.editorMode,
       cached: arguments.cached,
     ),
-  ) as RoutineLogDto?;
+  );
   if (log != null) {
     if (context.mounted) {
       navigateWithSlideTransition(
@@ -240,8 +254,18 @@ Future<void> navigateToRoutineLogEditor(
 Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
     {required BuildContext context,
     required RoutineLogArguments arguments}) async {
-  final log = await context.push(RoutineLogEditorScreen.routeName,
-      extra: arguments) as RoutineLogDto?;
+  final log = await showAppBottomSheet<RoutineLogDto>(
+    context: context,
+    isDraggable: true,
+    initialChildSize: 0.9,
+    minChildSize: 0.6,
+    maxChildSize: 0.98,
+    child: RoutineLogEditorScreen(
+      log: arguments.log,
+      mode: arguments.editorMode,
+      cached: arguments.cached,
+    ),
+  );
   return log;
 }
 

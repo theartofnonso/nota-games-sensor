@@ -22,6 +22,7 @@ import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/routine/editors/exercise_log_list_item.dart';
 import '_add_exercise_list_item.dart';
 import '../../widgets/weight_plate_calculator.dart';
+import '../../widgets/empty_states/no_list_empty_state.dart';
 
 class RoutineTemplateEditorScreen extends StatefulWidget {
   static const routeName = '/routine-template-editor';
@@ -189,31 +190,6 @@ class _RoutineTemplateEditorScreenState
     await templateProvider.updateTemplate(template: updatedRoutineTemplate);
   }
 
-  void _checkForUnsavedChanges() {
-    final exerciseProvider =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final exerciseLog1 = widget.template?.exerciseTemplates ?? [];
-    final exerciseLog2 = exerciseProvider.exerciseLogs;
-    final unsavedChangesMessage =
-        checkForChanges(exerciseLog1: exerciseLog1, exerciseLog2: exerciseLog2);
-    if (unsavedChangesMessage.isNotEmpty) {
-      showBottomSheetWithMultiActions(
-          context: context,
-          description: "You have unsaved changes",
-          leftAction: _closeDialog,
-          leftActionLabel: 'Cancel',
-          rightAction: () {
-            _closeDialog();
-            _navigateBack();
-          },
-          rightActionLabel: 'Discard',
-          isRightActionDestructive: true,
-          title: "Discard changes");
-    } else {
-      _navigateBack();
-    }
-  }
-
   void _dismissKeyboard() {
     FocusScope.of(context).unfocus();
   }
@@ -363,8 +339,6 @@ class _RoutineTemplateEditorScreenState
           : null,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final topPadding = MediaQuery.of(context).padding.top + 8;
-
           return Container(
             decoration: BoxDecoration(
               gradient: themeGradient(context: context),
@@ -406,82 +380,97 @@ class _RoutineTemplateEditorScreenState
                             child: Column(
                               children: [
                                 Expanded(
-                                  child: ReorderableListView.builder(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    itemCount: exerciseTemplates.length,
-                                    onReorder: (oldIndex, newIndex) {
-                                      if (newIndex > oldIndex) {
-                                        newIndex -= 1;
-                                      }
-
-                                      final updated =
-                                          exerciseTemplates.toList();
-                                      final item = updated.removeAt(oldIndex);
-                                      updated.insert(newIndex, item);
-
-                                      exerciseLogController.reOrderExerciseLogs(
-                                        reOrderedList: updated,
-                                      );
-                                    },
-                                    itemBuilder: (context, index) {
-                                      final exerciseLog =
-                                          exerciseTemplates[index];
-                                      final superSet =
-                                          whereOtherExerciseInSuperSet(
-                                              firstExercise: exerciseLog,
-                                              exercises: exerciseTemplates);
-
-                                      return Column(
-                                        key: ValueKey(exerciseLog.id),
-                                        children: [
-                                          ExerciseLogListItem(
-                                            exerciseLogDto: exerciseLog,
-                                            superSet: superSet,
-                                            onTap: () {
-                                              showExerciseLogEditor(
-                                                context: context,
-                                                exerciseLogId:
-                                                    exerciseLog.exercise.id,
-                                                editorType:
-                                                    RoutineEditorMode.edit,
-                                              );
-                                            },
-                                            onMenuTap: () {
-                                              _showExerciseActionsBottomSheet(
-                                                exerciseLog: exerciseLog,
-                                                onRemoveLog: () {
-                                                  exerciseLogController
-                                                      .removeExerciseLog(
-                                                          logId:
-                                                              exerciseLog.id);
-                                                },
-                                                onReplaceLog: () {
-                                                  _showReplaceExercisePicker(
-                                                      oldExerciseLog:
-                                                          exerciseLog);
-                                                },
-                                                onSuperSet: () {
-                                                  _showSuperSetExercisePicker(
-                                                      firstExerciseLog:
-                                                          exerciseLog);
-                                                },
-                                                onRemoveSuperSet:
-                                                    (String superSetId) {
-                                                  exerciseLogController
-                                                      .removeSuperSet(
-                                                          superSetId:
-                                                              exerciseLog
-                                                                  .superSetId);
-                                                },
-                                              );
-                                            },
+                                  child: exerciseTemplates.isEmpty
+                                      ? const Center(
+                                          child: NoListEmptyState(
+                                            message:
+                                                "It might feel quiet now, but tap the + button below to add exercises to this workout template.",
                                           ),
-                                          const SizedBox(height: 12),
-                                        ],
-                                      );
-                                    },
-                                  ),
+                                        )
+                                      : ReorderableListView.builder(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 8),
+                                          itemCount: exerciseTemplates.length,
+                                          onReorder: (oldIndex, newIndex) {
+                                            if (newIndex > oldIndex) {
+                                              newIndex -= 1;
+                                            }
+
+                                            final updated =
+                                                exerciseTemplates.toList();
+                                            final item =
+                                                updated.removeAt(oldIndex);
+                                            updated.insert(newIndex, item);
+
+                                            exerciseLogController
+                                                .reOrderExerciseLogs(
+                                              reOrderedList: updated,
+                                            );
+                                          },
+                                          itemBuilder: (context, index) {
+                                            final exerciseLog =
+                                                exerciseTemplates[index];
+                                            final superSet =
+                                                whereOtherExerciseInSuperSet(
+                                                    firstExercise: exerciseLog,
+                                                    exercises:
+                                                        exerciseTemplates);
+
+                                            return Column(
+                                              key: ValueKey(exerciseLog.id),
+                                              children: [
+                                                ExerciseLogListItem(
+                                                  exerciseLogDto: exerciseLog,
+                                                  superSet: superSet,
+                                                  showOnlyTotalSets: true,
+                                                  onTap: () {
+                                                    showExerciseLogEditor(
+                                                      context: context,
+                                                      exerciseLogId:
+                                                          exerciseLog
+                                                              .exercise.id,
+                                                      editorType:
+                                                          RoutineEditorMode
+                                                              .edit,
+                                                      showSetCheck: false,
+                                                    );
+                                                  },
+                                                  onMenuTap: () {
+                                                    _showExerciseActionsBottomSheet(
+                                                      exerciseLog: exerciseLog,
+                                                      onRemoveLog: () {
+                                                        exerciseLogController
+                                                            .removeExerciseLog(
+                                                                logId:
+                                                                    exerciseLog
+                                                                        .id);
+                                                      },
+                                                      onReplaceLog: () {
+                                                        _showReplaceExercisePicker(
+                                                            oldExerciseLog:
+                                                                exerciseLog);
+                                                      },
+                                                      onSuperSet: () {
+                                                        _showSuperSetExercisePicker(
+                                                            firstExerciseLog:
+                                                                exerciseLog);
+                                                      },
+                                                      onRemoveSuperSet:
+                                                          (String superSetId) {
+                                                        exerciseLogController
+                                                            .removeSuperSet(
+                                                                superSetId:
+                                                                    exerciseLog
+                                                                        .superSetId);
+                                                      },
+                                                    );
+                                                  },
+                                                ),
+                                                const SizedBox(height: 12),
+                                              ],
+                                            );
+                                          },
+                                        ),
                                 ),
                                 const SizedBox(height: 12),
                                 AddExerciseListItem(
@@ -495,28 +484,7 @@ class _RoutineTemplateEditorScreenState
                       ),
                     ),
                   ),
-                  // Top overlay controls (back), matching Overview style
-                  Positioned(
-                    top: topPadding,
-                    left: 16,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: IconButton(
-                          icon: const FaIcon(FontAwesomeIcons.arrowLeftLong,
-                              size: 18),
-                          onPressed: _checkForUnsavedChanges,
-                          color: Colors.white,
-                          padding: const EdgeInsets.all(12),
-                          constraints: const BoxConstraints(),
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Top overlay controls (no back button – closing handled by sheet)
                   // Bottom fixed CTA (does not scroll) – vertically aligned similar to Overview FAB
                   Align(
                     alignment: Alignment.bottomCenter,

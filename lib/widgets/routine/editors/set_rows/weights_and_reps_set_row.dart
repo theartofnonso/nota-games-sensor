@@ -17,6 +17,7 @@ class WeightsAndRepsSetRow extends StatelessWidget {
   final void Function() onTapWeightEditor;
   final void Function() onTapRepsEditor;
   final (TextEditingController, TextEditingController) controllers;
+  final bool showCheck;
 
   const WeightsAndRepsSetRow({
     super.key,
@@ -29,6 +30,7 @@ class WeightsAndRepsSetRow extends StatelessWidget {
     required this.onTapRepsEditor,
     required this.controllers,
     required this.editorType,
+    required this.showCheck,
   });
 
   @override
@@ -101,30 +103,33 @@ class WeightsAndRepsSetRow extends StatelessWidget {
               maxLength: 2,
             ),
           ),
-          const SizedBox(width: 12),
-          // Check button on right (fully rounded)
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onCheck,
-              borderRadius: BorderRadius.circular(50),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: setDto.checked
-                      ? colors.vibrantAccent
-                      : colors.vibrantAccent.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: FaIcon(
-                  FontAwesomeIcons.check,
-                  color: setDto.checked ? Colors.black : colors.vibrantAccent,
-                  size: 14,
+          if (showCheck) ...[
+            const SizedBox(width: 12),
+            // Check button on right (fully rounded)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onCheck,
+                borderRadius: BorderRadius.circular(50),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: setDto.checked
+                        ? colors.vibrantAccent
+                        : colors.vibrantAccent.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: FaIcon(
+                    FontAwesomeIcons.check,
+                    color:
+                        setDto.checked ? Colors.black : colors.vibrantAccent,
+                    size: 14,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

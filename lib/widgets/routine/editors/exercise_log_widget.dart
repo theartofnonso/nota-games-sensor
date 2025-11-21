@@ -32,13 +32,14 @@ import '../../weight_plate_calculator.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
-
   final String exerciseLogId;
+  final bool showSetCheck;
 
   const ExerciseLogWidget(
       {super.key,
       this.editorType = RoutineEditorMode.edit,
-      required this.exerciseLogId});
+      required this.exerciseLogId,
+      this.showSetCheck = true});
 
   @override
   State<ExerciseLogWidget> createState() => _ExerciseLogWidgetState();
@@ -675,6 +676,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                         onTapWeightEditor: _onTapWeightEditor,
                                         onTapRepsEditor: _onTapRepsEditor,
                                         editorType: widget.editorType,
+                                        showSetCheck: widget.showSetCheck,
                                       ),
                                     ExerciseType.bodyWeight => _RepsSetListView(
                                         sets: currentSets
@@ -686,6 +688,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                         controllers: _repsControllers,
                                         onTapRepsEditor: _onTapRepsEditor,
                                         editorType: widget.editorType,
+                                        showSetCheck: widget.showSetCheck,
                                       ),
                                     ExerciseType.duration =>
                                       _DurationSetListView(
@@ -697,6 +700,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                         updateDuration: _updateDuration,
                                         controllers: _durationControllers,
                                         editorType: widget.editorType,
+                                        showSetCheck: widget.showSetCheck,
                                       ),
                                   }
                                 ],
@@ -827,6 +831,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
 class _WeightAndRepsSetListView extends StatelessWidget {
   final RoutineEditorMode editorType;
+  final bool showSetCheck;
   final List<WeightAndRepsSetDto> sets;
   final List<(TextEditingController, TextEditingController)> controllers;
   final void Function({required int index}) removeSet;
@@ -851,7 +856,8 @@ class _WeightAndRepsSetListView extends StatelessWidget {
       required this.updateWeight,
       required this.onTapWeightEditor,
       required this.onTapRepsEditor,
-      required this.editorType});
+      required this.editorType,
+      required this.showSetCheck});
 
   @override
   Widget build(BuildContext context) {
@@ -866,6 +872,7 @@ class _WeightAndRepsSetListView extends StatelessWidget {
         return WeightsAndRepsSetRow(
           editorType: editorType,
           setDto: setDto,
+          showCheck: showSetCheck,
           onCheck: () => updateSetCheck(index: index),
           onRemoved: () => removeSet(index: index),
           onChangedReps: (int value) =>
@@ -883,6 +890,7 @@ class _WeightAndRepsSetListView extends StatelessWidget {
 
 class _RepsSetListView extends StatelessWidget {
   final RoutineEditorMode editorType;
+  final bool showSetCheck;
   final List<RepsSetDto> sets;
   final List<TextEditingController> controllers;
   final void Function({required int index}) removeSet;
@@ -900,7 +908,8 @@ class _RepsSetListView extends StatelessWidget {
       required this.removeSet,
       required this.updateReps,
       required this.onTapRepsEditor,
-      required this.editorType});
+      required this.editorType,
+      required this.showSetCheck});
 
   @override
   Widget build(BuildContext context) {
@@ -915,6 +924,7 @@ class _RepsSetListView extends StatelessWidget {
         return RepsSetRow(
           editorType: editorType,
           setDto: setDto,
+          showCheck: showSetCheck,
           onCheck: () => updateSetCheck(index: index),
           onRemoved: () => removeSet(index: index),
           onChangedReps: (int value) =>
@@ -929,6 +939,7 @@ class _RepsSetListView extends StatelessWidget {
 
 class _DurationSetListView extends StatelessWidget {
   final RoutineEditorMode editorType;
+  final bool showSetCheck;
   final List<DurationSetDto> sets;
   final List<DateTime> controllers;
   final void Function({required int index}) removeSet;
@@ -945,7 +956,8 @@ class _DurationSetListView extends StatelessWidget {
       required this.updateSetCheck,
       required this.removeSet,
       required this.updateDuration,
-      required this.editorType});
+      required this.editorType,
+      required this.showSetCheck});
 
   @override
   Widget build(BuildContext context) {
@@ -971,6 +983,7 @@ class _DurationSetListView extends StatelessWidget {
               return DurationSetRow(
                 editorType: editorType,
                 setDto: setDto,
+                showCheck: showSetCheck,
                 onCheck: () => updateSetCheck(index: actualIndex),
                 onRemoved: () => removeSet(index: actualIndex),
                 startTime:

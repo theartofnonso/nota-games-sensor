@@ -25,6 +25,8 @@ import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/routine_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
+import '../../extensions/duration_extension.dart';
+import '../../widgets/empty_states/no_list_empty_state.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/routine-log-editor';
@@ -42,6 +44,9 @@ class RoutineLogEditorScreen extends StatefulWidget {
 
 class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     with WidgetsBindingObserver {
+  Timer? _timer;
+  Duration _elapsed = Duration.zero;
+  Duration? _averageSessionDuration;
   void _selectExercisesInLibrary() async {
     final controller =
         Provider.of<ExerciseLogController>(context, listen: false);
@@ -118,6 +123,99 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     return routineLog;
   }
 
+  void _startTimer() {
+    // Initialize elapsed based on the log's start time
+    _elapsed = DateTime.now().difference(widget.log.startTime);
+
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _elapsed = DateTime.now().difference(widget.log.startTime);
+      });
+    });
+  }
+
+  void _loadAverageSessionDuration() {
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final logs = controller.logs;
+    if (logs.isEmpty) return;
+
+    final durations = logs
+        .map((log) => log.endTime.difference(log.startTime))
+        .where((d) => !d.isNegative && d.inMinutes > 0)
+        .toList();
+
+    if (durations.isEmpty) return;
+
+    final totalSeconds = durations.fold<int>(0, (sum, d) => sum + d.inSeconds);
+    final avgSeconds = totalSeconds ~/ durations.length;
+
+    setState(() {
+      _averageSessionDuration = Duration(seconds: avgSeconds);
+    });
+  }
+
+  String _buildTimerDeltaLabel() {
+    if (_averageSessionDuration == null) return "";
+    final avg = _averageSessionDuration!;
+    if (_elapsed <= avg) return "";
+
+    final diff = _elapsed - avg;
+    final minutesOver = diff.inMinutes;
+    if (minutesOver <= 0) return "";
+
+    return "$minutesOver min over your usual session";
+  }
+
+  void _showTimerInfoBottomSheet() {
+    final avgText = _averageSessionDuration != null
+        ? _averageSessionDuration!.hmsAnalog()
+        : "not enough data yet";
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Session timer",
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "This timer shows how long this workout has been running, from when you first started the session.",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Based on your past workouts, your average session lasts $avgText.",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            if (_averageSessionDuration != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _buildTimerDeltaLabel(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _doCreateRoutineLog() async {
     final routineLogToBeCreated =
         _routineLog().copyWith(endTime: DateTime.now());
@@ -169,23 +267,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             (log) => log.sets.any((set) => set.isNotEmpty() && set.checked));
   }
 
-  void _discardLog() {
-    showBottomSheetWithMultiActions(
-        context: context,
-        title: "Discard session?",
-        description: "Do you want to discard this session",
-        leftAction: _closeDialog,
-        rightAction: () {
-          _closeDialog();
-          // Clear cache when user explicitly discards
-          Provider.of<ExerciseLogController>(context, listen: false).onClear();
-          _navigateBack();
-        },
-        leftActionLabel: 'Cancel',
-        rightActionLabel: 'Discard',
-        isRightActionDestructive: true);
-  }
-
   void _saveLog() {
     final isRoutinePartiallyComplete = _isRoutinePartiallyComplete();
     if (isRoutinePartiallyComplete) {
@@ -230,6 +311,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     context.pop(routineLog);
   }
 
+  // initState is defined later once all helper methods are declared.
+
   @override
   Widget build(BuildContext context) {
     final exerciseLogController =
@@ -239,7 +322,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         .select((ExerciseLogController controller) => controller.exerciseLogs);
 
     return PopScope(
-        canPop: false,
+        canPop: true,
         child: Scaffold(
             body: Container(
           decoration: BoxDecoration(
@@ -260,17 +343,64 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                           child: Align(
                             alignment: Alignment.centerLeft,
-                            child: Text(
-                              widget.log.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                    height: 1.2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.log.name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w900,
+                                        height: 1.2,
+                                      ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+                                GestureDetector(
+                                  onTap: _showTimerInfoBottomSheet,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _elapsed.msDigital(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      Builder(
+                                        builder: (context) {
+                                          final deltaLabel =
+                                              _buildTimerDeltaLabel();
+                                          if (deltaLabel.isEmpty) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 2),
+                                            child: Text(
+                                              deltaLabel,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Colors.white70,
+                                                    height: 1.2,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -279,77 +409,91 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                           child: Column(
                             children: [
                               Expanded(
-                                child: ReorderableListView.builder(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  itemCount: exerciseLogs.length,
-                                  onReorder: (oldIndex, newIndex) {
-                                    if (newIndex > oldIndex) {
-                                      newIndex -= 1;
-                                    }
-
-                                    final updated = exerciseLogs.toList();
-                                    final item = updated.removeAt(oldIndex);
-                                    updated.insert(newIndex, item);
-
-                                    exerciseLogController.reOrderExerciseLogs(
-                                      reOrderedList: updated,
-                                    );
-                                  },
-                                  itemBuilder: (context, index) {
-                                    final exerciseLog = exerciseLogs[index];
-                                    final superSet =
-                                        whereOtherExerciseInSuperSet(
-                                            firstExercise: exerciseLog,
-                                            exercises: exerciseLogs);
-
-                                    return Column(
-                                      key: ValueKey(exerciseLog.id),
-                                      children: [
-                                        ExerciseLogListItem(
-                                          exerciseLogDto: exerciseLog,
-                                          superSet: superSet,
-                                          onTap: () {
-                                            showExerciseLogEditor(
-                                              context: context,
-                                              exerciseLogId:
-                                                  exerciseLog.exercise.id,
-                                              editorType: widget.mode,
-                                            );
-                                          },
-                                          onMenuTap: () {
-                                            _showExerciseActionsBottomSheet(
-                                              exerciseLog: exerciseLog,
-                                              onRemoveLog: () {
-                                                exerciseLogController
-                                                    .removeExerciseLog(
-                                                        logId: exerciseLog.id);
-                                              },
-                                              onReplaceLog: () {
-                                                _showReplaceExercisePicker(
-                                                  oldExerciseLog: exerciseLog,
-                                                );
-                                              },
-                                              onSuperSet: () {
-                                                _showSuperSetExercisePicker(
-                                                  firstExerciseLog: exerciseLog,
-                                                );
-                                              },
-                                              onRemoveSuperSet:
-                                                  (String superSetId) {
-                                                exerciseLogController
-                                                    .removeSuperSet(
-                                                        superSetId: exerciseLog
-                                                            .superSetId);
-                                              },
-                                            );
-                                          },
+                                child: exerciseLogs.isEmpty
+                                    ? const Center(
+                                        child: NoListEmptyState(
+                                          message:
+                                              "It might feel quiet now, but tap the + button below to start adding exercises to this session.",
                                         ),
-                                        const SizedBox(height: 12),
-                                      ],
-                                    );
-                                  },
-                                ),
+                                      )
+                                    : ReorderableListView.builder(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 8),
+                                        itemCount: exerciseLogs.length,
+                                        onReorder: (oldIndex, newIndex) {
+                                          if (newIndex > oldIndex) {
+                                            newIndex -= 1;
+                                          }
+
+                                          final updated = exerciseLogs.toList();
+                                          final item =
+                                              updated.removeAt(oldIndex);
+                                          updated.insert(newIndex, item);
+
+                                          exerciseLogController
+                                              .reOrderExerciseLogs(
+                                            reOrderedList: updated,
+                                          );
+                                        },
+                                        itemBuilder: (context, index) {
+                                          final exerciseLog =
+                                              exerciseLogs[index];
+                                          final superSet =
+                                              whereOtherExerciseInSuperSet(
+                                                  firstExercise: exerciseLog,
+                                                  exercises: exerciseLogs);
+
+                                          return Column(
+                                            key: ValueKey(exerciseLog.id),
+                                            children: [
+                                              ExerciseLogListItem(
+                                                exerciseLogDto: exerciseLog,
+                                                superSet: superSet,
+                                                onTap: () {
+                                                  showExerciseLogEditor(
+                                                    context: context,
+                                                    exerciseLogId:
+                                                        exerciseLog.exercise.id,
+                                                    editorType: widget.mode,
+                                                  );
+                                                },
+                                                onMenuTap: () {
+                                                  _showExerciseActionsBottomSheet(
+                                                    exerciseLog: exerciseLog,
+                                                    onRemoveLog: () {
+                                                      exerciseLogController
+                                                          .removeExerciseLog(
+                                                              logId: exerciseLog
+                                                                  .id);
+                                                    },
+                                                    onReplaceLog: () {
+                                                      _showReplaceExercisePicker(
+                                                        oldExerciseLog:
+                                                            exerciseLog,
+                                                      );
+                                                    },
+                                                    onSuperSet: () {
+                                                      _showSuperSetExercisePicker(
+                                                        firstExerciseLog:
+                                                            exerciseLog,
+                                                      );
+                                                    },
+                                                    onRemoveSuperSet:
+                                                        (String superSetId) {
+                                                      exerciseLogController
+                                                          .removeSuperSet(
+                                                              superSetId:
+                                                                  exerciseLog
+                                                                      .superSetId);
+                                                    },
+                                                  );
+                                                },
+                                              ),
+                                              const SizedBox(height: 12),
+                                            ],
+                                          );
+                                        },
+                                      ),
                               ),
                               const SizedBox(height: 12),
                               AddExerciseListItem(
@@ -363,28 +507,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                     ),
                   ),
                 ),
-                // Top overlay controls (back + add), matching Overview style
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 8,
-                  left: 16,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: IconButton(
-                        icon: const FaIcon(FontAwesomeIcons.arrowLeftLong,
-                            size: 18),
-                        onPressed: _discardLog,
-                        color: Colors.white,
-                        padding: const EdgeInsets.all(12),
-                        constraints: const BoxConstraints(),
-                      ),
-                    ),
-                  ),
-                ),
+                // Top overlay controls (no back button – closing handled by sheet)
                 // Bottom fixed CTA (does not scroll) – vertically aligned similar to Overview FAB
                 if (_isRoutinePartiallyComplete())
                   Align(
@@ -480,15 +603,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         ));
   }
 
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addObserver(this);
-
-    _loadRoutineAndExerciseLogs();
-  }
-
   void _loadRoutineAndExerciseLogs() {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -562,6 +676,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _timer?.cancel();
     // Don't auto-clear cache on dispose - only clear on successful save
     if (Platform.isIOS) {
       FlutterLocalNotificationsPlugin()
@@ -597,6 +712,22 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             androidScheduleMode: AndroidScheduleMode.exact);
       }
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addObserver(this);
+
+    _loadRoutineAndExerciseLogs();
+    _startTimer();
+    // Load average duration after first frame to ensure provider is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadAverageSessionDuration();
+      }
+    });
   }
 }
 
