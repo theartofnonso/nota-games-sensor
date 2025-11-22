@@ -74,7 +74,7 @@ class WeightsAndRepsSetRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Weight input field (no icon, no label)
+          // Weight input field (no icon, no label) – show unit suffix
           Expanded(
             child: DoubleTextField(
               value: weight,
@@ -82,18 +82,11 @@ class WeightsAndRepsSetRow extends StatelessWidget {
               onTap: onTapWeightEditor,
               controller: controllers.$1,
               textAlign: TextAlign.center,
+              suffix: 'kg',
             ),
           ),
           // Divider between weight and reps
-          Container(
-            width: 1,
-            height: 24,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: colors.borderLight,
-            ),
-          ),
-          // Reps input field (no icon, no label)
+          // Reps input field (no icon, no label) – show "reps" suffix
           Expanded(
             child: IntTextField(
               value: reps,
@@ -101,6 +94,7 @@ class WeightsAndRepsSetRow extends StatelessWidget {
               onTap: onTapRepsEditor,
               controller: controllers.$2,
               maxLength: 2,
+              suffix: 'reps',
             ),
           ),
           if (showCheck) ...[
@@ -122,8 +116,7 @@ class WeightsAndRepsSetRow extends StatelessWidget {
                   clipBehavior: Clip.antiAlias,
                   child: FaIcon(
                     FontAwesomeIcons.check,
-                    color:
-                        setDto.checked ? Colors.black : colors.vibrantAccent,
+                    color: setDto.checked ? Colors.black : colors.vibrantAccent,
                     size: 14,
                   ),
                 ),

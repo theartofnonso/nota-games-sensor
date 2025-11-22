@@ -287,8 +287,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                   children: [
                     if (withWeightsOnly(type: widget.exercise.type))
                       OpacityButtonWidget(
-                        onPressed: _heaviestWeightPerLog,
-                        label: SummaryType.weight.label,
+                          onPressed: _heaviestWeightPerLog,
+                          label: SummaryType.weight.label,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 8),
                         borderRadius: BorderRadius.circular(999),
@@ -296,8 +296,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                       ),
                     if (withWeightsOnly(type: widget.exercise.type))
                       OpacityButtonWidget(
-                        onPressed: _heaviestSetVolumePerLog,
-                        label: SummaryType.setVolume.label,
+                          onPressed: _heaviestSetVolumePerLog,
+                          label: SummaryType.setVolume.label,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 8),
                         borderRadius: BorderRadius.circular(999),
@@ -305,8 +305,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                       ),
                     if (withReps(type: widget.exercise.type))
                       OpacityButtonWidget(
-                        onPressed: _highestRepsForLog,
-                        label: SummaryType.mostReps.label,
+                          onPressed: _highestRepsForLog,
+                          label: SummaryType.mostReps.label,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 8),
                         borderRadius: BorderRadius.circular(999),
@@ -314,18 +314,18 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                       ),
                     if (withReps(type: widget.exercise.type))
                       OpacityButtonWidget(
-                        onPressed: _totalRepsForLog,
-                        label: SummaryType.sessionReps.label,
+                          onPressed: _totalRepsForLog,
+                          label: SummaryType.sessionReps.label,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 8),
                         borderRadius: BorderRadius.circular(999),
-                        buttonColor:
+                          buttonColor:
                             _buttonColor(type: SummaryType.sessionReps),
                       ),
                     if (withDurationOnly(type: widget.exercise.type))
                       OpacityButtonWidget(
-                        onPressed: _longestDurationPerLog,
-                        label: SummaryType.bestTime.label,
+                          onPressed: _longestDurationPerLog,
+                          label: SummaryType.bestTime.label,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 8),
                         borderRadius: BorderRadius.circular(999),
@@ -333,12 +333,12 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                       ),
                     if (withDurationOnly(type: widget.exercise.type))
                       OpacityButtonWidget(
-                        onPressed: _totalTimePerLog,
-                        label: SummaryType.sessionTimes.label,
+                          onPressed: _totalTimePerLog,
+                          label: SummaryType.sessionTimes.label,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 8),
                         borderRadius: BorderRadius.circular(999),
-                        buttonColor:
+                          buttonColor:
                             _buttonColor(type: SummaryType.sessionTimes),
                       ),
                   ],

@@ -7,6 +7,7 @@ class IntTextField extends StatelessWidget {
   final void Function(int value) onChanged;
   final void Function() onTap;
   final int? maxLength;
+  final String? suffix;
 
   const IntTextField(
       {super.key,
@@ -14,7 +15,8 @@ class IntTextField extends StatelessWidget {
       required this.controller,
       required this.onChanged,
       required this.onTap,
-      this.maxLength});
+      this.maxLength,
+      this.suffix});
 
   int _parseIntOrDefault({required String value}) {
     return int.tryParse(value) ?? 0;
@@ -47,6 +49,11 @@ class IntTextField extends StatelessWidget {
         focusedBorder: InputBorder.none,
         filled: false,
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        suffixText: suffix,
+        suffixStyle: TextStyle(
+          color: theme.extension<TRKRColors>()?.textSecondary,
+          fontSize: 13,
+        ),
         counterText: "",
       ),
       keyboardType: TextInputType.number,

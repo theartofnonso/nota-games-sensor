@@ -6,6 +6,7 @@ import '../enums/exercise_type_enums.dart';
 import '../enums/routine_editor_type_enums.dart';
 import '../screens/exercise/library/exercise_library_screen.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
+import '../widgets/buttons/opacity_button_widget_two.dart';
 import '../widgets/routine/editors/exercise_log_widget.dart';
 import '../widgets/routine/editors/pickers/superset_exercise_log_picker.dart';
 
@@ -70,4 +71,69 @@ void showExercisesInLibrary(
       onSelected.call(selectedExercises);
     }
   }
+}
+
+/// Shared helper to confirm removing an exercise from any editor.
+/// The [fromLabel] should be a short descriptor like "workout", "log", or "template".
+Future<bool> confirmRemoveExerciseBottomSheet({
+  required BuildContext context,
+  required String exerciseName,
+  required String fromLabel,
+}) async {
+  bool shouldRemove = false;
+
+  await showAppBottomSheet(
+    context: context,
+    isScrollControlled: false,
+    child: Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Remove exercise?",
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Are you sure you want to remove "$exerciseName" from this $fromLabel?',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: OpacityButtonWidgetTwo(
+                  label: 'Cancel',
+                  showArrowRight: false,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    shouldRemove = false;
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OpacityButtonWidgetTwo(
+                  label: 'Remove',
+                  buttonColor: Colors.red,
+                  showArrowRight: false,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    shouldRemove = true;
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+
+  return shouldRemove;
 }

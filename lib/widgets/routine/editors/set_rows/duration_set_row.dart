@@ -13,18 +13,15 @@ class DurationSetRow extends StatelessWidget {
   final RoutineEditorMode editorType;
   final DateTime startTime;
   final void Function(Duration duration, bool shouldCheck) onUpdateDuration;
-  final bool showCheck;
 
-  const DurationSetRow({
-    super.key,
-    required this.setDto,
-    required this.onRemoved,
-    required this.onCheck,
-    required this.onUpdateDuration,
-    required this.startTime,
-    required this.editorType,
-    required this.showCheck,
-  });
+  const DurationSetRow(
+      {super.key,
+      required this.setDto,
+      required this.onRemoved,
+      required this.onCheck,
+      required this.onUpdateDuration,
+      required this.startTime,
+      required this.editorType});
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +60,6 @@ class DurationSetRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
           // Duration display (single text field)
           Expanded(
             child: Center(
@@ -77,33 +73,7 @@ class DurationSetRow extends StatelessWidget {
               ),
             ),
           ),
-          if (showCheck) ...[
-            const SizedBox(width: 12),
-            // Check button on right (fully rounded)
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onCheck,
-                borderRadius: BorderRadius.circular(50),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: setDto.checked
-                        ? colors.vibrantAccent
-                        : colors.vibrantAccent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(50),
-                    shape: BoxShape.circle,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: FaIcon(
-                    FontAwesomeIcons.check,
-                    color: setDto.checked ? Colors.black : colors.vibrantAccent,
-                    size: 14,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          // No check button for duration sets anymore.
         ],
       ),
     );

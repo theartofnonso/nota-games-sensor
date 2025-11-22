@@ -12,9 +12,6 @@ import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/sets_utils.dart';
 import 'package:trainware/utils/string_utils.dart';
-import 'package:trainware/widgets/routine/editors/set_headers/duration_set_header.dart';
-import 'package:trainware/widgets/routine/editors/set_headers/reps_set_header.dart';
-import 'package:trainware/widgets/routine/editors/set_headers/weight_and_reps_set_header.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/duration_set_row.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/reps_set_row.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/weights_and_reps_set_row.dart';
@@ -549,6 +546,12 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     final currentSets = exerciseLog.sets;
 
+    final bool isDurationExercise = exerciseType == ExerciseType.duration;
+    final bool isLogMode = widget.editorType == RoutineEditorMode.log;
+    // We currently only pass showSetCheck = false from the template editor,
+    // so treat that as "template mode" to tweak duration behaviour.
+    final bool isTemplateMode = !widget.showSetCheck;
+
     hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
 
     return ClipRRect(
@@ -591,8 +594,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                         ),
                       ),
                     ),
-                    if (!(exerciseType == ExerciseType.duration &&
-                        widget.editorType == RoutineEditorMode.log))
+                    // Only allow manual "add set" for:
+                    // - non-duration exercises, or
+                    // - duration exercises when editing a past log (not live log, not template)
+                    if (!isDurationExercise || (!isLogMode && !isTemplateMode))
                       IconButton(
                         onPressed: _addSet,
                         icon: const FaIcon(
@@ -613,8 +618,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                   ),
                   child: SingleChildScrollView(
                     padding: EdgeInsets.only(
-                      top: 16,
-                      bottom: 100 + MediaQuery.of(context).viewInsets.bottom,
+                      // Leave enough space so notes aren't hidden behind the FAB overlay,
+                      // while still letting the list visually reach the bottom of the sheet.
+                      bottom: 80 + MediaQuery.of(context).viewInsets.bottom,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,79 +638,79 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                   key: _durationStopwatchKey,
                                   onLogSet: _onLogDurationSet,
                                 ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  switch (exerciseType) {
-                                    ExerciseType.weights =>
-                                      WeightAndRepsSetHeader(
-                                        editorType: widget.editorType,
-                                        firstLabel: weightUnit().toUpperCase(),
-                                        secondLabel: 'REPS',
-                                      ),
-                                    ExerciseType.bodyWeight => RepsSetHeader(
-                                        editorType: widget.editorType,
-                                      ),
-                                    ExerciseType.duration => DurationSetHeader(
-                                        editorType: widget.editorType,
-                                      )
-                                  },
-                                  if (currentSets.isEmpty &&
-                                      withReps(type: exerciseType))
-                                    Column(
-                                      children: [
-                                        const SizedBox(height: 10),
-                                        NoListEmptyState(
-                                          message:
-                                              "Tap the + button to start adding sets to your exercise",
-                                        ),
-                                      ],
+                              // For duration exercises in the template editor, we
+                              // don't allow pre-configuring sets. Instead, show a
+                              // simple hint that this will be captured in real time
+                              // during logging.
+                              if (isDurationExercise && isTemplateMode)
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "This time-based exercise will be tracked with a timer during your workout.",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Colors.white70,
+                                          ),
                                     ),
-                                  const SizedBox(height: 20),
-                                  switch (exerciseType) {
-                                    ExerciseType.weights =>
-                                      _WeightAndRepsSetListView(
-                                        sets: currentSets
-                                            .map((set) =>
-                                                set as WeightAndRepsSetDto)
-                                            .toList(),
-                                        updateSetCheck: _updateSetCheck,
-                                        removeSet: _removeSet,
-                                        updateReps: _updateReps,
-                                        updateWeight: _updateWeight,
-                                        controllers: _weightAndRepsControllers,
-                                        onTapWeightEditor: _onTapWeightEditor,
-                                        onTapRepsEditor: _onTapRepsEditor,
-                                        editorType: widget.editorType,
-                                        showSetCheck: widget.showSetCheck,
+                                  ],
+                                )
+                              else ...[
+                                if (currentSets.isEmpty &&
+                                    withReps(type: exerciseType))
+                                  Column(
+                                    children: [
+                                      const SizedBox(height: 10),
+                                      NoListEmptyState(
+                                        message:
+                                            "Tap the + button to start adding sets to your exercise",
                                       ),
-                                    ExerciseType.bodyWeight => _RepsSetListView(
-                                        sets: currentSets
-                                            .map((set) => set as RepsSetDto)
-                                            .toList(),
-                                        updateSetCheck: _updateSetCheck,
-                                        removeSet: _removeSet,
-                                        updateReps: _updateReps,
-                                        controllers: _repsControllers,
-                                        onTapRepsEditor: _onTapRepsEditor,
-                                        editorType: widget.editorType,
-                                        showSetCheck: widget.showSetCheck,
-                                      ),
-                                    ExerciseType.duration =>
-                                      _DurationSetListView(
-                                        sets: currentSets
-                                            .map((set) => set as DurationSetDto)
-                                            .toList(),
-                                        updateSetCheck: _updateSetCheck,
-                                        removeSet: _removeSet,
-                                        updateDuration: _updateDuration,
-                                        controllers: _durationControllers,
-                                        editorType: widget.editorType,
-                                        showSetCheck: widget.showSetCheck,
-                                      ),
-                                  }
-                                ],
-                              ),
+                                    ],
+                                  ),
+                                switch (exerciseType) {
+                                  ExerciseType.weights =>
+                                    _WeightAndRepsSetListView(
+                                      sets: currentSets
+                                          .map((set) =>
+                                              set as WeightAndRepsSetDto)
+                                          .toList(),
+                                      updateSetCheck: _updateSetCheck,
+                                      removeSet: _removeSet,
+                                      updateReps: _updateReps,
+                                      updateWeight: _updateWeight,
+                                      controllers: _weightAndRepsControllers,
+                                      onTapWeightEditor: _onTapWeightEditor,
+                                      onTapRepsEditor: _onTapRepsEditor,
+                                      editorType: widget.editorType,
+                                      showSetCheck: widget.showSetCheck,
+                                    ),
+                                  ExerciseType.bodyWeight => _RepsSetListView(
+                                      sets: currentSets
+                                          .map((set) => set as RepsSetDto)
+                                          .toList(),
+                                      updateSetCheck: _updateSetCheck,
+                                      removeSet: _removeSet,
+                                      updateReps: _updateReps,
+                                      controllers: _repsControllers,
+                                      onTapRepsEditor: _onTapRepsEditor,
+                                      editorType: widget.editorType,
+                                      showSetCheck: widget.showSetCheck,
+                                    ),
+                                  ExerciseType.duration => _DurationSetListView(
+                                      sets: currentSets
+                                          .map((set) => set as DurationSetDto)
+                                          .toList(),
+                                      updateSetCheck: _updateSetCheck,
+                                      removeSet: _removeSet,
+                                      updateDuration: _updateDuration,
+                                      controllers: _durationControllers,
+                                      editorType: widget.editorType,
+                                      showSetCheck: widget.showSetCheck,
+                                    ),
+                                },
+                              ],
                             ],
                           ),
                         ),
@@ -983,7 +989,6 @@ class _DurationSetListView extends StatelessWidget {
               return DurationSetRow(
                 editorType: editorType,
                 setDto: setDto,
-                showCheck: showSetCheck,
                 onCheck: () => updateSetCheck(index: actualIndex),
                 onRemoved: () => removeSet(index: actualIndex),
                 startTime:

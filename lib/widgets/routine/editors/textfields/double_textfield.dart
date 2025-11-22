@@ -8,6 +8,7 @@ class DoubleTextField extends StatelessWidget {
   final void Function()? onTap;
   final TextAlign? textAlign;
   final int? maxLength;
+  final String? suffix;
 
   const DoubleTextField(
       {super.key,
@@ -16,7 +17,8 @@ class DoubleTextField extends StatelessWidget {
       required this.onChanged,
       this.onTap,
       this.textAlign,
-      this.maxLength});
+      this.maxLength,
+      this.suffix});
 
   double _parseDoubleOrDefault({required String value}) {
     return double.tryParse(value) ?? 0;
@@ -49,6 +51,11 @@ class DoubleTextField extends StatelessWidget {
         focusedBorder: InputBorder.none,
         filled: false,
         contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        suffixText: suffix,
+        suffixStyle: TextStyle(
+          color: theme.extension<TRKRColors>()?.textSecondary,
+          fontSize: 13,
+        ),
         counterText: "",
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),

@@ -68,7 +68,7 @@ class RepsSetRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Reps input field (no icon, no label)
+          // Reps input field (no icon, no label) – show "reps" suffix
           Expanded(
             child: IntTextField(
               value: reps,
@@ -76,6 +76,7 @@ class RepsSetRow extends StatelessWidget {
               onTap: onTapRepsEditor,
               controller: controller,
               maxLength: 2,
+              suffix: 'reps',
             ),
           ),
           if (showCheck) ...[
@@ -97,8 +98,7 @@ class RepsSetRow extends StatelessWidget {
                   clipBehavior: Clip.antiAlias,
                   child: FaIcon(
                     FontAwesomeIcons.check,
-                    color:
-                        setDto.checked ? Colors.black : colors.vibrantAccent,
+                    color: setDto.checked ? Colors.black : colors.vibrantAccent,
                     size: 14,
                   ),
                 ),

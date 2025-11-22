@@ -26,19 +26,6 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
     final json = jsonDecode(cache);
     final routineLog = RoutineLogDto.fromJson(json: json);
 
-    void discardCachedSession() {
-      Navigator.of(context).pop(); // Close bottom sheet
-
-      // Clear the cached workout
-      SharedPrefs().remove(key: SharedPrefs().routineLogKey);
-
-      // Notify user
-      showSnackbar(
-        context: context,
-        message: 'Workout discarded',
-      );
-    }
-
     Future<void> retryCachedSession() async {
       Navigator.of(context).pop(); // Close bottom sheet
 
@@ -65,20 +52,24 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
       if (savedLog != null) {
         SharedPrefs().remove(key: SharedPrefs().routineLogKey);
 
-        showSnackbar(
-          context: context,
-          message: 'Session saved successfully!',
-        );
+        if (context.mounted) {
+          showSnackbar(
+            context: context,
+            message: 'Session saved successfully!',
+          );
+        }
       } else {
         // Save failed - keep cache so user can retry later
-        showSnackbar(
-          context: context,
-          message: 'Failed to sync. Please try again later.',
-        );
+        if (context.mounted) {
+          showSnackbar(
+            context: context,
+            message: 'Failed to sync. Please try again later.',
+          );
+        }
       }
     }
 
-    void continueTraining() {
+    void resumeTraining() {
       Navigator.of(context).pop(); // Close bottom sheet
 
       final arguments = RoutineLogArguments(
@@ -148,9 +139,10 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
               children: [
                 Expanded(
                   child: OpacityButtonWidgetTwo(
-                    label: 'Discard',
-                    buttonColor: Colors.red,
-                    onPressed: discardCachedSession,
+                    label: 'Resume',
+                    buttonColor: Theme.of(context).colors.vibrantAccent,
+                    showArrowRight: false,
+                    onPressed: resumeTraining,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -158,19 +150,11 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
                   child: OpacityButtonWidgetTwo(
                     label: 'Retry Sync',
                     buttonColor: vibrantBlue,
+                    showArrowRight: false,
                     onPressed: retryCachedSession,
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OpacityButtonWidgetTwo(
-                label: 'Continue Training',
-                buttonColor: Theme.of(context).colors.vibrantAccent,
-                onPressed: continueTraining,
-              ),
             ),
           ],
         ),

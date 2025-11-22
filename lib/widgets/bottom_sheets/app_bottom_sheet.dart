@@ -46,11 +46,11 @@ class AppBottomSheet extends StatelessWidget {
               child: ClipRRect(
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Container(
-                  decoration: decoration,
-                  child: builder != null
-                      ? builder!(context, scrollController)
-                      : child!,
+              child: Container(
+                decoration: decoration,
+                child: builder != null
+                    ? builder!(context, scrollController)
+                    : child!,
                 ),
               ),
             );
@@ -62,9 +62,9 @@ class AppBottomSheet extends StatelessWidget {
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: Container(
-        decoration: decoration,
-        child: SafeArea(
-          child: builder != null ? builder!(context, null) : child!,
+      decoration: decoration,
+      child: SafeArea(
+        child: builder != null ? builder!(context, null) : child!,
         ),
       ),
     );

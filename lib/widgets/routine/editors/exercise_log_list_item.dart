@@ -6,18 +6,16 @@ import 'package:trainware/widgets/list_tile.dart';
 
 class ExerciseLogListItem extends StatelessWidget {
   final ExerciseLogDto exerciseLogDto;
-  final ExerciseLogDto? superSet;
   final VoidCallback onTap;
-  final VoidCallback onMenuTap;
   final bool showOnlyTotalSets;
+  final bool showStatusIcon;
 
   const ExerciseLogListItem({
     super.key,
     required this.exerciseLogDto,
-    this.superSet,
     required this.onTap,
-    required this.onMenuTap,
     this.showOnlyTotalSets = false,
+    this.showStatusIcon = true,
   });
 
   @override
@@ -35,31 +33,26 @@ class ExerciseLogListItem extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
         onTap: onTap,
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isCompleted
-                  ? Theme.of(context).colors.vibrantAccent
-                  : Colors.white.withOpacity(0.4),
-              width: 2,
-            ),
-            color: isCompleted
-                ? Theme.of(context).colors.vibrantAccent.withOpacity(0.15)
-                : Colors.transparent,
-          ),
-          child: Center(
-            child: FaIcon(
-              isCompleted ? FontAwesomeIcons.check : FontAwesomeIcons.circle,
-              size: 18,
-              color: isCompleted
-                  ? Theme.of(context).colors.vibrantAccent
-                  : Colors.white70,
-            ),
-          ),
-        ),
+        leading: showStatusIcon
+            ? Container(
+                width: 33,
+                height: 33,
+                decoration: BoxDecoration(
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(8),
+                  color: isCompleted
+                      ? Theme.of(context).colors.vibrantAccent
+                      : Colors.white.withValues(alpha: 0.10),
+                ),
+                child: Center(
+                  child: FaIcon(
+                    FontAwesomeIcons.check,
+                    size: 14,
+                    color: isCompleted ? Colors.black : Colors.white54,
+                  ),
+                ),
+              )
+            : null,
         title: Text(
           exerciseLogDto.exercise.name,
           maxLines: 1,
@@ -74,13 +67,6 @@ class ExerciseLogListItem extends StatelessWidget {
           progressText: progressText,
           isCompleted: isCompleted,
         ),
-        trailing: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, size: 16),
-          onPressed: onMenuTap,
-          color: Colors.white70,
-          padding: const EdgeInsets.all(8),
-          constraints: const BoxConstraints(),
-        ),
       ),
     );
   }
@@ -90,57 +76,15 @@ class ExerciseLogListItem extends StatelessWidget {
     required String progressText,
     required bool isCompleted,
   }) {
-    final superSetExercise = superSet;
-
-    Widget content;
-
-    if (superSetExercise == null) {
-      content = _buildProgressPill(
-        context: context,
-        progressText: progressText,
-        isCompleted: isCompleted,
-      );
-    } else {
-      content = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FaIcon(
-                FontAwesomeIcons.link,
-                size: 10,
-                color: Colors.white.withOpacity(0.7),
-              ),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  superSetExercise.exercise.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
-                      ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          _buildProgressPill(
-            context: context,
-            progressText: progressText,
-            isCompleted: isCompleted,
-          ),
-        ],
-      );
-    }
-
     // Ensure the subtitle only wraps its intrinsic width (doesn't stretch)
     return Align(
       alignment: Alignment.centerLeft,
       widthFactor: 1.0,
-      child: content,
+      child: _buildProgressPill(
+        context: context,
+        progressText: progressText,
+        isCompleted: isCompleted,
+      ),
     );
   }
 

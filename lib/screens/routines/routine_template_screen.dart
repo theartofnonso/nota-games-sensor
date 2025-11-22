@@ -19,7 +19,6 @@ import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
-import '../../utils/routine_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../shared_prefs.dart';
 import '../../utils/string_utils.dart';
@@ -220,9 +219,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             label:
                                 "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
                             child: CustomIcon(FontAwesomeIcons.personWalking,
-                                color: Theme.of(context)
-                                    .colors
-                                    .vibrantAccent)),
+                                color: Theme.of(context).colors.vibrantAccent)),
                         Calendar(
                           onSelectDate: (date) => _showLogsForDate(
                               context, date, allLogsForTemplate),
@@ -298,8 +295,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             ],
                           ),
                           ExerciseLogListView(
-                            exerciseLogs: exerciseLogsToViewModels(
-                                exerciseLogs: exerciseTemplates),
+                            exerciseLogs: exerciseTemplates,
                           ),
                         ],
                       ),
@@ -435,9 +431,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _showRenameTemplateBottomSheet() {
-    final controller =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
     final template = controller.templateWhere(id: widget.id);
 
     if (template == null) return;

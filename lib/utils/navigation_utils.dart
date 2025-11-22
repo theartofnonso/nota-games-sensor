@@ -219,10 +219,10 @@ void navigateToPastRoutineLogEditor(
     child: PastRoutineLogEditorScreen(log: arguments.log),
   );
   if (log != null && context.mounted) {
-    navigateWithSlideTransition(
-      context: context,
+      navigateWithSlideTransition(
+        context: context,
       child: RoutineLogScreen(id: log.id, isEditable: true),
-    );
+      );
   }
 }
 

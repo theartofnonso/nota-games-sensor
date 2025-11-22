@@ -8,20 +8,17 @@ import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
-import '../../../dtos/exercise_log_dto.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
-import '../../dtos/viewmodels/exercise_log_view_model.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
-import '../../utils/routine_utils.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
@@ -200,8 +197,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                             muscleGroup: muscleGroupFamilyFrequencies,
                             minimized: false),
                         ExerciseLogListView(
-                            exerciseLogs: _exerciseLogsToViewModels(
-                                exerciseLogs: completedExerciseLogs)),
+                            exerciseLogs: completedExerciseLogs),
                         const SizedBox(
                           height: 60,
                         )
@@ -276,16 +272,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         _loading = false;
       });
     }
-  }
-
-  List<ExerciseLogViewModel> _exerciseLogsToViewModels(
-      {required List<ExerciseLogDto> exerciseLogs}) {
-    return exerciseLogs
-        .map((exerciseLog) => ExerciseLogViewModel(
-            exerciseLog: exerciseLog,
-            superSet: whereOtherExerciseInSuperSet(
-                firstExercise: exerciseLog, exercises: exerciseLogs)))
-        .toList();
   }
 
   void _editLog() async {

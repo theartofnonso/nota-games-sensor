@@ -4,27 +4,23 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
-import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/routine_editors_utils.dart';
-import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
-import 'package:trainware/widgets/routine/editors/exercise_log_list_item.dart';
-import 'package:trainware/screens/editors/_add_exercise_list_item.dart';
-
 import 'package:trainware/utils/theme/color_extensions.dart';
+import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
+import 'package:trainware/widgets/routine/editors/exercise_log_list_item.dart';
+
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
-import '../../utils/routine_utils.dart';
-import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../extensions/duration_extension.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
@@ -63,63 +59,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
               .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
         });
-  }
-
-  void _showSuperSetExercisePicker({required ExerciseLogDto firstExerciseLog}) {
-    final controller =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final otherExercises = whereOtherExerciseLogsExcept(
-        exerciseLog: firstExerciseLog, others: controller.exerciseLogs);
-    showSuperSetExercisePicker(
-        context: context,
-        firstExerciseLog: firstExerciseLog,
-        otherExerciseLogs: otherExercises,
-        onSelected: (secondExerciseLog) {
-          _closeDialog();
-          final id = superSetId(
-              firstExerciseLog: firstExerciseLog,
-              secondExerciseLog: secondExerciseLog);
-          controller.superSetExerciseLogs(
-              firstExerciseLogId: firstExerciseLog.id,
-              secondExerciseLogId: secondExerciseLog.id,
-              superSetId: id);
-        },
-        selectExercisesInLibrary: () {
-          _closeDialog();
-          _selectExercisesInLibrary();
-        });
-  }
-
-  void _showReplaceExercisePicker({required ExerciseLogDto oldExerciseLog}) {
-    final controller =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final excludeExercises =
-        controller.exerciseLogs.map((procedure) => procedure.exercise).toList();
-
-    showExercisesInLibrary(
-        context: context,
-        exercisesToExclude: excludeExercises,
-        onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
-                  context,
-                  listen: false)
-              .whereRecentSetsForExercise(exercise: selectedExercises.first);
-          controller.replaceExerciseLog(
-              oldExerciseId: oldExerciseLog.id,
-              newExercise: selectedExercises.first,
-              pastSets: pastSets);
-        });
-  }
-
-  RoutineLogDto _routineLog() {
-    final exerciseLogController =
-        Provider.of<ExerciseLogController>(context, listen: false);
-
-    final exerciseLogs = exerciseLogController.exerciseLogs;
-
-    final routineLog = widget.log.copyWith(exerciseLogs: exerciseLogs);
-
-    return routineLog;
   }
 
   void _startTimer() {
@@ -163,10 +102,10 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     if (_elapsed <= avg) return "";
 
     final diff = _elapsed - avg;
-    final minutesOver = diff.inMinutes;
-    if (minutesOver <= 0) return "";
+    if (diff.inSeconds <= 0) return "";
 
-    return "$minutesOver min over your usual session";
+    final diffLabel = diff.msDigital();
+    return "$diffLabel over your usual session";
   }
 
   void _showTimerInfoBottomSheet() {
@@ -215,48 +154,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     );
   }
 
-  Future<void> _doCreateRoutineLog() async {
-    final routineLogToBeCreated =
-        _routineLog().copyWith(endTime: DateTime.now());
-
-    if (mounted) {
-      final createdRoutineLog =
-          await Provider.of<SupabaseExerciseAndRoutineController>(context,
-                  listen: false)
-              .saveLog(logDto: routineLogToBeCreated);
-
-      // Check mounted again after async operation
-      if (!mounted) return;
-
-      // Clear cache ONLY if save succeeded
-      if (createdRoutineLog != null) {
-        Provider.of<ExerciseLogController>(context, listen: false).onClear();
-      }
-
-      // Always exit regardless of save success/failure
-      _navigateBack(routineLog: createdRoutineLog);
-    }
-  }
-
-  Future<void> _doUpdateRoutineLog() async {
-    final routineLogToBeUpdated = _routineLog();
-
-    final success = await Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .updateLog(log: routineLogToBeUpdated);
-
-    // Clear cache ONLY if update succeeded
-    if (success && mounted) {
-      Provider.of<ExerciseLogController>(context, listen: false).onClear();
-    }
-
-    // Always exit regardless of update success/failure
-    if (mounted) {
-      _navigateBack(routineLog: routineLogToBeUpdated);
-    }
-  }
-
   bool _isRoutinePartiallyComplete() {
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
@@ -264,50 +161,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     return exerciseLogs.isNotEmpty &&
         exerciseLogs.any(
             (log) => log.sets.any((set) => set.isNotEmpty() && set.checked));
-  }
-
-  void _saveLog() {
-    final isRoutinePartiallyComplete = _isRoutinePartiallyComplete();
-    if (isRoutinePartiallyComplete) {
-      showBottomSheetWithMultiActions(
-          context: context,
-          title: 'Running Session',
-          description: "Do you want to end session?",
-          leftAction: Navigator.of(context).pop,
-          rightAction: () {
-            _closeDialog();
-            _doCreateRoutineLog();
-          },
-          leftActionLabel: 'Cancel',
-          rightActionLabel: 'End',
-          rightActionColor: Theme.of(context).colors.vibrantAccent);
-    } else {
-      showBottomSheetWithNoAction(
-          context: context,
-          description: "Complete some sets!",
-          title: 'Running Session');
-    }
-  }
-
-  void _updateLog() {
-    final isRoutinePartiallyComplete = _isRoutinePartiallyComplete();
-    if (isRoutinePartiallyComplete) {
-      _closeDialog();
-      _doUpdateRoutineLog();
-    } else {
-      showBottomSheetWithNoAction(
-          context: context,
-          description: "Complete some sets!",
-          title: 'Update Workout');
-    }
-  }
-
-  void _closeDialog() {
-    Navigator.of(context).pop();
-  }
-
-  void _navigateBack({RoutineLogDto? routineLog}) async {
-    context.pop(routineLog);
   }
 
   // initState is defined later once all helper methods are declared.
@@ -328,193 +181,190 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             gradient: themeGradient(context: context),
           ),
           child: SafeArea(
-            minimum: EdgeInsets.symmetric(vertical: 10),
+            top: true,
+            bottom:
+                false, // let content (including the list) reach the bottom of the sheet
+            left: true,
+            right: true,
+            minimum: const EdgeInsets.all(20),
             child: Stack(
               children: [
-                // Main content: header + list + "Add exercises"
+                // Main content: header + list
+                // Reserve vertical space at the bottom for the fixed CTA only
+                // when it's visible, so the list doesn't scroll underneath it.
                 Positioned.fill(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 0),
-                    child: Column(
-                      children: [
-                        // Header: routine name
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.log.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w900,
-                                        height: 1.2,
-                                      ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 6),
-                                GestureDetector(
-                                  onTap: _showTimerInfoBottomSheet,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _elapsed.msDigital(),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
-                                      Builder(
-                                        builder: (context) {
-                                          final deltaLabel =
-                                              _buildTimerDeltaLabel();
-                                          if (deltaLabel.isEmpty) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          return Padding(
-                                            padding:
-                                                const EdgeInsets.only(top: 2),
-                                            child: Text(
-                                              deltaLabel,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Colors.white70,
-                                                    height: 1.2,
-                                                  ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
+                  bottom: _isRoutinePartiallyComplete() ? 88.0 : 0.0,
+                  child: Column(
+                    children: [
+                      // Header: routine name
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.log.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w900,
+                                          height: 1.2,
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: exerciseLogs.isEmpty
-                                    ? Center(
-                                        child: Text(
-                                          'No exercises yet.\nTap + to add exercises and start logging.',
-                                          textAlign: TextAlign.center,
+                                  const SizedBox(height: 6),
+                                  GestureDetector(
+                                    onTap: _showTimerInfoBottomSheet,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _elapsed.msDigital(),
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodyMedium
+                                              .headlineSmall
                                               ?.copyWith(
-                                                color: Colors.white70,
+                                                fontWeight: FontWeight.w700,
                                               ),
                                         ),
-                                      )
-                                    : ReorderableListView.builder(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 8),
-                                        itemCount: exerciseLogs.length,
-                                        onReorder: (oldIndex, newIndex) {
-                                          if (newIndex > oldIndex) {
-                                            newIndex -= 1;
-                                          }
-
-                                          final updated = exerciseLogs.toList();
-                                          final item =
-                                              updated.removeAt(oldIndex);
-                                          updated.insert(newIndex, item);
-
-                                          exerciseLogController
-                                              .reOrderExerciseLogs(
-                                            reOrderedList: updated,
-                                          );
-                                        },
-                                        itemBuilder: (context, index) {
-                                          final exerciseLog =
-                                              exerciseLogs[index];
-                                          final superSet =
-                                              whereOtherExerciseInSuperSet(
-                                                  firstExercise: exerciseLog,
-                                                  exercises: exerciseLogs);
-
-                                          return Column(
-                                            key: ValueKey(exerciseLog.id),
-                                            children: [
-                                              ExerciseLogListItem(
-                                                exerciseLogDto: exerciseLog,
-                                                superSet: superSet,
-                                                onTap: () {
-                                                  showExerciseLogEditor(
-                                                    context: context,
-                                                    exerciseLogId:
-                                                        exerciseLog
-                                                            .exercise.id,
-                                                    editorType: widget.mode,
-                                                  );
-                                                },
-                                                onMenuTap: () {
-                                                  _showExerciseActionsBottomSheet(
-                                                    exerciseLog: exerciseLog,
-                                                    onRemoveLog: () {
-                                                      exerciseLogController
-                                                          .removeExerciseLog(
-                                                              logId: exerciseLog
-                                                                  .id);
-                                                    },
-                                                    onReplaceLog: () {
-                                                      _showReplaceExercisePicker(
-                                                        oldExerciseLog:
-                                                            exerciseLog,
-                                                      );
-                                                    },
-                                                    onSuperSet: () {
-                                                      _showSuperSetExercisePicker(
-                                                        firstExerciseLog:
-                                                            exerciseLog,
-                                                      );
-                                                    },
-                                                    onRemoveSuperSet:
-                                                        (String superSetId) {
-                                                      exerciseLogController
-                                                          .removeSuperSet(
-                                                              superSetId:
-                                                                  exerciseLog
-                                                                      .superSetId);
-                                                    },
-                                                  );
-                                                },
+                                        Builder(
+                                          builder: (context) {
+                                            final deltaLabel =
+                                                _buildTimerDeltaLabel();
+                                            if (deltaLabel.isEmpty) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 2),
+                                              child: Text(
+                                                deltaLabel,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: Colors.white70,
+                                                      height: 1.2,
+                                                    ),
                                               ),
-                                              const SizedBox(height: 12),
-                                            ],
-                                          );
-                                        },
-                                      ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  TextButton(
+                                    onPressed: _confirmDiscardSession,
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(0, 0),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      foregroundColor: Colors.redAccent,
+                                    ),
+                                    child: Text(
+                                      'Discard session',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Colors.redAccent,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 12),
-                              AddExerciseListItem(
-                                onTap: _selectExercisesInLibrary,
+                            ),
+                            IconButton(
+                              onPressed: _selectExercisesInLibrary,
+                              icon: const FaIcon(
+                                FontAwesomeIcons.circlePlus,
+                                size: 18,
+                                color: Colors.white,
                               ),
-                            ],
-                          ),
+                              tooltip: 'Add exercises',
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 90),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: exerciseLogs.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No exercises yet.\nTap + to add exercises and start logging.',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Colors.white70,
+                                      ),
+                                ),
+                              )
+                            : ReorderableListView.builder(
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                ),
+                                itemCount: exerciseLogs.length,
+                                onReorder: (oldIndex, newIndex) {
+                                  if (newIndex > oldIndex) {
+                                    newIndex -= 1;
+                                  }
+
+                                  final updated = exerciseLogs.toList();
+                                  final item = updated.removeAt(oldIndex);
+                                  updated.insert(newIndex, item);
+
+                                  exerciseLogController.reOrderExerciseLogs(
+                                    reOrderedList: updated,
+                                  );
+                                },
+                                itemBuilder: (context, index) {
+                                  final exerciseLog = exerciseLogs[index];
+                                  return Dismissible(
+                                    key: ValueKey(exerciseLog.id),
+                                    direction: DismissDirection.endToStart,
+                                    confirmDismiss: (_) =>
+                                        _confirmRemoveExercise(exerciseLog),
+                                    onDismissed: (_) {
+                                      exerciseLogController.removeExerciseLog(
+                                          logId: exerciseLog.id);
+                                    },
+                                    background: const SizedBox.shrink(),
+                                    child: Column(
+                                      children: [
+                                        ExerciseLogListItem(
+                                          exerciseLogDto: exerciseLog,
+                                          onTap: () {
+                                            showExerciseLogEditor(
+                                              context: context,
+                                              exerciseLogId:
+                                                  exerciseLog.exercise.id,
+                                              editorType: widget.mode,
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
                   ),
                 ),
-                // Top overlay controls (no back button – closing handled by sheet)
-                // Bottom fixed CTA (does not scroll) – vertically aligned similar to Overview FAB
+                // Bottom fixed CTA (does not scroll) – same pattern as PastRoutineLogEditor
                 if (_isRoutinePartiallyComplete())
                   Align(
                     alignment: Alignment.bottomCenter,
@@ -525,12 +375,10 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                         width: double.infinity,
                         child: OpacityButtonWidgetTwo(
                           buttonColor: Theme.of(context).colors.vibrantAccent,
-                          label: widget.mode == RoutineEditorMode.log
-                              ? "Finish Session"
-                              : "Update Session",
-                          onPressed: widget.mode == RoutineEditorMode.log
-                              ? _saveLog
-                              : _updateLog,
+                          label: widget.log.id.isNotEmpty
+                              ? "Update Session"
+                              : "Finish Session",
+                          onPressed: _finishOrUpdateSession,
                         ),
                       ),
                     ),
@@ -541,72 +389,111 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         )));
   }
 
-  void _showExerciseActionsBottomSheet({
-    required ExerciseLogDto exerciseLog,
-    required VoidCallback onRemoveLog,
-    required VoidCallback onReplaceLog,
-    required VoidCallback onSuperSet,
-    required void Function(String superSetId) onRemoveSuperSet,
-  }) {
-    showAppBottomSheet(
-        context: context,
-        isScrollControlled: false,
-        child: Padding(
-          padding: const EdgeInsets.all(26),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(
-                FontAwesomeIcons.arrowRightArrowLeft,
-                size: 18,
-              ),
-              horizontalTitleGap: 6,
-              title: const Text("Replace"),
-              onTap: () {
-                Navigator.of(context).pop();
-                onReplaceLog();
-              },
+  Future<bool> _confirmRemoveExercise(ExerciseLogDto exerciseLog) async {
+    return confirmRemoveExerciseBottomSheet(
+      context: context,
+      exerciseName: exerciseLog.exercise.name,
+      fromLabel: 'workout',
+    );
+  }
+
+  Future<void> _confirmDiscardSession() async {
+    bool shouldDiscard = false;
+
+    await showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Discard session?",
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.link, size: 18),
-              horizontalTitleGap: 6,
-              title: const Text("Superset"),
-              onTap: () {
-                Navigator.of(context).pop();
-                onSuperSet();
-              },
+            const SizedBox(height: 8),
+            Text(
+              'Are you sure you want to discard this workout session? This cannot be undone.',
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            if (exerciseLog.superSetId.isNotEmpty)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const FaIcon(FontAwesomeIcons.linkSlash, size: 18),
-                horizontalTitleGap: 6,
-                title: const Text("Remove from superset"),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  onRemoveSuperSet(exerciseLog.superSetId);
-                },
-              ),
-            ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const FaIcon(
-                  FontAwesomeIcons.trash,
-                  size: 18,
-                  color: Colors.red,
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OpacityButtonWidgetTwo(
+                    label: 'Cancel',
+                    showArrowRight: false,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      shouldDiscard = false;
+                    },
+                  ),
                 ),
-                horizontalTitleGap: 6,
-                title: const Text("Remove",
-                    style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16)),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  onRemoveLog();
-                }),
-          ]),
-        ));
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OpacityButtonWidgetTwo(
+                    label: 'Discard',
+                    buttonColor: Colors.red,
+                    showArrowRight: false,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      shouldDiscard = true;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!shouldDiscard) return;
+
+    // Clear both in-memory state and cached pending routine log.
+    Provider.of<ExerciseLogController>(context, listen: false).onClear();
+
+    if (mounted && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _finishOrUpdateSession() async {
+    final exerciseLogController =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final exerciseLogs = exerciseLogController.exerciseLogs;
+
+    if (exerciseLogs.isEmpty) return;
+
+    final routineController = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+
+    final updatedLog = widget.log.copyWith(
+      exerciseLogs: exerciseLogs,
+      endTime: DateTime.now(),
+    );
+
+    final savedLog = await routineController.saveLog(logDto: updatedLog);
+
+    if (!mounted) return;
+
+    if (savedLog != null) {
+      // Clear in-memory + cached pending routine log once session is saved.
+      exerciseLogController.onClear();
+
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(savedLog);
+      }
+    } else {
+      // If save failed, keep state and let user retry later.
+      // Optional: surface an error snackbar in a follow-up iteration.
+    }
   }
 
   void _loadRoutineAndExerciseLogs() {

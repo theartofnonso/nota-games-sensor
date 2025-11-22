@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
@@ -21,11 +20,9 @@ import '../../extensions/duration_extension.dart';
 import '../../strings/datetime_range_picker_strings.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/routine_editors_utils.dart';
-import '../../utils/routine_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/routine/editors/exercise_log_list_item.dart';
 import '../../widgets/weight_plate_calculator.dart';
-import '_add_exercise_list_item.dart';
 
 class PastRoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/past-routine-log-editor';
@@ -66,52 +63,6 @@ class _PastRoutineLogEditorScreenState
                   listen: false)
               .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
-        });
-  }
-
-  void _showSuperSetExercisePicker({required ExerciseLogDto firstExerciseLog}) {
-    final controller =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final otherExercises = whereOtherExerciseLogsExcept(
-        exerciseLog: firstExerciseLog, others: controller.exerciseLogs);
-    showSuperSetExercisePicker(
-        context: context,
-        firstExerciseLog: firstExerciseLog,
-        otherExerciseLogs: otherExercises,
-        onSelected: (secondExerciseLog) {
-          _closeDialog();
-          final id = superSetId(
-              firstExerciseLog: firstExerciseLog,
-              secondExerciseLog: secondExerciseLog);
-          controller.superSetExerciseLogs(
-              firstExerciseLogId: firstExerciseLog.id,
-              secondExerciseLogId: secondExerciseLog.id,
-              superSetId: id);
-        },
-        selectExercisesInLibrary: () {
-          _closeDialog();
-          _selectExercisesInLibrary();
-        });
-  }
-
-  void _showReplaceExercisePicker({required ExerciseLogDto oldExerciseLog}) {
-    final controller =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final excludeExercises =
-        controller.exerciseLogs.map((exercise) => exercise.exercise).toList();
-
-    showExercisesInLibrary(
-        context: context,
-        exercisesToExclude: excludeExercises,
-        onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
-                  context,
-                  listen: false)
-              .whereRecentSetsForExercise(exercise: selectedExercises.first);
-          controller.replaceExerciseLog(
-              oldExerciseId: oldExerciseLog.id,
-              newExercise: selectedExercises.first,
-              pastSets: pastSets);
         });
   }
 
@@ -287,9 +238,10 @@ class _PastRoutineLogEditorScreenState
     // Check mounted after async operation
     if (!mounted) return;
 
-    // Clear cache ONLY if save succeeded
+    // Clear local controller state ONLY if save succeeded.
+    // Do not touch any pending live workout cache.
     if (createdLog != null) {
-      Provider.of<ExerciseLogController>(context, listen: false).onClear();
+      Provider.of<ExerciseLogController>(context, listen: false).clearLocal();
     }
 
     // Always exit regardless of save success/failure
@@ -300,12 +252,16 @@ class _PastRoutineLogEditorScreenState
     FocusScope.of(context).unfocus();
   }
 
-  void _closeDialog() {
-    context.pop();
-  }
-
   void _navigateBack({RoutineLogDto? log}) {
     Navigator.of(context).pop(log);
+  }
+
+  Future<bool> _confirmRemoveExercise(ExerciseLogDto exerciseLog) async {
+    return confirmRemoveExerciseBottomSheet(
+      context: context,
+      exerciseName: exerciseLog.exercise.name,
+      fromLabel: 'log',
+    );
   }
 
   @override
@@ -368,152 +324,125 @@ class _PastRoutineLogEditorScreenState
                 gradient: themeGradient(context: context),
               ),
               child: SafeArea(
+                top: true,
                 bottom: false,
-                minimum: const EdgeInsets.only(
-                    right: 10.0, bottom: 10.0, left: 10.0),
+                left: true,
+                right: true,
+                minimum: const EdgeInsets.all(20),
                 child: Stack(
                   children: [
                     // Main scrollable content (name + list)
                     Positioned.fill(
+                      bottom: _isRoutinePartiallyComplete() ? 88.0 : 0.0,
                       child: GestureDetector(
                         onTap: _dismissKeyboard,
                         child: Column(
                           children: [
-                            // Header: past routine name
+                            // Header: past routine name + add button (top-right)
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  widget.log.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w900,
-                                        height: 1.2,
-                                      ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Expanded(
-                              child: Column(
+                              padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
-                                    child: exerciseLogs.isEmpty
-                                        ? Center(
-                                            child: Text(
-                                              'No exercises in this log yet.\nTap + to add exercises.',
-                                              textAlign: TextAlign.center,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyMedium
-                                                  ?.copyWith(
-                                                    color: Colors.white70,
-                                                  ),
-                                            ),
-                                          )
-                                        : ReorderableListView.builder(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 8),
-                                            itemCount: exerciseLogs.length,
-                                            onReorder: (oldIndex, newIndex) {
-                                              if (newIndex > oldIndex) {
-                                                newIndex -= 1;
-                                              }
-
-                                              final updated =
-                                                  exerciseLogs.toList();
-                                              final item =
-                                                  updated.removeAt(oldIndex);
-                                              updated.insert(newIndex, item);
-
-                                              exerciseLogController
-                                                  .reOrderExerciseLogs(
-                                                reOrderedList: updated,
-                                              );
-                                            },
-                                            itemBuilder: (context, index) {
-                                              final exerciseLog =
-                                                  exerciseLogs[index];
-                                              final superSet =
-                                                  whereOtherExerciseInSuperSet(
-                                                      firstExercise:
-                                                          exerciseLog,
-                                                      exercises: exerciseLogs);
-
-                                              return Column(
-                                                key: ValueKey(exerciseLog.id),
-                                                children: [
-                                                  ExerciseLogListItem(
-                                                    exerciseLogDto:
-                                                        exerciseLog,
-                                                    superSet: superSet,
-                                                    onTap: () {
-                                                      showExerciseLogEditor(
-                                                        context: context,
-                                                        exerciseLogId:
-                                                            exerciseLog
-                                                                .exercise.id,
-                                                        editorType:
-                                                            RoutineEditorMode
-                                                                .edit,
-                                                      );
-                                                    },
-                                                    onMenuTap: () {
-                                                      _showExerciseActionsBottomSheet(
-                                                        exerciseLog:
-                                                            exerciseLog,
-                                                        onRemoveLog: () {
-                                                          exerciseLogController
-                                                              .removeExerciseLog(
-                                                                  logId:
-                                                                      exerciseLog
-                                                                          .id);
-                                                        },
-                                                        onReplaceLog: () {
-                                                          _showReplaceExercisePicker(
-                                                              oldExerciseLog:
-                                                                  exerciseLog);
-                                                        },
-                                                        onSuperSet: () {
-                                                          _showSuperSetExercisePicker(
-                                                              firstExerciseLog:
-                                                                  exerciseLog);
-                                                        },
-                                                        onRemoveSuperSet:
-                                                            (String
-                                                                superSetId) {
-                                                          exerciseLogController
-                                                              .removeSuperSet(
-                                                                  superSetId:
-                                                                      exerciseLog
-                                                                          .superSetId);
-                                                        },
-                                                      );
-                                                    },
-                                                  ),
-                                                  const SizedBox(height: 12),
-                                                ],
-                                              );
-                                            },
+                                    child: Text(
+                                      widget.log.name,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                            height: 1.2,
                                           ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  AddExerciseListItem(
-                                    onTap: _selectExercisesInLibrary,
+                                  IconButton(
+                                    onPressed: _selectExercisesInLibrary,
+                                    icon: const FaIcon(
+                                      FontAwesomeIcons.circlePlus,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
+                                    tooltip: 'Add exercises',
                                   ),
                                 ],
                               ),
+                            ),
+                            Expanded(
+                              child: exerciseLogs.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        'No exercises in this log yet.\nTap + to add exercises.',
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Colors.white70,
+                                            ),
+                                      ),
+                                    )
+                                  : ReorderableListView.builder(
+                                      padding: const EdgeInsets.only(
+                                        top: 8,
+                                      ),
+                                      itemCount: exerciseLogs.length,
+                                      onReorder: (oldIndex, newIndex) {
+                                        if (newIndex > oldIndex) {
+                                          newIndex -= 1;
+                                        }
+
+                                        final updated = exerciseLogs.toList();
+                                        final item = updated.removeAt(oldIndex);
+                                        updated.insert(newIndex, item);
+
+                                        exerciseLogController
+                                            .reOrderExerciseLogs(
+                                          reOrderedList: updated,
+                                        );
+                                      },
+                                      itemBuilder: (context, index) {
+                                        final exerciseLog = exerciseLogs[index];
+                                        return Dismissible(
+                                          key: ValueKey(exerciseLog.id),
+                                          direction:
+                                              DismissDirection.endToStart,
+                                          confirmDismiss: (_) =>
+                                              _confirmRemoveExercise(
+                                                  exerciseLog),
+                                          onDismissed: (_) {
+                                            exerciseLogController
+                                                .removeExerciseLog(
+                                                    logId: exerciseLog.id);
+                                          },
+                                          background: const SizedBox.shrink(),
+                                          child: Column(
+                                            children: [
+                                              ExerciseLogListItem(
+                                                exerciseLogDto: exerciseLog,
+                                                onTap: () {
+                                                  showExerciseLogEditor(
+                                                    context: context,
+                                                    exerciseLogId:
+                                                        exerciseLog.exercise.id,
+                                                    editorType:
+                                                        RoutineEditorMode.edit,
+                                                  );
+                                                },
+                                              ),
+                                              const SizedBox(height: 12),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    // Top overlay controls (no back button – closing handled by sheet)
                     // Bottom fixed CTA (does not scroll) – vertically aligned similar to Overview FAB
                     if (_isRoutinePartiallyComplete())
                       Align(
@@ -559,8 +488,9 @@ class _PastRoutineLogEditorScreenState
   }
 
   void _initializeProcedureData() {
-    // Clear controller first to ensure clean state when opening a new past session
-    Provider.of<ExerciseLogController>(context, listen: false).onClear();
+    // Clear controller first to ensure clean state when opening a new past session,
+    // but do NOT clear any pending live workout cache.
+    Provider.of<ExerciseLogController>(context, listen: false).clearLocal();
 
     final exercises = widget.log.exerciseLogs;
     if (exercises.isNotEmpty) {
@@ -669,74 +599,6 @@ class _PastRoutineLogEditorScreenState
     // Don't auto-clear cache on dispose - only clear on successful save
     _templateNameController.dispose();
     super.dispose();
-  }
-
-  void _showExerciseActionsBottomSheet({
-    required ExerciseLogDto exerciseLog,
-    required VoidCallback onRemoveLog,
-    required VoidCallback onReplaceLog,
-    required VoidCallback onSuperSet,
-    required void Function(String superSetId) onRemoveSuperSet,
-  }) {
-    showAppBottomSheet(
-        context: context,
-        isScrollControlled: false,
-        child: Padding(
-          padding: const EdgeInsets.all(26),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(
-                FontAwesomeIcons.arrowRightArrowLeft,
-                size: 18,
-              ),
-              horizontalTitleGap: 6,
-              title: const Text("Replace"),
-              onTap: () {
-                Navigator.of(context).pop();
-                onReplaceLog();
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.link, size: 18),
-              horizontalTitleGap: 6,
-              title: const Text("Superset"),
-              onTap: () {
-                Navigator.of(context).pop();
-                onSuperSet();
-              },
-            ),
-            if (exerciseLog.superSetId.isNotEmpty)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const FaIcon(FontAwesomeIcons.linkSlash, size: 18),
-                horizontalTitleGap: 6,
-                title: const Text("Remove from superset"),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  onRemoveSuperSet(exerciseLog.superSetId);
-                },
-              ),
-            ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const FaIcon(
-                  FontAwesomeIcons.trash,
-                  size: 18,
-                  color: Colors.red,
-                ),
-                horizontalTitleGap: 6,
-                title: const Text("Remove",
-                    style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16)),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  onRemoveLog();
-                }),
-          ]),
-        ));
   }
 }
 

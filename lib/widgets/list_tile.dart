@@ -15,11 +15,11 @@ class ThemeListTile extends StatelessWidget {
         backgroundColor ?? (isDarkMode ? Colors.black12 : Colors.grey.shade100);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20),
-      ),
+          borderRadius: BorderRadius.circular(20),
+        ),
       child: child,
     );
   }
