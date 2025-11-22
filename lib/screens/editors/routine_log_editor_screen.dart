@@ -288,7 +288,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                               onPressed: _selectExercisesInLibrary,
                               icon: const FaIcon(
                                 FontAwesomeIcons.circlePlus,
-                                size: 18,
+                                size: 22,
                                 color: Colors.white,
                               ),
                               tooltip: 'Add exercises',

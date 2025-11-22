@@ -436,6 +436,29 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return allSets;
   }
 
+  /// Returns the most recent [limit] exercise logs for a given exercise,
+  /// ordered from most recent to oldest.
+  List<ExerciseLogDto> whereRecentExerciseLogsForExercise({
+    required ExerciseDto exercise,
+    int limit = 4,
+  }) {
+    final matches = <({ExerciseLogDto log, DateTime timestamp})>[];
+
+    for (final routineLog in logs) {
+      for (final exerciseLog in routineLog.exerciseLogs) {
+        if (exerciseLog.exercise.id == exercise.id) {
+          matches.add((log: exerciseLog, timestamp: routineLog.startTime));
+        }
+      }
+    }
+
+    if (matches.isEmpty) return const [];
+
+    matches.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    return matches.take(limit).map((e) => e.log).toList();
+  }
+
   List<SetDto> wherePrevSetsForExercise({required ExerciseDto exercise}) {
     final exerciseLogs = whereExerciseLogsForExercise(exercise: exercise);
     if (exerciseLogs.isEmpty) return [];

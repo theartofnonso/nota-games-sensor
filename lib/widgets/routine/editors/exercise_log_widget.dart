@@ -60,6 +60,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   late TextEditingController _notesController;
   final FocusNode _notesFocusNode = FocusNode();
 
+  bool _hasShownProgressionPrompt = false;
+
   /// Get the current exercise log, throwing if it doesn't exist
   /// This should only be called after null checks in build method
   ExerciseLogDto get _currentExerciseLog {
@@ -261,6 +263,85 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         setDto: updatedSet);
 
     _loadControllers();
+
+    // After successfully logging a set in live log mode for a weights exercise,
+    // optionally prompt the user about progression if they've been stalled.
+    final exerciseType = _currentExerciseLog.exercise.type;
+    final isLogMode = widget.editorType == RoutineEditorMode.log;
+    if (checked &&
+        isLogMode &&
+        withWeightsOnly(type: exerciseType) &&
+        !_hasShownProgressionPrompt) {
+      _maybeShowProgressionPrompt();
+    }
+  }
+
+  Future<void> _maybeShowProgressionPrompt() async {
+    final controller =
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
+
+    final recentLogs = controller.whereRecentExerciseLogsForExercise(
+      exercise: _currentExerciseLog.exercise,
+      limit: 4,
+    );
+
+    if (!isStalledAtSameWeightAndReps(recentLogs: recentLogs)) return;
+
+    _hasShownProgressionPrompt = true;
+
+    if (!mounted) return;
+
+    final stalledSample = recentLogs
+        .expand((log) => log.sets)
+        .where((s) => s.type == ExerciseType.weights)
+        .map((s) => s as WeightAndRepsSetDto)
+        .where((s) => s.weight > 0 && s.reps > 0)
+        .toList()
+        .lastOrNull;
+
+    final exerciseName = _currentExerciseLog.exercise.name;
+    final weightText =
+        stalledSample != null ? "${stalledSample.weight} kg" : "this weight";
+    final repsText =
+        stalledSample != null ? "${stalledSample.reps} reps" : "this rep range";
+
+    if (!mounted) return;
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Ready to progress on $exerciseName?",
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "You've been consistently logging $weightText for $repsText over your recent sessions. "
+              "You might be ready to increase the weight slightly, or tighten your target rep range.",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("Got it"),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _onLogDurationSet() {

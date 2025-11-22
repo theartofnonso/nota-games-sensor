@@ -358,6 +358,43 @@ Map<MuscleGroup, double> muscleGroupFrequency(
   return sortedFrequencyMap;
 }
 
+/// Heuristic to detect if a user is consistently hitting the same weight
+/// and reps for a weights-based exercise across recent sessions.
+///
+/// We look at up to [recentLogs] (most recent first) and:
+/// - Extract the last non-empty set from each log
+/// - Require at least [minSessions] logs with valid sets
+/// - Consider it "stalled" if all (weight, reps) pairs are identical.
+bool isStalledAtSameWeightAndReps({
+  required List<ExerciseLogDto> recentLogs,
+  int minSessions = 3,
+}) {
+  if (recentLogs.isEmpty) return false;
+
+  final samples = <(double weight, int reps)>[];
+
+  for (final log in recentLogs) {
+    final weightSets = log.sets
+        .where((s) => s.type == ExerciseType.weights)
+        .map((s) => s as WeightAndRepsSetDto)
+        .where((s) => s.weight > 0 && s.reps > 0)
+        .toList();
+
+    if (weightSets.isEmpty) continue;
+
+    // Use the last filled set in this session as the "top set"
+    final last = weightSets.last;
+    samples.add((last.weight, last.reps));
+  }
+
+  if (samples.length < minSessions) return false;
+
+  final (firstWeight, firstReps) = samples.first;
+  return samples.every((sample) =>
+      sample.$1 == firstWeight &&
+      sample.$2 == firstReps);
+}
+
 bool withWeightsOnly({required ExerciseType type}) {
   return type == ExerciseType.weights;
 }
