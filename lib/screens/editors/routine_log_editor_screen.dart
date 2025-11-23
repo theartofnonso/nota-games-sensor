@@ -474,9 +474,15 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         context,
         listen: false);
 
+    // For new sessions, we should capture the current time as the end time.
+    // For existing sessions (updates), we must preserve the original end time
+    // so that the logged duration remains accurate unless the user explicitly
+    // edits it from the duration editor.
+    final endTime = widget.log.id.isEmpty ? DateTime.now() : widget.log.endTime;
+
     final updatedLog = widget.log.copyWith(
       exerciseLogs: exerciseLogs,
-      endTime: DateTime.now(),
+      endTime: endTime,
     );
 
     final savedLog = await routineController.saveLog(logDto: updatedLog);

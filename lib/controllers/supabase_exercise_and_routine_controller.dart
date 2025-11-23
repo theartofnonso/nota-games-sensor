@@ -4,7 +4,10 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/enums/muscle_group_enums.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/offline_first/routine_log_sync_service.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_log_repository.dart';
+import 'package:uuid/uuid.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
@@ -27,6 +30,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   late SupabaseRoutineTemplateRepository _templateRepository;
   late SupabaseRoutinePlanRepository _planRepository;
   late SupabaseRoutineLogRepository _logRepository;
+  late OfflineRoutineLogRepository _offlineLogRepository;
 
   SupabaseExerciseAndRoutineController({
     required SupabaseExerciseRepository exerciseRepository,
@@ -38,6 +42,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     _templateRepository = templateRepository;
     _planRepository = planRepository;
     _logRepository = logRepository;
+    _offlineLogRepository =
+        OfflineRoutineLogRepository(remoteRepository: _logRepository);
   }
 
   UnmodifiableListView<ExerciseDto> get exercises =>
@@ -48,7 +54,18 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   UnmodifiableListView<RoutinePlanDto> get plans => _planRepository.plans;
 
-  UnmodifiableListView<RoutineLogDto> get logs => _logRepository.logs;
+  /// Offline-first view of routine logs backed by local cache and sync engine.
+  UnmodifiableListView<RoutineLogDto> get logs =>
+      UnmodifiableListView(_offlineLogRepository.offlineLogs);
+
+  /// Direct view of logs loaded from Supabase (used internally by the
+  /// offline sync engine and for debugging; prefer [logs] in the UI).
+  UnmodifiableListView<RoutineLogDto> get remoteLogs => _logRepository.logs;
+
+  /// Expose sync status for individual logs so the UI can show
+  /// pending/failed badges.
+  RoutineLogSyncStatus syncStatusForLog(String id) =>
+      _offlineLogRepository.syncStatusForLog(id);
 
   UnmodifiableMapView<String, List<ExerciseLogDto>>
       get exerciseLogsByExerciseId => _logRepository.exerciseLogsByExerciseId;
@@ -74,6 +91,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> loadUserData() async {
     try {
+      // Load cached logs first so they are available immediately in offline mode.
+      await _offlineLogRepository.loadFromCache();
+
       await Future.wait([
         _exerciseRepository.loadUserExercises(),
         _templateRepository.loadTemplates(),
@@ -81,9 +101,11 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         _logRepository.loadLogs(),
       ]);
 
+      // Keep the offline cache and Supabase in sync using last-write-wins.
+      await _offlineLogRepository.syncNow();
+
       // Schedule training reminders based on historic log data
-      final historicLogTimes =
-          _logRepository.logs.map((log) => log.startTime).toList();
+      final historicLogTimes = logs.map((log) => log.startTime).toList();
       if (historicLogTimes.isNotEmpty) {
         schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
       }
@@ -93,6 +115,13 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       logger.e("Error loading user data", error: e);
       rethrow;
     }
+  }
+
+  /// Manually trigger a routine log sync (e.g. on pull-to-refresh or
+  /// connectivity change).
+  Future<void> syncRoutineLogs() async {
+    await _offlineLogRepository.syncNow();
+    notifyListeners();
   }
 
   /// Exercises
@@ -239,34 +268,61 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Logs
 
+  /// Local-first create: write to the offline cache, then sync to Supabase
+  /// in the background using last-write-wins.
   Future<RoutineLogDto?> saveLog({required RoutineLogDto logDto}) async {
-    RoutineLogDto? savedLog;
     isLoading = true;
     try {
-      savedLog = await _logRepository.saveLog(logDto);
+      // Generate a stable ID if needed so we can persist locally without
+      // relying on the remote database.
+      final id = logDto.id.isEmpty ? const Uuid().v4() : logDto.id;
 
-      // Reschedule training reminders based on updated log data
-      final historicLogTimes =
-          _logRepository.logs.map((log) => log.startTime).toList();
+      // Ensure all nested exercise logs reference this routine log ID.
+      final logWithId = logDto.copyWith(id: id);
+      final updatedLog = logWithId.copyWith(
+        exerciseLogs: logWithId.exerciseLogs
+            .map((exerciseLog) => exerciseLog.copyWith(routineLogId: id))
+            .toList(),
+      );
+
+      // Local-first write: persist to the offline repository so the workout
+      // is immediately available offline and in the UI.
+      await _offlineLogRepository.upsertLocal(updatedLog);
+
+      // Best-effort background sync with Supabase. We don't await this so
+      // that the UI isn't blocked by network conditions.
+      // ignore: discarded_futures
+      syncRoutineLogs();
+
+      // Reschedule training reminders based on updated (offline-first) log data.
+      final historicLogTimes = logs.map((log) => log.startTime).toList();
       if (historicLogTimes.isNotEmpty) {
         schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
       }
+      return updatedLog;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving log", error: e);
+      return null;
     } finally {
       isLoading = false;
       errorMessage = "";
       notifyListeners();
     }
-    return savedLog;
   }
 
+  /// Local-first update: modify the offline cache and then sync in the
+  /// background. Callers still get a success flag but are not blocked
+  /// on the network.
   Future<bool> updateLog({required RoutineLogDto log}) async {
     isLoading = true;
     bool success = false;
     try {
-      await _logRepository.updateLog(log);
+      await _offlineLogRepository.upsertLocal(log);
+
+      // ignore: discarded_futures
+      syncRoutineLogs();
+
       success = true;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -279,10 +335,15 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return success;
   }
 
+  /// Local-first delete: mark/remove the log from the offline cache and
+  /// then sync in the background.
   Future<void> deleteLog({required RoutineLogDto log}) async {
     isLoading = true;
     try {
-      await _logRepository.deleteLog(log);
+      await _offlineLogRepository.deleteLocal(log.id);
+
+      // ignore: discarded_futures
+      syncRoutineLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error deleting log", error: e);
@@ -322,36 +383,102 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Query Helpers - Logs
 
   RoutineLogDto? logWhereId({required String id}) {
-    return _logRepository.whereLogById(id);
+    return logs.firstWhereOrNull((log) => log.id == id);
   }
 
   List<RoutineLogDto> whereLogsForTemplate({required String templateId}) {
-    return _logRepository.whereLogsForTemplate(templateId);
+    return logs.where((log) => log.templateId == templateId).toList();
   }
 
   List<RoutineLogDto> whereLogsIsSameDay({required DateTime dateTime}) {
-    return _logRepository.whereLogsForDate(dateTime);
+    return logs
+        .where((log) => log.startTime.isSameDayMonthYear(dateTime))
+        .toList();
   }
 
-  List<DateTime> get allWorkoutDates => _logRepository.allWorkoutDates;
+  List<DateTime> get allWorkoutDates {
+    final uniqueDates = <String, DateTime>{};
+    for (final log in logs) {
+      final dateKey = log.startTime.toIso8601String().substring(0, 10);
+      uniqueDates[dateKey] = log.startTime;
+    }
+    return uniqueDates.values.toList();
+  }
 
-  List<ExerciseLogDto> get allExerciseLogs => _logRepository.allExerciseLogs;
+  List<ExerciseLogDto> get allExerciseLogs {
+    return logs.expand((log) => log.exerciseLogs).toList();
+  }
 
-  List<RoutineLogDto> get recentLogs => _logRepository.recentLogs;
+  List<RoutineLogDto> get recentLogs {
+    final sorted = List<RoutineLogDto>.from(logs)
+      ..sort((a, b) => b.startTime.compareTo(a.startTime));
+    return sorted.take(10).toList();
+  }
 
   /// Exercise Log Helpers
 
   List<ExerciseLogDto> whereExerciseLogsForExercise({
     required ExerciseDto exercise,
   }) {
-    return _logRepository.whereExerciseLogsForExercise(exercise: exercise);
+    final matches = <ExerciseLogDto>[];
+    for (final routineLog in logs) {
+      for (final exerciseLog in routineLog.exerciseLogs) {
+        if (exerciseLog.exercise.id == exercise.id) {
+          matches.add(exerciseLog);
+        }
+      }
+    }
+    return matches;
   }
 
   // Personal bests removed from project
 
   /// Workout Stats
 
-  Map<String, dynamic> get workoutStats => _logRepository.workoutStats;
+  Map<String, dynamic> get workoutStats {
+    final totalWorkouts = logs.length;
+    final totalExercises = allExerciseLogs.length;
+    final totalVolume = allExerciseLogs.fold<double>(
+      0,
+      (sum, log) =>
+          sum +
+          log.sets.fold<double>(
+            0,
+            (setSum, set) {
+              // Only weight+reps sets contribute to volume.
+              // We avoid importing specific set DTO types here to keep this
+              // controller decoupled; volume is computed elsewhere as well.
+              try {
+                final weight = (set as dynamic).weight as num?;
+                final reps = (set as dynamic).reps as num?;
+                if (weight != null && reps != null) {
+                  return setSum + (weight * reps);
+                }
+              } catch (_) {
+                // Non-weighted sets or unexpected types are ignored in volume.
+              }
+              return setSum;
+            },
+          ),
+    );
+
+    final avgDuration = logs.isEmpty
+        ? Duration.zero
+        : Duration(
+            seconds: logs
+                    .map((log) =>
+                        log.endTime.difference(log.startTime).inSeconds)
+                    .reduce((a, b) => a + b) ~/
+                totalWorkouts,
+          );
+
+    return {
+      'totalWorkouts': totalWorkouts,
+      'totalExercises': totalExercises,
+      'totalVolume': totalVolume,
+      'avgDuration': avgDuration,
+    };
+  }
 
   // Personal bests removed from project
 

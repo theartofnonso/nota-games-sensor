@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/enums/muscle_group_enums.dart';
@@ -14,7 +13,6 @@ import '../../dtos/exercise_log_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../dtos/set_dtos/reps_dto.dart';
-import '../../enums/posthog_analytics_event.dart';
 import '../../logger.dart';
 
 class SupabaseRoutineLogRepository {
@@ -119,11 +117,6 @@ class SupabaseRoutineLogRepository {
 
       // Insert into Supabase
       await _client.from('routine_logs').insert(updatedLog.toJson());
-
-      // Analytics
-      await Posthog().capture(
-        eventName: PostHogAnalyticsEvent.logRoutine.displayName,
-      );
 
       // Add to in-memory list
       _logs = [updatedLog, ..._logs];

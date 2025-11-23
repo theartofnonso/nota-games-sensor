@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -244,11 +246,13 @@ class _MyAppState extends State<MyApp> {
   bool _isFirstLaunch = SharedPrefs().firstLaunch;
   bool _isAuthenticated = false;
   bool _isLoading = true;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   @override
   void initState() {
     super.initState();
     _checkAuthAndInitialize();
+    _listenToConnectivity();
   }
 
   Future<void> _checkAuthAndInitialize() async {
@@ -333,6 +337,31 @@ class _MyAppState extends State<MyApp> {
       _isFirstLaunch = false;
       SharedPrefs().firstLaunch = false;
     });
+  }
+
+  void _listenToConnectivity() {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      if (!mounted) return;
+
+      final current =
+          results.isNotEmpty ? results.last : ConnectivityResult.none;
+      final isOnline = current != ConnectivityResult.none;
+      if (!isOnline || !_isAuthenticated) return;
+
+      try {
+        final controller = context.read<SupabaseExerciseAndRoutineController>();
+        // ignore: discarded_futures
+        controller.syncRoutineLogs();
+      } catch (e) {
+        debugPrint('[Connectivity] Error triggering sync: $e');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySub?.cancel();
+    super.dispose();
   }
 
   // This widget is the root of your application.
