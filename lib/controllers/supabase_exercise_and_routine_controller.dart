@@ -4,7 +4,13 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/enums/muscle_group_enums.dart';
+import 'package:trainware/extensions/datetime/datetime_extension.dart';
+import 'package:trainware/offline_first/exercise_offline_repository.dart';
+import 'package:trainware/offline_first/routine_log_sync_service.dart';
+import 'package:trainware/offline_first/routine_plan_offline_repository.dart';
+import 'package:trainware/offline_first/routine_template_offline_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_log_repository.dart';
+import 'package:uuid/uuid.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
@@ -16,6 +22,7 @@ import '../repositories/supabase/supabase_exercise_repository.dart';
 import '../repositories/supabase/supabase_routine_plan_repository.dart';
 import '../repositories/supabase/supabase_routine_template_repository.dart';
 import '../utils/notifications_utils.dart';
+import '../utils/routine_utils.dart';
 
 class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   bool isLoading = false;
@@ -27,6 +34,10 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   late SupabaseRoutineTemplateRepository _templateRepository;
   late SupabaseRoutinePlanRepository _planRepository;
   late SupabaseRoutineLogRepository _logRepository;
+  late OfflineExerciseRepository _offlineExerciseRepository;
+  late OfflineRoutineTemplateRepository _offlineTemplateRepository;
+  late OfflineRoutinePlanRepository _offlinePlanRepository;
+  late OfflineRoutineLogRepository _offlineLogRepository;
 
   SupabaseExerciseAndRoutineController({
     required SupabaseExerciseRepository exerciseRepository,
@@ -38,23 +49,40 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     _templateRepository = templateRepository;
     _planRepository = planRepository;
     _logRepository = logRepository;
+    _offlineExerciseRepository =
+        OfflineExerciseRepository(remoteRepository: _exerciseRepository);
+    _offlineTemplateRepository =
+        OfflineRoutineTemplateRepository(remoteRepository: _templateRepository);
+    _offlinePlanRepository =
+        OfflineRoutinePlanRepository(remoteRepository: _planRepository);
+    _offlineLogRepository =
+        OfflineRoutineLogRepository(remoteRepository: _logRepository);
   }
 
   UnmodifiableListView<ExerciseDto> get exercises =>
-      _exerciseRepository.exercises;
+      UnmodifiableListView(_offlineExerciseRepository.offlineExercises);
 
   UnmodifiableListView<RoutineTemplateDto> get templates =>
-      _templateRepository.templates;
+      UnmodifiableListView(_offlineTemplateRepository.offlineTemplates);
 
-  UnmodifiableListView<RoutinePlanDto> get plans => _planRepository.plans;
+  UnmodifiableListView<RoutinePlanDto> get plans =>
+      UnmodifiableListView(_offlinePlanRepository.offlinePlans);
 
-  UnmodifiableListView<RoutineLogDto> get logs => _logRepository.logs;
+  /// Offline-first view of routine logs backed by local cache and sync engine.
+  UnmodifiableListView<RoutineLogDto> get logs =>
+      UnmodifiableListView(_offlineLogRepository.offlineLogs);
+
+  /// Direct view of logs loaded from Supabase (used internally by the
+  /// offline sync engine and for debugging; prefer [logs] in the UI).
+  UnmodifiableListView<RoutineLogDto> get remoteLogs => _logRepository.logs;
 
   UnmodifiableMapView<String, List<ExerciseLogDto>>
-      get exerciseLogsByExerciseId => _logRepository.exerciseLogsByExerciseId;
+      get exerciseLogsByExerciseId =>
+          UnmodifiableMapView(groupExerciseLogsByExerciseId(routineLogs: logs));
 
   UnmodifiableMapView<MuscleGroup, List<ExerciseLogDto>>
-      get exerciseLogsByMuscleGroup => _logRepository.exerciseLogsByMuscleGroup;
+      get exerciseLogsByMuscleGroup => UnmodifiableMapView(
+          groupExerciseLogsByMuscleGroup(routineLogs: logs));
 
   /// Initialization
   Future<void> initialize() async {
@@ -74,16 +102,16 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> loadUserData() async {
     try {
-      await Future.wait([
-        _exerciseRepository.loadUserExercises(),
-        _templateRepository.loadTemplates(),
-        _planRepository.loadPlans(),
-        _logRepository.loadLogs(),
-      ]);
+      // Load cached data first so they are available immediately in offline mode.
+      await _offlineExerciseRepository.loadFromCache();
+      await _offlineTemplateRepository.loadFromCache();
+      await _offlinePlanRepository.loadFromCache();
+      await _offlineLogRepository.loadFromCache();
+      // Keep the offline caches and Supabase in sync using last-write-wins.
+      await syncRoutineLogs();
 
       // Schedule training reminders based on historic log data
-      final historicLogTimes =
-          _logRepository.logs.map((log) => log.startTime).toList();
+      final historicLogTimes = logs.map((log) => log.startTime).toList();
       if (historicLogTimes.isNotEmpty) {
         schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
       }
@@ -95,12 +123,32 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
+  /// Manually trigger a routine log sync (e.g. on pull-to-refresh or
+  /// connectivity change).
+  Future<void> syncRoutineLogs() async {
+    await Future.wait([
+      _offlineExerciseRepository.syncNow(),
+      _offlineTemplateRepository.syncNow(),
+      _offlinePlanRepository.syncNow(),
+      _offlineLogRepository.syncNow(),
+    ]);
+    notifyListeners();
+  }
+
   /// Exercises
 
   Future<void> saveExercise({required ExerciseDto exerciseDto}) async {
     isLoading = true;
     try {
-      await _exerciseRepository.saveExercise(exerciseDto);
+      // Ensure new exercises have a stable client-generated ID so offline
+      // storage and Supabase stay in sync.
+      final id =
+          exerciseDto.id.isEmpty ? const Uuid().v4() : exerciseDto.id;
+      final exerciseWithId = exerciseDto.copyWith(id: id);
+
+      await _offlineExerciseRepository.upsertLocal(exerciseWithId);
+      // ignore: discarded_futures
+      syncRoutineLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving exercise", error: e);
@@ -114,7 +162,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> updateExercise({required ExerciseDto exercise}) async {
     isLoading = true;
     try {
-      await _exerciseRepository.updateExercise(exercise);
+      await _offlineExerciseRepository.upsertLocal(exercise);
+      // ignore: discarded_futures
+      syncRoutineLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating exercise", error: e);
@@ -128,7 +178,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> removeExercise({required ExerciseDto exercise}) async {
     isLoading = true;
     try {
-      await _exerciseRepository.deleteExercise(exercise);
+      await _offlineExerciseRepository.deleteLocal(exercise.id);
+      // ignore: discarded_futures
+      syncRoutineLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error removing exercise", error: e);
@@ -142,10 +194,17 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Plans
 
   Future<RoutinePlanDto?> savePlan({required RoutinePlanDto planDto}) async {
-    RoutinePlanDto? savedPlan;
     isLoading = true;
+    RoutinePlanDto? result;
     try {
-      savedPlan = await _planRepository.savePlan(planDto);
+      // Generate a stable ID for new plans so they can be synced correctly.
+      final id = planDto.id.isEmpty ? const Uuid().v4() : planDto.id;
+      final planWithId = planDto.copyWith(id: id);
+
+      await _offlinePlanRepository.upsertLocal(planWithId);
+      // ignore: discarded_futures
+      syncRoutineLogs();
+      result = planWithId;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving plan", error: e);
@@ -154,13 +213,15 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       errorMessage = "";
       notifyListeners();
     }
-    return savedPlan;
+    return result;
   }
 
   Future<void> updatePlan({required RoutinePlanDto plan}) async {
     isLoading = true;
     try {
-      await _planRepository.updatePlan(plan);
+      await _offlinePlanRepository.upsertLocal(plan);
+      // ignore: discarded_futures
+      syncRoutineLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating plan", error: e);
@@ -174,7 +235,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> deletePlan({required RoutinePlanDto plan}) async {
     isLoading = true;
     try {
-      await _planRepository.deletePlan(plan);
+      await _offlinePlanRepository.deleteLocal(plan.id);
+      // ignore: discarded_futures
+      syncRoutineLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error deleting plan", error: e);
@@ -190,10 +253,18 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<RoutineTemplateDto?> saveTemplate({
     required RoutineTemplateDto templateDto,
   }) async {
-    RoutineTemplateDto? savedTemplate;
     isLoading = true;
+    RoutineTemplateDto? result;
     try {
-      savedTemplate = await _templateRepository.saveTemplate(templateDto);
+      // Generate a stable ID for new templates so they can be synced correctly.
+      final id =
+          templateDto.id.isEmpty ? const Uuid().v4() : templateDto.id;
+      final templateWithId = templateDto.copyWith(id: id);
+
+      await _offlineTemplateRepository.upsertLocal(templateWithId);
+      // ignore: discarded_futures
+      syncRoutineLogs();
+      result = templateWithId;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving template", error: e);
@@ -202,7 +273,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       errorMessage = "";
       notifyListeners();
     }
-    return savedTemplate;
+    return result;
   }
 
   Future<void> updateTemplate({
@@ -210,7 +281,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }) async {
     isLoading = true;
     try {
-      await _templateRepository.updateTemplate(template);
+      await _offlineTemplateRepository.upsertLocal(template);
+      // ignore: discarded_futures
+      syncRoutineLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating template", error: e);
@@ -226,7 +299,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }) async {
     isLoading = true;
     try {
-      await _templateRepository.deleteTemplate(template);
+      await _offlineTemplateRepository.deleteLocal(template.id);
+      // ignore: discarded_futures
+      syncRoutineLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error deleting template", error: e);
@@ -239,34 +314,61 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Logs
 
+  /// Local-first create: write to the offline cache, then sync to Supabase
+  /// in the background using last-write-wins.
   Future<RoutineLogDto?> saveLog({required RoutineLogDto logDto}) async {
-    RoutineLogDto? savedLog;
     isLoading = true;
     try {
-      savedLog = await _logRepository.saveLog(logDto);
+      // Generate a stable ID if needed so we can persist locally without
+      // relying on the remote database.
+      final id = logDto.id.isEmpty ? const Uuid().v4() : logDto.id;
 
-      // Reschedule training reminders based on updated log data
-      final historicLogTimes =
-          _logRepository.logs.map((log) => log.startTime).toList();
+      // Ensure all nested exercise logs reference this routine log ID.
+      final logWithId = logDto.copyWith(id: id);
+      final updatedLog = logWithId.copyWith(
+        exerciseLogs: logWithId.exerciseLogs
+            .map((exerciseLog) => exerciseLog.copyWith(routineLogId: id))
+            .toList(),
+      );
+
+      // Local-first write: persist to the offline repository so the workout
+      // is immediately available offline and in the UI.
+      await _offlineLogRepository.upsertLocal(updatedLog);
+
+      // Best-effort background sync with Supabase. We don't await this so
+      // that the UI isn't blocked by network conditions.
+      // ignore: discarded_futures
+      syncRoutineLogs();
+
+      // Reschedule training reminders based on updated (offline-first) log data.
+      final historicLogTimes = logs.map((log) => log.startTime).toList();
       if (historicLogTimes.isNotEmpty) {
         schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
       }
+      return updatedLog;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error saving log", error: e);
+      return null;
     } finally {
       isLoading = false;
       errorMessage = "";
       notifyListeners();
     }
-    return savedLog;
   }
 
+  /// Local-first update: modify the offline cache and then sync in the
+  /// background. Callers still get a success flag but are not blocked
+  /// on the network.
   Future<bool> updateLog({required RoutineLogDto log}) async {
     isLoading = true;
     bool success = false;
     try {
-      await _logRepository.updateLog(log);
+      await _offlineLogRepository.upsertLocal(log);
+
+      // ignore: discarded_futures
+      syncRoutineLogs();
+
       success = true;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -279,10 +381,15 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return success;
   }
 
+  /// Local-first delete: mark/remove the log from the offline cache and
+  /// then sync in the background.
   Future<void> deleteLog({required RoutineLogDto log}) async {
     isLoading = true;
     try {
-      await _logRepository.deleteLog(log);
+      await _offlineLogRepository.deleteLocal(log.id);
+
+      // ignore: discarded_futures
+      syncRoutineLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error deleting log", error: e);
@@ -296,62 +403,130 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Query Helpers - Exercises
 
   ExerciseDto? exerciseWhere({required String id}) {
-    return _exerciseRepository.whereExerciseById(id);
+    return exercises.firstWhereOrNull((exercise) => exercise.id == id);
   }
 
   ExerciseDto? exerciseWhereByName({required String name}) {
-    return _exerciseRepository.whereExerciseByName(name);
+    return exercises.firstWhereOrNull(
+      (exercise) => exercise.name.toLowerCase() == name.toLowerCase(),
+    );
   }
 
   /// Query Helpers - Plans
 
   RoutinePlanDto? planWhere({required String id}) {
-    return _planRepository.wherePlanById(id);
+    return plans.firstWhereOrNull((plan) => plan.id == id);
   }
 
   /// Query Helpers - Templates
 
   RoutineTemplateDto? templateWhere({required String id}) {
-    return _templateRepository.whereTemplateById(id);
+    return templates.firstWhereOrNull((template) => template.id == id);
   }
 
   List<RoutineTemplateDto> whereTemplatesForPlan({required String planId}) {
-    return _templateRepository.whereTemplatesByPlanId(planId);
+    return templates.where((template) => template.planId == planId).toList();
   }
 
   /// Query Helpers - Logs
 
   RoutineLogDto? logWhereId({required String id}) {
-    return _logRepository.whereLogById(id);
+    return logs.firstWhereOrNull((log) => log.id == id);
   }
 
   List<RoutineLogDto> whereLogsForTemplate({required String templateId}) {
-    return _logRepository.whereLogsForTemplate(templateId);
+    return logs.where((log) => log.templateId == templateId).toList();
   }
 
   List<RoutineLogDto> whereLogsIsSameDay({required DateTime dateTime}) {
-    return _logRepository.whereLogsForDate(dateTime);
+    return logs
+        .where((log) => log.startTime.isSameDayMonthYear(dateTime))
+        .toList();
   }
 
-  List<DateTime> get allWorkoutDates => _logRepository.allWorkoutDates;
+  List<DateTime> get allWorkoutDates {
+    final uniqueDates = <String, DateTime>{};
+    for (final log in logs) {
+      final dateKey = log.startTime.toIso8601String().substring(0, 10);
+      uniqueDates[dateKey] = log.startTime;
+    }
+    return uniqueDates.values.toList();
+  }
 
-  List<ExerciseLogDto> get allExerciseLogs => _logRepository.allExerciseLogs;
+  List<ExerciseLogDto> get allExerciseLogs {
+    return logs.expand((log) => log.exerciseLogs).toList();
+  }
 
-  List<RoutineLogDto> get recentLogs => _logRepository.recentLogs;
+  List<RoutineLogDto> get recentLogs {
+    final sorted = List<RoutineLogDto>.from(logs)
+      ..sort((a, b) => b.startTime.compareTo(a.startTime));
+    return sorted.take(10).toList();
+  }
 
   /// Exercise Log Helpers
 
   List<ExerciseLogDto> whereExerciseLogsForExercise({
     required ExerciseDto exercise,
   }) {
-    return _logRepository.whereExerciseLogsForExercise(exercise: exercise);
+    final matches = <ExerciseLogDto>[];
+    for (final routineLog in logs) {
+      for (final exerciseLog in routineLog.exerciseLogs) {
+        if (exerciseLog.exercise.id == exercise.id) {
+          matches.add(exerciseLog);
+        }
+      }
+    }
+    return matches;
   }
 
   // Personal bests removed from project
 
   /// Workout Stats
 
-  Map<String, dynamic> get workoutStats => _logRepository.workoutStats;
+  Map<String, dynamic> get workoutStats {
+    final totalWorkouts = logs.length;
+    final totalExercises = allExerciseLogs.length;
+    final totalVolume = allExerciseLogs.fold<double>(
+      0,
+      (sum, log) =>
+          sum +
+          log.sets.fold<double>(
+            0,
+            (setSum, set) {
+              // Only weight+reps sets contribute to volume.
+              // We avoid importing specific set DTO types here to keep this
+              // controller decoupled; volume is computed elsewhere as well.
+              try {
+                final weight = (set as dynamic).weight as num?;
+                final reps = (set as dynamic).reps as num?;
+                if (weight != null && reps != null) {
+                  return setSum + (weight * reps);
+                }
+              } catch (_) {
+                // Non-weighted sets or unexpected types are ignored in volume.
+              }
+              return setSum;
+            },
+          ),
+    );
+
+    final avgDuration = logs.isEmpty
+        ? Duration.zero
+        : Duration(
+            seconds: logs
+                    .map((log) =>
+                        log.endTime.difference(log.startTime).inSeconds)
+                    .reduce((a, b) => a + b) ~/
+                totalWorkouts,
+          );
+
+    return {
+      'totalWorkouts': totalWorkouts,
+      'totalExercises': totalExercises,
+      'totalVolume': totalVolume,
+      'avgDuration': avgDuration,
+    };
+  }
 
   // Personal bests removed from project
 
@@ -434,6 +609,29 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       allSets.addAll(log.sets);
     }
     return allSets;
+  }
+
+  /// Returns the most recent [limit] exercise logs for a given exercise,
+  /// ordered from most recent to oldest.
+  List<ExerciseLogDto> whereRecentExerciseLogsForExercise({
+    required ExerciseDto exercise,
+    int limit = 4,
+  }) {
+    final matches = <({ExerciseLogDto log, DateTime timestamp})>[];
+
+    for (final routineLog in logs) {
+      for (final exerciseLog in routineLog.exerciseLogs) {
+        if (exerciseLog.exercise.id == exercise.id) {
+          matches.add((log: exerciseLog, timestamp: routineLog.startTime));
+        }
+      }
+    }
+
+    if (matches.isEmpty) return const [];
+
+    matches.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    return matches.take(limit).map((e) => e.log).toList();
   }
 
   List<SetDto> wherePrevSetsForExercise({required ExerciseDto exercise}) {

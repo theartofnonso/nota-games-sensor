@@ -43,11 +43,15 @@ class AppBottomSheet extends StatelessWidget {
           builder: (context, scrollController) {
             return GestureDetector(
               onTap: () {}, // Absorb taps on the sheet content
+              child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
               child: Container(
                 decoration: decoration,
                 child: builder != null
                     ? builder!(context, scrollController)
                     : child!,
+                ),
               ),
             );
           },
@@ -55,10 +59,13 @@ class AppBottomSheet extends StatelessWidget {
       );
     }
 
-    return Container(
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: Container(
       decoration: decoration,
       child: SafeArea(
         child: builder != null ? builder!(context, null) : child!,
+        ),
       ),
     );
   }

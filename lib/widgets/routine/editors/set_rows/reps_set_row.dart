@@ -14,6 +14,7 @@ class RepsSetRow extends StatelessWidget {
   final void Function() onTapRepsEditor;
   final TextEditingController controller;
   final void Function(int reps) onChangedReps;
+  final bool showCheck;
 
   const RepsSetRow({
     super.key,
@@ -24,6 +25,7 @@ class RepsSetRow extends StatelessWidget {
     required this.onChangedReps,
     required this.onTapRepsEditor,
     required this.editorType,
+    required this.showCheck,
   });
 
   @override
@@ -66,7 +68,7 @@ class RepsSetRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Reps input field (no icon, no label)
+          // Reps input field (no icon, no label) – show "reps" suffix
           Expanded(
             child: IntTextField(
               value: reps,
@@ -74,32 +76,35 @@ class RepsSetRow extends StatelessWidget {
               onTap: onTapRepsEditor,
               controller: controller,
               maxLength: 2,
+              suffix: 'reps',
             ),
           ),
-          const SizedBox(width: 12),
-          // Check button on right (fully rounded)
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onCheck,
-              borderRadius: BorderRadius.circular(50),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: setDto.checked
-                      ? colors.vibrantAccent
-                      : colors.vibrantAccent.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: FaIcon(
-                  FontAwesomeIcons.check,
-                  color: setDto.checked ? Colors.black : colors.vibrantAccent,
-                  size: 14,
+          if (showCheck) ...[
+            const SizedBox(width: 12),
+            // Check button on right (fully rounded)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onCheck,
+                borderRadius: BorderRadius.circular(50),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: setDto.checked
+                        ? colors.vibrantAccent
+                        : colors.vibrantAccent.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: FaIcon(
+                    FontAwesomeIcons.check,
+                    color: setDto.checked ? Colors.black : colors.vibrantAccent,
+                    size: 14,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

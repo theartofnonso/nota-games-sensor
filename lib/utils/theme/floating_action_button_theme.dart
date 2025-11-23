@@ -7,7 +7,9 @@ class TRKRFloatingActionButtonTheme {
   static FloatingActionButtonThemeData lightTheme =
       FloatingActionButtonThemeData(
     backgroundColor: freshGreen,
-    shape: const CircleBorder(),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
     foregroundColor: Colors.white,
     elevation: 2,
   );
@@ -15,7 +17,9 @@ class TRKRFloatingActionButtonTheme {
   static FloatingActionButtonThemeData darkTheme =
       FloatingActionButtonThemeData(
     backgroundColor: success,
-    shape: const CircleBorder(),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
     foregroundColor: Colors.white,
     elevation: 8,
   );

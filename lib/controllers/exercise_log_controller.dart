@@ -173,9 +173,16 @@ class ExerciseLogController extends ChangeNotifier {
     return _exerciseLogRepository.completedExerciseLogs();
   }
 
-  void onClear() {
+  /// Clear only in-memory state. Does NOT touch the cached routineLog in SharedPrefs.
+  void clearLocal() {
     _exerciseLogRepository.clear();
     _initialRoutineLog = null;
+  }
+
+  /// Clear both in-memory state and the cached pending routine log.
+  /// Use this only when a session has been successfully saved/updated or explicitly discarded.
+  void onClear() {
+    clearLocal();
     SharedPrefs().remove(key: SharedPrefs().routineLogKey);
   }
 

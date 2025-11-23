@@ -359,44 +359,74 @@ class _Day extends StatelessWidget {
     required this.isDarkMode,
   });
 
-  Color _getBackgroundColor(BuildContext context) => hasRoutineLog
-      ? (isDarkMode
-          ? Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.1)
-          : Theme.of(context).colors.vibrantAccent)
-      : (isDarkMode
-          ? Theme.of(context).colors.sapphireDark80.withValues(alpha: 0.5)
-          : Colors.grey.shade200);
-
-  Color _getTextColor(BuildContext context) => hasRoutineLog
-      ? (isDarkMode ? Theme.of(context).colors.vibrantAccent : Colors.black)
-      : (isDarkMode ? Colors.white : Colors.black);
-
-  Border? _dateBorder() {
-    if (selected) return Border.all(color: Colors.blueGrey, width: 2);
-    if (currentDate) return Border.all(color: Colors.grey, width: 2);
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Match InfiniteCalendar styling:
+    // - Days without logs: transparent background, low‑opacity text
+    // - Selected day: 2px border (accent if has log, white otherwise)
+    // - Today: always white text
+
+    // Background
+    final Color backgroundColor = hasRoutineLog
+        ? (isDarkMode
+            ? Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.1)
+            : Theme.of(context).colors.vibrantAccent)
+        : Colors.transparent;
+
+    // Text color
+    Color textColor;
+    if (currentDate) {
+      // Today: always white
+      textColor = Colors.white;
+    } else if (hasRoutineLog) {
+      textColor =
+          isDarkMode ? Theme.of(context).colors.vibrantAccent : Colors.black;
+    } else {
+      // No log: reduced opacity, similar to InfiniteCalendar
+      textColor = isDarkMode
+          ? Colors.white.withValues(alpha: 0.3)
+          : Colors.black.withOpacity(0.3);
+    }
+
+    // Border for selected date (date selector)
+    Border? border;
+    if (selected) {
+      if (hasRoutineLog) {
+        border = Border.all(
+          color: isDarkMode
+              ? Theme.of(context).colors.vibrantAccent
+              : Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.8),
+          width: 2,
+        );
+      } else {
+        border = Border.all(
+          color: Colors.white,
+          width: 2,
+        );
+      }
+    }
+
     return GestureDetector(
       onTap: () => onTap(dateTime),
       child: Container(
         padding: selected ? const EdgeInsets.all(2) : null,
         decoration: BoxDecoration(
-            border: _dateBorder(), borderRadius: BorderRadius.circular(2)),
+          border: border,
+          borderRadius: BorderRadius.circular(6),
+        ),
         child: Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-              color: _getBackgroundColor(context),
-              borderRadius: BorderRadius.circular(2)),
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(4),
+          ),
           child: Center(
             child: Text(
               "${dateTime.day}",
               style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: _getTextColor(context)),
+                  color: textColor),
             ),
           ),
         ),

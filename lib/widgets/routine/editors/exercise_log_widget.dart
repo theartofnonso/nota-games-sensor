@@ -12,9 +12,6 @@ import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/sets_utils.dart';
 import 'package:trainware/utils/string_utils.dart';
-import 'package:trainware/widgets/routine/editors/set_headers/duration_set_header.dart';
-import 'package:trainware/widgets/routine/editors/set_headers/reps_set_header.dart';
-import 'package:trainware/widgets/routine/editors/set_headers/weight_and_reps_set_header.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/duration_set_row.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/reps_set_row.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/weights_and_reps_set_row.dart';
@@ -32,13 +29,14 @@ import '../../weight_plate_calculator.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
-
   final String exerciseLogId;
+  final bool showSetCheck;
 
   const ExerciseLogWidget(
       {super.key,
       this.editorType = RoutineEditorMode.edit,
-      required this.exerciseLogId});
+      required this.exerciseLogId,
+      this.showSetCheck = true});
 
   @override
   State<ExerciseLogWidget> createState() => _ExerciseLogWidgetState();
@@ -61,6 +59,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   late TextEditingController _notesController;
   final FocusNode _notesFocusNode = FocusNode();
+
+  bool _hasShownProgressionPrompt = false;
 
   /// Get the current exercise log, throwing if it doesn't exist
   /// This should only be called after null checks in build method
@@ -263,6 +263,85 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         setDto: updatedSet);
 
     _loadControllers();
+
+    // After successfully logging a set in live log mode for a weights exercise,
+    // optionally prompt the user about progression if they've been stalled.
+    final exerciseType = _currentExerciseLog.exercise.type;
+    final isLogMode = widget.editorType == RoutineEditorMode.log;
+    if (checked &&
+        isLogMode &&
+        withWeightsOnly(type: exerciseType) &&
+        !_hasShownProgressionPrompt) {
+      _maybeShowProgressionPrompt();
+    }
+  }
+
+  Future<void> _maybeShowProgressionPrompt() async {
+    final controller =
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
+
+    final recentLogs = controller.whereRecentExerciseLogsForExercise(
+      exercise: _currentExerciseLog.exercise,
+      limit: 4,
+    );
+
+    if (!isStalledAtSameWeightAndReps(recentLogs: recentLogs)) return;
+
+    _hasShownProgressionPrompt = true;
+
+    if (!mounted) return;
+
+    final stalledSample = recentLogs
+        .expand((log) => log.sets)
+        .where((s) => s.type == ExerciseType.weights)
+        .map((s) => s as WeightAndRepsSetDto)
+        .where((s) => s.weight > 0 && s.reps > 0)
+        .toList()
+        .lastOrNull;
+
+    final exerciseName = _currentExerciseLog.exercise.name;
+    final weightText =
+        stalledSample != null ? "${stalledSample.weight} kg" : "this weight";
+    final repsText =
+        stalledSample != null ? "${stalledSample.reps} reps" : "this rep range";
+
+    if (!mounted) return;
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Ready to progress on $exerciseName?",
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "You've been consistently logging $weightText for $repsText over your recent sessions. "
+              "You might be ready to increase the weight slightly, or tighten your target rep range.",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("Got it"),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _onLogDurationSet() {
@@ -548,6 +627,12 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     final currentSets = exerciseLog.sets;
 
+    final bool isDurationExercise = exerciseType == ExerciseType.duration;
+    final bool isLogMode = widget.editorType == RoutineEditorMode.log;
+    // We currently only pass showSetCheck = false from the template editor,
+    // so treat that as "template mode" to tweak duration behaviour.
+    final bool isTemplateMode = !widget.showSetCheck;
+
     hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
 
     return ClipRRect(
@@ -590,8 +675,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                         ),
                       ),
                     ),
-                    if (!(exerciseType == ExerciseType.duration &&
-                        widget.editorType == RoutineEditorMode.log))
+                    // Only allow manual "add set" for:
+                    // - non-duration exercises, or
+                    // - duration exercises when editing a past log (not live log, not template)
+                    if (!isDurationExercise || (!isLogMode && !isTemplateMode))
                       IconButton(
                         onPressed: _addSet,
                         icon: const FaIcon(
@@ -611,124 +698,172 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                     gradient: themeGradient(context: context),
                   ),
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16).copyWith(bottom: 100),
+                    padding: EdgeInsets.only(
+                      // Leave enough space so notes aren't hidden behind the FAB overlay,
+                      // while still letting the list visually reach the bottom of the sheet.
+                      bottom: 80 + MediaQuery.of(context).viewInsets.bottom,
+                    ),
                     child: Column(
-                      spacing: 20,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Stopwatch UI for duration exercises in log mode
-                        if (exerciseType == ExerciseType.duration &&
-                            widget.editorType == RoutineEditorMode.log)
-                          DurationStopwatchWidget(
-                            key: _durationStopwatchKey,
-                            onLogSet: _onLogDurationSet,
-                          ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            switch (exerciseType) {
-                              ExerciseType.weights => WeightAndRepsSetHeader(
-                                  editorType: widget.editorType,
-                                  firstLabel: weightUnit().toUpperCase(),
-                                  secondLabel: 'REPS',
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            spacing: 20,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Stopwatch UI for duration exercises in log mode
+                              if (exerciseType == ExerciseType.duration &&
+                                  widget.editorType == RoutineEditorMode.log)
+                                DurationStopwatchWidget(
+                                  key: _durationStopwatchKey,
+                                  onLogSet: _onLogDurationSet,
                                 ),
-                              ExerciseType.bodyWeight => RepsSetHeader(
-                                  editorType: widget.editorType,
-                                ),
-                              ExerciseType.duration => DurationSetHeader(
-                                  editorType: widget.editorType,
+                              // For duration exercises in the template editor, we
+                              // don't allow pre-configuring sets. Instead, show a
+                              // simple hint that this will be captured in real time
+                              // during logging.
+                              if (isDurationExercise && isTemplateMode)
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "This time-based exercise will be tracked with a timer during your workout.",
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Colors.white70,
+                                          ),
+                                    ),
+                                  ],
                                 )
-                            },
-                            if (currentSets.isEmpty &&
-                                withReps(type: exerciseType))
-                              Column(
-                                children: [
-                                  const SizedBox(height: 10),
-                                  NoListEmptyState(
-                                      message:
-                                          "Tap the + button to start adding sets to your exercise"),
-                                ],
-                              ),
-                            const SizedBox(height: 20),
-                            switch (exerciseType) {
-                              ExerciseType.weights => _WeightAndRepsSetListView(
-                                  sets: currentSets
-                                      .map((set) => set as WeightAndRepsSetDto)
-                                      .toList(),
-                                  updateSetCheck: _updateSetCheck,
-                                  removeSet: _removeSet,
-                                  updateReps: _updateReps,
-                                  updateWeight: _updateWeight,
-                                  controllers: _weightAndRepsControllers,
-                                  onTapWeightEditor: _onTapWeightEditor,
-                                  onTapRepsEditor: _onTapRepsEditor,
-                                  editorType: widget.editorType,
-                                ),
-                              ExerciseType.bodyWeight => _RepsSetListView(
-                                  sets: currentSets
-                                      .map((set) => set as RepsSetDto)
-                                      .toList(),
-                                  updateSetCheck: _updateSetCheck,
-                                  removeSet: _removeSet,
-                                  updateReps: _updateReps,
-                                  controllers: _repsControllers,
-                                  onTapRepsEditor: _onTapRepsEditor,
-                                  editorType: widget.editorType,
-                                ),
-                              ExerciseType.duration => _DurationSetListView(
-                                  sets: currentSets
-                                      .map((set) => set as DurationSetDto)
-                                      .toList(),
-                                  updateSetCheck: _updateSetCheck,
-                                  removeSet: _removeSet,
-                                  updateDuration: _updateDuration,
-                                  controllers: _durationControllers,
-                                  editorType: widget.editorType,
-                                ),
-                            }
-                          ],
+                              else ...[
+                                if (currentSets.isEmpty &&
+                                    withReps(type: exerciseType))
+                                  Column(
+                                    children: [
+                                      const SizedBox(height: 10),
+                                      NoListEmptyState(
+                                        message:
+                                            "Tap the + button to start adding sets to your exercise",
+                                      ),
+                                    ],
+                                  ),
+                                switch (exerciseType) {
+                                  ExerciseType.weights =>
+                                    _WeightAndRepsSetListView(
+                                      sets: currentSets
+                                          .map((set) =>
+                                              set as WeightAndRepsSetDto)
+                                          .toList(),
+                                      updateSetCheck: _updateSetCheck,
+                                      removeSet: _removeSet,
+                                      updateReps: _updateReps,
+                                      updateWeight: _updateWeight,
+                                      controllers: _weightAndRepsControllers,
+                                      onTapWeightEditor: _onTapWeightEditor,
+                                      onTapRepsEditor: _onTapRepsEditor,
+                                      editorType: widget.editorType,
+                                      showSetCheck: widget.showSetCheck,
+                                    ),
+                                  ExerciseType.bodyWeight => _RepsSetListView(
+                                      sets: currentSets
+                                          .map((set) => set as RepsSetDto)
+                                          .toList(),
+                                      updateSetCheck: _updateSetCheck,
+                                      removeSet: _removeSet,
+                                      updateReps: _updateReps,
+                                      controllers: _repsControllers,
+                                      onTapRepsEditor: _onTapRepsEditor,
+                                      editorType: widget.editorType,
+                                      showSetCheck: widget.showSetCheck,
+                                    ),
+                                  ExerciseType.duration => _DurationSetListView(
+                                      sets: currentSets
+                                          .map((set) => set as DurationSetDto)
+                                          .toList(),
+                                      updateSetCheck: _updateSetCheck,
+                                      removeSet: _removeSet,
+                                      updateDuration: _updateDuration,
+                                      controllers: _durationControllers,
+                                      editorType: widget.editorType,
+                                      showSetCheck: widget.showSetCheck,
+                                    ),
+                                },
+                              ],
+                            ],
+                          ),
                         ),
                         // Notes section - always shown
-                        const SizedBox(height: 2),
-                        // Notes label
-                        Text(
-                          'Notes',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white70,
-                                  ),
-                        ),
-                        // Notes input field (no borders)
-                        TextField(
-                          controller: _notesController,
-                          focusNode: _notesFocusNode,
-                          cursorColor: Colors.white,
-                          onChanged: _updateNotesController,
-                          decoration: InputDecoration(
-                            hintText: "Enter notes (optional)",
-                            hintStyle: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              fontSize: 14,
+                        Builder(builder: (context) {
+                          final isDark =
+                              Theme.of(context).brightness == Brightness.dark;
+                          final color = isDark
+                              ? Colors.white.withValues(alpha: 0.12)
+                              : Colors.black.withValues(alpha: 0.06);
+                          // Full-bleed divider: cancel out the 16px horizontal padding
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Divider(
+                              thickness: 0.5,
+                              color: color,
+                              height: 16,
                             ),
-                            border: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            errorBorder: InputBorder.none,
-                            focusedErrorBorder: InputBorder.none,
-                            filled: false,
-                          ),
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white,
+                          );
+                        }),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Notes label
+                              Text(
+                                'Notes',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white70,
+                                    ),
+                              ),
+                              // Notes input field (no borders)
+                              TextField(
+                                controller: _notesController,
+                                focusNode: _notesFocusNode,
+                                cursorColor: Colors.white,
+                                onChanged: _updateNotesController,
+                                decoration: InputDecoration(
+                                  hintText: "Enter notes (optional)",
+                                  hintStyle: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.4),
                                     fontSize: 14,
-                                    height: 1.5,
                                   ),
-                          maxLines: null,
-                          minLines: 4,
-                          keyboardType: TextInputType.multiline,
-                          textCapitalization: TextCapitalization.sentences,
+                                  border: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  errorBorder: InputBorder.none,
+                                  focusedErrorBorder: InputBorder.none,
+                                  filled: false,
+                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      height: 1.5,
+                                    ),
+                                maxLines: null,
+                                minLines: 4,
+                                keyboardType: TextInputType.multiline,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -783,6 +918,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
 class _WeightAndRepsSetListView extends StatelessWidget {
   final RoutineEditorMode editorType;
+  final bool showSetCheck;
   final List<WeightAndRepsSetDto> sets;
   final List<(TextEditingController, TextEditingController)> controllers;
   final void Function({required int index}) removeSet;
@@ -807,7 +943,8 @@ class _WeightAndRepsSetListView extends StatelessWidget {
       required this.updateWeight,
       required this.onTapWeightEditor,
       required this.onTapRepsEditor,
-      required this.editorType});
+      required this.editorType,
+      required this.showSetCheck});
 
   @override
   Widget build(BuildContext context) {
@@ -822,6 +959,7 @@ class _WeightAndRepsSetListView extends StatelessWidget {
         return WeightsAndRepsSetRow(
           editorType: editorType,
           setDto: setDto,
+          showCheck: showSetCheck,
           onCheck: () => updateSetCheck(index: index),
           onRemoved: () => removeSet(index: index),
           onChangedReps: (int value) =>
@@ -839,6 +977,7 @@ class _WeightAndRepsSetListView extends StatelessWidget {
 
 class _RepsSetListView extends StatelessWidget {
   final RoutineEditorMode editorType;
+  final bool showSetCheck;
   final List<RepsSetDto> sets;
   final List<TextEditingController> controllers;
   final void Function({required int index}) removeSet;
@@ -856,7 +995,8 @@ class _RepsSetListView extends StatelessWidget {
       required this.removeSet,
       required this.updateReps,
       required this.onTapRepsEditor,
-      required this.editorType});
+      required this.editorType,
+      required this.showSetCheck});
 
   @override
   Widget build(BuildContext context) {
@@ -871,6 +1011,7 @@ class _RepsSetListView extends StatelessWidget {
         return RepsSetRow(
           editorType: editorType,
           setDto: setDto,
+          showCheck: showSetCheck,
           onCheck: () => updateSetCheck(index: index),
           onRemoved: () => removeSet(index: index),
           onChangedReps: (int value) =>
@@ -885,6 +1026,7 @@ class _RepsSetListView extends StatelessWidget {
 
 class _DurationSetListView extends StatelessWidget {
   final RoutineEditorMode editorType;
+  final bool showSetCheck;
   final List<DurationSetDto> sets;
   final List<DateTime> controllers;
   final void Function({required int index}) removeSet;
@@ -901,7 +1043,8 @@ class _DurationSetListView extends StatelessWidget {
       required this.updateSetCheck,
       required this.removeSet,
       required this.updateDuration,
-      required this.editorType});
+      required this.editorType,
+      required this.showSetCheck});
 
   @override
   Widget build(BuildContext context) {

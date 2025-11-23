@@ -73,7 +73,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
         actions: [
           exercise != null
               ? IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.solidSquareCheck),
+                  icon: const FaIcon(FontAwesomeIcons.solidCircleCheck),
                   onPressed: _updateExercise,
                 )
               : const SizedBox.shrink(),

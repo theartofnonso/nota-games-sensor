@@ -8,6 +8,7 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
   final Color? buttonColor;
   final TextStyle? textStyle;
   final VisualDensity? visualDensity;
+  final bool showArrowRight;
 
   const OpacityButtonWidgetTwo({
     super.key,
@@ -17,6 +18,7 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
     this.buttonColor,
     this.textStyle,
     this.visualDensity = VisualDensity.compact,
+    this.showArrowRight = true,
   });
 
   Color? _themeForegroundColor({required bool isDarkMode}) {
@@ -58,17 +60,29 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: showArrowRight
+                ? MainAxisAlignment.spaceBetween
+                : MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
             children: [
-              Text(label,
-                  textAlign: TextAlign.start,
+              Expanded(
+                child: Text(
+                  label,
+                  textAlign: showArrowRight ? TextAlign.left : TextAlign.center,
                   style: textStyle ??
                       Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: _themeForegroundColor(isDarkMode: isDarkMode),
-                          fontWeight: FontWeight.bold)),
-              FaIcon(FontAwesomeIcons.arrowRight,
-                  color: buttonColor ?? Colors.white)
+                            color:
+                                _themeForegroundColor(isDarkMode: isDarkMode),
+                            fontWeight: FontWeight.bold,
+                          ),
+                ),
+              ),
+              if (showArrowRight)
+                FaIcon(
+                  FontAwesomeIcons.arrowRight,
+                  size: 12,
+                  color: _themeForegroundColor(isDarkMode: isDarkMode),
+                ),
             ],
           ),
         ));

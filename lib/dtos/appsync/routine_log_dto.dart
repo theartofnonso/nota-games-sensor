@@ -8,7 +8,6 @@ class RoutineLogDto {
   final String id;
   final String templateId;
   final String name;
-  final String notes;
   final DateTime startTime;
   final DateTime endTime;
   final List<ExerciseLogDto> exerciseLogs;
@@ -18,7 +17,6 @@ class RoutineLogDto {
     required this.templateId,
     required this.name,
     required this.exerciseLogs,
-    required this.notes,
     required this.startTime,
     required this.endTime,
   });
@@ -32,7 +30,6 @@ class RoutineLogDto {
       'id': id,
       'templateId': templateId,
       'name': name,
-      'notes': notes,
       'startTime': startTime.toIso8601String(),
       'endTime': endTime.toIso8601String(),
       'exercises': exerciseLogs.map((exercise) => exercise.toJson()).toList(),
@@ -43,7 +40,6 @@ class RoutineLogDto {
     final id = json["id"] ?? "";
     final templateId = json["templateId"] ?? "";
     final name = json["name"] ?? "";
-    final notes = json["notes"] ?? "";
     final startTime = DateTime.parse(json["startTime"]);
     final endTime = DateTime.parse(json["endTime"]);
 
@@ -61,7 +57,6 @@ class RoutineLogDto {
       templateId: templateId,
       name: name,
       exerciseLogs: exerciseLogs,
-      notes: notes,
       startTime: startTime,
       endTime: endTime,
     );
@@ -71,7 +66,6 @@ class RoutineLogDto {
     String? id,
     String? templateId,
     String? name,
-    String? notes,
     DateTime? startTime,
     DateTime? endTime,
     List<ExerciseLogDto>? exerciseLogs,
@@ -80,7 +74,6 @@ class RoutineLogDto {
       id: id ?? this.id,
       templateId: templateId ?? this.templateId,
       name: name ?? this.name,
-      notes: notes ?? this.notes,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       exerciseLogs: exerciseLogs != null
@@ -91,7 +84,7 @@ class RoutineLogDto {
 
   @override
   String toString() {
-    return 'RoutineLogDto{id: $id, templateId: $templateId, name: $name, notes: $notes, startTime: $startTime, endTime: $endTime, exerciseLogs: $exerciseLogs}';
+    return 'RoutineLogDto{id: $id, templateId: $templateId, name: $name, startTime: $startTime, endTime: $endTime, exerciseLogs: $exerciseLogs}';
   }
 
   double get volume =>

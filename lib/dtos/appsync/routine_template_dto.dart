@@ -13,8 +13,8 @@ class RoutineTemplateDto {
     this.id = "",
     this.planId = "",
     required this.name,
+    this.notes = "",
     required this.exerciseTemplates,
-    required this.notes,
   });
 
   Map<String, dynamic> toJson() {
@@ -47,8 +47,8 @@ class RoutineTemplateDto {
       id: id,
       planId: planId,
       name: name,
-      exerciseTemplates: exerciseTemplates,
       notes: notes,
+      exerciseTemplates: exerciseTemplates,
     );
   }
 
@@ -58,7 +58,6 @@ class RoutineTemplateDto {
         templateId: id,
         name: name,
         exerciseLogs: List.from(exerciseTemplates),
-        notes: notes,
         startTime: DateTime.now(),
         endTime: DateTime.now());
   }

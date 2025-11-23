@@ -8,20 +8,18 @@ import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
-import '../../../dtos/exercise_log_dto.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
-import '../../dtos/viewmodels/exercise_log_view_model.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
-import '../../utils/routine_utils.dart';
+import '../../utils/session_duration_selector.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
@@ -47,9 +45,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = Theme.of(context).brightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final exerciseAndRoutineController =
@@ -141,17 +136,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                               label: updatedLog.endTime.formattedDayMonthTime(),
                               child: CustomIcon(FontAwesomeIcons.calendarDay,
                                   color: Colors.deepOrange)),
-                          Text(
-                            updatedLog.notes.isNotEmpty
-                                ? "${updatedLog.notes}."
-                                : "No notes",
-                            style: TextStyle(
-                                fontSize: 14,
-                                color:
-                                    isDarkMode ? Colors.white70 : Colors.black,
-                                height: 1.8,
-                                fontWeight: FontWeight.w400),
-                          )
+                          // Removed routine-level notes; rely on per-exercise notes instead
                         ]),
                   ),
                   SingleChildScrollView(
@@ -213,8 +198,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                             muscleGroup: muscleGroupFamilyFrequencies,
                             minimized: false),
                         ExerciseLogListView(
-                            exerciseLogs: _exerciseLogsToViewModels(
-                                exerciseLogs: completedExerciseLogs)),
+                            exerciseLogs: completedExerciseLogs),
                         const SizedBox(
                           height: 60,
                         )
@@ -291,16 +275,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     }
   }
 
-  List<ExerciseLogViewModel> _exerciseLogsToViewModels(
-      {required List<ExerciseLogDto> exerciseLogs}) {
-    return exerciseLogs
-        .map((exerciseLog) => ExerciseLogViewModel(
-            exerciseLog: exerciseLog,
-            superSet: whereOtherExerciseInSuperSet(
-                firstExercise: exerciseLog, exercises: exerciseLogs)))
-        .toList();
-  }
-
   void _editLog() async {
     Navigator.of(context).pop();
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
@@ -329,22 +303,20 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final log = controller.logWhereId(id: widget.id);
 
     if (log != null) {
-      showDatetimeRangePicker(
-          context: context,
-          initialDateTimeRange:
-              DateTimeRange(start: log.startTime, end: log.endTime),
-          onChangedDateTimeRange: (DateTimeRange datetimeRange) async {
-            Navigator.of(context).pop();
-            final updatedLog = log.copyWith(
-                startTime: datetimeRange.start, endTime: datetimeRange.end);
-            await Provider.of<SupabaseExerciseAndRoutineController>(context,
-                    listen: false)
-                .updateLog(log: updatedLog);
-            // No need to update state - controller will notify listeners
-            if (mounted) {
-              _showBottomSheet();
-            }
-          });
+      showSessionDurationSelectorBottomSheet(
+        context: context,
+        initialStartTime: log.startTime,
+        initialEndTime: log.endTime,
+        onConfirm: (start, end) async {
+          final updatedLog = log.copyWith(startTime: start, endTime: end);
+          await Provider.of<SupabaseExerciseAndRoutineController>(context,
+                  listen: false)
+              .updateLog(log: updatedLog);
+          if (mounted) {
+            _showBottomSheet();
+          }
+        },
+      );
     }
   }
 
@@ -433,10 +405,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       }).toList();
 
       final templateToCreate = RoutineTemplateDto(
-          planId: planId,
-          name: log.name,
-          notes: log.notes,
-          exerciseTemplates: exercises);
+          planId: planId, name: log.name, exerciseTemplates: exercises);
 
       final createdTemplate =
           await Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -522,25 +491,22 @@ class _StatisticWidget extends StatelessWidget {
   final String title;
   final String subtitle;
   final _StatisticsInformation information;
-  final VoidCallback? customOnTap;
 
   const _StatisticWidget(
       {this.icon,
       required this.title,
       required this.subtitle,
-      required this.information,
-      this.customOnTap});
+      required this.information});
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: customOnTap ??
-          () => showBottomSheetWithNoAction(
-              context: context,
-              title: information.title,
-              description: information.description),
+      onTap: () => showBottomSheetWithNoAction(
+          context: context,
+          title: information.title,
+          description: information.description),
       child: Container(
         constraints: const BoxConstraints(minWidth: 120),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),

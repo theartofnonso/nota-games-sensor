@@ -1,31 +1,10 @@
 import 'package:collection/collection.dart';
-import 'package:flutter/material.dart';
 import 'package:trainware/enums/muscle_group_enums.dart';
 
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/exercise_log_dto.dart';
-import '../dtos/viewmodels/exercise_log_view_model.dart';
 import '../enums/template_changes_type_message_enums.dart';
-import '../screens/exercise/reorder_exercises_screen.dart';
 import 'exercise_logs_utils.dart';
-
-Future<List<ExerciseLogDto>?> reOrderExerciseLogs(
-    {required BuildContext context,
-    required List<ExerciseLogDto> exerciseLogs}) async {
-  return await Navigator.of(context).push(MaterialPageRoute(
-          builder: (context) =>
-              ReOrderExercisesScreen(exercises: exerciseLogs)))
-      as List<ExerciseLogDto>?;
-}
-
-List<ExerciseLogDto> whereOtherExerciseLogsExcept(
-    {required ExerciseLogDto exerciseLog,
-    required List<ExerciseLogDto> others}) {
-  return others
-      .where((procedure) =>
-          procedure.id != exerciseLog.id && procedure.superSetId.isEmpty)
-      .toList();
-}
 
 List<TemplateChange> checkForChanges(
     {required List<ExerciseLogDto> exerciseLog1,
@@ -53,11 +32,6 @@ List<TemplateChange> checkForChanges(
       exerciseLogs1: exerciseLog1, exerciseLogs2: exerciseLog2);
   unsavedChangesMessage.add(differentExerciseTypesChangeMessage);
 
-  /// Check if superset in [ExerciseLogDto] has been changed i.e. added or removed
-  final differentSuperSetIdsChangeMessage = hasSuperSetIdChanged(
-      exerciseLogs1: exerciseLog1, exerciseLogs2: exerciseLog2);
-  unsavedChangesMessage.add(differentSuperSetIdsChangeMessage);
-
   /// Check if set values have been changed
   if (isEditor) {
     final updatedSetValuesChangeMessage = hasSetValueChanged(
@@ -66,15 +40,6 @@ List<TemplateChange> checkForChanges(
   }
 
   return unsavedChangesMessage.whereType<TemplateChange>().toList();
-}
-
-ExerciseLogDto? whereOtherExerciseInSuperSet(
-    {required ExerciseLogDto firstExercise,
-    required List<ExerciseLogDto> exercises}) {
-  return exercises.firstWhereOrNull((exercise) =>
-      exercise.superSetId.isNotEmpty &&
-      exercise.superSetId == firstExercise.superSetId &&
-      exercise.exercise.id != firstExercise.exercise.id);
 }
 
 Map<String, List<ExerciseLogDto>> groupExerciseLogsByExerciseId(
@@ -88,20 +53,4 @@ Map<MuscleGroup, List<ExerciseLogDto>> groupExerciseLogsByMuscleGroup(
   final exerciseLogs = routineLogs.expand((log) => log.exerciseLogs);
   return groupBy(
       exerciseLogs, (exerciseLog) => exerciseLog.exercise.primaryMuscleGroup);
-}
-
-String superSetId(
-    {required ExerciseLogDto firstExerciseLog,
-    required ExerciseLogDto secondExerciseLog}) {
-  return "superset_id_${firstExerciseLog.exercise.id}_${secondExerciseLog.exercise.id}";
-}
-
-List<ExerciseLogViewModel> exerciseLogsToViewModels(
-    {required List<ExerciseLogDto> exerciseLogs}) {
-  return exerciseLogs.map((exerciseLog) {
-    return ExerciseLogViewModel(
-        exerciseLog: exerciseLog,
-        superSet: whereOtherExerciseInSuperSet(
-            firstExercise: exerciseLog, exercises: exerciseLogs));
-  }).toList();
 }

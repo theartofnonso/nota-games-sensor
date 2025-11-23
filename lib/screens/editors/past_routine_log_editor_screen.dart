@@ -1,7 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
@@ -10,21 +8,17 @@ import 'package:trainware/dtos/appsync/exercise_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
 import 'package:trainware/utils/dialog_utils.dart';
+import 'package:trainware/utils/session_duration_selector.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 
 import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/set_dtos/weight_and_reps_dto.dart';
-import '../../extensions/datetime/datetime_extension.dart';
-import '../../extensions/duration_extension.dart';
-import '../../strings/datetime_range_picker_strings.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/routine_editors_utils.dart';
-import '../../utils/routine_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
-import '../../widgets/routine/editors/exercise_log_grid_item.dart';
+import '../../widgets/routine/editors/exercise_log_list_item.dart';
 import '../../widgets/weight_plate_calculator.dart';
 
 class PastRoutineLogEditorScreen extends StatefulWidget {
@@ -42,7 +36,6 @@ class PastRoutineLogEditorScreen extends StatefulWidget {
 class _PastRoutineLogEditorScreenState
     extends State<PastRoutineLogEditorScreen> {
   late TextEditingController _templateNameController;
-  late TextEditingController _templateNotesController;
 
   late DateTime _startTime;
   late DateTime _endTime;
@@ -67,52 +60,6 @@ class _PastRoutineLogEditorScreenState
                   listen: false)
               .whereRecentSetsForExercise(exercise: onlyExercise);
           controller.addExerciseLog(exercise: onlyExercise, pastSets: pastSets);
-        });
-  }
-
-  void _showSuperSetExercisePicker({required ExerciseLogDto firstExerciseLog}) {
-    final controller =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final otherExercises = whereOtherExerciseLogsExcept(
-        exerciseLog: firstExerciseLog, others: controller.exerciseLogs);
-    showSuperSetExercisePicker(
-        context: context,
-        firstExerciseLog: firstExerciseLog,
-        otherExerciseLogs: otherExercises,
-        onSelected: (secondExerciseLog) {
-          _closeDialog();
-          final id = superSetId(
-              firstExerciseLog: firstExerciseLog,
-              secondExerciseLog: secondExerciseLog);
-          controller.superSetExerciseLogs(
-              firstExerciseLogId: firstExerciseLog.id,
-              secondExerciseLogId: secondExerciseLog.id,
-              superSetId: id);
-        },
-        selectExercisesInLibrary: () {
-          _closeDialog();
-          _selectExercisesInLibrary();
-        });
-  }
-
-  void _showReplaceExercisePicker({required ExerciseLogDto oldExerciseLog}) {
-    final controller =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final excludeExercises =
-        controller.exerciseLogs.map((exercise) => exercise.exercise).toList();
-
-    showExercisesInLibrary(
-        context: context,
-        exercisesToExclude: excludeExercises,
-        onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
-                  context,
-                  listen: false)
-              .whereRecentSetsForExercise(exercise: selectedExercises.first);
-          controller.replaceExerciseLog(
-              oldExerciseId: oldExerciseLog.id,
-              newExercise: selectedExercises.first,
-              pastSets: pastSets);
         });
   }
 
@@ -141,127 +88,22 @@ class _PastRoutineLogEditorScreenState
     if (!_validateRoutineTemplateInputs()) return;
 
     // Show duration selector bottom sheet
-    _showDurationSelectorBottomSheet();
-  }
-
-  void _showDurationSelectorBottomSheet() {
-    showAppBottomSheet(
+    await showSessionDurationSelectorBottomSheet(
       context: context,
-      isScrollControlled: true,
-      child: StatefulBuilder(
-        builder:
-            (BuildContext bottomSheetContext, StateSetter setBottomSheetState) {
-          return Padding(
-            padding: const EdgeInsets.all(26.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Select Duration",
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Set the start and end times for this session",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
-                      ),
-                ),
-                const SizedBox(height: 24),
-                // Start Time Selector
-                _DurationSelectorRow(
-                  label: "Start Time",
-                  dateTime: _startTime,
-                  onTimeChanged: (DateTime newDateTime) {
-                    setState(() {
-                      _startTime = newDateTime;
-                    });
-                    setBottomSheetState(() {});
-                  },
-                ),
-                const SizedBox(height: 16),
-                // End Time Selector
-                _DurationSelectorRow(
-                  label: "End Time",
-                  dateTime: _endTime,
-                  onTimeChanged: (DateTime newDateTime) {
-                    setState(() {
-                      _endTime = newDateTime;
-                    });
-                    setBottomSheetState(() {});
-                  },
-                ),
-                const SizedBox(height: 24),
-                // Log Session Button with validation state
-                Builder(
-                  builder: (context) {
-                    final errorMessage = _validateDuration();
-                    final duration = _endTime.difference(_startTime);
-                    final isValid = errorMessage == null;
-
-                    return OpacityButtonWidgetTwo(
-                      buttonColor: isValid
-                          ? Theme.of(context).colors.vibrantAccent
-                          : Colors.grey,
-                      label: isValid
-                          ? "Log ${duration.hmsAnalog()} session"
-                          : "Log Session",
-                      onPressed: isValid
-                          ? () {
-                              Navigator.of(context).pop();
-                              _saveLogWithDuration();
-                            }
-                          : null, // Disable button when invalid
-                    );
-                  },
-                )
-              ],
-            ),
-          );
-        },
-      ),
+      initialStartTime: _startTime,
+      initialEndTime: _endTime,
+      onConfirm: (start, end) async {
+        setState(() {
+          _startTime = start;
+          _endTime = end;
+        });
+        await _saveLogWithDuration();
+      },
     );
   }
 
-  String? _validateDuration() {
-    // Check if start and end times are the same (zero duration)
-    if (_startTime.millisecondsSinceEpoch == _endTime.millisecondsSinceEpoch) {
-      return editZeroDurationRestriction;
-    }
-
-    if (_startTime.isAfter(_endTime)) {
-      return editStartDateMustBeBeforeEndDate;
-    }
-
-    if (_endTime.isBefore(_startTime)) {
-      return editEndDateMustBeAfterStartDate;
-    }
-
-    if (_endTime.millisecondsSinceEpoch >
-        DateTime.now().millisecondsSinceEpoch) {
-      return editFutureDateRestriction;
-    }
-
-    Duration difference = _endTime.difference(_startTime);
-
-    if (difference.inHours > 24) {
-      return edit24HourRestriction;
-    }
-
-    return null;
-  }
-
-  void _saveLogWithDuration() async {
-    // Validate before saving
-    final errorMessage = _validateDuration();
-    if (errorMessage != null) {
-      _showSnackbar(errorMessage);
-      return;
-    }
+  Future<void> _saveLogWithDuration() async {
+    // Validation is handled by the shared duration selector.
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
 
@@ -274,13 +116,8 @@ class _PastRoutineLogEditorScreenState
     final routineName = _templateNameController.text.trim().isNotEmpty
         ? _templateNameController.text.trim()
         : widget.log.name;
-    final routineNotes = _templateNotesController.text.trim().isNotEmpty
-        ? _templateNotesController.text.trim()
-        : widget.log.notes;
-
     final updatedLog = widget.log.copyWith(
         name: routineName,
-        notes: routineNotes,
         exerciseLogs: exerciseLogs,
         startTime: _startTime,
         endTime: _endTime);
@@ -293,68 +130,30 @@ class _PastRoutineLogEditorScreenState
     // Check mounted after async operation
     if (!mounted) return;
 
-    // Clear cache ONLY if save succeeded
+    // Clear local controller state ONLY if save succeeded.
+    // Do not touch any pending live workout cache.
     if (createdLog != null) {
-      Provider.of<ExerciseLogController>(context, listen: false).onClear();
+      Provider.of<ExerciseLogController>(context, listen: false).clearLocal();
     }
 
     // Always exit regardless of save success/failure
     _navigateBack(log: createdLog);
   }
 
-  void _checkForUnsavedChanges() {
-    final exerciseProvider =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final exerciseLog1 = widget.log.exerciseLogs;
-    final exerciseLog2 = exerciseProvider.exerciseLogs;
-    final unsavedChangesMessage =
-        checkForChanges(exerciseLog1: exerciseLog1, exerciseLog2: exerciseLog2);
-    if (unsavedChangesMessage.isNotEmpty) {
-      showBottomSheetWithMultiActions(
-          context: context,
-          description: "You have unsaved changes",
-          leftAction: _closeDialog,
-          leftActionLabel: 'Cancel',
-          rightAction: () {
-            _closeDialog();
-            // Clear controller when user explicitly discards
-            Provider.of<ExerciseLogController>(context, listen: false)
-                .onClear();
-            _navigateBack();
-          },
-          rightActionLabel: 'Discard',
-          isRightActionDestructive: true,
-          title: "Discard changes");
-    } else {
-      // Clear controller even when no changes (to ensure clean state)
-      Provider.of<ExerciseLogController>(context, listen: false).onClear();
-      _navigateBack();
-    }
-  }
-
-  void _reOrderExerciseLogs(
-      {required List<ExerciseLogDto> exerciseLogs}) async {
-    final orderedList =
-        await reOrderExerciseLogs(context: context, exerciseLogs: exerciseLogs);
-    if (!mounted) {
-      return;
-    }
-    if (orderedList != null) {
-      Provider.of<ExerciseLogController>(context, listen: false)
-          .reOrderExerciseLogs(reOrderedList: orderedList);
-    }
-  }
-
   void _dismissKeyboard() {
     FocusScope.of(context).unfocus();
   }
 
-  void _closeDialog() {
-    context.pop();
-  }
-
   void _navigateBack({RoutineLogDto? log}) {
     Navigator.of(context).pop(log);
+  }
+
+  Future<bool> _confirmRemoveExercise(ExerciseLogDto exerciseLog) async {
+    return confirmRemoveExerciseBottomSheet(
+      context: context,
+      exerciseName: exerciseLog.exercise.name,
+      fromLabel: 'log',
+    );
   }
 
   @override
@@ -380,193 +179,194 @@ class _PastRoutineLogEditorScreenState
 
     bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom != 0;
 
-    final children = exerciseLogs.map((exerciseLog) {
-      return ExerciseLogGridItemWidget(
-        editorType: RoutineEditorMode.edit,
-        isPastRoutine: true,
-        exerciseLogDto: exerciseLog,
-        superSet: whereOtherExerciseInSuperSet(
-            firstExercise: exerciseLog, exercises: exerciseLogs),
-        onRemoveSuperSet: (String superSetId) {
-          exerciseLogController.removeSuperSet(
-              superSetId: exerciseLog.superSetId);
-        },
-        onRemoveLog: () {
-          exerciseLogController.removeExerciseLog(logId: exerciseLog.id);
-        },
-        onSuperSet: () =>
-            _showSuperSetExercisePicker(firstExerciseLog: exerciseLog),
-        onReplaceLog: () =>
-            _showReplaceExercisePicker(oldExerciseLog: exerciseLog),
-      );
-    }).toList();
-
     return PopScope(
-      canPop: false,
+      canPop: true,
       child: Scaffold(
-          appBar: AppBar(
-            backgroundColor: appBarBackgroundColor(context: context),
-            surfaceTintColor: Colors.transparent,
-            scrolledUnderElevation: 0,
-            leading: IconButton(
-                icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
-                onPressed: _checkForUnsavedChanges),
-            actions: [
-              IconButton(
-                  onPressed: _selectExercisesInLibrary,
-                  icon: const FaIcon(FontAwesomeIcons.circlePlus)),
-              if (exerciseLogs.length > 1)
-                IconButton(
-                    onPressed: () =>
-                        _reOrderExerciseLogs(exerciseLogs: exerciseLogs),
-                    icon: const FaIcon(FontAwesomeIcons.barsStaggered)),
-            ],
-          ),
-          floatingActionButton: isKeyboardOpen
-              ? SafeArea(
-                  minimum: EdgeInsets.only(left: 32),
-                  child: Row(children: [
-                    FloatingActionButton(
-                      heroTag: UniqueKey(),
-                      onPressed: _dismissKeyboard,
-                      enableFeedback: true,
-                      child: FaIcon(Icons.keyboard_hide_rounded),
-                    ),
-                    Spacer(),
-                    _selectedSetDto != null
-                        ? FloatingActionButton(
-                            heroTag: UniqueKey(),
-                            onPressed: _showWeightCalculator,
-                            enableFeedback: true,
-                            child: Image.asset(
-                              'icons/dumbbells.png',
-                              fit: BoxFit.contain,
-                              color: isDarkMode ? Colors.white : Colors.white,
-                              height: 24, // Adjust the height as needed
-                            ),
-                          )
-                        : SizedBox.shrink()
-                  ]),
-                )
-              : null,
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: themeGradient(context: context),
-            ),
-            child: SafeArea(
-              bottom: false,
-              minimum:
-                  const EdgeInsets.only(right: 10.0, bottom: 10.0, left: 10.0),
-              child: GestureDetector(
-                onTap: _dismissKeyboard,
-                child: Column(
-                  spacing: 20,
+        floatingActionButton: isKeyboardOpen
+            ? SafeArea(
+                minimum: EdgeInsets.only(left: 32),
+                child: Row(children: [
+                  FloatingActionButton(
+                    heroTag: UniqueKey(),
+                    onPressed: _dismissKeyboard,
+                    enableFeedback: true,
+                    child: FaIcon(Icons.keyboard_hide_rounded),
+                  ),
+                  Spacer(),
+                  _selectedSetDto != null
+                      ? FloatingActionButton(
+                          heroTag: UniqueKey(),
+                          onPressed: _showWeightCalculator,
+                          enableFeedback: true,
+                          child: Image.asset(
+                            'icons/dumbbells.png',
+                            fit: BoxFit.contain,
+                            color: isDarkMode ? Colors.white : Colors.white,
+                            height: 24, // Adjust the height as needed
+                          ),
+                        )
+                      : SizedBox.shrink()
+                ]),
+              )
+            : null,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: themeGradient(context: context),
+              ),
+              child: SafeArea(
+                top: true,
+                bottom: false,
+                left: true,
+                right: true,
+                minimum: const EdgeInsets.all(20),
+                child: Stack(
                   children: [
-                    Column(
-                      spacing: 10,
-                      children: [
-                        const SizedBox(height: 10),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Theme.of(context)
-                                  .extension<TRKRColors>()!
-                                  .borderLight,
-                              width: 1,
+                    // Main scrollable content (name + list)
+                    Positioned.fill(
+                      bottom: _isRoutinePartiallyComplete() ? 88.0 : 0.0,
+                      child: GestureDetector(
+                        onTap: _dismissKeyboard,
+                        child: Column(
+                          children: [
+                            // Header: past routine name + add button (top-right)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      widget.log.name,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                            height: 1.2,
+                                          ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: _selectExercisesInLibrary,
+                                    icon: const FaIcon(
+                                      FontAwesomeIcons.circlePlus,
+                                      size: 22,
+                                      color: Colors.white,
+                                    ),
+                                    tooltip: 'Add exercises',
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          padding: const EdgeInsets.only(
-                              left: 20, top: 6, bottom: 6, right: 20),
-                          child: TextField(
-                            controller: _templateNameController,
-                            cursorColor:
-                                isDarkMode ? Colors.white : Colors.black,
-                            decoration: InputDecoration(
-                              hintText: "New workout",
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
+                            Expanded(
+                              child: exerciseLogs.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        'No exercises in this log yet.\nTap + to add exercises.',
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Colors.white70,
+                                            ),
+                                      ),
+                                    )
+                                  : ReorderableListView.builder(
+                                      padding: const EdgeInsets.only(
+                                        top: 8,
+                                      ),
+                                      itemCount: exerciseLogs.length,
+                                      onReorder: (oldIndex, newIndex) {
+                                        if (newIndex > oldIndex) {
+                                          newIndex -= 1;
+                                        }
+
+                                        final updated = exerciseLogs.toList();
+                                        final item = updated.removeAt(oldIndex);
+                                        updated.insert(newIndex, item);
+
+                                        exerciseLogController
+                                            .reOrderExerciseLogs(
+                                          reOrderedList: updated,
+                                        );
+                                      },
+                                      proxyDecorator:
+                                          (Widget child, int index, animation) {
+                                        return Material(
+                                          type: MaterialType.transparency,
+                                          child: child,
+                                        );
+                                      },
+                                      itemBuilder: (context, index) {
+                                        final exerciseLog = exerciseLogs[index];
+                                        return Dismissible(
+                                          key: ValueKey(exerciseLog.id),
+                                          direction:
+                                              DismissDirection.endToStart,
+                                          confirmDismiss: (_) =>
+                                              _confirmRemoveExercise(
+                                                  exerciseLog),
+                                          onDismissed: (_) {
+                                            exerciseLogController
+                                                .removeExerciseLog(
+                                                    logId: exerciseLog.id);
+                                          },
+                                          background: const SizedBox.shrink(),
+                                          child: Column(
+                                            children: [
+                                              ExerciseLogListItem(
+                                                exerciseLogDto: exerciseLog,
+                                                onTap: () {
+                                                  showExerciseLogEditor(
+                                                    context: context,
+                                                    exerciseLogId:
+                                                        exerciseLog.exercise.id,
+                                                    editorType:
+                                                        RoutineEditorMode.edit,
+                                                  );
+                                                },
+                                              ),
+                                              const SizedBox(height: 12),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                             ),
-                            keyboardType: TextInputType.text,
-                            textCapitalization: TextCapitalization.words,
-                            style: TextStyle(
-                                fontWeight: FontWeight.w400,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                                fontSize: 14),
-                          ),
+                          ],
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(50),
-                            border: Border.all(
-                              color: Theme.of(context)
-                                  .extension<TRKRColors>()!
-                                  .borderLight,
-                              width: 1,
-                            ),
-                          ),
-                          padding: const EdgeInsets.only(
-                              left: 20, top: 6, bottom: 6, right: 6),
-                          child: TextField(
-                            controller: _templateNotesController,
-                            cursorColor:
-                                isDarkMode ? Colors.white : Colors.black,
-                            decoration: InputDecoration(
-                              hintText: "Notes (optional)",
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                            ),
-                            maxLines: null,
-                            minLines: 4,
-                            keyboardType: TextInputType.text,
-                            textCapitalization: TextCapitalization.sentences,
-                            style: TextStyle(
-                                fontWeight: FontWeight.w400,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                                fontSize: 14),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    if (exerciseLogs.isNotEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: GridView.count(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1,
-                              mainAxisSpacing: 10.0,
-                              crossAxisSpacing: 10.0,
-                              children: children),
-                        ),
-                      ),
-                    if (exerciseLogs.isEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: const NoListEmptyState(
-                              message:
-                                  "Tap the + button to start adding exercises to your workout session"),
-                        ),
-                      ),
+                    // Bottom fixed CTA (does not scroll) – vertically aligned similar to Overview FAB
                     if (_isRoutinePartiallyComplete())
-                      SafeArea(
-                        minimum: EdgeInsets.symmetric(horizontal: 20),
-                        child: SizedBox(
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: SafeArea(
+                          minimum: const EdgeInsets.only(
+                              left: 20, right: 20, bottom: 16),
+                          child: SizedBox(
                             width: double.infinity,
                             child: OpacityButtonWidgetTwo(
-                                buttonColor:
-                                    Theme.of(context).colors.vibrantAccent,
-                                label: "Log Past Session",
-                                onPressed: _createLog)),
-                      )
+                              buttonColor:
+                                  Theme.of(context).colors.vibrantAccent,
+                              label: "Log Past Session",
+                              onPressed: _createLog,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-            ),
-          )),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -587,8 +387,9 @@ class _PastRoutineLogEditorScreenState
   }
 
   void _initializeProcedureData() {
-    // Clear controller first to ensure clean state when opening a new past session
-    Provider.of<ExerciseLogController>(context, listen: false).onClear();
+    // Clear controller first to ensure clean state when opening a new past session,
+    // but do NOT clear any pending live workout cache.
+    Provider.of<ExerciseLogController>(context, listen: false).clearLocal();
 
     final exercises = widget.log.exerciseLogs;
     if (exercises.isNotEmpty) {
@@ -644,7 +445,6 @@ class _PastRoutineLogEditorScreenState
   void _initializeTextControllers() {
     final log = widget.log;
     _templateNameController = TextEditingController(text: log.name);
-    _templateNotesController = TextEditingController(text: log.notes);
 
     // Initialize start and end times: default to 1 hour ago from current time
     // If startTime == endTime, it's the initial state (both set to the selected date)
@@ -697,124 +497,6 @@ class _PastRoutineLogEditorScreenState
   void dispose() {
     // Don't auto-clear cache on dispose - only clear on successful save
     _templateNameController.dispose();
-    _templateNotesController.dispose();
     super.dispose();
-  }
-}
-
-// Widget for duration selector row in the bottom sheet with embedded time picker
-class _DurationSelectorRow extends StatefulWidget {
-  final String label;
-  final DateTime dateTime;
-  final void Function(DateTime newDateTime) onTimeChanged;
-
-  const _DurationSelectorRow({
-    required this.label,
-    required this.dateTime,
-    required this.onTimeChanged,
-  });
-
-  @override
-  State<_DurationSelectorRow> createState() => _DurationSelectorRowState();
-}
-
-class _DurationSelectorRowState extends State<_DurationSelectorRow> {
-  late DateTime _currentDateTime;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentDateTime = widget.dateTime;
-  }
-
-  @override
-  void didUpdateWidget(_DurationSelectorRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.dateTime != oldWidget.dateTime) {
-      _currentDateTime = widget.dateTime;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Label and Date/Time Display
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        "${_currentDateTime.day} ${_currentDateTime.abbreviatedMonth()}",
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "${_currentDateTime.hour.toString().padLeft(2, '0')}:${_currentDateTime.minute.toString().padLeft(2, '0')}",
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colors.vibrantAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        // Embedded Time Picker - always visible, compact height
-        Container(
-          height: 120,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-              width: 1,
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: CupertinoDatePicker(
-            mode: CupertinoDatePickerMode.time,
-            use24hFormat: true,
-            initialDateTime: _currentDateTime,
-            itemExtent: 40,
-            onDateTimeChanged: (DateTime value) {
-              setState(() {
-                // Keep the same date, only update time
-                _currentDateTime = DateTime(
-                  _currentDateTime.year,
-                  _currentDateTime.month,
-                  _currentDateTime.day,
-                  value.hour,
-                  value.minute,
-                );
-              });
-              widget.onTimeChanged(_currentDateTime);
-            },
-          ),
-        ),
-      ],
-    );
   }
 }

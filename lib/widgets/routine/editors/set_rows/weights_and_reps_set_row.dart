@@ -17,6 +17,7 @@ class WeightsAndRepsSetRow extends StatelessWidget {
   final void Function() onTapWeightEditor;
   final void Function() onTapRepsEditor;
   final (TextEditingController, TextEditingController) controllers;
+  final bool showCheck;
 
   const WeightsAndRepsSetRow({
     super.key,
@@ -29,6 +30,7 @@ class WeightsAndRepsSetRow extends StatelessWidget {
     required this.onTapRepsEditor,
     required this.controllers,
     required this.editorType,
+    required this.showCheck,
   });
 
   @override
@@ -72,7 +74,7 @@ class WeightsAndRepsSetRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Weight input field (no icon, no label)
+          // Weight input field (no icon, no label) – show unit suffix
           Expanded(
             child: DoubleTextField(
               value: weight,
@@ -80,18 +82,11 @@ class WeightsAndRepsSetRow extends StatelessWidget {
               onTap: onTapWeightEditor,
               controller: controllers.$1,
               textAlign: TextAlign.center,
+              suffix: 'kg',
             ),
           ),
           // Divider between weight and reps
-          Container(
-            width: 1,
-            height: 24,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: colors.borderLight,
-            ),
-          ),
-          // Reps input field (no icon, no label)
+          // Reps input field (no icon, no label) – show "reps" suffix
           Expanded(
             child: IntTextField(
               value: reps,
@@ -99,32 +94,35 @@ class WeightsAndRepsSetRow extends StatelessWidget {
               onTap: onTapRepsEditor,
               controller: controllers.$2,
               maxLength: 2,
+              suffix: 'reps',
             ),
           ),
-          const SizedBox(width: 12),
-          // Check button on right (fully rounded)
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onCheck,
-              borderRadius: BorderRadius.circular(50),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: setDto.checked
-                      ? colors.vibrantAccent
-                      : colors.vibrantAccent.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: FaIcon(
-                  FontAwesomeIcons.check,
-                  color: setDto.checked ? Colors.black : colors.vibrantAccent,
-                  size: 14,
+          if (showCheck) ...[
+            const SizedBox(width: 12),
+            // Check button on right (fully rounded)
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onCheck,
+                borderRadius: BorderRadius.circular(50),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: setDto.checked
+                        ? colors.vibrantAccent
+                        : colors.vibrantAccent.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: FaIcon(
+                    FontAwesomeIcons.check,
+                    color: setDto.checked ? Colors.black : colors.vibrantAccent,
+                    size: 14,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

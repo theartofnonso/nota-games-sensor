@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
 import 'package:trainware/widgets/routine/preview/set_headers/single_set_header.dart';
 
@@ -11,10 +10,8 @@ import 'sets_listview.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final ExerciseLogDto exerciseLog;
-  final ExerciseLogDto? superSet;
 
-  const ExerciseLogWidget(
-      {super.key, required this.exerciseLog, this.superSet});
+  const ExerciseLogWidget({super.key, required this.exerciseLog});
 
   @override
   State<ExerciseLogWidget> createState() => _ExerciseLogWidgetState();
@@ -23,8 +20,6 @@ class ExerciseLogWidget extends StatefulWidget {
 class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   @override
   Widget build(BuildContext context) {
-    final otherSuperSet = widget.superSet;
-
     final exercise = widget.exerciseLog.exercise;
 
     final exerciseType = exercise.type;
@@ -45,19 +40,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                   .titleSmall
                   ?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center),
-          if (otherSuperSet != null)
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.link,
-                  size: 10,
-                ),
-                const SizedBox(width: 4),
-                Text(otherSuperSet.exercise.name,
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
           if (widget.exerciseLog.notes.isNotEmpty)
             Text(widget.exerciseLog.notes,
                 textAlign: TextAlign.center,

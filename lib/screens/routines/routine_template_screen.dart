@@ -19,7 +19,6 @@ import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
-import '../../utils/routine_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../shared_prefs.dart';
 import '../../utils/string_utils.dart';
@@ -33,6 +32,8 @@ import '../../widgets/monthly_insights/muscle_groups_family_frequency_widget.dar
 import '../../widgets/routine/preview/exercise_log_listview.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
+import '../../widgets/empty_states/no_list_empty_state.dart';
+import '../../widgets/buttons/opacity_button_widget_two.dart';
 
 enum _OriginalNewValues {
   originalValues(
@@ -195,128 +196,124 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 2,
+                          spacing: 4,
                           children: [
-                            Text(template.name,
-                                style: TextStyle(
-                                    fontSize: 20,
-                                    height: 1.5,
-                                    fontWeight: FontWeight.w900)),
-                            if (plan != null)
-                              Text(
-                                "In ${plan.name}",
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDarkMode
-                                        ? Colors.white70
-                                        : Colors.black,
-                                    fontWeight: FontWeight.w400),
-                              )
-                          ],
-                        ),
-                        Column(
-                          spacing: 12,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ChipOne(
-                                label:
-                                    "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
-                                child: CustomIcon(
-                                    FontAwesomeIcons.personWalking,
-                                    color: Theme.of(context)
-                                        .colors
-                                        .vibrantAccent)),
                             Text(
-                              template.notes.isNotEmpty
-                                  ? "${template.notes}."
-                                  : "No notes",
-                              style: TextStyle(
+                              template.name,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                height: 1.5,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            if (template.notes.isNotEmpty)
+                              Text(
+                                template.notes,
+                                style: TextStyle(
                                   fontSize: 14,
                                   color: isDarkMode
                                       ? Colors.white70
                                       : Colors.black,
-                                  height: 1.8,
-                                  fontWeight: FontWeight.w400),
-                            )
+                                  height: 1.6,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
                           ],
                         ),
+                        ChipOne(
+                            label:
+                                "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
+                            child: CustomIcon(FontAwesomeIcons.personWalking,
+                                color: Theme.of(context).colors.vibrantAccent)),
                         Calendar(
                           onSelectDate: (date) => _showLogsForDate(
                               context, date, allLogsForTemplate),
                           logs: allLogsForTemplate,
                         ),
-                        MuscleGroupSplitChart(
+                        if (template.exerciseTemplates.isNotEmpty)
+                          MuscleGroupSplitChart(
                             title: "Muscle Groups Split",
                             description:
                                 "Here's a breakdown of the muscle groups in your ${template.name} workout plan.",
                             muscleGroup: muscleGroupFamilyFrequencies,
-                            minimized: false),
+                            minimized: false,
+                          ),
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      spacing: 30,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          spacing: 6,
-                          children: [
-                            CupertinoSlidingSegmentedControl<
-                                _OriginalNewValues>(
-                              backgroundColor: isDarkMode
-                                  ? Theme.of(context).colors.sapphireDark
-                                  : Colors.grey.shade200,
-                              thumbColor: isDarkMode
-                                  ? Theme.of(context).colors.sapphireDark80
-                                  : Colors.white,
-                              groupValue: _originalNewValues,
-                              children: {
-                                _OriginalNewValues.originalValues: SizedBox(
-                                    width: 100,
-                                    child: Text(
-                                        _OriginalNewValues.originalValues.name,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                        textAlign: TextAlign.center)),
-                                _OriginalNewValues.newValues: SizedBox(
-                                    width: 100,
-                                    child: Text(
-                                        _OriginalNewValues.newValues.name,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                        textAlign: TextAlign.center)),
-                              },
-                              onValueChanged: (_OriginalNewValues? value) {
-                                if (value != null) {
-                                  setState(() {
-                                    _originalNewValues = value;
-                                  });
-                                }
-                              },
-                            ),
-                            Text(_originalNewValues.description,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                        fontWeight: FontWeight.w400,
-                                        color: isDarkMode
-                                            ? Colors.white70
-                                            : Colors.black)),
-                          ],
-                        ),
-                        ExerciseLogListView(
-                          exerciseLogs: exerciseLogsToViewModels(
-                              exerciseLogs: exerciseTemplates),
-                        ),
-                      ],
+                  if (template.exerciseTemplates.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        spacing: 30,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            spacing: 6,
+                            children: [
+                              CupertinoSlidingSegmentedControl<
+                                  _OriginalNewValues>(
+                                backgroundColor: isDarkMode
+                                    ? Theme.of(context).colors.sapphireDark
+                                    : Colors.grey.shade200,
+                                thumbColor: isDarkMode
+                                    ? Theme.of(context).colors.sapphireDark80
+                                    : Colors.white,
+                                groupValue: _originalNewValues,
+                                children: {
+                                  _OriginalNewValues.originalValues: SizedBox(
+                                      width: 100,
+                                      child: Text(
+                                          _OriginalNewValues
+                                              .originalValues.name,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                          textAlign: TextAlign.center)),
+                                  _OriginalNewValues.newValues: SizedBox(
+                                      width: 100,
+                                      child: Text(
+                                          _OriginalNewValues.newValues.name,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                          textAlign: TextAlign.center)),
+                                },
+                                onValueChanged: (_OriginalNewValues? value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      _originalNewValues = value;
+                                    });
+                                  }
+                                },
+                              ),
+                              Text(_originalNewValues.description,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                          fontWeight: FontWeight.w400,
+                                          color: isDarkMode
+                                              ? Colors.white70
+                                              : Colors.black)),
+                            ],
+                          ),
+                          ExerciseLogListView(
+                            exerciseLogs: exerciseTemplates,
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0, vertical: 40.0),
+                      child: const NoListEmptyState(
+                        message:
+                            "It might feel quiet now, but tap the + button to add exercises to this workout.",
+                      ),
                     ),
-                  )
                 ],
               ),
             ),
@@ -438,6 +435,93 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     });
   }
 
+  void _showRenameTemplateBottomSheet() {
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final template = controller.templateWhere(id: widget.id);
+
+    if (template == null) return;
+
+    final nameController = TextEditingController(text: template.name);
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      child: Builder(
+        builder: (context) {
+          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 26,
+              right: 26,
+              top: 26,
+              bottom: 26 + bottomInset,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Edit workout",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: nameController,
+                  cursorColor: isDark ? Colors.white : Colors.black,
+                  decoration: const InputDecoration(
+                    hintText: "Workout name",
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.words,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: OpacityButtonWidgetTwo(
+                    buttonColor: Theme.of(context).colors.vibrantAccent,
+                    label: "Update Workout",
+                    onPressed: () async {
+                      final name = nameController.text.trim();
+                      if (name.isEmpty) {
+                        showSnackbar(
+                          context: context,
+                          message: 'Please provide a name for this workout',
+                        );
+                        return;
+                      }
+
+                      final updated = template.copyWith(name: name);
+                      await controller.updateTemplate(template: updated);
+
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _navigateToRoutineTemplateEditor() async {
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
@@ -492,7 +576,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         final templateToBeCreated = RoutineTemplateDto(
             id: "",
             name: copy ? "Copy of ${template.name}" : template.name,
-            notes: template.notes,
             exerciseTemplates: exercises,
             planId: template.planId);
 
@@ -531,6 +614,23 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const FaIcon(
+                    FontAwesomeIcons.circlePlus,
+                    size: 18,
+                  ),
+                  horizontalTitleGap: 10,
+                  title: Text("Add exercises",
+                      style: Theme.of(context).textTheme.bodyLarge),
+                  onTap: () async {
+                    Navigator.of(context).pop();
+                    await _navigateToRoutineTemplateEditor();
+                    if (mounted) {
+                      _showMenuBottomSheet(planDto: planDto);
+                    }
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const FaIcon(
                     FontAwesomeIcons.penToSquare,
                     size: 18,
                   ),
@@ -539,10 +639,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       style: Theme.of(context).textTheme.bodyLarge),
                   onTap: () async {
                     Navigator.of(context).pop();
-                    await _navigateToRoutineTemplateEditor();
-                    if (mounted) {
-                      _showMenuBottomSheet(planDto: planDto);
-                    }
+                    _showRenameTemplateBottomSheet();
                   },
                 ),
                 ListTile(

@@ -13,7 +13,6 @@ import 'package:trainware/controllers/supabase_exercise_and_routine_controller.d
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
-import '../../dtos/viewmodels/routine_template_arguments.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
@@ -29,6 +28,7 @@ import '../../widgets/routine/preview/routine_template_grid_item.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
 import '../../nudges/plans_nudges.dart';
 import '../../widgets/information_containers/transparent_information_container_lite.dart';
+import '../../utils/name_notes_bottom_sheet.dart';
 
 class RoutinePlanScreen extends StatefulWidget {
   static const routeName = '/routine_plan_screen';
@@ -96,7 +96,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             onLongPress: () =>
                 _showTemplateMenu(template: template, plan: plan),
             child: RoutineTemplateGridItemWidget(
-              template: template.copyWith(notes: template.notes),
+              template: template,
               onTap: () => navigateToRoutineTemplatePreview(
                   context: context, template: template),
             ),
@@ -147,11 +147,23 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                         useOpacity: true,
                       );
                     }),
-                    Text(plan.name,
-                        style: TextStyle(
-                            fontSize: 20,
-                            height: 1.5,
-                            fontWeight: FontWeight.w900)),
+                    Text(
+                      plan.name,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        height: 1.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      plan.notes.isNotEmpty ? plan.notes : "No notes",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.white70 : Colors.black,
+                        height: 1.8,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                     Row(spacing: 12, children: [
                       ChipOne(
                         label:
@@ -165,12 +177,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                           child: CustomIcon(FontAwesomeIcons.hashtag,
                               color: Theme.of(context).colorScheme.secondary)),
                     ]),
-                    Text(plan.notes.isNotEmpty ? plan.notes : "No notes",
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode ? Colors.white70 : Colors.black,
-                            height: 1.8,
-                            fontWeight: FontWeight.w400)),
                     Column(
                       spacing: 4,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,6 +459,29 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     }
   }
 
+  void _showCreateWorkoutBottomSheet({required RoutinePlanDto plan}) {
+    showNameNotesBottomSheet(
+      context: context,
+      title: "Create workout",
+      primaryButtonLabel: "Create Workout",
+      emptyNameMessage: 'Please provide a name for this workout',
+    ).then((result) async {
+      if (result == null) return;
+
+      final template = RoutineTemplateDto(
+        id: "",
+        name: result.name,
+        notes: result.notes,
+        exerciseTemplates: const [],
+        planId: plan.id,
+      );
+
+      await Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false)
+          .saveTemplate(templateDto: template);
+    });
+  }
+
   void _showMenuBottomSheet() {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -479,12 +508,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                         style: Theme.of(context).textTheme.bodyLarge),
                     onTap: () async {
                       Navigator.of(context).pop();
-                      final arguments =
-                          RoutineTemplateArguments(planId: plan?.id ?? "");
-                      await navigateToRoutineTemplateEditor(
-                          context: context, arguments: arguments);
-                      if (mounted) {
-                        _showMenuBottomSheet();
+                      if (plan != null) {
+                        _showCreateWorkoutBottomSheet(plan: plan);
                       }
                     }),
                 ListTile(

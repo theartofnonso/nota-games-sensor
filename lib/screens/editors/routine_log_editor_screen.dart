@@ -4,26 +4,24 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
-import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/routine_editors_utils.dart';
-import 'package:trainware/widgets/routine/editors/exercise_log_grid_item.dart';
-
 import 'package:trainware/utils/theme/color_extensions.dart';
+import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
+import 'package:trainware/widgets/routine/editors/exercise_log_list_item.dart';
+
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
-import '../../utils/routine_utils.dart';
-import '../../widgets/buttons/opacity_button_widget_two.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
+import '../../extensions/duration_extension.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/routine-log-editor';
@@ -41,6 +39,9 @@ class RoutineLogEditorScreen extends StatefulWidget {
 
 class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     with WidgetsBindingObserver {
+  Timer? _timer;
+  Duration _elapsed = Duration.zero;
+  Duration? _averageSessionDuration;
   void _selectExercisesInLibrary() async {
     final controller =
         Provider.of<ExerciseLogController>(context, listen: false);
@@ -60,103 +61,97 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         });
   }
 
-  void _showSuperSetExercisePicker({required ExerciseLogDto firstExerciseLog}) {
-    final controller =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final otherExercises = whereOtherExerciseLogsExcept(
-        exerciseLog: firstExerciseLog, others: controller.exerciseLogs);
-    showSuperSetExercisePicker(
-        context: context,
-        firstExerciseLog: firstExerciseLog,
-        otherExerciseLogs: otherExercises,
-        onSelected: (secondExerciseLog) {
-          _closeDialog();
-          final id = superSetId(
-              firstExerciseLog: firstExerciseLog,
-              secondExerciseLog: secondExerciseLog);
-          controller.superSetExerciseLogs(
-              firstExerciseLogId: firstExerciseLog.id,
-              secondExerciseLogId: secondExerciseLog.id,
-              superSetId: id);
-        },
-        selectExercisesInLibrary: () {
-          _closeDialog();
-          _selectExercisesInLibrary();
-        });
-  }
+  void _startTimer() {
+    // Initialize elapsed based on the log's start time
+    _elapsed = DateTime.now().difference(widget.log.startTime);
 
-  void _showReplaceExercisePicker({required ExerciseLogDto oldExerciseLog}) {
-    final controller =
-        Provider.of<ExerciseLogController>(context, listen: false);
-    final excludeExercises =
-        controller.exerciseLogs.map((procedure) => procedure.exercise).toList();
-
-    showExercisesInLibrary(
-        context: context,
-        exercisesToExclude: excludeExercises,
-        onSelected: (List<ExerciseDto> selectedExercises) {
-          final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(
-                  context,
-                  listen: false)
-              .whereRecentSetsForExercise(exercise: selectedExercises.first);
-          controller.replaceExerciseLog(
-              oldExerciseId: oldExerciseLog.id,
-              newExercise: selectedExercises.first,
-              pastSets: pastSets);
-        });
-  }
-
-  RoutineLogDto _routineLog() {
-    final exerciseLogController =
-        Provider.of<ExerciseLogController>(context, listen: false);
-
-    final exerciseLogs = exerciseLogController.exerciseLogs;
-
-    final routineLog = widget.log.copyWith(exerciseLogs: exerciseLogs);
-
-    return routineLog;
-  }
-
-  Future<void> _doCreateRoutineLog() async {
-    final routineLogToBeCreated =
-        _routineLog().copyWith(endTime: DateTime.now());
-
-    if (mounted) {
-      final createdRoutineLog =
-          await Provider.of<SupabaseExerciseAndRoutineController>(context,
-                  listen: false)
-              .saveLog(logDto: routineLogToBeCreated);
-
-      // Check mounted again after async operation
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-
-      // Clear cache ONLY if save succeeded
-      if (createdRoutineLog != null) {
-        Provider.of<ExerciseLogController>(context, listen: false).onClear();
-      }
-
-      // Always exit regardless of save success/failure
-      _navigateBack(routineLog: createdRoutineLog);
-    }
+      setState(() {
+        _elapsed = DateTime.now().difference(widget.log.startTime);
+      });
+    });
   }
 
-  Future<void> _doUpdateRoutineLog() async {
-    final routineLogToBeUpdated = _routineLog();
+  void _loadAverageSessionDuration() {
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final logs = controller.logs;
+    if (logs.isEmpty) return;
 
-    final success = await Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .updateLog(log: routineLogToBeUpdated);
+    final durations = logs
+        .map((log) => log.endTime.difference(log.startTime))
+        .where((d) => !d.isNegative && d.inMinutes > 0)
+        .toList();
 
-    // Clear cache ONLY if update succeeded
-    if (success && mounted) {
-      Provider.of<ExerciseLogController>(context, listen: false).onClear();
-    }
+    if (durations.isEmpty) return;
 
-    // Always exit regardless of update success/failure
-    if (mounted) {
-      _navigateBack(routineLog: routineLogToBeUpdated);
-    }
+    final totalSeconds = durations.fold<int>(0, (sum, d) => sum + d.inSeconds);
+    final avgSeconds = totalSeconds ~/ durations.length;
+
+    setState(() {
+      _averageSessionDuration = Duration(seconds: avgSeconds);
+    });
+  }
+
+  String _buildTimerDeltaLabel() {
+    if (_averageSessionDuration == null) return "";
+    final avg = _averageSessionDuration!;
+    if (_elapsed <= avg) return "";
+
+    final diff = _elapsed - avg;
+    if (diff.inSeconds <= 0) return "";
+
+    final diffLabel = diff.msDigital();
+    return "$diffLabel over your usual session";
+  }
+
+  void _showTimerInfoBottomSheet() {
+    final avgText = _averageSessionDuration != null
+        ? _averageSessionDuration!.hmsAnalog()
+        : "not enough data yet";
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Session timer",
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "This timer shows how long this workout has been running, from when you first started the session.",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Based on your past workouts, your average session lasts $avgText.",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            if (_averageSessionDuration != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _buildTimerDeltaLabel(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   bool _isRoutinePartiallyComplete() {
@@ -168,176 +163,355 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             (log) => log.sets.any((set) => set.isNotEmpty() && set.checked));
   }
 
-  void _discardLog() {
-    showBottomSheetWithMultiActions(
-        context: context,
-        title: "Discard session?",
-        description: "Do you want to discard this session",
-        leftAction: _closeDialog,
-        rightAction: () {
-          _closeDialog();
-          // Clear cache when user explicitly discards
-          Provider.of<ExerciseLogController>(context, listen: false).onClear();
-          _navigateBack();
-        },
-        leftActionLabel: 'Cancel',
-        rightActionLabel: 'Discard',
-        isRightActionDestructive: true);
-  }
-
-  void _saveLog() {
-    final isRoutinePartiallyComplete = _isRoutinePartiallyComplete();
-    if (isRoutinePartiallyComplete) {
-      showBottomSheetWithMultiActions(
-          context: context,
-          title: 'Running Session',
-          description: "Do you want to end session?",
-          leftAction: Navigator.of(context).pop,
-          rightAction: () {
-            _closeDialog();
-            _doCreateRoutineLog();
-          },
-          leftActionLabel: 'Cancel',
-          rightActionLabel: 'End',
-          rightActionColor: Theme.of(context).colors.vibrantAccent);
-    } else {
-      showBottomSheetWithNoAction(
-          context: context,
-          description: "Complete some sets!",
-          title: 'Running Session');
-    }
-  }
-
-  void _updateLog() {
-    final isRoutinePartiallyComplete = _isRoutinePartiallyComplete();
-    if (isRoutinePartiallyComplete) {
-      _closeDialog();
-      _doUpdateRoutineLog();
-    } else {
-      showBottomSheetWithNoAction(
-          context: context,
-          description: "Complete some sets!",
-          title: 'Update Workout');
-    }
-  }
-
-  void _closeDialog() {
-    Navigator.of(context).pop();
-  }
-
-  void _navigateBack({RoutineLogDto? routineLog}) async {
-    context.pop(routineLog);
-  }
+  // initState is defined later once all helper methods are declared.
 
   @override
   Widget build(BuildContext context) {
+    final isLogMode = widget.mode == RoutineEditorMode.log;
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
 
     final exerciseLogs = context
         .select((ExerciseLogController controller) => controller.exerciseLogs);
 
-    final log = widget.log;
-
-    final children = exerciseLogs.map((exerciseLog) {
-      return ExerciseLogGridItemWidget(
-        editorType: widget.mode,
-        exerciseLogDto: exerciseLog,
-        superSet: whereOtherExerciseInSuperSet(
-            firstExercise: exerciseLog, exercises: exerciseLogs),
-        onRemoveSuperSet: (String superSetId) {
-          exerciseLogController.removeSuperSet(
-              superSetId: exerciseLog.superSetId);
-        },
-        onRemoveLog: () {
-          exerciseLogController.removeExerciseLog(logId: exerciseLog.id);
-        },
-        onSuperSet: () =>
-            _showSuperSetExercisePicker(firstExerciseLog: exerciseLog),
-        onReplaceLog: () =>
-            _showReplaceExercisePicker(oldExerciseLog: exerciseLog),
-      );
-    }).toList();
-
     return PopScope(
-        canPop: false,
+        canPop: true,
         child: Scaffold(
-            appBar: AppBar(
-              backgroundColor: appBarBackgroundColor(context: context),
-              surfaceTintColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              leading: IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
-                  onPressed: _discardLog),
-              title: Text(
-                log.name,
-              ),
-              actions: [
-                IconButton(
-                    key: const Key('select_exercises_in_library_btn'),
-                    onPressed: _selectExercisesInLibrary,
-                    icon: const FaIcon(FontAwesomeIcons.circlePlus)),
+            body: Container(
+          decoration: BoxDecoration(
+            gradient: themeGradient(context: context),
+          ),
+          child: SafeArea(
+            top: true,
+            bottom:
+                false, // let content (including the list) reach the bottom of the sheet
+            left: true,
+            right: true,
+            minimum: const EdgeInsets.all(20),
+            child: Stack(
+              children: [
+                // Main content: header + list
+                // Reserve vertical space at the bottom for the fixed CTA only
+                // when it's visible, so the list doesn't scroll underneath it.
+                Positioned.fill(
+                  bottom: _isRoutinePartiallyComplete() ? 88.0 : 0.0,
+                  child: Column(
+                    children: [
+                      // Header: routine name
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.log.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w900,
+                                          height: 1.2,
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (isLogMode) ...[
+                                    const SizedBox(height: 6),
+                                    GestureDetector(
+                                      onTap: _showTimerInfoBottomSheet,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _elapsed.msDigital(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headlineSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          Builder(
+                                            builder: (context) {
+                                              final deltaLabel =
+                                                  _buildTimerDeltaLabel();
+                                              if (deltaLabel.isEmpty) {
+                                                return const SizedBox.shrink();
+                                              }
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 2),
+                                                child: Text(
+                                                  deltaLabel,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: Colors.white70,
+                                                        height: 1.2,
+                                                      ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    TextButton(
+                                      onPressed: _confirmDiscardSession,
+                                      style: TextButton.styleFrom(
+                                        padding: EdgeInsets.zero,
+                                        minimumSize: const Size(0, 0),
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        foregroundColor: Colors.redAccent,
+                                      ),
+                                      child: Text(
+                                        'Discard session',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Colors.redAccent,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: _selectExercisesInLibrary,
+                              icon: const FaIcon(
+                                FontAwesomeIcons.circlePlus,
+                                size: 22,
+                                color: Colors.white,
+                              ),
+                              tooltip: 'Add exercises',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: exerciseLogs.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No exercises yet.\nTap + to add exercises and start logging.',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Colors.white70,
+                                      ),
+                                ),
+                              )
+                            : ReorderableListView.builder(
+                                padding: const EdgeInsets.only(
+                                  top: 8,
+                                ),
+                                itemCount: exerciseLogs.length,
+                                onReorder: (oldIndex, newIndex) {
+                                  if (newIndex > oldIndex) {
+                                    newIndex -= 1;
+                                  }
+
+                                  final updated = exerciseLogs.toList();
+                                  final item = updated.removeAt(oldIndex);
+                                  updated.insert(newIndex, item);
+
+                                  exerciseLogController.reOrderExerciseLogs(
+                                    reOrderedList: updated,
+                                  );
+                                },
+                                proxyDecorator:
+                                    (Widget child, int index, animation) {
+                                  // Keep the dragged item visually identical
+                                  // without additional background color.
+                                  return Material(
+                                    type: MaterialType.transparency,
+                                    child: child,
+                                  );
+                                },
+                                itemBuilder: (context, index) {
+                                  final exerciseLog = exerciseLogs[index];
+                                  return Dismissible(
+                                    key: ValueKey(exerciseLog.id),
+                                    direction: DismissDirection.endToStart,
+                                    confirmDismiss: (_) =>
+                                        _confirmRemoveExercise(exerciseLog),
+                                    onDismissed: (_) {
+                                      exerciseLogController.removeExerciseLog(
+                                          logId: exerciseLog.id);
+                                    },
+                                    background: const SizedBox.shrink(),
+                                    child: Column(
+                                      children: [
+                                        ExerciseLogListItem(
+                                          exerciseLogDto: exerciseLog,
+                                          onTap: () {
+                                            showExerciseLogEditor(
+                                              context: context,
+                                              exerciseLogId:
+                                                  exerciseLog.exercise.id,
+                                              editorType: widget.mode,
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Bottom fixed CTA (does not scroll) – same pattern as PastRoutineLogEditor
+                if (_isRoutinePartiallyComplete())
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: SafeArea(
+                      minimum: const EdgeInsets.only(
+                          left: 20, right: 20, bottom: 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: OpacityButtonWidgetTwo(
+                          buttonColor: Theme.of(context).colors.vibrantAccent,
+                          label: widget.log.id.isNotEmpty
+                              ? "Update Session"
+                              : "Finish Session",
+                          onPressed: _finishOrUpdateSession,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-            body: Container(
-              decoration: BoxDecoration(
-                gradient: themeGradient(context: context),
-              ),
-              child: SafeArea(
-                minimum: EdgeInsets.symmetric(vertical: 10),
-                child: Column(
-                  spacing: 20,
-                  children: [
-                    if (exerciseLogs.isNotEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: GridView.count(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1,
-                              mainAxisSpacing: 10.0,
-                              crossAxisSpacing: 10.0,
-                              children: children),
-                        ),
-                      ),
-                    if (_isRoutinePartiallyComplete())
-                      SafeArea(
-                        minimum: EdgeInsets.symmetric(horizontal: 20),
-                        child: SizedBox(
-                            width: double.infinity,
-                            child: OpacityButtonWidgetTwo(
-                              buttonColor:
-                                  Theme.of(context).colors.vibrantAccent,
-                              label: widget.mode == RoutineEditorMode.log
-                                  ? "Finish Session"
-                                  : "Update Session",
-                              onPressed: widget.mode == RoutineEditorMode.log
-                                  ? _saveLog
-                                  : _updateLog,
-                            )),
-                      ),
-                    if (exerciseLogs.isEmpty)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: const NoListEmptyState(
-                              message:
-                                  "Tap the + button to start adding exercises to your workout session"),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            )));
+          ),
+        )));
   }
 
-  @override
-  void initState() {
-    super.initState();
+  Future<bool> _confirmRemoveExercise(ExerciseLogDto exerciseLog) async {
+    return confirmRemoveExerciseBottomSheet(
+      context: context,
+      exerciseName: exerciseLog.exercise.name,
+      fromLabel: 'workout',
+    );
+  }
 
-    WidgetsBinding.instance.addObserver(this);
+  Future<void> _confirmDiscardSession() async {
+    bool shouldDiscard = false;
 
-    _loadRoutineAndExerciseLogs();
+    await showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Discard session?",
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Are you sure you want to discard this workout session? This cannot be undone.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OpacityButtonWidgetTwo(
+                    label: 'Cancel',
+                    showArrowRight: false,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      shouldDiscard = false;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OpacityButtonWidgetTwo(
+                    label: 'Discard',
+                    buttonColor: Colors.red,
+                    showArrowRight: false,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      shouldDiscard = true;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!shouldDiscard) return;
+
+    // Clear both in-memory state and cached pending routine log.
+    Provider.of<ExerciseLogController>(context, listen: false).onClear();
+
+    if (mounted && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _finishOrUpdateSession() async {
+    final exerciseLogController =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final exerciseLogs = exerciseLogController.exerciseLogs;
+
+    if (exerciseLogs.isEmpty) return;
+
+    final routineController = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+
+    // For new sessions, we should capture the current time as the end time.
+    // For existing sessions (updates), we must preserve the original end time
+    // so that the logged duration remains accurate unless the user explicitly
+    // edits it from the duration editor.
+    final endTime = widget.log.id.isEmpty ? DateTime.now() : widget.log.endTime;
+
+    final updatedLog = widget.log.copyWith(
+      exerciseLogs: exerciseLogs,
+      endTime: endTime,
+    );
+
+    final savedLog = await routineController.saveLog(logDto: updatedLog);
+
+    if (!mounted) return;
+
+    if (savedLog != null) {
+      // Clear in-memory + cached pending routine log once session is saved.
+      exerciseLogController.onClear();
+
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(savedLog);
+      }
+    } else {
+      // If save failed, keep state and let user retry later.
+      // Optional: surface an error snackbar in a follow-up iteration.
+    }
   }
 
   void _loadRoutineAndExerciseLogs() {
@@ -413,6 +587,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _timer?.cancel();
     // Don't auto-clear cache on dispose - only clear on successful save
     if (Platform.isIOS) {
       FlutterLocalNotificationsPlugin()
@@ -448,6 +623,24 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             androidScheduleMode: AndroidScheduleMode.exact);
       }
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addObserver(this);
+
+    _loadRoutineAndExerciseLogs();
+    if (widget.mode == RoutineEditorMode.log) {
+      _startTimer();
+    }
+    // Load average duration after first frame to ensure provider is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadAverageSessionDuration();
+      }
+    });
   }
 }
 

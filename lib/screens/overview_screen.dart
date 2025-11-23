@@ -44,6 +44,15 @@ class _OverviewScreenState extends State<OverviewScreen>
     WidgetsBinding.instance.addObserver(this);
     _lastCachedSessionState = _hasCachedSession();
     _sharedPrefs.routineLogRevision.addListener(_handleRoutineLogChanged);
+
+    // If there's a pending unsaved workout when the overview screen first loads,
+    // immediately prompt the user to resolve it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_hasCachedSession()) {
+        _showRetryBottomSheet();
+      }
+    });
   }
 
   @override
@@ -80,7 +89,13 @@ class _OverviewScreenState extends State<OverviewScreen>
   }
 
   void _handleRoutineLogChanged() {
-    _checkCacheStatus();
+    if (!mounted) return;
+    // Defer cache status check to the next frame to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkCacheStatus();
+      }
+    });
   }
 
   bool _hasCachedSession() {
@@ -325,7 +340,6 @@ class _OverviewScreenState extends State<OverviewScreen>
       templateId: "",
       name: "${timeOfDay()} Session",
       exerciseLogs: [],
-      notes: "",
       startTime: date,
       endTime: date,
     );

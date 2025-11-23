@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/colors.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/viewmodels/routine_log_arguments.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
@@ -24,19 +25,6 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
   try {
     final json = jsonDecode(cache);
     final routineLog = RoutineLogDto.fromJson(json: json);
-
-    void discardCachedSession() {
-      Navigator.of(context).pop(); // Close bottom sheet
-
-      // Clear the cached workout
-      SharedPrefs().remove(key: SharedPrefs().routineLogKey);
-
-      // Notify user
-      showSnackbar(
-        context: context,
-        message: 'Workout discarded',
-      );
-    }
 
     Future<void> retryCachedSession() async {
       Navigator.of(context).pop(); // Close bottom sheet
@@ -64,20 +52,24 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
       if (savedLog != null) {
         SharedPrefs().remove(key: SharedPrefs().routineLogKey);
 
-        showSnackbar(
-          context: context,
-          message: 'Session saved successfully!',
-        );
+        if (context.mounted) {
+          showSnackbar(
+            context: context,
+            message: 'Session saved successfully!',
+          );
+        }
       } else {
         // Save failed - keep cache so user can retry later
-        showSnackbar(
-          context: context,
-          message: 'Failed to sync. Please try again later.',
-        );
+        if (context.mounted) {
+          showSnackbar(
+            context: context,
+            message: 'Failed to sync. Please try again later.',
+          );
+        }
       }
     }
 
-    void continueTraining() {
+    void resumeTraining() {
       Navigator.of(context).pop(); // Close bottom sheet
 
       final arguments = RoutineLogArguments(
@@ -147,29 +139,22 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
               children: [
                 Expanded(
                   child: OpacityButtonWidgetTwo(
-                    label: 'Discard',
-                    buttonColor: Colors.red,
-                    onPressed: discardCachedSession,
+                    label: 'Resume',
+                    buttonColor: Theme.of(context).colors.vibrantAccent,
+                    showArrowRight: false,
+                    onPressed: resumeTraining,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OpacityButtonWidgetTwo(
                     label: 'Retry Sync',
-                    buttonColor: Theme.of(context).colors.vibrantAccent,
+                    buttonColor: vibrantBlue,
+                    showArrowRight: false,
                     onPressed: retryCachedSession,
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OpacityButtonWidgetTwo(
-                label: 'Continue Training',
-                buttonColor: Theme.of(context).colors.vibrantAccent,
-                onPressed: continueTraining,
-              ),
             ),
           ],
         ),
