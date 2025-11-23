@@ -33,7 +33,7 @@ import '../../widgets/routine/preview/exercise_log_listview.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/empty_states/no_list_empty_state.dart';
-import '../../widgets/buttons/opacity_button_widget_two.dart';
+import '../../utils/name_notes_bottom_sheet.dart';
 
 enum _OriginalNewValues {
   originalValues(
@@ -443,83 +443,21 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     if (template == null) return;
 
-    final nameController = TextEditingController(text: template.name);
-
-    showAppBottomSheet(
+    showNameNotesBottomSheet(
       context: context,
-      isScrollControlled: true,
-      child: Builder(
-        builder: (context) {
-          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 26,
-              right: 26,
-              top: 26,
-              bottom: 26 + bottomInset,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Edit workout",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameController,
-                  cursorColor: isDark ? Colors.white : Colors.black,
-                  decoration: const InputDecoration(
-                    hintText: "Workout name",
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: isDark ? Colors.white : Colors.black,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: OpacityButtonWidgetTwo(
-                    buttonColor: Theme.of(context).colors.vibrantAccent,
-                    label: "Update Workout",
-                    onPressed: () async {
-                      final name = nameController.text.trim();
-                      if (name.isEmpty) {
-                        showSnackbar(
-                          context: context,
-                          message: 'Please provide a name for this workout',
-                        );
-                        return;
-                      }
-
-                      final updated = template.copyWith(name: name);
-                      await controller.updateTemplate(template: updated);
-
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
+      title: "Edit workout",
+      primaryButtonLabel: "Update Workout",
+      initialName: template.name,
+      initialNotes: template.notes,
+      emptyNameMessage: 'Please provide a name for this workout',
+    ).then((result) async {
+      if (result == null) return;
+      final updated = template.copyWith(
+        name: result.name,
+        notes: result.notes,
+      );
+      await controller.updateTemplate(template: updated);
+    });
   }
 
   Future<void> _navigateToRoutineTemplateEditor() async {

@@ -20,6 +20,7 @@ import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/session_duration_selector.dart';
+import '../../utils/name_notes_bottom_sheet.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
@@ -335,15 +336,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     // Show plan picker to select which plan to save template into
     _showPlanPickerForTemplate(log: log, plans: plans.toList());
-    // When the plan picker closes without selection, re-open this sheet
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        // Delay to ensure the plan picker has closed
-        Future.delayed(const Duration(milliseconds: 200), () {
-          if (mounted) _showBottomSheet();
-        });
-      }
-    });
   }
 
   void _showPlanPickerForTemplate(
@@ -359,9 +351,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
           onSelect: (selectedPlan) async {
             Navigator.of(context).pop();
             await _doCreateTemplate(log: log, planId: selectedPlan.id);
-            if (mounted) {
-              _showBottomSheet();
-            }
           },
           onCreatePlan: () async {
             Navigator.of(context).pop(); // Close bottom sheet
@@ -388,6 +377,19 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   Future<void> _doCreateTemplate(
       {required RoutineLogDto log, required String planId}) async {
+    // Let the user confirm the template name and notes first, similar to plans.
+    final details = await showNameNotesBottomSheet(
+      context: context,
+      title: "Save as template",
+      primaryButtonLabel: "Save Template",
+      initialName: log.name,
+      // Routine logs currently have no top-level notes; start empty.
+      initialNotes: '',
+      emptyNameMessage: 'Please provide a name for this workout',
+    );
+
+    if (details == null) return;
+
     _showLoadingScreen();
 
     try {
@@ -405,7 +407,11 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       }).toList();
 
       final templateToCreate = RoutineTemplateDto(
-          planId: planId, name: log.name, exerciseTemplates: exercises);
+        planId: planId,
+        name: details.name,
+        notes: details.notes,
+        exerciseTemplates: exercises,
+      );
 
       final createdTemplate =
           await Provider.of<SupabaseExerciseAndRoutineController>(context,
