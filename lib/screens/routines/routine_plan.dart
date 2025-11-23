@@ -28,7 +28,7 @@ import '../../widgets/routine/preview/routine_template_grid_item.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
 import '../../nudges/plans_nudges.dart';
 import '../../widgets/information_containers/transparent_information_container_lite.dart';
-import '../../widgets/buttons/opacity_button_widget_two.dart';
+import '../../utils/name_notes_bottom_sheet.dart';
 
 class RoutinePlanScreen extends StatefulWidget {
   static const routeName = '/routine_plan_screen';
@@ -460,112 +460,26 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
   }
 
   void _showCreateWorkoutBottomSheet({required RoutinePlanDto plan}) {
-    final nameController = TextEditingController();
-    final notesController = TextEditingController();
-
-    showAppBottomSheet(
+    showNameNotesBottomSheet(
       context: context,
-      isScrollControlled: true,
-      child: Builder(
-        builder: (context) {
-          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+      title: "Create workout",
+      primaryButtonLabel: "Create Workout",
+      emptyNameMessage: 'Please provide a name for this workout',
+    ).then((result) async {
+      if (result == null) return;
 
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 26,
-              right: 26,
-              top: 26,
-              bottom: 26 + bottomInset,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Create workout",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameController,
-                  cursorColor: isDark ? Colors.white : Colors.black,
-                  decoration: const InputDecoration(
-                    hintText: "Workout name",
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: isDark ? Colors.white : Colors.black,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: notesController,
-                  cursorColor: isDark ? Colors.white : Colors.black,
-                  decoration: const InputDecoration(
-                    hintText: "Notes (optional)",
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: OpacityButtonWidgetTwo(
-                    buttonColor: Theme.of(context).colors.vibrantAccent,
-                    label: "Create Workout",
-                    onPressed: () async {
-                      final name = nameController.text.trim();
-                      if (name.isEmpty) {
-                        showSnackbar(
-                          context: context,
-                          message: 'Please provide a name for this workout',
-                        );
-                        return;
-                      }
+      final template = RoutineTemplateDto(
+        id: "",
+        name: result.name,
+        notes: result.notes,
+        exerciseTemplates: const [],
+        planId: plan.id,
+      );
 
-                      final template = RoutineTemplateDto(
-                        id: "",
-                        name: name,
-                        notes: notesController.text.trim(),
-                        exerciseTemplates: const [],
-                        planId: plan.id,
-                      );
-
-                      await Provider.of<SupabaseExerciseAndRoutineController>(
-                              context,
-                              listen: false)
-                          .saveTemplate(templateDto: template);
-
-                      if (mounted) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
+      await Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false)
+          .saveTemplate(templateDto: template);
+    });
   }
 
   void _showMenuBottomSheet() {

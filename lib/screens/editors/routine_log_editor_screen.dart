@@ -167,6 +167,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isLogMode = widget.mode == RoutineEditorMode.log;
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
 
@@ -218,69 +219,71 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 6),
-                                  GestureDetector(
-                                    onTap: _showTimerInfoBottomSheet,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _elapsed.msDigital(),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headlineSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                        Builder(
-                                          builder: (context) {
-                                            final deltaLabel =
-                                                _buildTimerDeltaLabel();
-                                            if (deltaLabel.isEmpty) {
-                                              return const SizedBox.shrink();
-                                            }
-                                            return Padding(
-                                              padding:
-                                                  const EdgeInsets.only(top: 2),
-                                              child: Text(
-                                                deltaLabel,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall
-                                                    ?.copyWith(
-                                                      color: Colors.white70,
-                                                      height: 1.2,
-                                                    ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  TextButton(
-                                    onPressed: _confirmDiscardSession,
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: const Size(0, 0),
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      foregroundColor: Colors.redAccent,
-                                    ),
-                                    child: Text(
-                                      'Discard session',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: Colors.redAccent,
-                                            fontWeight: FontWeight.w700,
+                                  if (isLogMode) ...[
+                                    const SizedBox(height: 6),
+                                    GestureDetector(
+                                      onTap: _showTimerInfoBottomSheet,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _elapsed.msDigital(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .headlineSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                           ),
+                                          Builder(
+                                            builder: (context) {
+                                              final deltaLabel =
+                                                  _buildTimerDeltaLabel();
+                                              if (deltaLabel.isEmpty) {
+                                                return const SizedBox.shrink();
+                                              }
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 2),
+                                                child: Text(
+                                                  deltaLabel,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: Colors.white70,
+                                                        height: 1.2,
+                                                      ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(height: 4),
+                                    TextButton(
+                                      onPressed: _confirmDiscardSession,
+                                      style: TextButton.styleFrom(
+                                        padding: EdgeInsets.zero,
+                                        minimumSize: const Size(0, 0),
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        foregroundColor: Colors.redAccent,
+                                      ),
+                                      child: Text(
+                                        'Discard session',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Colors.redAccent,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -629,7 +632,9 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     WidgetsBinding.instance.addObserver(this);
 
     _loadRoutineAndExerciseLogs();
-    _startTimer();
+    if (widget.mode == RoutineEditorMode.log) {
+      _startTimer();
+    }
     // Load average duration after first frame to ensure provider is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {

@@ -16,6 +16,7 @@ import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../utils/general_utils.dart';
+import '../../utils/name_notes_bottom_sheet.dart';
 import '../../utils/routine_editors_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/routine/editors/exercise_log_list_item.dart';
@@ -38,6 +39,7 @@ class RoutineTemplateEditorScreen extends StatefulWidget {
 class _RoutineTemplateEditorScreenState
     extends State<RoutineTemplateEditorScreen> {
   late TextEditingController _templateNameController;
+  late TextEditingController _templateNotesController;
 
   late Function _onDisposeCallback;
 
@@ -126,6 +128,7 @@ class _RoutineTemplateEditorScreenState
 
     return template.copyWith(
       name: _templateNameController.text.trim(),
+      notes: _templateNotesController.text.trim(),
       exerciseTemplates: exerciseLogs,
     );
   }
@@ -155,116 +158,30 @@ class _RoutineTemplateEditorScreenState
   }
 
   void _showTemplateNameBottomSheet({required bool isUpdate}) {
-    final existingName = _templateNameController.text.trim();
-    final existingNotes = widget.template?.notes ?? "";
-    final nameController = TextEditingController(text: existingName);
-    final notesController = TextEditingController(text: existingNotes);
-
-    showAppBottomSheet(
+    showNameNotesBottomSheet(
       context: context,
-      isScrollControlled: true,
-      child: Builder(
-        builder: (context) {
-          final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-          final isDark = Theme.of(context).brightness == Brightness.dark;
+      title: isUpdate ? "Update workout" : "Create workout",
+      primaryButtonLabel: isUpdate ? "Update Workout" : "Create Workout",
+      initialName: _templateNameController.text.trim(),
+      initialNotes: _templateNotesController.text.trim(),
+      emptyNameMessage: 'Please provide a name for this workout',
+    ).then((result) async {
+      if (result == null) return;
+      _templateNameController.text = result.name;
+      _templateNotesController.text = result.notes;
 
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 26,
-              right: 26,
-              top: 26,
-              bottom: 26 + bottomInset,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isUpdate ? "Update workout" : "Create workout",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameController,
-                  cursorColor: isDark ? Colors.white : Colors.black,
-                  decoration: const InputDecoration(
-                    hintText: "Workout name",
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: isDark ? Colors.white : Colors.black,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: notesController,
-                  cursorColor: isDark ? Colors.white : Colors.black,
-                  decoration: const InputDecoration(
-                    hintText: "Notes (optional)",
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
-                  keyboardType: TextInputType.multiline,
-                  maxLines: null,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: OpacityButtonWidgetTwo(
-                    buttonColor: Theme.of(context).colors.vibrantAccent,
-                    label: isUpdate ? "Update Workout" : "Create Workout",
-                    onPressed: () {
-                      final name = nameController.text.trim();
-                      if (name.isEmpty) {
-                        showSnackbar(
-                            context: context,
-                            message: 'Please provide a name for this workout');
-                        return;
-                      }
-
-                      // Persist into the screen controller, then delegate to existing logic
-                      _templateNameController.text = name;
-                      if (isUpdate && widget.template != null) {
-                        final updated = widget.template!
-                            .copyWith(notes: notesController.text.trim());
-                        // Update the template's notes immediately via controller
-                        Provider.of<SupabaseExerciseAndRoutineController>(
-                                context,
-                                listen: false)
-                            .updateTemplate(template: updated);
-                      }
-
-                      Navigator.of(context).pop();
-
-                      if (isUpdate) {
-                        _updateRoutineTemplate();
-                      } else {
-                        _createRoutineTemplate();
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
+      if (isUpdate) {
+        final template = widget.template;
+        if (template != null) {
+          final updatedTemplate =
+              _getUpdatedRoutineTemplate(template: template);
+          _doUpdateRoutineTemplate(updatedTemplate: updatedTemplate);
+          _navigateBack(template: updatedTemplate);
+        }
+      } else {
+        _createRoutineTemplate();
+      }
+    });
   }
 
   @override
@@ -542,6 +459,8 @@ class _RoutineTemplateEditorScreenState
   void _initializeTextControllers() {
     final template = widget.template;
     _templateNameController = TextEditingController(text: template?.name);
+    _templateNotesController =
+        TextEditingController(text: template?.notes ?? "");
   }
 
   void _minimiseOrMaximiseCards() {
@@ -570,6 +489,7 @@ class _RoutineTemplateEditorScreenState
   void dispose() {
     _onDisposeCallback();
     _templateNameController.dispose();
+    _templateNotesController.dispose();
     super.dispose();
   }
 }
