@@ -23,8 +23,6 @@ import 'routine_log_local_store.dart';
 /// You can adopt it incrementally by:
 /// - Using [offlineLogs] instead of direct Supabase logs where appropriate.
 /// - Calling [syncNow] on app start, resume, or when connectivity changes.
-enum RoutineLogSyncStatus { synced, pending, failed }
-
 class OfflineRoutineLogRepository {
   OfflineRoutineLogRepository({
     RoutineLogLocalStore? localStore,
@@ -44,32 +42,6 @@ class OfflineRoutineLogRepository {
   /// Public, offline-first view of logs for the rest of the app.
   List<RoutineLogDto> get offlineLogs =>
       _entries.where((e) => !e.isDeleted).map((e) => e.log).toList();
-
-  /// Returns the current sync status for a given log ID so the UI can show
-  /// pending/failed badges.
-  RoutineLogSyncStatus syncStatusForLog(String id) {
-    final entry = _entries.firstWhere(
-      (e) => e.log.id == id,
-      orElse: () => RoutineLogLocalEntry(
-        log: RoutineLogDto(
-          id: id,
-          templateId: '',
-          name: '',
-          exerciseLogs: const [],
-          startTime: DateTime.fromMillisecondsSinceEpoch(0),
-          endTime: DateTime.fromMillisecondsSinceEpoch(0),
-        ),
-        updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
-        isDeleted: false,
-        needsSync: false,
-        lastSyncFailed: false,
-      ),
-    );
-
-    if (entry.lastSyncFailed) return RoutineLogSyncStatus.failed;
-    if (entry.needsSync) return RoutineLogSyncStatus.pending;
-    return RoutineLogSyncStatus.synced;
-  }
 
   /// Load from disk only (no network).
   Future<void> loadFromCache() async {
