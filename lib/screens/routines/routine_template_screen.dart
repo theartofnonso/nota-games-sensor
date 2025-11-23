@@ -615,7 +615,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                   contentPadding: EdgeInsets.zero,
                   leading: const FaIcon(
                     FontAwesomeIcons.circlePlus,
-                    size: 18,
+                    size: 22,
                   ),
                   horizontalTitleGap: 10,
                   title: Text("Add exercises",

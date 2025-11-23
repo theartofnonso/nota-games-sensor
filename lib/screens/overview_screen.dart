@@ -232,8 +232,8 @@ class _OverviewScreenState extends State<OverviewScreen>
     showAppBottomSheet(
       context: context,
       isDraggable: true,
-      builder: (context, scrollController) {
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+      builder: (sheetContext, scrollController) {
+        final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
 
         return Column(
           children: [
@@ -252,7 +252,7 @@ class _OverviewScreenState extends State<OverviewScreen>
                       children: [
                         Text(
                           dateLabel,
-                          style: Theme.of(context)
+                          style: Theme.of(sheetContext)
                               .textTheme
                               .headlineMedium
                               ?.copyWith(
@@ -261,10 +261,12 @@ class _OverviewScreenState extends State<OverviewScreen>
                         ),
                         Text(
                           DateFormat('MMMM d').format(date),
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey.shade400,
-                                  ),
+                          style: Theme.of(sheetContext)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Colors.grey.shade400,
+                              ),
                         ),
                       ],
                     ),
@@ -273,7 +275,7 @@ class _OverviewScreenState extends State<OverviewScreen>
                   if (!isFuture)
                     IconButton(
                       onPressed: () {
-                        Navigator.pop(context); // Close bottom sheet
+                        Navigator.pop(sheetContext); // Close bottom sheet
                         if (isToday) {
                           // Log a fresh session for today
                           logEmptyRoutine(context: context);
@@ -284,7 +286,7 @@ class _OverviewScreenState extends State<OverviewScreen>
                       },
                       icon: FaIcon(
                         FontAwesomeIcons.circlePlus,
-                        size: 18,
+                        size: 22,
                         color: isDarkMode ? Colors.white : Colors.black,
                       ),
                     ),
@@ -397,7 +399,7 @@ class _OverviewScreenState extends State<OverviewScreen>
                     onPressed: () => _createNewPlan(context),
                     icon: FaIcon(
                       FontAwesomeIcons.circlePlus,
-                      size: 18,
+                      size: 22,
                       color: isDarkMode ? Colors.white : Colors.black,
                     ),
                   ),

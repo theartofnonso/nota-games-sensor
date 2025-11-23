@@ -170,7 +170,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         actions: [
           IconButton(
               onPressed: _navigateToExerciseEditor,
-              icon: const FaIcon(FontAwesomeIcons.circlePlus)),
+              icon: const FaIcon(FontAwesomeIcons.circlePlus, size: 22)),
         ],
       ),
       body: Container(
@@ -200,7 +200,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          childAspectRatio: 0.75,
+                          // Slightly higher aspect ratio so cards feel a bit
+                          // smaller/less tall while keeping readability.
+                          childAspectRatio: 0.9,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
                         ),
@@ -265,7 +267,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
             if (!widget.readOnly) ...[
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const FaIcon(FontAwesomeIcons.circlePlus, size: 20),
+                leading: const FaIcon(FontAwesomeIcons.circlePlus, size: 22),
                 horizontalTitleGap: 6,
                 title: const Text("Add to workout"),
                 onTap: () {

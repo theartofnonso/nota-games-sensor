@@ -112,7 +112,7 @@ class _RoutinePlansScreenState extends State<RoutinePlansScreen> {
                   contentPadding: EdgeInsets.zero,
                   leading: FaIcon(
                     FontAwesomeIcons.circlePlus,
-                    size: 18,
+                    size: 22,
                     color: Theme.of(context).colors.vibrantAccent,
                   ),
                   horizontalTitleGap: 6,

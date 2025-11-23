@@ -501,7 +501,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                     contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(
                       FontAwesomeIcons.circlePlus,
-                      size: 18,
+                      size: 22,
                     ),
                     horizontalTitleGap: 6,
                     title: Text("Add new workout",

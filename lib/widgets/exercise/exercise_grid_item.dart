@@ -30,29 +30,30 @@ class ExerciseGridItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Muscle group illustration - centered with proper spacing
+            // Muscle group illustration - smaller and centered so it supports
+            // the content without overpowering it.
             Expanded(
               child: Center(
                 child: Opacity(
-                  opacity: 0.8,
+                  opacity: 0.85,
                   child: Image.asset(
                     illustrationPath,
-                    height: 90,
+                    height: 64,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
                       // Fallback if image not found
                       return Icon(
                         Icons.block,
-                        size: 60,
+                        size: 32,
                         color:
-                            isDarkMode ? Colors.white38 : Colors.grey.shade400,
+                            isDarkMode ? Colors.white24 : Colors.grey.shade300,
                       );
                     },
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             // Exercise name
             Text(
               exercise.name,
