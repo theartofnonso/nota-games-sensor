@@ -147,11 +147,23 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                         useOpacity: true,
                       );
                     }),
-                    Text(plan.name,
-                        style: TextStyle(
-                            fontSize: 20,
-                            height: 1.5,
-                            fontWeight: FontWeight.w900)),
+                    Text(
+                      plan.name,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        height: 1.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      plan.notes.isNotEmpty ? plan.notes : "No notes",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.white70 : Colors.black,
+                        height: 1.8,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                     Row(spacing: 12, children: [
                       ChipOne(
                         label:
@@ -165,12 +177,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                           child: CustomIcon(FontAwesomeIcons.hashtag,
                               color: Theme.of(context).colorScheme.secondary)),
                     ]),
-                    Text(plan.notes.isNotEmpty ? plan.notes : "No notes",
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode ? Colors.white70 : Colors.black,
-                            height: 1.8,
-                            fontWeight: FontWeight.w400)),
                     Column(
                       spacing: 4,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,6 +461,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
   void _showCreateWorkoutBottomSheet({required RoutinePlanDto plan}) {
     final nameController = TextEditingController();
+    final notesController = TextEditingController();
 
     showAppBottomSheet(
       context: context,
@@ -500,6 +507,24 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                     fontSize: 14,
                   ),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesController,
+                  cursorColor: isDark ? Colors.white : Colors.black,
+                  decoration: const InputDecoration(
+                    hintText: "Notes (optional)",
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -511,8 +536,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                       if (name.isEmpty) {
                         showSnackbar(
                           context: context,
-                          message:
-                              'Please provide a name for this workout',
+                          message: 'Please provide a name for this workout',
                         );
                         return;
                       }
@@ -520,6 +544,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                       final template = RoutineTemplateDto(
                         id: "",
                         name: name,
+                        notes: notesController.text.trim(),
                         exerciseTemplates: const [],
                         planId: plan.id,
                       );

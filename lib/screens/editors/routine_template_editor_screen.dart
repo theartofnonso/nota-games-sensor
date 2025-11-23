@@ -125,8 +125,9 @@ class _RoutineTemplateEditorScreenState
     final exerciseLogs = updatedExerciseLogs ?? exerciseProvider.exerciseLogs;
 
     return template.copyWith(
-        name: _templateNameController.text.trim(),
-        exerciseTemplates: exerciseLogs);
+      name: _templateNameController.text.trim(),
+      exerciseTemplates: exerciseLogs,
+    );
   }
 
   void _doUpdateRoutineTemplate(
@@ -155,7 +156,9 @@ class _RoutineTemplateEditorScreenState
 
   void _showTemplateNameBottomSheet({required bool isUpdate}) {
     final existingName = _templateNameController.text.trim();
-    final controller = TextEditingController(text: existingName);
+    final existingNotes = widget.template?.notes ?? "";
+    final nameController = TextEditingController(text: existingName);
+    final notesController = TextEditingController(text: existingNotes);
 
     showAppBottomSheet(
       context: context,
@@ -185,7 +188,7 @@ class _RoutineTemplateEditorScreenState
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: controller,
+                  controller: nameController,
                   cursorColor: isDark ? Colors.white : Colors.black,
                   decoration: const InputDecoration(
                     hintText: "Workout name",
@@ -201,6 +204,24 @@ class _RoutineTemplateEditorScreenState
                     fontSize: 14,
                   ),
                 ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesController,
+                  cursorColor: isDark ? Colors.white : Colors.black,
+                  decoration: const InputDecoration(
+                    hintText: "Notes (optional)",
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                  keyboardType: TextInputType.multiline,
+                  maxLines: null,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -208,7 +229,7 @@ class _RoutineTemplateEditorScreenState
                     buttonColor: Theme.of(context).colors.vibrantAccent,
                     label: isUpdate ? "Update Workout" : "Create Workout",
                     onPressed: () {
-                      final name = controller.text.trim();
+                      final name = nameController.text.trim();
                       if (name.isEmpty) {
                         showSnackbar(
                             context: context,
@@ -218,6 +239,15 @@ class _RoutineTemplateEditorScreenState
 
                       // Persist into the screen controller, then delegate to existing logic
                       _templateNameController.text = name;
+                      if (isUpdate && widget.template != null) {
+                        final updated = widget.template!
+                            .copyWith(notes: notesController.text.trim());
+                        // Update the template's notes immediately via controller
+                        Provider.of<SupabaseExerciseAndRoutineController>(
+                                context,
+                                listen: false)
+                            .updateTemplate(template: updated);
+                      }
 
                       Navigator.of(context).pop();
 
@@ -376,6 +406,13 @@ class _RoutineTemplateEditorScreenState
                                         reOrderedList: updated,
                                       );
                                     },
+                                    proxyDecorator:
+                                        (Widget child, int index, animation) {
+                                      return Material(
+                                        type: MaterialType.transparency,
+                                        child: child,
+                                      );
+                                    },
                                     itemBuilder: (context, index) {
                                       final exerciseLog =
                                           exerciseTemplates[index];
@@ -435,7 +472,11 @@ class _RoutineTemplateEditorScreenState
                             onPressed: () {
                               final isUpdate =
                                   widget.template?.id.isNotEmpty ?? false;
-                              _showTemplateNameBottomSheet(isUpdate: isUpdate);
+                              if (isUpdate) {
+                                _updateRoutineTemplate();
+                              } else {
+                                _showTemplateNameBottomSheet(isUpdate: false);
+                              }
                             },
                           ),
                         ),

@@ -19,6 +19,7 @@ import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
+import '../../utils/session_duration_selector.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
@@ -302,22 +303,20 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final log = controller.logWhereId(id: widget.id);
 
     if (log != null) {
-      showDatetimeRangePicker(
-          context: context,
-          initialDateTimeRange:
-              DateTimeRange(start: log.startTime, end: log.endTime),
-          onChangedDateTimeRange: (DateTimeRange datetimeRange) async {
-            Navigator.of(context).pop();
-            final updatedLog = log.copyWith(
-                startTime: datetimeRange.start, endTime: datetimeRange.end);
-            await Provider.of<SupabaseExerciseAndRoutineController>(context,
-                    listen: false)
-                .updateLog(log: updatedLog);
-            // No need to update state - controller will notify listeners
-            if (mounted) {
-              _showBottomSheet();
-            }
-          });
+      showSessionDurationSelectorBottomSheet(
+        context: context,
+        initialStartTime: log.startTime,
+        initialEndTime: log.endTime,
+        onConfirm: (start, end) async {
+          final updatedLog = log.copyWith(startTime: start, endTime: end);
+          await Provider.of<SupabaseExerciseAndRoutineController>(context,
+                  listen: false)
+              .updateLog(log: updatedLog);
+          if (mounted) {
+            _showBottomSheet();
+          }
+        },
+      );
     }
   }
 

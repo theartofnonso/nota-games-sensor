@@ -196,23 +196,28 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 2,
+                          spacing: 4,
                           children: [
-                            Text(template.name,
-                                style: TextStyle(
-                                    fontSize: 20,
-                                    height: 1.5,
-                                    fontWeight: FontWeight.w900)),
-                            if (plan != null)
+                            Text(
+                              template.name,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                height: 1.5,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            if (template.notes.isNotEmpty)
                               Text(
-                                "In ${plan.name}",
+                                template.notes,
                                 style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDarkMode
-                                        ? Colors.white70
-                                        : Colors.black,
-                                    fontWeight: FontWeight.w400),
-                              )
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? Colors.white70
+                                      : Colors.black,
+                                  height: 1.6,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
                           ],
                         ),
                         ChipOne(

@@ -329,6 +329,15 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                     reOrderedList: updated,
                                   );
                                 },
+                                proxyDecorator:
+                                    (Widget child, int index, animation) {
+                                  // Keep the dragged item visually identical
+                                  // without additional background color.
+                                  return Material(
+                                    type: MaterialType.transparency,
+                                    child: child,
+                                  );
+                                },
                                 itemBuilder: (context, index) {
                                   final exerciseLog = exerciseLogs[index];
                                   return Dismissible(
