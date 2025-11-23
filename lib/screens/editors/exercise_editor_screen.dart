@@ -386,9 +386,11 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     _exerciseNameController =
         TextEditingController(text: previousExercise?.name);
 
+    // Default to the first item in the muscle group list used by the picker
+    // when creating a new exercise, otherwise preserve the existing value.
     _primaryMuscleGroup = previousExercise != null
         ? previousExercise.primaryMuscleGroup
-        : MuscleGroup.values.first;
+        : MuscleGroup.sortedValues.first;
 
     _exerciseType =
         previousExercise != null ? previousExercise.type : ExerciseType.weights;

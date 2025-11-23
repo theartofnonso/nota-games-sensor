@@ -277,9 +277,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   Future<void> _maybeShowProgressionPrompt() async {
-    final controller =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
 
     final recentLogs = controller.whereRecentExerciseLogsForExercise(
       exercise: _currentExerciseLog.exercise,
@@ -643,8 +643,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             children: [
               // Custom header with sapphire background
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
                 decoration: const BoxDecoration(
                   color: sapphireDark80,
                 ),

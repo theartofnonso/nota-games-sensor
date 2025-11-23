@@ -62,14 +62,21 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   }
 
   void _startTimer() {
-    // Initialize elapsed based on the log's start time
+    // Initialize elapsed based on the log's start time. Clamp to zero in case
+    // the device clock has moved backwards (e.g. manual time change).
     _elapsed = DateTime.now().difference(widget.log.startTime);
+    if (_elapsed.isNegative) {
+      _elapsed = Duration.zero;
+    }
 
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() {
         _elapsed = DateTime.now().difference(widget.log.startTime);
+        if (_elapsed.isNegative) {
+          _elapsed = Duration.zero;
+        }
       });
     });
   }
