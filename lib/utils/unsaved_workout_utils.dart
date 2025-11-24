@@ -2,22 +2,17 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import 'package:trainware/colors.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/viewmodels/routine_log_arguments.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
 import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 
-import '../controllers/supabase_exercise_and_routine_controller.dart';
-
-/// Shows the "unsaved workout" bottom sheet and forces the user
-/// to either discard, retry sync, or continue the cached session.
+/// Shows the "unsaved workout" bottom sheet and lets the user
+/// resume the cached session.
 Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
   final cache = SharedPrefs().routineLog;
   if (cache.isEmpty) return;
@@ -25,49 +20,6 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
   try {
     final json = jsonDecode(cache);
     final routineLog = RoutineLogDto.fromJson(json: json);
-
-    Future<void> retryCachedSession() async {
-      Navigator.of(context).pop(); // Close bottom sheet
-
-      final controller = context.read<SupabaseExerciseAndRoutineController>();
-
-      // Check if this log already exists in the database
-      final existingLog = controller.logWhereId(id: routineLog.id);
-
-      if (existingLog != null) {
-        // Log already exists - just clear the cache
-        SharedPrefs().remove(key: SharedPrefs().routineLogKey);
-
-        showSnackbar(
-          context: context,
-          message: 'Workout was already saved!',
-        );
-        return;
-      }
-
-      // Try to save the cached workout
-      final savedLog = await controller.saveLog(logDto: routineLog);
-
-      // Clear cache ONLY if save succeeded
-      if (savedLog != null) {
-        SharedPrefs().remove(key: SharedPrefs().routineLogKey);
-
-        if (context.mounted) {
-          showSnackbar(
-            context: context,
-            message: 'Session saved successfully!',
-          );
-        }
-      } else {
-        // Save failed - keep cache so user can retry later
-        if (context.mounted) {
-          showSnackbar(
-            context: context,
-            message: 'Failed to sync. Please try again later.',
-          );
-        }
-      }
-    }
 
     void resumeTraining() {
       Navigator.of(context).pop(); // Close bottom sheet
@@ -107,7 +59,7 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
             ),
             const SizedBox(height: 16),
             Text(
-              'You have a workout session that failed to sync:',
+              'You have a workout session ready to resume:',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -135,26 +87,14 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
               ),
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Resume',
-                    buttonColor: Theme.of(context).colors.vibrantAccent,
-                    showArrowRight: false,
-                    onPressed: resumeTraining,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Retry Sync',
-                    buttonColor: vibrantBlue,
-                    showArrowRight: false,
-                    onPressed: retryCachedSession,
-                  ),
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Resume workout',
+                buttonColor: Theme.of(context).colors.vibrantAccent,
+                showArrowRight: false,
+                onPressed: resumeTraining,
+              ),
             ),
           ],
         ),

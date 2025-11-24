@@ -643,20 +643,12 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             children: [
               // Custom header with sapphire background
               Container(
-                padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+                padding: const EdgeInsets.fromLTRB(20, 18, 16, 12),
                 decoration: const BoxDecoration(
                   color: sapphireDark80,
                 ),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const FaIcon(FontAwesomeIcons.xmark,
-                          size: 20, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
