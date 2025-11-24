@@ -13,8 +13,13 @@ import 'package:trainware/utils/theme/color_extensions.dart';
 /// Dates flow across month boundaries without line breaks
 class InfiniteCalendar extends StatefulWidget {
   final void Function(DateTime date)? onDateTap;
+  final void Function(DateTime visibleMonthStart)? onMonthChanged;
 
-  const InfiniteCalendar({super.key, this.onDateTap});
+  const InfiniteCalendar({
+    super.key,
+    this.onDateTap,
+    this.onMonthChanged,
+  });
 
   @override
   State<InfiniteCalendar> createState() => _InfiniteCalendarState();
@@ -26,6 +31,10 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
   bool _hasScrolledToToday = false;
   bool _showScrollToTodayButton = false;
   double? _todayScrollOffset;
+
+  /// Tracks the last month we reported via [onMonthChanged] so we only
+  /// notify when the visible month actually changes.
+  DateTime? _lastReportedMonthStart;
 
   @override
   void initState() {
@@ -45,9 +54,17 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
   }
 
   void _onScroll() {
-    if (!mounted || _todayScrollOffset == null) return;
+    if (!mounted) return;
 
     final currentOffset = _scrollController.offset;
+
+    // Always update visible month based on scroll position.
+    _updateVisibleMonth(currentOffset);
+
+    // Only handle "Back to Today" button visibility once we know where
+    // today's row is.
+    if (_todayScrollOffset == null) return;
+
     final threshold =
         200.0; // Show button if scrolled more than 200 pixels away
 
@@ -58,6 +75,34 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
       setState(() {
         _showScrollToTodayButton = isAwayFromToday;
       });
+    }
+  }
+
+  void _updateVisibleMonth(double scrollOffset) {
+    if (widget.onMonthChanged == null) return;
+
+    // Mirror the same date range logic used by _ContinuousCalendarGrid.
+    final today = DateTime.now();
+    final startDate = DateTime(today.year - 1, today.month, today.day);
+    final firstMonday = _findPreviousMonday(startDate);
+
+    // Use the same approximate row height as in _scrollToCurrentDate.
+    const approximateRowHeight = 60.0;
+    if (approximateRowHeight <= 0) return;
+
+    // Estimate which row is currently at the top of the viewport.
+    final rawRowIndex = (scrollOffset / approximateRowHeight).floor();
+    final rowIndex = rawRowIndex < 0 ? 0 : rawRowIndex;
+
+    // Each row represents a full week (7 days).
+    final weekStart = firstMonday.add(Duration(days: rowIndex * 7));
+    final visibleMonthStart = DateTime(weekStart.year, weekStart.month);
+
+    if (_lastReportedMonthStart == null ||
+        _lastReportedMonthStart!.year != visibleMonthStart.year ||
+        _lastReportedMonthStart!.month != visibleMonthStart.month) {
+      _lastReportedMonthStart = visibleMonthStart;
+      widget.onMonthChanged?.call(visibleMonthStart);
     }
   }
 
@@ -92,6 +137,9 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
 
     // Save today's scroll position for comparison
     _todayScrollOffset = targetOffset;
+
+    // Ensure the initial visible month overlay matches where we scrolled.
+    _updateVisibleMonth(targetOffset);
 
     // Animate to position for smoother scrolling
     _scrollController.animateTo(

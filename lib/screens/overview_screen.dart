@@ -37,6 +37,8 @@ class _OverviewScreenState extends State<OverviewScreen>
   final SharedPrefs _sharedPrefs = SharedPrefs();
   bool _loading = false;
   bool _lastCachedSessionState = false;
+  DateTime _currentVisibleMonth =
+      DateTime(DateTime.now().year, DateTime.now().month);
 
   @override
   void initState() {
@@ -133,6 +135,65 @@ class _OverviewScreenState extends State<OverviewScreen>
             bottom: false,
             child: InfiniteCalendar(
               onDateTap: (date) => _showLogsForDate(context, date),
+              onMonthChanged: (monthStart) {
+                if (!mounted) return;
+                setState(() {
+                  _currentVisibleMonth =
+                      DateTime(monthStart.year, monthStart.month);
+                });
+              },
+            ),
+          ),
+          // Month summary overlay (bottom-left)
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 16,
+            left: 16,
+            child: Consumer<SupabaseExerciseAndRoutineController>(
+              builder: (context, controller, _) {
+                final logs = controller.logs;
+                final monthLogs = logs.where((log) {
+                  final dt = log.startTime;
+                  return dt.year == _currentVisibleMonth.year &&
+                      dt.month == _currentVisibleMonth.month;
+                }).length;
+
+                final monthLabel =
+                    DateFormat('MMM yyyy').format(_currentVisibleMonth);
+                final countLabel =
+                    monthLogs == 1 ? '1 session' : '$monthLogs sessions';
+
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        monthLabel,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        countLabel,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 14,
+                            ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
           // Notification icon overlay (only when cached session exists)
