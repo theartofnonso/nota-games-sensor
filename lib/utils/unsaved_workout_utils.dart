@@ -89,12 +89,12 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: OpacityButtonWidgetTwo(
+                  child: OpacityButtonWidgetTwo(
                 label: 'Resume workout',
-                buttonColor: Theme.of(context).colors.vibrantAccent,
-                showArrowRight: false,
-                onPressed: resumeTraining,
-              ),
+                    buttonColor: Theme.of(context).colors.vibrantAccent,
+                    showArrowRight: false,
+                    onPressed: resumeTraining,
+                  ),
             ),
           ],
         ),

@@ -4,11 +4,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
+import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/routine_editors_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -42,6 +43,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   Timer? _timer;
   Duration _elapsed = Duration.zero;
   Duration? _averageSessionDuration;
+  late final bool _isFreshEmptyLog;
+  bool _showSuggestionsBar = false;
   void _selectExercisesInLibrary() async {
     final controller =
         Provider.of<ExerciseLogController>(context, listen: false);
@@ -79,6 +82,80 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         }
       });
     });
+  }
+
+  void _handleSuggestedExerciseTap(ExerciseDto exercise) {
+    final controller =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false)
+        .whereRecentSetsForExercise(exercise: exercise);
+    controller.addExerciseLog(exercise: exercise, pastSets: pastSets);
+  }
+
+  List<_SuggestionCardData> _buildSuggestionCards() {
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final logs = controller.logs;
+    if (logs.isEmpty) return [];
+
+    final now = DateTime.now();
+    final todayWeekday = now.weekday;
+    final cutoff = now.subtract(const Duration(days: 365));
+
+    final Map<String, _SuggestionStats> stats = {};
+
+    for (final log in logs) {
+      if (log.startTime.isBefore(cutoff)) continue;
+      final sameWeekday = log.startTime.weekday == todayWeekday;
+      for (final exerciseLog in log.exerciseLogs) {
+        final exercise = exerciseLog.exercise;
+        if (exercise.id.isEmpty) continue;
+        final entry = stats.putIfAbsent(
+          exercise.id,
+          () => _SuggestionStats(exercise: exercise),
+        );
+        entry.totalCount++;
+        if (sameWeekday) entry.weekdayCount++;
+        if (entry.lastDate == null || log.startTime.isAfter(entry.lastDate!)) {
+          entry.lastDate = log.startTime;
+        }
+      }
+    }
+
+    if (stats.isEmpty) return [];
+
+    int compareStats(_SuggestionStats a, _SuggestionStats b) {
+      if (a.weekdayCount != b.weekdayCount) {
+        return b.weekdayCount.compareTo(a.weekdayCount);
+      }
+      if (a.totalCount != b.totalCount) {
+        return b.totalCount.compareTo(a.totalCount);
+      }
+      final aDate = a.lastDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.lastDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bDate.compareTo(aDate);
+    }
+
+    final weekdayFavs = stats.values.where((s) => s.weekdayCount > 0).toList()
+      ..sort(compareStats);
+    final generalFavs = stats.values.where((s) => s.weekdayCount == 0).toList()
+      ..sort(compareStats);
+
+    final ordered = <_SuggestionStats>[];
+    ordered.addAll(weekdayFavs);
+    if (ordered.length < 5) {
+      ordered.addAll(
+        generalFavs.take(5 - ordered.length),
+      );
+    }
+
+    return ordered.take(5).map((entry) {
+      return _SuggestionCardData(
+        exercise: entry.exercise,
+      );
+    }).toList();
   }
 
   void _loadAverageSessionDuration() {
@@ -180,6 +257,27 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 
     final exerciseLogs = context
         .select((ExerciseLogController controller) => controller.exerciseLogs);
+
+    final suggestionData = _showSuggestionsBar
+        ? _buildSuggestionCards()
+        : const <_SuggestionCardData>[];
+    final activeExerciseIds =
+        exerciseLogs.map((log) => log.exercise.id).toSet();
+    final visibleSuggestions = suggestionData
+        .where((entry) => !activeExerciseIds.contains(entry.exercise.id))
+        .toList();
+
+    if (_showSuggestionsBar && suggestionData.isEmpty && _isFreshEmptyLog) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _showSuggestionsBar = false;
+          });
+        }
+      });
+    }
+    final shouldShowSuggestions =
+        _showSuggestionsBar && visibleSuggestions.isNotEmpty;
 
     return PopScope(
         canPop: true,
@@ -309,75 +407,100 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                       const SizedBox(height: 16),
                       Expanded(
                         child: exerciseLogs.isEmpty
-                            ? Center(
-                                child: Text(
-                                  'No exercises yet.\nTap + to add exercises and start logging.',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Colors.white70,
-                                      ),
-                                ),
+                            ? _EmptySessionSuggestions(
+                                showSuggestions: shouldShowSuggestions,
+                                suggestions: visibleSuggestions,
+                                onAddExercise: _handleSuggestedExerciseTap,
                               )
-                            : ReorderableListView.builder(
-                                padding: const EdgeInsets.only(
-                                  top: 8,
-                                ),
-                                itemCount: exerciseLogs.length,
-                                onReorder: (oldIndex, newIndex) {
-                                  if (newIndex > oldIndex) {
-                                    newIndex -= 1;
-                                  }
+                            : Column(
+                                children: [
+                                  Expanded(
+                                    child: ReorderableListView.builder(
+                                      padding: const EdgeInsets.only(
+                                        top: 8,
+                                      ),
+                                      itemCount: exerciseLogs.length,
+                                      onReorder: (oldIndex, newIndex) {
+                                        if (newIndex > oldIndex) {
+                                          newIndex -= 1;
+                                        }
 
-                                  final updated = exerciseLogs.toList();
-                                  final item = updated.removeAt(oldIndex);
-                                  updated.insert(newIndex, item);
+                                        final updated = exerciseLogs.toList();
+                                        final item = updated.removeAt(oldIndex);
+                                        updated.insert(newIndex, item);
 
-                                  exerciseLogController.reOrderExerciseLogs(
-                                    reOrderedList: updated,
-                                  );
-                                },
-                                proxyDecorator:
-                                    (Widget child, int index, animation) {
-                                  // Keep the dragged item visually identical
-                                  // without additional background color.
-                                  return Material(
-                                    type: MaterialType.transparency,
-                                    child: child,
-                                  );
-                                },
-                                itemBuilder: (context, index) {
-                                  final exerciseLog = exerciseLogs[index];
-                                  return Dismissible(
-                                    key: ValueKey(exerciseLog.id),
-                                    direction: DismissDirection.endToStart,
-                                    confirmDismiss: (_) =>
-                                        _confirmRemoveExercise(exerciseLog),
-                                    onDismissed: (_) {
-                                      exerciseLogController.removeExerciseLog(
-                                          logId: exerciseLog.id);
-                                    },
-                                    background: const SizedBox.shrink(),
-                                    child: Column(
-                                      children: [
-                                        ExerciseLogListItem(
-                                          exerciseLogDto: exerciseLog,
-                                          onTap: () {
-                                            showExerciseLogEditor(
-                                              context: context,
-                                              exerciseLogId:
-                                                  exerciseLog.exercise.id,
-                                              editorType: widget.mode,
-                                            );
+                                        exerciseLogController
+                                            .reOrderExerciseLogs(
+                                          reOrderedList: updated,
+                                        );
+                                      },
+                                      proxyDecorator:
+                                          (Widget child, int index, animation) {
+                                        // Keep the dragged item visually identical
+                                        // without additional background color.
+                                        return Material(
+                                          type: MaterialType.transparency,
+                                          child: child,
+                                        );
+                                      },
+                                      itemBuilder: (context, index) {
+                                        final exerciseLog = exerciseLogs[index];
+                                        return Dismissible(
+                                          key: ValueKey(exerciseLog.id),
+                                          direction:
+                                              DismissDirection.endToStart,
+                                          confirmDismiss: (_) =>
+                                              _confirmRemoveExercise(
+                                                  exerciseLog),
+                                          onDismissed: (_) {
+                                            exerciseLogController
+                                                .removeExerciseLog(
+                                                    logId: exerciseLog.id);
                                           },
-                                        ),
-                                        const SizedBox(height: 12),
-                                      ],
+                                          background: const SizedBox.shrink(),
+                                          child: Column(
+                                            children: [
+                                              ExerciseLogListItem(
+                                                exerciseLogDto: exerciseLog,
+                                                onTap: () {
+                                                  showExerciseLogEditor(
+                                                    context: context,
+                                                    exerciseLogId:
+                                                        exerciseLog.exercise.id,
+                                                    editorType: widget.mode,
+                                                  );
+                                                },
+                                              ),
+                                              const SizedBox(height: 12),
+                                            ],
+                                          ),
+                                        );
+                                      },
                                     ),
-                                  );
-                                },
+                                  ),
+                                  if (shouldShowSuggestions) ...[
+                                    const SizedBox(height: 16),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        'You usually train these on ${DateFormat('EEEE').format(DateTime.now())}s',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Colors.white70,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _SuggestionRail(
+                                      suggestions: visibleSuggestions,
+                                      onAddExercise:
+                                          _handleSuggestedExerciseTap,
+                                    ),
+                                  ],
+                                ],
                               ),
                       ),
                     ],
@@ -565,8 +688,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                       .map((set) => set.copyWith(checked: false))
                       .toList();
 
-                  /// Don't add any previous set for [ExerciseType.Duration]
-                  /// Duration is captured in realtime from a fresh instance
+                  /// Don't add previous sets for duration-based exercises.
+                  /// Duration is captured in real time from a fresh instance.
                   return exerciseLog.copyWith(
                       sets: withReps(type: exerciseLog.exercise.type)
                           ? uncheckedSets
@@ -576,8 +699,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 
               // Fallback: no template logs or exercise not found - return original exercise log
               // (which contains the template's sets from widget.log)
-              /// Don't add any previous set for [ExerciseType.Duration]
-              /// Duration is captured in realtime from a fresh instance
+              /// Don't add previous sets for duration-based exercises.
+              /// Duration is captured in real time from a fresh instance.
               return exerciseLog.copyWith(
                   sets: withReps(type: exerciseLog.exercise.type)
                       ? exerciseLog.sets
@@ -636,6 +759,12 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   void initState() {
     super.initState();
 
+    _isFreshEmptyLog = widget.mode == RoutineEditorMode.log &&
+        widget.log.exerciseLogs.isEmpty &&
+        widget.log.templateId.isEmpty &&
+        !widget.cached;
+    _showSuggestionsBar = _isFreshEmptyLog;
+
     WidgetsBinding.instance.addObserver(this);
 
     _loadRoutineAndExerciseLogs();
@@ -652,3 +781,174 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 }
 
 // Removed in-session info banner
+
+class _EmptySessionSuggestions extends StatelessWidget {
+  final bool showSuggestions;
+  final List<_SuggestionCardData> suggestions;
+  final void Function(ExerciseDto exercise) onAddExercise;
+
+  const _EmptySessionSuggestions({
+    required this.showSuggestions,
+    required this.suggestions,
+    required this.onAddExercise,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!showSuggestions || suggestions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Spacer(),
+        Text(
+          'You usually train these on ${DateFormat('EEEE').format(DateTime.now())}s',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.white70,
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 12),
+        _SuggestionRail(
+          suggestions: suggestions,
+          onAddExercise: onAddExercise,
+        ),
+      ],
+    );
+  }
+}
+
+class _SuggestionRail extends StatelessWidget {
+  final List<_SuggestionCardData> suggestions;
+  final void Function(ExerciseDto exercise) onAddExercise;
+
+  const _SuggestionRail({
+    required this.suggestions,
+    required this.onAddExercise,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: EdgeInsets.zero,
+      child: Row(
+        children: [
+          for (int i = 0; i < suggestions.length; i++) ...[
+            if (i != 0) const SizedBox(width: 14),
+            _SuggestionCard(
+              data: suggestions[i],
+              onAdd: () => onAddExercise(suggestions[i].exercise),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SuggestionCardData {
+  final ExerciseDto exercise;
+
+  const _SuggestionCardData({
+    required this.exercise,
+  });
+}
+
+class _SuggestionStats {
+  final ExerciseDto exercise;
+  int weekdayCount = 0;
+  int totalCount = 0;
+  DateTime? lastDate;
+
+  _SuggestionStats({required this.exercise});
+}
+
+class _SuggestionCard extends StatelessWidget {
+  final _SuggestionCardData data;
+  final VoidCallback onAdd;
+
+  const _SuggestionCard({
+    required this.data,
+    required this.onAdd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colors;
+
+    final MuscleGroup muscleGroup = data.exercise.primaryMuscleGroup;
+    final muscleGroupLabel = muscleGroup.displayName;
+
+    // Get muscle illustration path
+    final illustrationPath = 'muscles_illustration/${muscleGroup.name}.png';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onAdd,
+        borderRadius: BorderRadius.circular(24),
+        child: Ink(
+          width: 240,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: colors.sapphireDark,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: colors.borderLight.withValues(alpha: 0.02),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          data.exercise.name,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          muscleGroupLabel,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Opacity(
+                    opacity: 0.85,
+                    child: Image.asset(
+                      illustrationPath,
+                      height: 32,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback if image not found
+                        return Icon(Icons.block,
+                            size: 32, color: Colors.white24);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

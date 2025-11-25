@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -178,7 +180,36 @@ void navigateToRoutineHome({required BuildContext context}) {
 }
 
 Future<void> navigateToSettings({required BuildContext context}) async {
-  await context.push(SettingsScreen.routeName);
+  await showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: 'Settings',
+    barrierColor: Colors.transparent,
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (ctx, animation, secondaryAnimation) {
+      return Stack(
+        children: [
+          // Blurred + dimmed background
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.25),
+              ),
+            ),
+          ),
+          // Full-screen settings content
+          const SettingsScreen(),
+        ],
+      );
+    },
+    transitionBuilder: (ctx, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: animation,
+        child: child,
+      );
+    },
+  );
 }
 
 /// Create a screen on demand

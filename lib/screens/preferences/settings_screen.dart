@@ -80,166 +80,160 @@ class _SettingsScreenState extends State<SettingsScreen>
         Supabase.instance.client.auth.currentUser?.email ?? "User";
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: appBarBackgroundColor(context: context),
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
-          onPressed: context.pop,
-        ),
-      ),
-      body: Stack(
-        children: [
-          // Full-screen gradient background
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: themeGradient(context: context),
-              ),
-            ),
-          ),
-          SafeArea(
-            minimum: const EdgeInsets.all(10),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                InformationContainerWithBackgroundImage(
-                  image: 'images/recovery_girl.PNG',
-                  subtitle:
-                      "Loving trainware? Your feedback helps us grow and improve.",
-                  color: Colors.black,
-                  onTap: _openStoreListing,
-                  alignmentGeometry: Alignment.center,
-                ),
-                const SizedBox(
-                  height: 20,
-                ),
-                if (Platform.isIOS)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              LabelDivider(
-                                label: "Notifications",
-                                labelColor:
-                                    isDarkMode ? Colors.white : Colors.black,
-                                dividerColor:
-                                    Theme.of(context).colors.dividerColor,
-                                fontSize: 14,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                  "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
-                                  textAlign: TextAlign.start,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w400,
-                                          color: isDarkMode
-                                              ? Colors.white70
-                                              : Colors.black)),
-                            ]),
-                      ),
-                      ListTile(
-                        onTap: _turnOnNotification,
-                        dense: true,
-                        horizontalTitleGap: 0,
-                        leading: Text(
-                            _notificationEnabled
-                                ? "Notification is on"
-                                : "Turn on notifications",
-                            textAlign: TextAlign.start,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    color: isDarkMode
-                                        ? Colors.white
-                                        : Colors.black)),
-                        trailing: FaIcon(
-                          FontAwesomeIcons.solidBell,
-                          size: 14,
-                        ),
-                      ),
-                    ],
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        minimum: const EdgeInsets.all(10),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Close (X) button in the top-left corner
+              Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: const FaIcon(
+                    FontAwesomeIcons.xmark,
+                    size: 24,
+                    color: Colors.white,
                   ),
-                ListTile(
-                  tileColor: Colors.transparent,
-                  title: Text("Weight",
+                  onPressed: context.pop,
+                ),
+              ),
+              InformationContainerWithBackgroundImage(
+                image: 'images/recovery_girl.PNG',
+                subtitle:
+                    "Loving trainware? Your feedback helps us grow and improve.",
+                color: Colors.black,
+                onTap: _openStoreListing,
+                alignmentGeometry: Alignment.center,
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              if (Platform.isIOS)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LabelDivider(
+                              label: "Notifications",
+                              labelColor:
+                                  isDarkMode ? Colors.white : Colors.black,
+                              dividerColor:
+                                  Theme.of(context).colors.dividerColor,
+                              fontSize: 14,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                                "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
+                                textAlign: TextAlign.start,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                        fontWeight: FontWeight.w400,
+                                        color: isDarkMode
+                                            ? Colors.white70
+                                            : Colors.black)),
+                          ]),
+                    ),
+                    ListTile(
+                      onTap: _turnOnNotification,
+                      dense: true,
+                      horizontalTitleGap: 0,
+                      leading: Text(
+                          _notificationEnabled
+                              ? "Notification is on"
+                              : "Turn on notifications",
+                          textAlign: TextAlign.start,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.black)),
+                      trailing: const FaIcon(
+                        FontAwesomeIcons.solidBell,
+                        size: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ListTile(
+                tileColor: Colors.transparent,
+                title: Text("Weight",
+                    style: Theme.of(context).textTheme.titleMedium),
+                subtitle: const Text("Choose kg or lbs"),
+                trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
+                  backgroundColor: isDarkMode
+                      ? Theme.of(context).colors.sapphireDark
+                      : Colors.grey.shade400,
+                  thumbColor: isDarkMode
+                      ? Theme.of(context).colors.sapphireDark80
+                      : Colors.white,
+                  groupValue: _weightUnit,
+                  children: {
+                    WeightUnit.kg: SizedBox(
+                        width: 30,
+                        child: Text(WeightUnit.kg.display,
+                            style: Theme.of(context).textTheme.bodySmall,
+                            textAlign: TextAlign.center)),
+                    WeightUnit.lbs: SizedBox(
+                        width: 30,
+                        child: Text(WeightUnit.lbs.display,
+                            style: Theme.of(context).textTheme.bodySmall,
+                            textAlign: TextAlign.center)),
+                  },
+                  onValueChanged: (WeightUnit? value) {
+                    if (value != null) {
+                      setState(() {
+                        _weightUnit = value;
+                      });
+                      toggleWeightUnit(unit: value);
+                    }
+                  },
+                ),
+              ),
+              ListTile(
+                  onTap: () => navigateWithSlideTransition(
+                        context: context,
+                        child: const ExerciseLibraryScreen(readOnly: true),
+                      ),
+                  leading: FaIcon(FontAwesomeIcons.personWalking,
+                      color: isDarkMode ? Colors.white70 : Colors.black38),
+                  title: Text("Exercise Library",
                       style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: Text("Choose kg or lbs"),
-                  trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
-                    backgroundColor: isDarkMode
-                        ? Theme.of(context).colors.sapphireDark
-                        : Colors.grey.shade400,
-                    thumbColor: isDarkMode
-                        ? Theme.of(context).colors.sapphireDark80
-                        : Colors.white,
-                    groupValue: _weightUnit,
-                    children: {
-                      WeightUnit.kg: SizedBox(
-                          width: 30,
-                          child: Text(WeightUnit.kg.display,
-                              style: Theme.of(context).textTheme.bodySmall,
-                              textAlign: TextAlign.center)),
-                      WeightUnit.lbs: SizedBox(
-                          width: 30,
-                          child: Text(WeightUnit.lbs.display,
-                              style: Theme.of(context).textTheme.bodySmall,
-                              textAlign: TextAlign.center)),
-                    },
-                    onValueChanged: (WeightUnit? value) {
-                      if (value != null) {
-                        setState(() {
-                          _weightUnit = value;
-                        });
-                        toggleWeightUnit(unit: value);
-                      }
-                    },
-                  ),
+                  subtitle: const Text("manage your exercises")),
+              ListTile(
+                  onTap: _logout,
+                  leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
+                      color: isDarkMode ? Colors.white70 : Colors.black38),
+                  title: Text("Logout",
+                      style: Theme.of(context).textTheme.titleMedium),
+                  subtitle: Text(userEmail)),
+              ListTile(
+                  onTap: _delete,
+                  leading: FaIcon(FontAwesomeIcons.solidCircleXmark,
+                      color: isDarkMode ? Colors.white70 : Colors.black38),
+                  title: Text("Delete Account",
+                      style: Theme.of(context).textTheme.titleMedium),
+                  subtitle: Text(userEmail)),
+              Center(
+                child: Text(
+                  _appVersion,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                ListTile(
-                    onTap: () => navigateWithSlideTransition(
-                          context: context,
-                          child: const ExerciseLibraryScreen(readOnly: true),
-                        ),
-                    leading: FaIcon(FontAwesomeIcons.personWalking,
-                        color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("Exercise Library",
-                        style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text("manage your exercises")),
-                ListTile(
-                    onTap: _logout,
-                    leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
-                        color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("Logout",
-                        style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text(userEmail)),
-                ListTile(
-                    onTap: _delete,
-                    leading: FaIcon(FontAwesomeIcons.solidCircleXmark,
-                        color: isDarkMode ? Colors.white70 : Colors.black38),
-                    title: Text("Delete Account",
-                        style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text(userEmail)),
-                  Center(
-                    child: Text(_appVersion,
-                        style: Theme.of(context).textTheme.bodySmall),
-                  ),
-                ],
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

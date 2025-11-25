@@ -239,7 +239,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               contentPadding: EdgeInsets.zero,
               leading: const FaIcon(FontAwesomeIcons.download, size: 18),
               horizontalTitleGap: 6,
-              title: Text("Save as template into..."),
+              title: Text("Save as workout into..."),
               onTap: _createTemplate,
             ),
             ListTile(
@@ -346,7 +346,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: PlanPicker(
-          title: "Save as template into...",
+          title: "Save as workout into...",
           plans: plans,
           onSelect: (selectedPlan) async {
             Navigator.of(context).pop();
@@ -380,8 +380,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     // Let the user confirm the template name and notes first, similar to plans.
     final details = await showNameNotesBottomSheet(
       context: context,
-      title: "Save as template",
-      primaryButtonLabel: "Save Template",
+      title: "Save as workout",
+      primaryButtonLabel: "Save Workout",
       initialName: log.name,
       // Routine logs currently have no top-level notes; start empty.
       initialNotes: '',

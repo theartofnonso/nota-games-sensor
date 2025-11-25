@@ -418,8 +418,9 @@ class _OverviewScreenState extends State<OverviewScreen>
     showAppBottomSheet(
       context: context,
       isDraggable: true,
-      builder: (context, scrollController) {
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+          builder: (sheetContext, scrollController) {
+        final isDarkMode =
+            Theme.of(sheetContext).brightness == Brightness.dark;
 
         return Column(
           children: [
@@ -457,7 +458,7 @@ class _OverviewScreenState extends State<OverviewScreen>
                   ),
                   // Create plan button
                   IconButton(
-                    onPressed: () => _createNewPlan(context),
+                    onPressed: () => _createNewPlan(sheetContext),
                     icon: FaIcon(
                       FontAwesomeIcons.circlePlus,
                       size: 22,
@@ -508,9 +509,9 @@ class _OverviewScreenState extends State<OverviewScreen>
     );
   }
 
-  void _createNewPlan(BuildContext context) async {
+  void _createNewPlan(BuildContext sheetContext) async {
     // Close bottom sheet first
-    Navigator.pop(context);
+    Navigator.pop(sheetContext);
 
     final plan = RoutinePlanDto(
       id: "",

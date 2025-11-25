@@ -4,6 +4,7 @@ import 'package:trainware/dtos/appsync/routine_plan_dto.dart';
 
 import '../../../../colors.dart';
 import '../../buttons/opacity_button_widget_two.dart';
+import 'routine_plan_grid_item.dart';
 
 class PlanPicker extends StatelessWidget {
   final String title;
@@ -21,31 +22,39 @@ class PlanPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listTiles = plans
-        .map((plan) => ListTile(
-              onTap: () {
-                onSelect(plan);
-              },
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                plan.name,
-                style: TextStyle(fontWeight: FontWeight.w400),
-              ),
-            ))
-        .toList();
+    if (plans.isEmpty) {
+      return _EmptyState(onPressed: onCreatePlan ?? () {});
+    }
 
-    return plans.isNotEmpty
-        ? SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                ...listTiles
-              ],
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(top: 8),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.85,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
             ),
-          )
-        : _EmptyState(onPressed: onCreatePlan ?? () {});
+            itemCount: plans.length,
+            itemBuilder: (context, index) {
+              final plan = plans[index];
+              return RoutinePlanGridItemWidget(
+                plan: plan,
+                onTap: () => onSelect(plan),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 

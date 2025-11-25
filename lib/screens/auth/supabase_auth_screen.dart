@@ -33,7 +33,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       showSnackbar(
         context: context,
         message: 'Please enter your email',
-        backgroundColor: Colors.orange,
+          backgroundColor: Colors.orange,
       );
       return;
     }
@@ -42,7 +42,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       showSnackbar(
         context: context,
         message: 'Please enter a valid email',
-        backgroundColor: Colors.orange,
+          backgroundColor: Colors.orange,
       );
       return;
     }
@@ -69,7 +69,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
             context: context,
             message:
                 'Test account login failed. Please ensure the account exists in Supabase.',
-            backgroundColor: Colors.red,
+              backgroundColor: Colors.red,
           );
         }
       } finally {
@@ -98,7 +98,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: 'Check your email for the verification code',
-          backgroundColor: Theme.of(context).colors.vibrantAccent,
+            backgroundColor: Theme.of(context).colors.vibrantAccent,
         );
       }
     } on AuthException catch (error) {
@@ -106,7 +106,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: error.message,
-          backgroundColor: Colors.red,
+            backgroundColor: Colors.red,
         );
       }
     } catch (error) {
@@ -114,7 +114,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: 'Unexpected error: $error',
-          backgroundColor: Colors.red,
+            backgroundColor: Colors.red,
         );
       }
     } finally {
@@ -132,7 +132,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       showSnackbar(
         context: context,
         message: 'Please enter a valid 6-digit code',
-        backgroundColor: Colors.orange,
+          backgroundColor: Colors.orange,
       );
       return;
     }
@@ -154,7 +154,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: error.message,
-          backgroundColor: Colors.red,
+            backgroundColor: Colors.red,
         );
       }
     } catch (error) {
@@ -162,7 +162,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: 'Unexpected error: $error',
-          backgroundColor: Colors.red,
+            backgroundColor: Colors.red,
         );
       }
     } finally {
