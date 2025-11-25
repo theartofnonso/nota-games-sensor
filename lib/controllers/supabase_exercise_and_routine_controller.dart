@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
@@ -142,8 +140,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     try {
       // Ensure new exercises have a stable client-generated ID so offline
       // storage and Supabase stay in sync.
-      final id =
-          exerciseDto.id.isEmpty ? const Uuid().v4() : exerciseDto.id;
+      final id = exerciseDto.id.isEmpty ? const Uuid().v4() : exerciseDto.id;
       final exerciseWithId = exerciseDto.copyWith(id: id);
 
       await _offlineExerciseRepository.upsertLocal(exerciseWithId);
@@ -257,8 +254,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     RoutineTemplateDto? result;
     try {
       // Generate a stable ID for new templates so they can be synced correctly.
-      final id =
-          templateDto.id.isEmpty ? const Uuid().v4() : templateDto.id;
+      final id = templateDto.id.isEmpty ? const Uuid().v4() : templateDto.id;
       final templateWithId = templateDto.copyWith(id: id);
 
       await _offlineTemplateRepository.upsertLocal(templateWithId);
