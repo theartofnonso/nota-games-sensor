@@ -9,24 +9,113 @@ import '../dtos/appsync/exercise_dto.dart';
 import '../widgets/buttons/opacity_button_widget.dart';
 import '../widgets/timers/time_picker.dart';
 
-void showSnackbar({required BuildContext context, required String message}) {
-  Brightness systemBrightness = Theme.of(context).brightness;
-  final isDarkMode = systemBrightness == Brightness.dark;
+void showSnackbar({
+  required BuildContext context,
+  required String message,
+  Color? backgroundColor,
+  Duration duration = const Duration(seconds: 3),
+}) {
+  final overlay = Overlay.maybeOf(context);
+  if (overlay == null) return;
 
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      backgroundColor: isDarkMode ? sapphireDark80 : Colors.grey.shade200,
-      behavior: SnackBarBehavior.fixed,
-      content: Row(
-        children: [
-          Expanded(
-            child: Text(
-              message,
-              style:
-                  Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+  final defaultBg = backgroundColor ?? sapphireDark;
+
+  final overlayEntry = OverlayEntry(
+    builder: (ctx) {
+      final paddingTop = MediaQuery.of(ctx).padding.top;
+      return Positioned(
+        top: paddingTop + 12,
+        left: 12,
+        right: 12,
+        child: _TopSnackbarBanner(
+          backgroundColor: defaultBg,
+          message: message,
+        ),
+      );
+    },
+  );
+
+  overlay.insert(overlayEntry);
+
+  Future.delayed(duration, () {
+    if (overlayEntry.mounted) {
+      overlayEntry.remove();
+    }
+  });
+}
+
+class _TopSnackbarBanner extends StatefulWidget {
+  final String message;
+  final Color backgroundColor;
+
+  const _TopSnackbarBanner({
+    required this.message,
+    required this.backgroundColor,
+  });
+
+  @override
+  State<_TopSnackbarBanner> createState() => _TopSnackbarBannerState();
+}
+
+class _TopSnackbarBannerState extends State<_TopSnackbarBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _slideAnimation;
+  late final Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, -0.2), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: widget.backgroundColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                widget.message,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      height: 1.5,
+                      color: Colors.white,
+                    ),
+              ),
             ),
           ),
-        ],
-      )));
+        ),
+      ),
+    );
+  }
 }
 
 void displayTimePicker(

@@ -68,16 +68,16 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                                 height: 1.2,
                               ),
                               children: [
-                                TextSpan(text: 'Where training\n'),
+                                TextSpan(text: 'adaptive training\n'),
                                 TextSpan(
-                                  text: 'becomes your\n',
+                                  text: 'that nudges you\n',
                                   style: TextStyle(
                                     fontSize: 42,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 TextSpan(
-                                  text: 'true story.',
+                                  text: 'in the right direction.',
                                 ),
                               ],
                             ),
@@ -88,7 +88,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                             width: double.infinity,
                             height: 50,
                             child: OpacityButtonWidgetTwo(
-                              label: "Get Started",
+                              label: "Start Training",
                               onPressed: widget.onPressed,
                               buttonColor: colors.vibrantAccent,
                             ),

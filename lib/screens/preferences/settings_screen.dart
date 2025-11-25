@@ -89,16 +89,22 @@ class _SettingsScreenState extends State<SettingsScreen>
           onPressed: context.pop,
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: themeGradient(context: context),
-        ),
-        child: SafeArea(
-          minimum: EdgeInsets.all(10),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      body: Stack(
+        children: [
+          // Full-screen gradient background
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: themeGradient(context: context),
+              ),
+            ),
+          ),
+          SafeArea(
+            minimum: const EdgeInsets.all(10),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 InformationContainerWithBackgroundImage(
                   image: 'images/recovery_girl.PNG',
                   subtitle:
@@ -225,14 +231,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                     title: Text("Delete Account",
                         style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text(userEmail)),
-                Center(
-                  child: Text(_appVersion,
-                      style: Theme.of(context).textTheme.bodySmall),
-                ),
-              ],
+                  Center(
+                    child: Text(_appVersion,
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

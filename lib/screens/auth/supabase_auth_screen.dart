@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -29,21 +30,19 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     final email = _emailController.text.trim();
 
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email'),
-          backgroundColor: Colors.orange,
-        ),
+      showSnackbar(
+        context: context,
+        message: 'Please enter your email',
+        backgroundColor: Colors.orange,
       );
       return;
     }
 
     if (!email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid email'),
-          backgroundColor: Colors.orange,
-        ),
+      showSnackbar(
+        context: context,
+        message: 'Please enter a valid email',
+        backgroundColor: Colors.orange,
       );
       return;
     }
@@ -66,12 +65,11 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         // If login fails, show error but don't fall back to OTP
         debugPrint('[Test Account] Login failed: $error');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                  'Test account login failed. Please ensure the account exists in Supabase.'),
-              backgroundColor: Colors.red,
-            ),
+          showSnackbar(
+            context: context,
+            message:
+                'Test account login failed. Please ensure the account exists in Supabase.',
+            backgroundColor: Colors.red,
           );
         }
       } finally {
@@ -97,29 +95,26 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           _otpSent = true;
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Check your email for the verification code'),
-            backgroundColor: Theme.of(context).colors.vibrantAccent,
-          ),
+        showSnackbar(
+          context: context,
+          message: 'Check your email for the verification code',
+          backgroundColor: Theme.of(context).colors.vibrantAccent,
         );
       }
     } on AuthException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.message),
-            backgroundColor: Colors.red,
-          ),
+        showSnackbar(
+          context: context,
+          message: error.message,
+          backgroundColor: Colors.red,
         );
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unexpected error: $error'),
-            backgroundColor: Colors.red,
-          ),
+        showSnackbar(
+          context: context,
+          message: 'Unexpected error: $error',
+          backgroundColor: Colors.red,
         );
       }
     } finally {
@@ -134,11 +129,10 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     final otp = _otpController.text.trim();
 
     if (otp.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid 6-digit code'),
-          backgroundColor: Colors.orange,
-        ),
+      showSnackbar(
+        context: context,
+        message: 'Please enter a valid 6-digit code',
+        backgroundColor: Colors.orange,
       );
       return;
     }
@@ -157,20 +151,18 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       // Success! User will be automatically navigated by the auth state listener
     } on AuthException catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.message),
-            backgroundColor: Colors.red,
-          ),
+        showSnackbar(
+          context: context,
+          message: error.message,
+          backgroundColor: Colors.red,
         );
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unexpected error: $error'),
-            backgroundColor: Colors.red,
-          ),
+        showSnackbar(
+          context: context,
+          message: 'Unexpected error: $error',
+          backgroundColor: Colors.red,
         );
       }
     } finally {
