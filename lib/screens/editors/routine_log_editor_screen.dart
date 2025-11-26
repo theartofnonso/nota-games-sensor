@@ -730,15 +730,27 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final isLiveLog = widget.mode == RoutineEditorMode.log;
+
     if (state == AppLifecycleState.resumed) {
+      if (isLiveLog) {
+        _startTimer(); // Re-sync elapsed time with real clock after suspension.
+      }
       if (Platform.isIOS) {
         FlutterLocalNotificationsPlugin()
             .cancel(notificationIDLongRunningSession);
       }
+      return;
     }
 
-    if (state == AppLifecycleState.paused) {
-      if (Platform.isIOS) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      if (isLiveLog) {
+        _timer?.cancel();
+      }
+      if (state == AppLifecycleState.paused && Platform.isIOS) {
         FlutterLocalNotificationsPlugin().periodicallyShowWithDuration(
             notificationIDLongRunningSession,
             "${widget.log.name} is still running",
