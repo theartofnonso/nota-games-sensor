@@ -111,7 +111,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       // Schedule training reminders based on historic log data
       final historicLogTimes = logs.map((log) => log.startTime).toList();
       if (historicLogTimes.isNotEmpty) {
-        schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
+        await schedulePreferredTrainingReminders(
+            historicDateTimes: historicLogTimes);
       }
 
       notifyListeners();
@@ -339,7 +340,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       // Reschedule training reminders based on updated (offline-first) log data.
       final historicLogTimes = logs.map((log) => log.startTime).toList();
       if (historicLogTimes.isNotEmpty) {
-        schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
+        await schedulePreferredTrainingReminders(
+            historicDateTimes: historicLogTimes);
       }
       await schedulePostWorkoutReviewReminder(log: updatedLog);
       return updatedLog;
