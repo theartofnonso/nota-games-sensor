@@ -24,6 +24,8 @@ import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../extensions/duration_extension.dart';
 
+const Duration _suggestionHistoryWindow = Duration(days: 30);
+
 class RoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/routine-log-editor';
 
@@ -102,7 +104,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 
     final now = DateTime.now();
     final todayWeekday = now.weekday;
-    final cutoff = now.subtract(const Duration(days: 365));
+    final cutoff = now.subtract(_suggestionHistoryWindow);
 
     final Map<String, _SuggestionStats> stats = {};
 

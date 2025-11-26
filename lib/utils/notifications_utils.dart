@@ -12,6 +12,7 @@ const String _postWorkoutChannelName = 'Post-workout reminders';
 const String _postWorkoutChannelDescription =
     'Reminds you to review or build on your last session.';
 const int _defaultPostWorkoutReminderHour = 9;
+const Duration _trainingHistoryWindow = Duration(days: 30);
 
 class _ReminderTime {
   final int weekday;
@@ -24,9 +25,14 @@ class _ReminderTime {
 }
 
 List<_ReminderTime> _getExerciseReminders(List<DateTime> logDates) {
+  final cutoff = DateTime.now().subtract(_trainingHistoryWindow);
+  final recentDates =
+      logDates.where((date) => !date.isBefore(cutoff)).toList();
+  if (recentDates.isEmpty) return [];
+
   // Group exercise hours by weekday
   final Map<int, List<int>> weekdayHours = {};
-  for (final logDate in logDates) {
+  for (final logDate in recentDates) {
     final hour = logDate.hour;
     weekdayHours.putIfAbsent(logDate.weekday, () => []).add(hour);
   }
