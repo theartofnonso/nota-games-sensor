@@ -37,6 +37,7 @@ import 'package:trainware/screens/routines/routine_plans_screen.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
+import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/theme/theme.dart';
 
 import 'dtos/appsync/exercise_dto.dart';
@@ -49,16 +50,79 @@ import 'dtos/viewmodels/past_routine_log_arguments.dart';
 import 'logger.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+Map<String, dynamic>? _pendingNotificationPayload;
+int _notificationRetryCount = 0;
+const int _maxNotificationRetries = 10;
+final _notificationLogger = getLogger(className: "NotificationHandler");
 
 // Top-level callback function
 @pragma('vm:entry-point')
 void onDidReceiveNotificationResponse(NotificationResponse response) {
   final String? payload = response.payload;
-  if (payload != null) {
-    Map<String, dynamic> _ = jsonDecode(payload);
-
-    /// Do nothing for now
+  if (payload == null) return;
+  try {
+    final decoded = jsonDecode(payload) as Map<String, dynamic>;
+    _pendingNotificationPayload = decoded;
+    _notificationRetryCount = 0;
+    _processPendingNotification();
+  } catch (e, stack) {
+    _notificationLogger.e("Failed to handle notification payload",
+        error: e, stackTrace: stack);
   }
+}
+
+void _processPendingNotification() {
+  if (_pendingNotificationPayload == null) return;
+
+  final context = navigatorKey.currentContext;
+  if (context == null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _processPendingNotification();
+    });
+    return;
+  }
+
+  final payload = _pendingNotificationPayload!;
+  final type = payload['type'] as String?;
+
+  if (type == 'view_log') {
+    final logId = payload['logId'] as String?;
+    if (logId == null || logId.isEmpty) {
+      _pendingNotificationPayload = null;
+      return;
+    }
+
+    final controller =
+        context.read<SupabaseExerciseAndRoutineController>();
+    final log = controller.logWhereId(id: logId);
+
+    if (log == null) {
+      if (_notificationRetryCount < _maxNotificationRetries) {
+        _notificationRetryCount++;
+        Future.delayed(const Duration(milliseconds: 350), () {
+          _processPendingNotification();
+        });
+      } else {
+        _notificationLogger.w(
+            "Failed to find log $logId for notification deep link.");
+        _pendingNotificationPayload = null;
+        _notificationRetryCount = 0;
+      }
+      return;
+    }
+
+    _pendingNotificationPayload = null;
+    _notificationRetryCount = 0;
+    navigateToRoutineLogPreview(
+      context: context,
+      log: log,
+      isEditable: false,
+    );
+    return;
+  }
+
+  _pendingNotificationPayload = null;
+  _notificationRetryCount = 0;
 }
 
 void main() async {
@@ -94,6 +158,15 @@ void main() async {
 
   await FlutterLocalNotificationsPlugin().initialize(initializationSettings,
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
+
+  final notificationLaunchDetails =
+      await FlutterLocalNotificationsPlugin().getNotificationAppLaunchDetails();
+  if (notificationLaunchDetails?.didNotificationLaunchApp ?? false) {
+    final response = notificationLaunchDetails?.notificationResponse;
+    if (response != null) {
+      onDidReceiveNotificationResponse(response);
+    }
+  }
 
   tz.initializeTimeZones();
 
@@ -253,6 +326,9 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _checkAuthAndInitialize();
     _listenToConnectivity();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _processPendingNotification();
+    });
   }
 
   Future<void> _checkAuthAndInitialize() async {

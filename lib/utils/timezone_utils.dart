@@ -21,3 +21,15 @@ tz.TZDateTime nextInstanceOfHourAndWeekDay({required int hours, required int wee
   }
   return scheduledDate;
 }
+
+tz.TZDateTime nextMorningAtHour({
+  required DateTime reference,
+  int hour = 9,
+}) {
+  final referenceDate = DateTime(reference.year, reference.month, reference.day);
+  final nextMorning = referenceDate.add(const Duration(days: 1));
+  return tz.TZDateTime.from(
+    DateTime(nextMorning.year, nextMorning.month, nextMorning.day, hour),
+    tz.local,
+  );
+}

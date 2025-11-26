@@ -341,6 +341,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       if (historicLogTimes.isNotEmpty) {
         schedulePreferredTrainingReminders(historicDateTimes: historicLogTimes);
       }
+      await schedulePostWorkoutReviewReminder(log: updatedLog);
       return updatedLog;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -383,6 +384,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     try {
       await _offlineLogRepository.deleteLocal(log.id);
+      await cancelPostWorkoutReviewReminder(log.id);
 
       // ignore: discarded_futures
       syncRoutineLogs();

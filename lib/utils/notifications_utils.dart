@@ -1,9 +1,17 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/utils/timezone_utils.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 const int notificationIDLongRunningSession = 999;
+const String _postWorkoutChannelId = 'post_workout_follow_up';
+const String _postWorkoutChannelName = 'Post-workout reminders';
+const String _postWorkoutChannelDescription =
+    'Reminds you to review or build on your last session.';
+const int _defaultPostWorkoutReminderHour = 9;
 
 class _ReminderTime {
   final int weekday;
@@ -123,4 +131,71 @@ Future<void> _scheduleNotification(
       const NotificationDetails(),
       matchDateTimeComponents: matchDateTimeComponents,
       androidScheduleMode: AndroidScheduleMode.exact);
+}
+
+int _logReminderNotificationId(String logId) =>
+    logId.hashCode & 0x7fffffff;
+
+Future<void> schedulePostWorkoutReviewReminder({
+  required RoutineLogDto log,
+  int reminderHour = _defaultPostWorkoutReminderHour,
+}) async {
+  if (!Platform.isIOS && !Platform.isAndroid) return;
+  if (log.id.isEmpty) return;
+
+  final plugin = FlutterLocalNotificationsPlugin();
+  final notificationId = _logReminderNotificationId(log.id);
+
+  // Avoid duplicate reminders if the user edits the same log.
+  await plugin.cancel(notificationId);
+
+  final anchorTime =
+      log.endTime.isAfter(log.startTime) ? log.endTime : log.startTime;
+  final scheduledDate =
+      nextMorningAtHour(reference: anchorTime, hour: reminderHour);
+
+  // Guard against scheduling in the past (e.g. if the clock changed)
+  if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
+    return;
+  }
+
+  final workoutLabel = log.name.isEmpty ? 'your last workout' : log.name;
+  final payload = jsonEncode({
+    'type': 'view_log',
+    'logId': log.id,
+    'isEditable': false,
+  });
+
+  const androidDetails = AndroidNotificationDetails(
+    _postWorkoutChannelId,
+    _postWorkoutChannelName,
+    channelDescription: _postWorkoutChannelDescription,
+    importance: Importance.defaultImportance,
+    priority: Priority.defaultPriority,
+  );
+
+  const iOSDetails = DarwinNotificationDetails(
+    presentAlert: true,
+    presentSound: true,
+  );
+
+  await plugin.zonedSchedule(
+    notificationId,
+    'Nice work yesterday',
+    'Jump back in and build on $workoutLabel.',
+    scheduledDate,
+    const NotificationDetails(
+      android: androidDetails,
+      iOS: iOSDetails,
+    ),
+    androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    payload: payload,
+  );
+}
+
+Future<void> cancelPostWorkoutReviewReminder(String logId) async {
+  if (!Platform.isIOS && !Platform.isAndroid) return;
+  if (logId.isEmpty) return;
+  await FlutterLocalNotificationsPlugin()
+      .cancel(_logReminderNotificationId(logId));
 }
