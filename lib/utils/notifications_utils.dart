@@ -53,121 +53,15 @@ List<_ReminderTime> _getExerciseReminders(List<DateTime> logDates) {
   return reminders;
 }
 
-/// Heuristic to decide whether a weekday has a consistent training pattern.
-///
-/// weeksObserved  – number of calendar weeks in the 30‑day window
-/// weeksTrained   – number of those weeks where the user trained on this weekday
-/// totalLogsLast30 – total number of sessions in the 30‑day window
-bool _isConsistentTrainingWeekday({
-  required int weeksObserved,
-  required int weeksTrained,
-  required int totalLogsLast30,
-}) {
-  if (weeksObserved == 0 || weeksTrained == 0) return false;
-
-  final consistency = weeksTrained / weeksObserved;
-
-  // With extremely little data, don't predict anything.
-  if (totalLogsLast30 < 4) return false;
-
-  // With ~4+ weeks of data, require at least 4 training weeks
-  // and a reasonably strong pattern (>= 70% of those weekdays).
-  if (weeksObserved >= 4) {
-    return weeksTrained >= 4 && consistency >= 0.7;
-  }
-
-  // With 3 weeks of data, be more strict on ratio.
-  if (weeksObserved == 3) {
-    return weeksTrained >= 2 && consistency >= (2 / 3);
-  }
-
-  // With 2 weeks of data, only trust if both weeks had training.
-  if (weeksObserved == 2) {
-    return weeksTrained == 2;
-  }
-
-  // With only 1 week of data we don't consider the pattern stable enough.
-  return false;
-}
-
-/// Get likely training weekdays based on historic log patterns over the last 30 days.
-/// Returns a Set of weekdays (1-7, where 1 is Monday) that the user consistently trains on.
+/// Get likely training weekdays based on the same logic used to schedule
+/// preferred training reminders (i.e. any weekday that has historical logs).
+/// Returns a Set of weekdays (1-7, where 1 is Monday).
 Set<int> getLikelyTrainingWeekdays(
     {required List<DateTime> historicDateTimes}) {
   if (historicDateTimes.isEmpty) return {};
 
-  // Work with only the last 30 days of training history.
-  final now = DateTime.now();
-  final rangeEnd = DateTime(now.year, now.month, now.day);
-  final rangeStart = rangeEnd.subtract(const Duration(days: 29));
-
-  final windowDates = historicDateTimes
-      .map((d) => DateTime(d.year, d.month, d.day))
-      .where((d) => !d.isBefore(rangeStart) && !d.isAfter(rangeEnd))
-      .toList();
-
-  if (windowDates.isEmpty) return {};
-
-  final totalLogsLast30 = windowDates.length;
-  if (totalLogsLast30 < 4) return {};
-
-  // Track, per weekday, which calendar weeks had training.
-  final Map<int, Set<int>> weekdayWeeks = {};
-  final Set<int> allWeeks = {};
-
-  for (final date in windowDates) {
-    // Monday-based week start for this date
-    final weekStart =
-        date.subtract(Duration(days: date.weekday - DateTime.monday));
-    final weekKey =
-        DateTime(weekStart.year, weekStart.month, weekStart.day)
-            .millisecondsSinceEpoch;
-
-    allWeeks.add(weekKey);
-    weekdayWeeks.putIfAbsent(date.weekday, () => <int>{}).add(weekKey);
-  }
-
-  final weeksObserved = allWeeks.length;
-  if (weeksObserved == 0) return {};
-
-  final likelyWeekdays = <int>{};
-
-  weekdayWeeks.forEach((weekday, weeksSet) {
-    final weeksTrained = weeksSet.length;
-    if (_isConsistentTrainingWeekday(
-      weeksObserved: weeksObserved,
-      weeksTrained: weeksTrained,
-      totalLogsLast30: totalLogsLast30,
-    )) {
-      likelyWeekdays.add(weekday);
-    }
-  });
-
-  // Fallback: if no weekday passes the strict consistency test but we
-  // still have a fair amount of data, fall back to the single most
-  // consistent weekday with at least 50% of weeks trained.
-  if (likelyWeekdays.isEmpty && totalLogsLast30 >= 8) {
-    double bestConsistency = 0.0;
-    int? bestWeekday;
-
-    weekdayWeeks.forEach((weekday, weeksSet) {
-      final weeksTrained = weeksSet.length;
-      final consistency = weeksObserved == 0
-          ? 0.0
-          : weeksTrained / weeksObserved;
-
-      if (consistency >= 0.5 && consistency > bestConsistency) {
-        bestConsistency = consistency;
-        bestWeekday = weekday;
-      }
-    });
-
-    if (bestWeekday != null) {
-      likelyWeekdays.add(bestWeekday!);
-    }
-  }
-
-  return likelyWeekdays;
+  final reminders = _getExerciseReminders(historicDateTimes);
+  return reminders.map((reminder) => reminder.weekday).toSet();
 }
 
 /// Get predicted training dates in the next N days based on weekday patterns
