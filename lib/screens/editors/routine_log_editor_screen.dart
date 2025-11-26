@@ -809,26 +809,39 @@ class _EmptySessionSuggestions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!showSuggestions || suggestions.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    final theme = Theme.of(context);
+    final weekdayLabel = DateFormat('EEEE').format(DateTime.now());
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Spacer(),
-        Text(
-          'You usually train these on ${DateFormat('EEEE').format(DateTime.now())}s',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        Expanded(
+          child: Center(
+            child: Text(
+              'No exercises yet.\nTap + to add exercises and start logging.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyLarge?.copyWith(
                 color: Colors.white70,
                 fontWeight: FontWeight.w500,
               ),
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
-        _SuggestionRail(
-          suggestions: suggestions,
-          onAddExercise: onAddExercise,
-        ),
+        if (showSuggestions && suggestions.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'You usually train these on $weekdayLabel',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white70,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _SuggestionRail(
+            suggestions: suggestions,
+            onAddExercise: onAddExercise,
+          ),
+        ],
       ],
     );
   }
