@@ -26,7 +26,6 @@ import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
-import '../exercise/library/exercise_library_screen.dart';
 
 enum WeightUnit {
   kg("kg"),
@@ -77,8 +76,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget build(BuildContext context) {
     Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
-    final overlayPrimaryColor = isDarkMode ? Colors.white : Colors.black87;
-    final overlaySecondaryColor = isDarkMode ? Colors.white70 : Colors.black54;
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
@@ -114,37 +111,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                 predictionInfo: predictionInfo,
               ),
               const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: Container(
-                  color: Colors.white.withValues(
-                    alpha: isDarkMode ? 0.03 : 0.15,
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    onTap: () => navigateWithSlideTransition(
-                      context: context,
-                      child: const ExerciseLibraryScreen(readOnly: true),
-                    ),
-                    leading: FaIcon(FontAwesomeIcons.personWalking,
-                        color: overlayPrimaryColor),
-                    title: Text("Exercise Library",
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(color: overlayPrimaryColor)),
-                    subtitle: Text(
-                      "Manage your exercises",
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: overlaySecondaryColor),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
               InformationContainerWithBackgroundImage(
                 image: 'images/recovery_girl.PNG',
                 subtitle:
