@@ -129,51 +129,94 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            LabelDivider(
-                              label: "Notifications",
-                              labelColor:
-                                  isDarkMode ? Colors.white : Colors.black,
-                              dividerColor:
-                                  Theme.of(context).colors.dividerColor,
-                              fontSize: 14,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          LabelDivider(
+                            label: "Notifications",
+                            labelColor:
+                                isDarkMode ? Colors.white : Colors.black,
+                            dividerColor: Theme.of(context).colors.dividerColor,
+                            fontSize: 14,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
+                            textAlign: TextAlign.start,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w400,
+                                  color: isDarkMode
+                                      ? Colors.white70
+                                      : Colors.black,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: (isDarkMode ? Colors.white : Colors.black)
+                                  .withValues(alpha: isDarkMode ? 0.06 : 0.05),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colors
+                                    .borderLight
+                                    .withValues(alpha: isDarkMode ? 0.3 : 0.3),
+                              ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                                "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
+                            child: ListTile(
+                              onTap: _turnOnNotification,
+                              dense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              tileColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              title: Text(
+                                _notificationEnabled
+                                    ? "Notification is on"
+                                    : "Turn on notifications",
                                 textAlign: TextAlign.start,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodyMedium
+                                    .bodySmall
                                     ?.copyWith(
-                                        fontWeight: FontWeight.w400,
-                                        color: isDarkMode
-                                            ? Colors.white70
-                                            : Colors.black)),
-                          ]),
-                    ),
-                    ListTile(
-                      onTap: _turnOnNotification,
-                      dense: true,
-                      horizontalTitleGap: 0,
-                      leading: Text(
-                          _notificationEnabled
-                              ? "Notification is on"
-                              : "Turn on notifications",
-                          textAlign: TextAlign.start,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.black)),
-                      trailing: const FaIcon(
-                        FontAwesomeIcons.solidBell,
-                        size: 14,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                              ),
+                              trailing: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colors.glassLight,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: FaIcon(
+                                  FontAwesomeIcons.solidBell,
+                                  size: 14,
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
