@@ -190,8 +190,12 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     final diff = _elapsed - avg;
     if (diff.inSeconds <= 0) return "";
 
-    final diffLabel = diff.msDigital();
+    final diffLabel = _formatElapsedDuration(diff);
     return "$diffLabel over your usual session";
+  }
+
+  String _formatElapsedDuration(Duration duration) {
+    return duration.inHours >= 1 ? duration.hmsDigital() : duration.msDigital();
   }
 
   void _showTimerInfoBottomSheet() {
@@ -335,7 +339,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            _elapsed.msDigital(),
+                                            _formatElapsedDuration(_elapsed),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .headlineSmall
