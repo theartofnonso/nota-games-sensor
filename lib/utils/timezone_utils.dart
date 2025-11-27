@@ -1,4 +1,14 @@
+import 'package:flutter_native_timezone/flutter_native_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
+
+Future<void> configureLocalTimezone({String fallback = 'UTC'}) async {
+  try {
+    final timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
+  } catch (_) {
+    tz.setLocalLocation(tz.getLocation(fallback));
+  }
+}
 
 tz.TZDateTime _nextInstanceOfHour({required int hours}) {
   final DateTime now = DateTime.now();
@@ -14,7 +24,8 @@ tz.TZDateTime _nextInstanceOfHour({required int hours}) {
   return scheduledDate;
 }
 
-tz.TZDateTime nextInstanceOfHourAndWeekDay({required int hours, required int weekday}) {
+tz.TZDateTime nextInstanceOfHourAndWeekDay(
+    {required int hours, required int weekday}) {
   tz.TZDateTime scheduledDate = _nextInstanceOfHour(hours: hours);
   while (scheduledDate.weekday != weekday) {
     scheduledDate = scheduledDate.add(const Duration(days: 1));
@@ -26,7 +37,8 @@ tz.TZDateTime nextMorningAtHour({
   required DateTime reference,
   int hour = 9,
 }) {
-  final referenceDate = DateTime(reference.year, reference.month, reference.day);
+  final referenceDate =
+      DateTime(reference.year, reference.month, reference.day);
   final nextMorning = referenceDate.add(const Duration(days: 1));
   return tz.TZDateTime.from(
     DateTime(nextMorning.year, nextMorning.month, nextMorning.day, hour),

@@ -40,6 +40,7 @@ import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/utils/route_observer.dart';
+import 'package:trainware/utils/timezone_utils.dart';
 
 import 'dtos/appsync/exercise_dto.dart';
 import 'dtos/appsync/routine_plan_dto.dart';
@@ -169,6 +170,7 @@ void main() async {
   }
 
   tz.initializeTimeZones();
+  await configureLocalTimezone();
 
   await SentryFlutter.init(
     (options) {
