@@ -39,6 +39,7 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/theme/theme.dart';
+import 'package:trainware/utils/route_observer.dart';
 
 import 'dtos/appsync/exercise_dto.dart';
 import 'dtos/appsync/routine_plan_dto.dart';
@@ -92,8 +93,7 @@ void _processPendingNotification() {
       return;
     }
 
-    final controller =
-        context.read<SupabaseExerciseAndRoutineController>();
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
     final log = controller.logWhereId(id: logId);
 
     if (log == null) {
@@ -103,8 +103,8 @@ void _processPendingNotification() {
           _processPendingNotification();
         });
       } else {
-        _notificationLogger.w(
-            "Failed to find log $logId for notification deep link.");
+        _notificationLogger
+            .w("Failed to find log $logId for notification deep link.");
         _pendingNotificationPayload = null;
         _notificationRetryCount = 0;
       }
@@ -202,6 +202,7 @@ void main() async {
 final _router = GoRouter(
   initialLocation: "/",
   navigatorKey: navigatorKey,
+  observers: [appRouteObserver],
   routes: [
     GoRoute(
         path: "/", // Define the path for Home Screen

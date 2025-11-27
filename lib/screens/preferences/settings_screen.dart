@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:in_app_review/in_app_review.dart';
+import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
@@ -15,8 +17,10 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
+import '../../dtos/appsync/routine_log_dto.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
+import '../../utils/notifications_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/dividers/label_divider.dart';
@@ -73,11 +77,17 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget build(BuildContext context) {
     Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
+    final overlayPrimaryColor = isDarkMode ? Colors.white : Colors.black87;
+    final overlaySecondaryColor = isDarkMode ? Colors.white70 : Colors.black54;
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final userEmail =
         Supabase.instance.client.auth.currentUser?.email ?? "User";
+    final controller = context.watch<SupabaseExerciseAndRoutineController>();
+    final logs = controller.logs;
+    final yearStats = _YearTrainingStats.fromLogs(logs);
+    final predictionInfo = _PredictionInfo.fromLogs(logs);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -92,13 +102,49 @@ class _SettingsScreenState extends State<SettingsScreen>
                 alignment: Alignment.topLeft,
                 child: IconButton(
                   icon: const FaIcon(
-                    FontAwesomeIcons.xmark,
+                    FontAwesomeIcons.solidCircleXmark,
                     size: 24,
                     color: Colors.white,
                   ),
                   onPressed: context.pop,
                 ),
               ),
+              _TrainingInsightsSection(
+                yearStats: yearStats,
+                predictionInfo: predictionInfo,
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  color: Colors.white.withValues(
+                    alpha: isDarkMode ? 0.03 : 0.15,
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    onTap: () => navigateWithSlideTransition(
+                      context: context,
+                      child: const ExerciseLibraryScreen(readOnly: true),
+                    ),
+                    leading: FaIcon(FontAwesomeIcons.personWalking,
+                        color: overlayPrimaryColor),
+                    title: Text("Exercise Library",
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(color: overlayPrimaryColor)),
+                    subtitle: Text(
+                      "Manage your exercises",
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: overlaySecondaryColor),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
               InformationContainerWithBackgroundImage(
                 image: 'images/recovery_girl.PNG',
                 subtitle:
@@ -201,16 +247,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   },
                 ),
               ),
-              ListTile(
-                  onTap: () => navigateWithSlideTransition(
-                        context: context,
-                        child: const ExerciseLibraryScreen(readOnly: true),
-                      ),
-                  leading: FaIcon(FontAwesomeIcons.personWalking,
-                      color: isDarkMode ? Colors.white70 : Colors.black38),
-                  title: Text("Exercise Library",
-                      style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: const Text("manage your exercises")),
               ListTile(
                   onTap: _logout,
                   leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
@@ -404,4 +440,364 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
     }
   }
+}
+
+class _TrainingInsightsSection extends StatelessWidget {
+  final _YearTrainingStats yearStats;
+  final _PredictionInfo predictionInfo;
+
+  const _TrainingInsightsSection({
+    required this.yearStats,
+    required this.predictionInfo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final dateLabel = predictionInfo.date != null
+        ? DateFormat('EEEE, MMM d').format(predictionInfo.date!)
+        : 'Need more workouts logged';
+    final timeLabel = predictionInfo.time != null
+        ? 'Around ${_formatTime(predictionInfo.time!)}'
+        : 'Log a few sessions to learn your timing';
+    final percentLabel =
+        (yearStats.progress * 100).clamp(0, 100).toStringAsFixed(0);
+    Widget statGroup({
+      required String value,
+      required String label,
+    }) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.displayLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  height: 0.9,
+                ) ??
+                const TextStyle(
+                  color: Colors.white,
+                  fontSize: 48,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.white70,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final maxWidth = constraints.maxWidth;
+            final availableWidth = maxWidth.isFinite
+                ? maxWidth
+                : MediaQuery.of(context).size.width - 20;
+            final isWide = availableWidth >= 600;
+            final cardWidth =
+                isWide ? (availableWidth - 16) / 2 : availableWidth;
+
+            return Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                SizedBox(
+                  width: cardWidth,
+                  child: _FrostedCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sessions this year',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Center(
+                                child: statGroup(
+                                  value: '${yearStats.daysTrained}',
+                                  label: 'Logged sessions',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            _VsDivider(
+                              textColor: Colors.white.withValues(alpha: 0.75),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Center(
+                                child: statGroup(
+                                  value: '${yearStats.predictedRemaining}',
+                                  label: 'Predicted days left',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        LinearProgressIndicator(
+                          value: yearStats.progress,
+                          minHeight: 6,
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          color: theme.colors.vibrantAccent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          yearStats.totalProjectedSessions == 0
+                              ? 'Log a few more workouts to project the year.'
+                              : '$percentLabel% of projected ${yearStats.totalProjectedSessions} sessions done',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: cardWidth,
+                  child: _FrostedCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Next predicted session',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          dateLabel,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          timeLabel,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              margin: const EdgeInsets.only(top: 4),
+                              decoration: BoxDecoration(
+                                color: theme.colors.vibrantAccent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Predictions look at your last 30 days of training.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white54,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _VsDivider extends StatelessWidget {
+  final Color textColor;
+
+  const _VsDivider({required this.textColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 1,
+          height: 24,
+          color: textColor.withValues(alpha: 0.4),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'vs',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: 1,
+          height: 24,
+          color: textColor.withValues(alpha: 0.4),
+        ),
+      ],
+    );
+  }
+}
+
+class _FrostedCard extends StatelessWidget {
+  final Widget child;
+
+  const _FrostedCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
+          ),
+          padding: const EdgeInsets.all(18),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _PredictionInfo {
+  final DateTime? date;
+  final TimeOfDay? time;
+
+  const _PredictionInfo({required this.date, required this.time});
+
+  static _PredictionInfo fromLogs(List<RoutineLogDto> logs) {
+    if (logs.isEmpty) return const _PredictionInfo(date: null, time: null);
+    final predictedSet = getPredictedTrainingDates(
+      historicDateTimes: logs.map((log) => log.startTime).toList(),
+      daysAhead: 14,
+    );
+    final predictedDays = predictedSet.toList()..sort((a, b) => a.compareTo(b));
+    if (predictedDays.isEmpty) {
+      return const _PredictionInfo(date: null, time: null);
+    }
+
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final nextDate = predictedDays.firstWhere(
+      (date) => !date.isBefore(startOfToday),
+      orElse: () => predictedDays.first,
+    );
+
+    final time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
+    return _PredictionInfo(date: nextDate, time: time);
+  }
+}
+
+class _YearTrainingStats {
+  final int year;
+  final int daysTrained;
+  final int predictedRemaining;
+  final int totalProjectedSessions;
+  final double progress;
+
+  const _YearTrainingStats({
+    required this.year,
+    required this.daysTrained,
+    required this.predictedRemaining,
+    required this.totalProjectedSessions,
+    required this.progress,
+  });
+
+  static _YearTrainingStats fromLogs(List<RoutineLogDto> logs) {
+    final now = DateTime.now();
+    final currentYear = now.year;
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final yearDays = logs
+        .where((log) => log.startTime.year == currentYear)
+        .map((log) => DateTime(
+            log.startTime.year, log.startTime.month, log.startTime.day))
+        .toSet()
+        .length;
+
+    final endOfYear = DateTime(currentYear, 12, 31);
+    final daysAhead = endOfYear.difference(todayStart).inDays;
+    int predictedRemaining = 0;
+    if (daysAhead > 0 && logs.isNotEmpty) {
+      final predictedSet = getPredictedTrainingDates(
+        historicDateTimes: logs.map((log) => log.startTime).toList(),
+        daysAhead: daysAhead,
+      );
+      predictedRemaining =
+          predictedSet.where((date) => !date.isBefore(todayStart)).length;
+    }
+
+    final totalProjectedSessions = yearDays + predictedRemaining;
+    final progress = totalProjectedSessions == 0
+        ? 0.0
+        : (yearDays / totalProjectedSessions).clamp(0, 1).toDouble();
+
+    return _YearTrainingStats(
+      year: currentYear,
+      daysTrained: yearDays,
+      predictedRemaining: predictedRemaining,
+      totalProjectedSessions: totalProjectedSessions,
+      progress: progress,
+    );
+  }
+}
+
+TimeOfDay? _deriveTypicalTimeForWeekday(List<RoutineLogDto> logs, int weekday) {
+  final matches =
+      logs.where((log) => log.startTime.weekday == weekday).toList();
+  if (matches.isEmpty) return null;
+  final totalMinutes = matches.fold<int>(
+      0, (sum, log) => sum + log.startTime.hour * 60 + log.startTime.minute);
+  final averageMinutes = totalMinutes ~/ matches.length;
+  final hour = averageMinutes ~/ 60;
+  final minute = averageMinutes % 60;
+  return TimeOfDay(hour: hour, minute: minute);
+}
+
+String _formatTime(TimeOfDay time) {
+  final date = DateTime(0, 1, 1, time.hour, time.minute);
+  return DateFormat('h:mm a').format(date);
 }

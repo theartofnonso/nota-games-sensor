@@ -12,6 +12,7 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/notifications_utils.dart';
+import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/routine/preview/routine_log_widget.dart';
 import 'package:trainware/widgets/routine/preview/routine_plan_grid_item.dart';
@@ -33,12 +34,15 @@ class OverviewScreen extends StatefulWidget {
 }
 
 class _OverviewScreenState extends State<OverviewScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, RouteAware {
   final SharedPrefs _sharedPrefs = SharedPrefs();
   bool _loading = false;
   bool _lastCachedSessionState = false;
   DateTime _currentVisibleMonth =
       DateTime(DateTime.now().year, DateTime.now().month);
+  bool _routeSubscribed = false;
+  bool _settingsOverlayActive = false;
+  bool _settingsPresentationScheduled = false;
 
   @override
   void initState() {
@@ -54,6 +58,7 @@ class _OverviewScreenState extends State<OverviewScreen>
       if (_hasCachedSession()) {
         _showRetryBottomSheet();
       }
+      _ensureSettingsOverlay();
     });
   }
 
@@ -61,6 +66,10 @@ class _OverviewScreenState extends State<OverviewScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _sharedPrefs.routineLogRevision.removeListener(_handleRoutineLogChanged);
+    if (_routeSubscribed) {
+      appRouteObserver.unsubscribe(this);
+      _routeSubscribed = false;
+    }
     super.dispose();
   }
 
@@ -70,12 +79,30 @@ class _OverviewScreenState extends State<OverviewScreen>
     // Refresh state when app resumes to check cache status
     if (state == AppLifecycleState.resumed && mounted) {
       _checkCacheStatus();
+      _ensureSettingsOverlay();
     }
+  }
+
+  @override
+  void didPush() {
+    _ensureSettingsOverlay();
+  }
+
+  @override
+  void didPopNext() {
+    _ensureSettingsOverlay();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (!_routeSubscribed) {
+      final route = ModalRoute.of(context);
+      if (route is PageRoute) {
+        appRouteObserver.subscribe(this, route);
+        _routeSubscribed = true;
+      }
+    }
     // Refresh state when route becomes active to check cache status
     _checkCacheStatus();
   }
@@ -106,6 +133,30 @@ class _OverviewScreenState extends State<OverviewScreen>
 
   void _showRetryBottomSheet() {
     showUnsavedWorkoutBottomSheet(context);
+  }
+
+  void _ensureSettingsOverlay() {
+    if (!mounted || _settingsOverlayActive || _settingsPresentationScheduled) {
+      return;
+    }
+    _settingsPresentationScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _settingsPresentationScheduled = false;
+      if (!mounted || _settingsOverlayActive) return;
+      _openSettingsOverlay();
+    });
+  }
+
+  Future<void> _openSettingsOverlay() async {
+    if (_settingsOverlayActive || !mounted) return;
+    _settingsOverlayActive = true;
+    try {
+      await navigateToSettings(context: context);
+    } finally {
+      if (mounted) {
+        _settingsOverlayActive = false;
+      }
+    }
   }
 
   @override
@@ -234,9 +285,9 @@ class _OverviewScreenState extends State<OverviewScreen>
               child: Material(
                 color: Colors.transparent,
                 child: IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.gear, size: 18),
-                  onPressed: () => navigateToSettings(context: context),
-                  tooltip: 'Settings',
+                  icon: const FaIcon(FontAwesomeIcons.grip, size: 18),
+                  onPressed: _openSettingsOverlay,
+                  tooltip: 'Dashboard',
                   color: Colors.white,
                   padding: const EdgeInsets.all(12),
                   constraints: const BoxConstraints(),
@@ -418,9 +469,8 @@ class _OverviewScreenState extends State<OverviewScreen>
     showAppBottomSheet(
       context: context,
       isDraggable: true,
-          builder: (sheetContext, scrollController) {
-        final isDarkMode =
-            Theme.of(sheetContext).brightness == Brightness.dark;
+      builder: (sheetContext, scrollController) {
+        final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
 
         return Column(
           children: [
