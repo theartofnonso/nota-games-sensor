@@ -68,50 +68,41 @@ class InformationContainerWithBackgroundImage extends StatelessWidget {
               // 2️⃣ Gradient overlay (transparent → dark)
               Positioned.fill(
                 child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        color, // semi‑opaque dark
-                      ],
-                    ),
-                  ),
+                  color: color.withValues(alpha: 0.6),
                 ),
               ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // Text column expands; arrow stays fixed size.
-                      Expanded(
-                        child: Text(
-                          subtitle,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            height: 1.8,
-                            color: Colors.white70,
-                          ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Text column expands; arrow stays fixed size.
+                    Expanded(
+                      child: Text(
+                        subtitle,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          height: 1.8,
+                          color: Colors.white,
                         ),
                       ),
-                      if (callback != null)
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          margin: const EdgeInsets.only(bottom: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: const FaIcon(
-                            Icons.chevron_right_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        )
-                    ],
-                  ),
+                    ),
+                    if (callback != null)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.only(bottom: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: const FaIcon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      )
+                  ],
                 ),
+              ),
             ],
           ),
         ),

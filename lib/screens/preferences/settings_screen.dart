@@ -112,7 +112,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
               const SizedBox(height: 16),
               InformationContainerWithBackgroundImage(
-                image: 'images/recovery_girl.PNG',
+                image: 'images/background.jpg',
                 subtitle:
                     "Loving trainware? Your feedback helps us grow and improve.",
                 color: Colors.black,
