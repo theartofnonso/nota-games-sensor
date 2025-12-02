@@ -92,6 +92,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       backgroundColor: Colors.transparent,
       body: SafeArea(
         minimum: const EdgeInsets.all(10),
+        bottom: false,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +266,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       color: isDarkMode ? Colors.white70 : Colors.black38),
                   title: Text("Socials",
                       style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: const Text("follow us on our socials")),
+                  subtitle: const Text("follow us everywhere")),
               ListTile(
                   onTap: _logout,
                   leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,

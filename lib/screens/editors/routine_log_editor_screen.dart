@@ -300,6 +300,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             right: true,
             minimum: const EdgeInsets.all(20),
             child: Stack(
+              clipBehavior: Clip.none,
               children: [
                 // Main content: header + list
                 // Reserve vertical space at the bottom for the fixed CTA only
@@ -413,11 +414,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                       const SizedBox(height: 16),
                       Expanded(
                         child: exerciseLogs.isEmpty
-                            ? _EmptySessionSuggestions(
-                                showSuggestions: shouldShowSuggestions,
-                                suggestions: visibleSuggestions,
-                                onAddExercise: _handleSuggestedExerciseTap,
-                              )
+                            ? const _EmptySessionSuggestions()
                             : Column(
                                 children: [
                                   Expanded(
@@ -484,46 +481,23 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                       },
                                     ),
                                   ),
-                                  if (shouldShowSuggestions) ...[
-                                    const SizedBox(height: 16),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 20),
-                                      child: Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Text(
-                                          'You usually train these on ${DateFormat('EEEE').format(DateTime.now())}s',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(
-                                                color: Colors.white70,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Transform.translate(
-                                      offset: const Offset(-20, 0),
-                                      child: SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width +
-                                                40,
-                                        child: _SuggestionRail(
-                                          suggestions: visibleSuggestions,
-                                          onAddExercise:
-                                              _handleSuggestedExerciseTap,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
                       ),
                     ],
                   ),
                 ),
+                if (shouldShowSuggestions)
+                  Positioned(
+                    left: -20,
+                    right: -20,
+                    bottom: 20,
+                    child: _RoutineLogSuggestionSheet(
+                      weekdayLabel: DateFormat('EEEE').format(DateTime.now()),
+                      suggestions: visibleSuggestions,
+                      onAddExercise: _handleSuggestedExerciseTap,
+                    ),
+                  ),
                 // Bottom fixed CTA (does not scroll) – same pattern as PastRoutineLogEditor
                 if (_isRoutinePartiallyComplete())
                   Align(
@@ -813,12 +787,35 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
 // Removed in-session info banner
 
 class _EmptySessionSuggestions extends StatelessWidget {
-  final bool showSuggestions;
+  const _EmptySessionSuggestions();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 100),
+      child: Center(
+        child: Text(
+          'No exercises yet.\nTap + to add exercises and start logging.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: Colors.white70,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoutineLogSuggestionSheet extends StatelessWidget {
+  final String weekdayLabel;
   final List<_SuggestionCardData> suggestions;
   final void Function(ExerciseDto exercise) onAddExercise;
 
-  const _EmptySessionSuggestions({
-    required this.showSuggestions,
+  const _RoutineLogSuggestionSheet({
+    required this.weekdayLabel,
     required this.suggestions,
     required this.onAddExercise,
   });
@@ -826,49 +823,30 @@ class _EmptySessionSuggestions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final weekdayLabel = DateFormat('EEEE').format(DateTime.now());
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: Center(
-            child: Text(
-              'No exercises yet.\nTap + to add exercises and start logging.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: Colors.white70,
-                fontWeight: FontWeight.w500,
+    return IgnorePointer(
+        ignoring: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'You usually train these on $weekdayLabel',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ),
-          ),
-        ),
-        if (showSuggestions && suggestions.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              'You usually train these on $weekdayLabel',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white70,
-                fontWeight: FontWeight.w500,
-              ),
+            const SizedBox(height: 12),
+            _SuggestionRail(
+              suggestions: suggestions,
+              onAddExercise: onAddExercise,
             ),
-          ),
-          const SizedBox(height: 12),
-          Transform.translate(
-            offset: const Offset(-20, 0),
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width + 40,
-              child: _SuggestionRail(
-                suggestions: suggestions,
-                onAddExercise: onAddExercise,
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
+          ],
+        ));
   }
 }
 
@@ -885,7 +863,7 @@ class _SuggestionRail extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: EdgeInsets.zero,
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           for (int i = 0; i < suggestions.length; i++) ...[
