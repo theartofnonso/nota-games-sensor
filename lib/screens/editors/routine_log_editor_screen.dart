@@ -486,24 +486,36 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                   ),
                                   if (shouldShowSuggestions) ...[
                                     const SizedBox(height: 16),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'You usually train these on ${DateFormat('EEEE').format(DateTime.now())}s',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: Colors.white70,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 20),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'You usually train these on ${DateFormat('EEEE').format(DateTime.now())}s',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: Colors.white70,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 12),
-                                    _SuggestionRail(
-                                      suggestions: visibleSuggestions,
-                                      onAddExercise:
-                                          _handleSuggestedExerciseTap,
+                                    Transform.translate(
+                                      offset: const Offset(-20, 0),
+                                      child: SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width +
+                                                40,
+                                        child: _SuggestionRail(
+                                          suggestions: visibleSuggestions,
+                                          onAddExercise:
+                                              _handleSuggestedExerciseTap,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ],
@@ -833,17 +845,26 @@ class _EmptySessionSuggestions extends StatelessWidget {
         ),
         if (showSuggestions && suggestions.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text(
-            'You usually train these on $weekdayLabel',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white70,
-              fontWeight: FontWeight.w500,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              'You usually train these on $weekdayLabel',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.white70,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           const SizedBox(height: 12),
-          _SuggestionRail(
-            suggestions: suggestions,
-            onAddExercise: onAddExercise,
+          Transform.translate(
+            offset: const Offset(-20, 0),
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width + 40,
+              child: _SuggestionRail(
+                suggestions: suggestions,
+                onAddExercise: onAddExercise,
+              ),
+            ),
           ),
         ],
       ],

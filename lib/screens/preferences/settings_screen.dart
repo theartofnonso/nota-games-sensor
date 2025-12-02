@@ -22,7 +22,9 @@ import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/navigation_utils.dart';
+import '../../utils/uri_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -221,6 +223,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ],
                 ),
+              const SizedBox(height: 16),
               ListTile(
                 tileColor: Colors.transparent,
                 title: Text("Weight",
@@ -256,6 +259,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                   },
                 ),
               ),
+              ListTile(
+                  onTap: _showSocialLinksBottomSheet,
+                  leading: FaIcon(FontAwesomeIcons.globe,
+                      color: isDarkMode ? Colors.white70 : Colors.black38),
+                  title: Text("Socials",
+                      style: Theme.of(context).textTheme.titleMedium),
+                  subtitle: const Text("follow us on our socials")),
               ListTile(
                   onTap: _logout,
                   leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
@@ -301,6 +311,67 @@ class _SettingsScreenState extends State<SettingsScreen>
     final InAppReview inAppReview = InAppReview.instance;
 
     inAppReview.openStoreListing(appStoreId: appStoreId);
+  }
+
+  void _showSocialLinksBottomSheet() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: FaIcon(
+                FontAwesomeIcons.instagram,
+                size: 18,
+                color: isDarkMode ? Colors.white70 : Colors.black38,
+              ),
+              horizontalTitleGap: 10,
+              title: Text("Instagram",
+                  style: Theme.of(context).textTheme.bodyLarge),
+              subtitle: const Text("@ware.train"),
+              onTap: () {
+                Navigator.of(context).pop();
+                _openSocialLink('instagram');
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: FaIcon(
+                FontAwesomeIcons.tiktok,
+                size: 18,
+                color: isDarkMode ? Colors.white70 : Colors.black38,
+              ),
+              horizontalTitleGap: 10,
+              title:
+                  Text("TikTok", style: Theme.of(context).textTheme.bodyLarge),
+              subtitle: const Text("@ware.train"),
+              onTap: () {
+                Navigator.of(context).pop();
+                _openSocialLink('tiktok');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openSocialLink(String platform) {
+    String url;
+    if (platform == 'instagram') {
+      url = 'https://www.instagram.com/ware.train';
+    } else if (platform == 'tiktok') {
+      url = 'https://www.tiktok.com/@ware.train';
+    } else {
+      return;
+    }
+    openUrl(url: url, context: context);
   }
 
   void _clearAppData() async {
@@ -465,7 +536,7 @@ class _TrainingInsightsSection extends StatelessWidget {
     final theme = Theme.of(context);
 
     final dateLabel = predictionInfo.date != null
-        ? DateFormat('EEEE, MMM d').format(predictionInfo.date!)
+        ? _formatRelativeDate(predictionInfo.date!)
         : 'Need more workouts logged';
     final timeLabel = predictionInfo.time != null
         ? 'Around ${_formatTime(predictionInfo.time!)}'
@@ -809,4 +880,23 @@ TimeOfDay? _deriveTypicalTimeForWeekday(List<RoutineLogDto> logs, int weekday) {
 String _formatTime(TimeOfDay time) {
   final date = DateTime(0, 1, 1, time.hour, time.minute);
   return DateFormat('h:mm a').format(date);
+}
+
+String _formatRelativeDate(DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final tomorrow = today.add(const Duration(days: 1));
+  final dateOnly = DateTime(date.year, date.month, date.day);
+
+  final daysDifference = dateOnly.difference(today).inDays;
+
+  if (dateOnly == today) {
+    return 'Today';
+  } else if (dateOnly == tomorrow) {
+    return 'Tomorrow';
+  } else if (daysDifference >= 2 && daysDifference <= 7) {
+    return 'In $daysDifference days';
+  } else {
+    return DateFormat('EEEE, MMM d').format(date);
+  }
 }
