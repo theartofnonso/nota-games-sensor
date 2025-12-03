@@ -47,6 +47,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   Duration? _averageSessionDuration;
   late final bool _isFreshEmptyLog;
   bool _showSuggestionsBar = false;
+  bool _suggestionsExpanded = false;
   void _selectExercisesInLibrary() async {
     final controller =
         Provider.of<ExerciseLogController>(context, listen: false);
@@ -491,11 +492,17 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                   Positioned(
                     left: -20,
                     right: -20,
-                    bottom: 20,
+                    bottom: _isRoutinePartiallyComplete() ? 100 : 20,
                     child: _RoutineLogSuggestionSheet(
                       weekdayLabel: DateFormat('EEEE').format(DateTime.now()),
                       suggestions: visibleSuggestions,
                       onAddExercise: _handleSuggestedExerciseTap,
+                      isExpanded: _suggestionsExpanded,
+                      onToggleExpanded: () {
+                        setState(() {
+                          _suggestionsExpanded = !_suggestionsExpanded;
+                        });
+                      },
                     ),
                   ),
                 // Bottom fixed CTA (does not scroll) – same pattern as PastRoutineLogEditor
@@ -813,11 +820,15 @@ class _RoutineLogSuggestionSheet extends StatelessWidget {
   final String weekdayLabel;
   final List<_SuggestionCardData> suggestions;
   final void Function(ExerciseDto exercise) onAddExercise;
+  final bool isExpanded;
+  final VoidCallback onToggleExpanded;
 
   const _RoutineLogSuggestionSheet({
     required this.weekdayLabel,
     required this.suggestions,
     required this.onAddExercise,
+    required this.isExpanded,
+    required this.onToggleExpanded,
   });
 
   @override
@@ -825,28 +836,47 @@ class _RoutineLogSuggestionSheet extends StatelessWidget {
     final theme = Theme.of(context);
 
     return IgnorePointer(
-        ignoring: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
+      ignoring: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: onToggleExpanded,
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'You usually train these on $weekdayLabel',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w400,
-                ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'You usually train these on $weekdayLabel',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  FaIcon(
+                    isExpanded
+                        ? FontAwesomeIcons.chevronDown
+                        : FontAwesomeIcons.chevronUp,
+                    size: 12,
+                    color: Colors.white70,
+                  ),
+                ],
               ),
             ),
+          ),
+          if (isExpanded) ...[
             const SizedBox(height: 12),
             _SuggestionRail(
               suggestions: suggestions,
               onAddExercise: onAddExercise,
             ),
           ],
-        ));
+        ],
+      ),
+    );
   }
 }
 

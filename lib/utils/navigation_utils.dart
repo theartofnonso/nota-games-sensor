@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/screens/editors/exercise_editor_screen.dart';
+import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/exercise/history/exercise_home_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
+import 'package:trainware/screens/home.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
@@ -18,7 +20,6 @@ import '../dtos/viewmodels/routine_log_arguments.dart';
 import '../dtos/viewmodels/routine_plan_arguments.dart';
 import '../dtos/viewmodels/routine_template_arguments.dart';
 import '../screens/editors/past_routine_log_editor_screen.dart';
-import '../screens/editors/routine_log_editor_screen.dart';
 import '../screens/editors/routine_template_editor_screen.dart';
 import '../screens/logs/routine_log_screen.dart';
 import '../screens/routines/routine_plan.dart';
@@ -180,6 +181,15 @@ void navigateToRoutineHome({required BuildContext context}) {
 }
 
 Future<void> navigateToSettings({required BuildContext context}) async {
+  // Only show settings if we're on the overview/home screen
+  final currentRoute = GoRouterState.of(context).uri.path;
+  final isOnOverview = currentRoute == Home.routeName || currentRoute == '/';
+
+  if (!isOnOverview) {
+    // Don't show settings unless on overview screen
+    return;
+  }
+
   await showGeneralDialog(
     context: context,
     barrierDismissible: true,
