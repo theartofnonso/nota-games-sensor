@@ -45,7 +45,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   Timer? _timer;
   Duration _elapsed = Duration.zero;
   Duration? _averageSessionDuration;
-  late final bool _isFreshEmptyLog;
   bool _showSuggestionsBar = false;
   bool _suggestionsExpanded = false;
   void _selectExercisesInLibrary() async {
@@ -274,17 +273,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         .where((entry) => !activeExerciseIds.contains(entry.exercise.id))
         .toList();
 
-    if (_showSuggestionsBar && suggestionData.isEmpty && _isFreshEmptyLog) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _showSuggestionsBar = false;
-          });
-        }
-      });
-    }
-    final shouldShowSuggestions =
-        _showSuggestionsBar && visibleSuggestions.isNotEmpty;
+    // Always show suggestions if there are any visible suggestions
+    final shouldShowSuggestions = visibleSuggestions.isNotEmpty;
 
     return PopScope(
         canPop: true,
@@ -770,11 +760,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   void initState() {
     super.initState();
 
-    _isFreshEmptyLog = widget.mode == RoutineEditorMode.log &&
-        widget.log.exerciseLogs.isEmpty &&
-        widget.log.templateId.isEmpty &&
-        !widget.cached;
-    _showSuggestionsBar = _isFreshEmptyLog;
+    // Always show suggestions in RoutineLogEditorScreen (not in PastRoutineLogEditorScreen)
+    _showSuggestionsBar = true;
 
     WidgetsBinding.instance.addObserver(this);
 
