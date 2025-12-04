@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -300,107 +301,103 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                   bottom: _isRoutinePartiallyComplete() ? 88.0 : 0.0,
                   child: Column(
                     children: [
-                      // Header: routine name
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.log.name,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w900,
-                                          height: 1.2,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.log.name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w900,
+                                        height: 1.2,
+                                      ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (isLogMode) ...[
+                                  const SizedBox(height: 6),
+                                  GestureDetector(
+                                    onTap: _showTimerInfoBottomSheet,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _formatElapsedDuration(_elapsed),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
                                         ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                        Builder(
+                                          builder: (context) {
+                                            final deltaLabel =
+                                                _buildTimerDeltaLabel();
+                                            if (deltaLabel.isEmpty) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.only(top: 2),
+                                              child: Text(
+                                                deltaLabel,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: Colors.white70,
+                                                      height: 1.2,
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  if (isLogMode) ...[
-                                    const SizedBox(height: 6),
-                                    GestureDetector(
-                                      onTap: _showTimerInfoBottomSheet,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            _formatElapsedDuration(_elapsed),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headlineSmall
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                          ),
-                                          Builder(
-                                            builder: (context) {
-                                              final deltaLabel =
-                                                  _buildTimerDeltaLabel();
-                                              if (deltaLabel.isEmpty) {
-                                                return const SizedBox.shrink();
-                                              }
-                                              return Padding(
-                                                padding: const EdgeInsets.only(
-                                                    top: 2),
-                                                child: Text(
-                                                  deltaLabel,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodySmall
-                                                      ?.copyWith(
-                                                        color: Colors.white70,
-                                                        height: 1.2,
-                                                      ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: _confirmDiscardSession,
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(0, 0),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      foregroundColor: Colors.redAccent,
                                     ),
-                                    const SizedBox(height: 4),
-                                    TextButton(
-                                      onPressed: _confirmDiscardSession,
-                                      style: TextButton.styleFrom(
-                                        padding: EdgeInsets.zero,
-                                        minimumSize: const Size(0, 0),
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        foregroundColor: Colors.redAccent,
-                                      ),
-                                      child: Text(
-                                        'Discard session',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: Colors.redAccent,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
+                                    child: Text(
+                                      'Discard session',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Colors.redAccent,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                     ),
-                                  ],
+                                  ),
                                 ],
-                              ),
+                              ],
                             ),
-                            IconButton(
-                              onPressed: _selectExercisesInLibrary,
-                              icon: const FaIcon(
-                                FontAwesomeIcons.circlePlus,
-                                size: 22,
-                                color: Colors.white,
-                              ),
-                              tooltip: 'Add exercises',
+                          ),
+                          IconButton(
+                            onPressed: _selectExercisesInLibrary,
+                            icon: const FaIcon(
+                              FontAwesomeIcons.circlePlus,
+                              size: 22,
+                              color: Colors.white,
                             ),
-                          ],
-                        ),
+                            tooltip: 'Add exercises',
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       Expanded(
@@ -500,8 +497,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: SafeArea(
-                      minimum: const EdgeInsets.only(
-                          left: 20, right: 20, bottom: 16),
+                      minimum:
+                          const EdgeInsets.only(left: 20, right: 20, bottom: 0),
                       child: SizedBox(
                         width: double.infinity,
                         child: OpacityButtonWidgetTwo(
@@ -821,6 +818,7 @@ class _RoutineLogSuggestionSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return IgnorePointer(
       ignoring: false,
@@ -828,29 +826,54 @@ class _RoutineLogSuggestionSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: onToggleExpanded,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'You usually train these on $weekdayLabel',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w400,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: (isDarkMode ? Colors.white : Colors.black)
+                        .withValues(alpha: isDarkMode ? 0.06 : 0.05),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colors
+                          .borderLight
+                          .withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: GestureDetector(
+                    onTap: onToggleExpanded,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'You usually train these on $weekdayLabel',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                          FaIcon(
+                            isExpanded
+                                ? FontAwesomeIcons.chevronDown
+                                : FontAwesomeIcons.chevronUp,
+                            size: 12,
+                            color: Colors.white70,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  FaIcon(
-                    isExpanded
-                        ? FontAwesomeIcons.chevronDown
-                        : FontAwesomeIcons.chevronUp,
-                    size: 12,
-                    color: Colors.white70,
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -925,7 +948,7 @@ class _SuggestionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colors;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     final MuscleGroup muscleGroup = data.exercise.primaryMuscleGroup;
     final muscleGroupLabel = muscleGroup.displayName;
@@ -937,62 +960,74 @@ class _SuggestionCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onAdd,
-        borderRadius: BorderRadius.circular(24),
-        child: Ink(
-          width: 240,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: colors.sapphireDark,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: colors.borderLight.withValues(alpha: 0.02),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
+        borderRadius: BorderRadius.circular(20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: (isDarkMode ? Colors.white : Colors.black)
+                    .withValues(alpha: isDarkMode ? 0.06 : 0.05),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Theme.of(context)
+                      .colors
+                      .borderLight
+                      .withValues(alpha: 0.1),
+                ),
+              ),
+              child: Container(
+                width: 240,
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          data.exercise.name,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data.exercise.name,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                muscleGroupLabel,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          muscleGroupLabel,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white70,
+                        Opacity(
+                          opacity: 0.85,
+                          child: Image.asset(
+                            illustrationPath,
+                            height: 32,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              // Fallback if image not found
+                              return Icon(Icons.block,
+                                  size: 32, color: Colors.white24);
+                            },
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  Opacity(
-                    opacity: 0.85,
-                    child: Image.asset(
-                      illustrationPath,
-                      height: 32,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        // Fallback if image not found
-                        return Icon(Icons.block,
-                            size: 32, color: Colors.white24);
-                      },
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),
