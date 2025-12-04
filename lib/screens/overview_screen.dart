@@ -42,7 +42,6 @@ class _OverviewScreenState extends State<OverviewScreen>
       DateTime(DateTime.now().year, DateTime.now().month);
   bool _routeSubscribed = false;
   bool _settingsOverlayActive = false;
-  bool _settingsPresentationScheduled = false;
 
   @override
   void initState() {
@@ -58,7 +57,6 @@ class _OverviewScreenState extends State<OverviewScreen>
       if (_hasCachedSession()) {
         _showRetryBottomSheet();
       }
-      _ensureSettingsOverlay();
     });
   }
 
@@ -79,18 +77,17 @@ class _OverviewScreenState extends State<OverviewScreen>
     // Refresh state when app resumes to check cache status
     if (state == AppLifecycleState.resumed && mounted) {
       _checkCacheStatus();
-      _ensureSettingsOverlay();
     }
   }
 
   @override
   void didPush() {
-    _ensureSettingsOverlay();
+    // Settings overlay removed - only show on explicit tap
   }
 
   @override
   void didPopNext() {
-    _ensureSettingsOverlay();
+    // Settings overlay removed - only show on explicit tap
   }
 
   @override
@@ -133,18 +130,6 @@ class _OverviewScreenState extends State<OverviewScreen>
 
   void _showRetryBottomSheet() {
     showUnsavedWorkoutBottomSheet(context);
-  }
-
-  void _ensureSettingsOverlay() {
-    if (!mounted || _settingsOverlayActive || _settingsPresentationScheduled) {
-      return;
-    }
-    _settingsPresentationScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _settingsPresentationScheduled = false;
-      if (!mounted || _settingsOverlayActive) return;
-      _openSettingsOverlay();
-    });
   }
 
   Future<void> _openSettingsOverlay() async {

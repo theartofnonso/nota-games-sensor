@@ -26,8 +26,6 @@ import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
-import '../../nudges/plans_nudges.dart';
-import '../../widgets/information_containers/transparent_information_container_lite.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 
 class RoutinePlanScreen extends StatefulWidget {
@@ -135,18 +133,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                   spacing: 16,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Builder(builder: (context) {
-                      final controller =
-                          Provider.of<SupabaseExerciseAndRoutineController>(
-                              context,
-                              listen: false);
-                      final msg = PlansNudges.build(controller: controller);
-                      if (msg == null) return const SizedBox.shrink();
-                      return TransparentInformationContainerLite(
-                        content: msg,
-                        useOpacity: true,
-                      );
-                    }),
                     Text(
                       plan.name,
                       style: const TextStyle(
