@@ -315,6 +315,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
