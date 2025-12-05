@@ -268,6 +268,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   const SizedBox(height: 16),
                   ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 30.0),
                     tileColor: Colors.transparent,
                     title: Text("Weight",
                         style: Theme.of(context).textTheme.titleMedium),
@@ -303,6 +305,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ),
                   ListTile(
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 30.0),
                       onTap: _showAccountOptionsBottomSheet,
                       leading: FaIcon(FontAwesomeIcons.user,
                           color: isDarkMode ? Colors.white70 : Colors.black38),
