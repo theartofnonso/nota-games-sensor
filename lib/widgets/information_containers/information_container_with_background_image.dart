@@ -86,6 +86,7 @@ class InformationContainerWithBackgroundImage extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 16),
                     if (callback != null)
                       Container(
                         padding: const EdgeInsets.all(8),

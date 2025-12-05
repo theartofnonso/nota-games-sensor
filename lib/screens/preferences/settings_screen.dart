@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:in_app_review/in_app_review.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
@@ -14,7 +13,6 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/request_screens/notifications_request.dart';
 import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
@@ -154,9 +152,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: InformationContainerWithBackgroundImage(
                       image: 'images/background.jpg',
                       subtitle:
-                          "Loving trainware? Your feedback helps us grow and improve.",
+                          "Loving trainware? Learn more about us and our mission.",
                       color: Colors.black,
-                      onTap: _openStoreListing,
+                      onTap: _openWebpage,
                       alignmentGeometry: Alignment.center,
                     ),
                   ),
@@ -305,13 +303,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ),
                   ListTile(
-                      onTap: _showSocialLinksBottomSheet,
-                      leading: FaIcon(FontAwesomeIcons.globe,
-                          color: isDarkMode ? Colors.white70 : Colors.black38),
-                      title: Text("Socials",
-                          style: Theme.of(context).textTheme.titleMedium),
-                      subtitle: const Text("follow us everywhere")),
-                  ListTile(
                       onTap: _showAccountOptionsBottomSheet,
                       leading: FaIcon(FontAwesomeIcons.user,
                           color: isDarkMode ? Colors.white70 : Colors.black38),
@@ -347,70 +338,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
-  void _openStoreListing() {
-    final InAppReview inAppReview = InAppReview.instance;
-
-    inAppReview.openStoreListing(appStoreId: appStoreId);
-  }
-
-  void _showSocialLinksBottomSheet() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    showAppBottomSheet(
-      context: context,
-      isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: FaIcon(
-                FontAwesomeIcons.instagram,
-                size: 18,
-                color: isDarkMode ? Colors.white70 : Colors.black38,
-              ),
-              horizontalTitleGap: 10,
-              title: Text("Instagram",
-                  style: Theme.of(context).textTheme.bodyLarge),
-              subtitle: const Text("@ware.train"),
-              onTap: () {
-                Navigator.of(context).pop();
-                _openSocialLink('instagram');
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: FaIcon(
-                FontAwesomeIcons.tiktok,
-                size: 18,
-                color: isDarkMode ? Colors.white70 : Colors.black38,
-              ),
-              horizontalTitleGap: 10,
-              title:
-                  Text("TikTok", style: Theme.of(context).textTheme.bodyLarge),
-              subtitle: const Text("@ware.train"),
-              onTap: () {
-                Navigator.of(context).pop();
-                _openSocialLink('tiktok');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _openSocialLink(String platform) {
-    String url;
-    if (platform == 'instagram') {
-      url = 'https://www.instagram.com/ware.train';
-    } else if (platform == 'tiktok') {
-      url = 'https://www.tiktok.com/@ware.train';
-    } else {
-      return;
-    }
+  void _openWebpage() {
+    const url = 'https://ware.health';
     openUrl(url: url, context: context);
   }
 
