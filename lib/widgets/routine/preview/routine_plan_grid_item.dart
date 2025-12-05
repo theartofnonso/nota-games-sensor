@@ -17,7 +17,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
   final void Function()? onTap;
 
   const RoutinePlanGridItemWidget(
-      {super.key, required this.plan, this.radius = 12, this.onTap});
+      {super.key, required this.plan, this.radius = 22, this.onTap});
 
   @override
   Widget build(BuildContext context) {

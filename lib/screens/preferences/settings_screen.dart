@@ -106,8 +106,38 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Spacer for top buttons
-                  const SizedBox(height: 50),
+                  // Top buttons row
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        // Notification icon (only when cached session exists)
+                        if (_hasCachedSession)
+                          IconButton(
+                            icon: const FaIcon(FontAwesomeIcons.solidBell,
+                                size: 18),
+                            onPressed: () =>
+                                showUnsavedWorkoutBottomSheet(context),
+                            tooltip: 'Unsaved workout',
+                            color: Theme.of(context)
+                                .colors
+                                .vibrantAccent
+                                .withValues(alpha: 0.5),
+                            padding: const EdgeInsets.all(12),
+                            constraints: const BoxConstraints(),
+                          ),
+                        // Close button
+                        IconButton(
+                          icon: FaIcon(FontAwesomeIcons.calendarDay,
+                              color: Colors.white.withValues(alpha: 0.9)),
+                          onPressed: widget.onClose ?? () => context.pop(),
+                          padding: const EdgeInsets.all(12),
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: _TrainingInsightsSection(
@@ -302,41 +332,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ),
                 ],
-              ),
-            ),
-            // Top buttons overlay
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Notification icon (only when cached session exists)
-                    if (_hasCachedSession)
-                      IconButton(
-                        icon:
-                            const FaIcon(FontAwesomeIcons.solidBell, size: 18),
-                        onPressed: () => showUnsavedWorkoutBottomSheet(context),
-                        tooltip: 'Unsaved workout',
-                        color: Theme.of(context)
-                            .colors
-                            .vibrantAccent
-                            .withValues(alpha: 0.5),
-                        padding: const EdgeInsets.all(12),
-                        constraints: const BoxConstraints(),
-                      ),
-                    // Close button
-                    IconButton(
-                      icon: FaIcon(FontAwesomeIcons.calendarDay,
-                          color: Colors.white.withValues(alpha: 0.9)),
-                      onPressed: widget.onClose ?? () => context.pop(),
-                      padding: const EdgeInsets.all(12),
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
               ),
             ),
           ],
