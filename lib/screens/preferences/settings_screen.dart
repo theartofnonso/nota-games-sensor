@@ -312,17 +312,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                           style: Theme.of(context).textTheme.titleMedium),
                       subtitle: const Text("follow us everywhere")),
                   ListTile(
-                      onTap: _logout,
-                      leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
+                      onTap: _showAccountOptionsBottomSheet,
+                      leading: FaIcon(FontAwesomeIcons.user,
                           color: isDarkMode ? Colors.white70 : Colors.black38),
-                      title: Text("Logout",
-                          style: Theme.of(context).textTheme.titleMedium),
-                      subtitle: Text(userEmail)),
-                  ListTile(
-                      onTap: _delete,
-                      leading: FaIcon(FontAwesomeIcons.solidCircleXmark,
-                          color: isDarkMode ? Colors.white70 : Colors.black38),
-                      title: Text("Delete Account",
+                      title: Text("Account",
                           style: Theme.of(context).textTheme.titleMedium),
                       subtitle: Text(userEmail)),
                   Center(
@@ -453,6 +446,57 @@ class _SettingsScreenState extends State<SettingsScreen>
     setState(() {
       _notificationEnabled = result.isEnabled;
     });
+  }
+
+  void _showAccountOptionsBottomSheet() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final userEmail =
+        Supabase.instance.client.auth.currentUser?.email ?? "User";
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: FaIcon(
+                FontAwesomeIcons.arrowRightFromBracket,
+                size: 18,
+                color: isDarkMode ? Colors.white70 : Colors.black38,
+              ),
+              horizontalTitleGap: 10,
+              title:
+                  Text("Logout", style: Theme.of(context).textTheme.bodyLarge),
+              subtitle: Text(userEmail),
+              onTap: () {
+                Navigator.of(context).pop();
+                _logout();
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: FaIcon(
+                FontAwesomeIcons.solidCircleXmark,
+                size: 18,
+                color: isDarkMode ? Colors.white70 : Colors.black38,
+              ),
+              horizontalTitleGap: 10,
+              title: Text("Delete Account",
+                  style: Theme.of(context).textTheme.bodyLarge),
+              subtitle: Text(userEmail),
+              onTap: () {
+                Navigator.of(context).pop();
+                _delete();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _logout() async {
