@@ -580,40 +580,6 @@ class _TrainingInsightsSection extends StatelessWidget {
         : 'Log a few sessions to learn your timing';
     final percentLabel =
         (yearStats.progress * 100).clamp(0, 100).toStringAsFixed(0);
-    Widget statGroup({
-      required String value,
-      required String label,
-    }) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.displayLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  height: 0.9,
-                ) ??
-                const TextStyle(
-                  color: Colors.white,
-                  fontSize: 48,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.white70,
-              letterSpacing: 0.4,
-            ),
-          ),
-        ],
-      );
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -636,60 +602,102 @@ class _TrainingInsightsSection extends StatelessWidget {
                 SizedBox(
                   width: cardWidth,
                   child: _FrostedCard(
+                    gradientColors: [
+                      theme.colors.vibrantAccent.withValues(alpha: 0.3),
+                      const Color(0xFF22c55e).withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.5),
+                    ],
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Sessions this year',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
+                        // Header row with title
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Center(
-                                child: statGroup(
-                                  value: '${yearStats.daysTrained}',
-                                  label: 'Logged sessions',
-                                ),
+                            Text(
+                              'progress this year',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            _VsDivider(
-                              textColor: Colors.white.withValues(alpha: 0.75),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Large percentage display
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '$percentLabel%',
+                              style: theme.textTheme.displayLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.0,
+                                  ) ??
+                                  const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.0,
+                                  ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Center(
-                                child: statGroup(
-                                  value: '${yearStats.predictedRemaining}',
-                                  label: 'Predicted days left',
+                            const SizedBox(width: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  '${yearStats.daysTrained}/${yearStats.totalProjectedSessions}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        LinearProgressIndicator(
-                          value: yearStats.progress,
-                          minHeight: 6,
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          color: theme.colors.vibrantAccent,
-                          borderRadius: BorderRadius.circular(12),
+                        // Segmented horizontal bar
+                        _SegmentedProgressBar(
+                          loggedSessions: yearStats.daysTrained,
+                          predictedRemaining: yearStats.predictedRemaining,
+                          totalSessions: yearStats.totalProjectedSessions,
+                          accentColor: theme.colors.vibrantAccent,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          yearStats.totalProjectedSessions == 0
-                              ? 'Log a few more workouts to project the year.'
-                              : '$percentLabel% of projected ${yearStats.totalProjectedSessions} sessions done',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white70,
-                          ),
+                        const SizedBox(height: 12),
+                        // Legend
+                        Row(
+                          children: [
+                            _LegendItem(
+                              color: theme.colors.vibrantAccent,
+                              label: 'Logged',
+                            ),
+                            const SizedBox(width: 16),
+                            _LegendItem(
+                              color: theme.colors.vibrantAccent
+                                  .withValues(alpha: 0.6),
+                              label: 'Predicted',
+                            ),
+                            if (yearStats.totalProjectedSessions >
+                                yearStats.daysTrained +
+                                    yearStats.predictedRemaining) ...[
+                              const SizedBox(width: 16),
+                              _LegendItem(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                label: 'Remaining',
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
@@ -698,23 +706,35 @@ class _TrainingInsightsSection extends StatelessWidget {
                 SizedBox(
                   width: cardWidth,
                   child: _FrostedCard(
+                    gradientColors: [
+                      const Color(0xFF3b82f6).withValues(alpha: 0.3),
+                      const Color(0xFF8b5cf6).withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.5),
+                    ],
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Next predicted session',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w400,
+                          'next predicted session',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
                         Text(
                           dateLabel,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: theme.textTheme.displayMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                height: 1.0,
+                              ) ??
+                              const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                height: 1.0,
+                              ),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -722,31 +742,6 @@ class _TrainingInsightsSection extends StatelessWidget {
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: Colors.white70,
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              margin: const EdgeInsets.only(top: 4),
-                              decoration: BoxDecoration(
-                                color: theme.colors.vibrantAccent,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Predictions look at your last 30 days of training.',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white54,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
@@ -761,44 +756,14 @@ class _TrainingInsightsSection extends StatelessWidget {
   }
 }
 
-class _VsDivider extends StatelessWidget {
-  final Color textColor;
-
-  const _VsDivider({required this.textColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 1,
-          height: 24,
-          color: textColor.withValues(alpha: 0.4),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'vs',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: 1,
-          height: 24,
-          color: textColor.withValues(alpha: 0.4),
-        ),
-      ],
-    );
-  }
-}
-
 class _FrostedCard extends StatelessWidget {
   final Widget child;
+  final List<Color> gradientColors;
 
-  const _FrostedCard({required this.child});
+  const _FrostedCard({
+    required this.child,
+    required this.gradientColors,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -808,9 +773,13 @@ class _FrostedCard extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.35),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradientColors,
+            ),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
           padding: const EdgeInsets.all(22),
           child: child,
@@ -898,6 +867,161 @@ class _YearTrainingStats {
       predictedRemaining: predictedRemaining,
       totalProjectedSessions: totalProjectedSessions,
       progress: progress,
+    );
+  }
+}
+
+class _SegmentedProgressBar extends StatefulWidget {
+  final int loggedSessions;
+  final int predictedRemaining;
+  final int totalSessions;
+  final Color accentColor;
+
+  const _SegmentedProgressBar({
+    required this.loggedSessions,
+    required this.predictedRemaining,
+    required this.totalSessions,
+    required this.accentColor,
+  });
+
+  @override
+  State<_SegmentedProgressBar> createState() => _SegmentedProgressBarState();
+}
+
+class _SegmentedProgressBarState extends State<_SegmentedProgressBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.totalSessions == 0) {
+      return Container(
+        height: 8,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(4),
+        ),
+      );
+    }
+
+    final loggedRatio = widget.loggedSessions / widget.totalSessions;
+    final predictedRatio = widget.predictedRemaining / widget.totalSessions;
+    final remainingRatio = 1.0 - loggedRatio - predictedRatio;
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          height: 8,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            children: [
+              // Logged sessions segment
+              if (loggedRatio > 0)
+                Expanded(
+                  flex: (loggedRatio * 1000).round(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: widget.accentColor,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(4),
+                        bottomLeft: const Radius.circular(4),
+                        topRight: loggedRatio >= 1.0
+                            ? const Radius.circular(4)
+                            : Radius.zero,
+                        bottomRight: loggedRatio >= 1.0
+                            ? const Radius.circular(4)
+                            : Radius.zero,
+                      ),
+                    ),
+                  ),
+                ),
+              // Predicted remaining segment
+              if (predictedRatio > 0)
+                Expanded(
+                  flex: (predictedRatio * 1000).round(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: widget.accentColor.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              // Remaining capacity segment
+              if (remainingRatio > 0)
+                Expanded(
+                  flex: (remainingRatio * 1000).round(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.only(
+                        topRight: const Radius.circular(4),
+                        bottomRight: const Radius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _LegendItem({
+    required this.color,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+        ),
+      ],
     );
   }
 }
