@@ -18,15 +18,20 @@ import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
+import '../../dtos/appsync/routine_plan_dto.dart';
+import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/uri_utils.dart';
+import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
+import '../../widgets/routine/preview/routine_plan_grid_item.dart';
+import '../../screens/routines/routine_plan.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
 enum WeightUnit {
@@ -58,7 +63,9 @@ enum HeightUnit {
 class SettingsScreen extends StatefulWidget {
   static const routeName = '/settings-screen';
 
-  const SettingsScreen({super.key});
+  final VoidCallback? onClose;
+
+  const SettingsScreen({super.key, this.onClose});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -73,6 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   String _appVersion = "";
 
   bool _notificationEnabled = false;
+  bool _hasCachedSession = false;
 
   @override
   Widget build(BuildContext context) {
@@ -93,202 +101,273 @@ class _SettingsScreenState extends State<SettingsScreen>
       body: SafeArea(
         minimum: const EdgeInsets.all(10),
         bottom: false,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Close (X) button in the top-left corner
-              Align(
-                alignment: Alignment.topLeft,
-                child: IconButton(
-                  icon: const FaIcon(
-                    FontAwesomeIcons.solidCircleXmark,
-                    size: 24,
-                    color: Colors.white,
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Spacer for top buttons
+                  const SizedBox(height: 50),
+                  _TrainingInsightsSection(
+                    yearStats: yearStats,
+                    predictionInfo: predictionInfo,
                   ),
-                  onPressed: context.pop,
-                ),
-              ),
-              _TrainingInsightsSection(
-                yearStats: yearStats,
-                predictionInfo: predictionInfo,
-              ),
-              const SizedBox(height: 16),
-              InformationContainerWithBackgroundImage(
-                image: 'images/background.jpg',
-                subtitle:
-                    "Loving trainware? Your feedback helps us grow and improve.",
-                color: Colors.black,
-                onTap: _openStoreListing,
-                alignmentGeometry: Alignment.center,
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              if (Platform.isIOS)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          LabelDivider(
-                            label: "Notifications",
-                            labelColor:
-                                isDarkMode ? Colors.white : Colors.black,
-                            dividerColor: Theme.of(context).colors.dividerColor,
-                            fontSize: 14,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
-                            textAlign: TextAlign.start,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w400,
-                                  color: isDarkMode
-                                      ? Colors.white70
-                                      : Colors.black,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(18),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: (isDarkMode ? Colors.white : Colors.black)
-                                  .withValues(alpha: isDarkMode ? 0.06 : 0.05),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .colors
-                                    .borderLight
-                                    .withValues(alpha: isDarkMode ? 0.3 : 0.3),
+                  const SizedBox(height: 16),
+                  _RoutinePlansSection(),
+                  const SizedBox(height: 16),
+                  InformationContainerWithBackgroundImage(
+                    image: 'images/background.jpg',
+                    subtitle:
+                        "Loving trainware? Your feedback helps us grow and improve.",
+                    color: Colors.black,
+                    onTap: _openStoreListing,
+                    alignmentGeometry: Alignment.center,
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  if (Platform.isIOS)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LabelDivider(
+                                label: "Notifications",
+                                labelColor:
+                                    isDarkMode ? Colors.white : Colors.black,
+                                dividerColor:
+                                    Theme.of(context).colors.dividerColor,
+                                fontSize: 14,
                               ),
-                            ),
-                            child: ListTile(
-                              onTap: _turnOnNotification,
-                              dense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              tileColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              title: Text(
-                                _notificationEnabled
-                                    ? "Notification is on"
-                                    : "Turn on notifications",
+                              const SizedBox(height: 8),
+                              Text(
+                                "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
                                 textAlign: TextAlign.start,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .bodySmall
+                                    .bodyMedium
                                     ?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                      color: isDarkMode
+                                          ? Colors.white70
+                                          : Colors.black,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color:
+                                      (isDarkMode ? Colors.white : Colors.black)
+                                          .withValues(
+                                              alpha: isDarkMode ? 0.06 : 0.05),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: Theme.of(context)
+                                        .colors
+                                        .borderLight
+                                        .withValues(
+                                            alpha: isDarkMode ? 0.3 : 0.3),
+                                  ),
+                                ),
+                                child: ListTile(
+                                  onTap: _turnOnNotification,
+                                  dense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  tileColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  title: Text(
+                                    _notificationEnabled
+                                        ? "Notification is on"
+                                        : "Turn on notifications",
+                                    textAlign: TextAlign.start,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14,
+                                          color: isDarkMode
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
+                                  ),
+                                  trailing: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Theme.of(context).colors.glassLight,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: FaIcon(
+                                      FontAwesomeIcons.solidBell,
+                                      size: 14,
                                       color: isDarkMode
                                           ? Colors.white
                                           : Colors.black,
                                     ),
+                                  ),
+                                ),
                               ),
-                              trailing: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colors.glassLight,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: FaIcon(
-                                  FontAwesomeIcons.solidBell,
-                                  size: 14,
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    tileColor: Colors.transparent,
+                    title: Text("Weight",
+                        style: Theme.of(context).textTheme.titleMedium),
+                    subtitle: const Text("Choose kg or lbs"),
+                    trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
+                      backgroundColor: isDarkMode
+                          ? Theme.of(context).colors.sapphireDark
+                          : Colors.grey.shade400,
+                      thumbColor: isDarkMode
+                          ? Theme.of(context).colors.sapphireDark80
+                          : Colors.white,
+                      groupValue: _weightUnit,
+                      children: {
+                        WeightUnit.kg: SizedBox(
+                            width: 30,
+                            child: Text(WeightUnit.kg.display,
+                                style: Theme.of(context).textTheme.bodySmall,
+                                textAlign: TextAlign.center)),
+                        WeightUnit.lbs: SizedBox(
+                            width: 30,
+                            child: Text(WeightUnit.lbs.display,
+                                style: Theme.of(context).textTheme.bodySmall,
+                                textAlign: TextAlign.center)),
+                      },
+                      onValueChanged: (WeightUnit? value) {
+                        if (value != null) {
+                          setState(() {
+                            _weightUnit = value;
+                          });
+                          toggleWeightUnit(unit: value);
+                        }
+                      },
+                    ),
+                  ),
+                  ListTile(
+                      onTap: _showSocialLinksBottomSheet,
+                      leading: FaIcon(FontAwesomeIcons.globe,
+                          color: isDarkMode ? Colors.white70 : Colors.black38),
+                      title: Text("Socials",
+                          style: Theme.of(context).textTheme.titleMedium),
+                      subtitle: const Text("follow us everywhere")),
+                  ListTile(
+                      onTap: _logout,
+                      leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
+                          color: isDarkMode ? Colors.white70 : Colors.black38),
+                      title: Text("Logout",
+                          style: Theme.of(context).textTheme.titleMedium),
+                      subtitle: Text(userEmail)),
+                  ListTile(
+                      onTap: _delete,
+                      leading: FaIcon(FontAwesomeIcons.solidCircleXmark,
+                          color: isDarkMode ? Colors.white70 : Colors.black38),
+                      title: Text("Delete Account",
+                          style: Theme.of(context).textTheme.titleMedium),
+                      subtitle: Text(userEmail)),
+                  Center(
+                    child: Text(
+                      _appVersion,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Top buttons overlay
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Notification icon (only when cached session exists)
+                  if (_hasCachedSession)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colors
+                                  .vibrantAccent
+                                  .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: IconButton(
+                                icon: const FaIcon(FontAwesomeIcons.bell,
+                                    size: 18),
+                                onPressed: () =>
+                                    showUnsavedWorkoutBottomSheet(context),
+                                tooltip: 'Unsaved workout',
+                                color: Colors.white,
+                                padding: const EdgeInsets.all(12),
+                                constraints: const BoxConstraints(),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              const SizedBox(height: 16),
-              ListTile(
-                tileColor: Colors.transparent,
-                title: Text("Weight",
-                    style: Theme.of(context).textTheme.titleMedium),
-                subtitle: const Text("Choose kg or lbs"),
-                trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
-                  backgroundColor: isDarkMode
-                      ? Theme.of(context).colors.sapphireDark
-                      : Colors.grey.shade400,
-                  thumbColor: isDarkMode
-                      ? Theme.of(context).colors.sapphireDark80
-                      : Colors.white,
-                  groupValue: _weightUnit,
-                  children: {
-                    WeightUnit.kg: SizedBox(
-                        width: 30,
-                        child: Text(WeightUnit.kg.display,
-                            style: Theme.of(context).textTheme.bodySmall,
-                            textAlign: TextAlign.center)),
-                    WeightUnit.lbs: SizedBox(
-                        width: 30,
-                        child: Text(WeightUnit.lbs.display,
-                            style: Theme.of(context).textTheme.bodySmall,
-                            textAlign: TextAlign.center)),
-                  },
-                  onValueChanged: (WeightUnit? value) {
-                    if (value != null) {
-                      setState(() {
-                        _weightUnit = value;
-                      });
-                      toggleWeightUnit(unit: value);
-                    }
-                  },
-                ),
+                  // Close button
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.03),
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: IconButton(
+                            icon: FaIcon(FontAwesomeIcons.calendarDay,
+                                color: Colors.white.withValues(alpha: 0.9)),
+                            onPressed: widget.onClose ?? () => context.pop(),
+                            padding: const EdgeInsets.all(12),
+                            constraints: const BoxConstraints(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              ListTile(
-                  onTap: _showSocialLinksBottomSheet,
-                  leading: FaIcon(FontAwesomeIcons.globe,
-                      color: isDarkMode ? Colors.white70 : Colors.black38),
-                  title: Text("Socials",
-                      style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: const Text("follow us everywhere")),
-              ListTile(
-                  onTap: _logout,
-                  leading: FaIcon(FontAwesomeIcons.arrowRightFromBracket,
-                      color: isDarkMode ? Colors.white70 : Colors.black38),
-                  title: Text("Logout",
-                      style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: Text(userEmail)),
-              ListTile(
-                  onTap: _delete,
-                  leading: FaIcon(FontAwesomeIcons.solidCircleXmark,
-                      color: isDarkMode ? Colors.white70 : Colors.black38),
-                  title: Text("Delete Account",
-                      style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: Text(userEmail)),
-              Center(
-                child: Text(
-                  _appVersion,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -497,6 +576,15 @@ class _SettingsScreenState extends State<SettingsScreen>
     });
   }
 
+  void _checkCachedSession() {
+    final hasCached = SharedPrefs().routineLog.isNotEmpty;
+    if (hasCached != _hasCachedSession) {
+      setState(() {
+        _hasCachedSession = hasCached;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -504,11 +592,14 @@ class _SettingsScreenState extends State<SettingsScreen>
     _weightUnit = WeightUnit.fromString(SharedPrefs().weightUnit);
     _getAppVersion();
     _checkNotificationPermission();
+    _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
+    SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    SharedPrefs().routineLogRevision.removeListener(_checkCachedSession);
     super.dispose();
   }
 
@@ -899,5 +990,121 @@ String _formatRelativeDate(DateTime date) {
     return 'In $daysDifference days';
   } else {
     return DateFormat('EEEE, MMM d').format(date);
+  }
+}
+
+class _RoutinePlansSection extends StatelessWidget {
+  const _RoutinePlansSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SupabaseExerciseAndRoutineController>(
+      builder: (context, controller, _) {
+        final plans = controller.plans;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Text(
+                'Routine Plans',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 188, // Matches grid aspect ratio: 160 / 0.85
+              child: GridView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 1,
+                  childAspectRatio: 1,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: plans.length + 1, // +1 for create new plan card
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    // Create new plan card
+                    return _CreatePlanCard(
+                      onTap: () {
+                        final plan = RoutinePlanDto(
+                          id: "",
+                          name: "",
+                          notes: "",
+                        );
+                        final arguments = RoutinePlanArguments(plan: plan);
+                        navigateToRoutinePlanEditor(
+                          context: context,
+                          arguments: arguments,
+                        ).then((createdPlan) {
+                          if (createdPlan != null && context.mounted) {
+                            navigateWithSlideTransition(
+                              context: context,
+                              child: RoutinePlanScreen(id: createdPlan.id),
+                            );
+                          }
+                        });
+                      },
+                    );
+                  }
+                  final plan = plans[index - 1];
+                  return RoutinePlanGridItemWidget(
+                    plan: plan,
+                    onTap: () {
+                      navigateWithSlideTransition(
+                        context: context,
+                        child: RoutinePlanScreen(id: plan.id),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _CreatePlanCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _CreatePlanCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.03),
+              ),
+            ),
+            child: Center(
+              child: FaIcon(
+                FontAwesomeIcons.circlePlus,
+                size: 32,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -1,12 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
-import 'package:trainware/dtos/appsync/routine_plan_dto.dart';
 import 'package:trainware/dtos/viewmodels/past_routine_log_arguments.dart';
-import 'package:trainware/dtos/viewmodels/routine_plan_arguments.dart';
 import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/utils/general_utils.dart';
@@ -15,14 +15,11 @@ import 'package:trainware/utils/notifications_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/routine/preview/routine_log_widget.dart';
-import 'package:trainware/widgets/routine/preview/routine_plan_grid_item.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
-
-import '../screens/routines/routine_plan.dart';
 import '../utils/unsaved_workout_utils.dart';
 import '../widgets/backgrounds/trkr_loading_screen.dart';
 import '../widgets/calendar/infinite_calendar.dart';
-import '../widgets/custom_logo.dart';
+import '../screens/preferences/settings_screen.dart';
 
 class OverviewScreen extends StatefulWidget {
   static const routeName = '/overview_screen';
@@ -41,7 +38,7 @@ class _OverviewScreenState extends State<OverviewScreen>
   DateTime _currentVisibleMonth =
       DateTime(DateTime.now().year, DateTime.now().month);
   bool _routeSubscribed = false;
-  bool _settingsOverlayActive = false;
+  bool _settingsOverlayActive = true; // Settings visible by default
 
   @override
   void initState() {
@@ -132,16 +129,10 @@ class _OverviewScreenState extends State<OverviewScreen>
     showUnsavedWorkoutBottomSheet(context);
   }
 
-  Future<void> _openSettingsOverlay() async {
-    if (_settingsOverlayActive || !mounted) return;
-    _settingsOverlayActive = true;
-    try {
-      await navigateToSettings(context: context);
-    } finally {
-      if (mounted) {
-        _settingsOverlayActive = false;
-      }
-    }
+  void _toggleSettingsOverlay() {
+    setState(() {
+      _settingsOverlayActive = !_settingsOverlayActive;
+    });
   }
 
   @override
@@ -180,56 +171,59 @@ class _OverviewScreenState extends State<OverviewScreen>
               },
             ),
           ),
-          // Month summary overlay (bottom-left)
+          // Month summary overlay (center)
           Positioned(
             bottom: MediaQuery.of(context).padding.bottom + 16,
-            left: 16,
-            child: Consumer<SupabaseExerciseAndRoutineController>(
-              builder: (context, controller, _) {
-                final logs = controller.logs;
-                final monthLogs = logs.where((log) {
-                  final dt = log.startTime;
-                  return dt.year == _currentVisibleMonth.year &&
-                      dt.month == _currentVisibleMonth.month;
-                }).length;
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Consumer<SupabaseExerciseAndRoutineController>(
+                builder: (context, controller, _) {
+                  final logs = controller.logs;
+                  final monthLogs = logs.where((log) {
+                    final dt = log.startTime;
+                    return dt.year == _currentVisibleMonth.year &&
+                        dt.month == _currentVisibleMonth.month;
+                  }).length;
 
-                final monthLabel =
-                    DateFormat('MMM yyyy').format(_currentVisibleMonth);
-                final countLabel =
-                    monthLogs == 1 ? '1 session' : '$monthLogs sessions';
+                  final monthLabel =
+                      DateFormat('MMM yyyy').format(_currentVisibleMonth);
+                  final countLabel =
+                      monthLogs == 1 ? '1 session' : '$monthLogs sessions';
 
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        monthLabel,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 18,
-                                ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        countLabel,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 14,
-                            ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          monthLabel,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 18,
+                                  ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          countLabel,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 14,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           // Notification icon overlay (only when cached session exists)
@@ -271,7 +265,7 @@ class _OverviewScreenState extends State<OverviewScreen>
                 color: Colors.transparent,
                 child: IconButton(
                   icon: const FaIcon(FontAwesomeIcons.grip, size: 18),
-                  onPressed: _openSettingsOverlay,
+                  onPressed: _toggleSettingsOverlay,
                   tooltip: 'Dashboard',
                   color: Colors.white,
                   padding: const EdgeInsets.all(12),
@@ -280,13 +274,21 @@ class _OverviewScreenState extends State<OverviewScreen>
               ),
             ),
           ),
+          // Settings screen overlay
+          if (_settingsOverlayActive)
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.25),
+                ),
+              ),
+            ),
+          if (_settingsOverlayActive)
+            SettingsScreen(
+              onClose: _toggleSettingsOverlay,
+            ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showPlansBottomSheet(context),
-        backgroundColor: themeGradient(context: context).colors.first,
-        elevation: 8.0,
-        child: const CustomLogo(size: 32),
       ),
     );
   }
@@ -446,125 +448,6 @@ class _OverviewScreenState extends State<OverviewScreen>
     navigateToPastRoutineLogEditor(context: context, arguments: arguments);
   }
 
-  void _showPlansBottomSheet(BuildContext context) {
-    final controller = context.read<SupabaseExerciseAndRoutineController>();
-    final plans = controller.plans;
-    final hasPlans = plans.isNotEmpty;
-
-    showAppBottomSheet(
-      context: context,
-      isDraggable: true,
-      builder: (sheetContext, scrollController) {
-        final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
-
-        return Column(
-          children: [
-            // Header row with title and "Create plan" button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title and subtitle
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Plans',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        Text(
-                          'Your workout plans',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey.shade400,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Create plan button
-                  IconButton(
-                    onPressed: () => _createNewPlan(sheetContext),
-                    icon: FaIcon(
-                      FontAwesomeIcons.circlePlus,
-                      size: 22,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: hasPlans
-                  ? GridView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.85,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                      ),
-                      itemCount: plans.length,
-                      itemBuilder: (context, index) {
-                        final plan = plans[index];
-                        return RoutinePlanGridItemWidget(
-                          plan: plan,
-                          onTap: () {
-                            navigateWithSlideTransition(
-                              context: context,
-                              child: RoutinePlanScreen(id: plan.id),
-                            );
-                          },
-                        );
-                      },
-                    )
-                  : Center(
-                      child: Text(
-                        'No plans created yet',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.grey.shade400,
-                            ),
-                      ),
-                    ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _createNewPlan(BuildContext sheetContext) async {
-    // Close bottom sheet first
-    Navigator.pop(sheetContext);
-
-    final plan = RoutinePlanDto(
-      id: "",
-      name: "",
-      notes: "",
-    );
-    final arguments = RoutinePlanArguments(plan: plan);
-    final createdPlan = await navigateToRoutinePlanEditor(
-        context: context, arguments: arguments);
-
-    // Navigate to the created plan
-    if (createdPlan != null && context.mounted) {
-      navigateWithSlideTransition(
-        context: context,
-        child: RoutinePlanScreen(id: createdPlan.id),
-      );
-    }
-  }
 
   void _hideLoadingScreen() {
     if (mounted) {
@@ -573,4 +456,6 @@ class _OverviewScreenState extends State<OverviewScreen>
       });
     }
   }
+
 }
+

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -19,9 +21,6 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = Theme.of(context).brightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
@@ -35,70 +34,81 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
     return GestureDetector(
       onTap: onTap ??
           () => navigateToRoutinePlanPreview(context: context, plan: plan),
-      child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-              color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(radius)),
-          child: Column(
-              spacing: 12,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Spacer(),
-                Text(
-                  plan.name,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 3,
-                ),
-                Column(
-                  spacing: 6,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      children: [
-                        CustomIcon(
-                          FontAwesomeIcons.personWalking,
-                          color: Theme.of(context).colors.vibrantAccent,
-                          width: 20,
-                          height: 20,
-                          iconSize: 10.5,
-                        ),
-                        const SizedBox(
-                          width: 6,
-                        ),
-                        Text(
-                          "${exerciseTemplates.length} ${pluralize(word: "Exercise", count: exerciseTemplates.length)}",
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 2,
-                        ),
-                      ],
-                    ),
-                    Wrap(
-                      children: [
-                        CustomIcon(
-                          FontAwesomeIcons.hashtag,
-                          color: Theme.of(context).colorScheme.secondary,
-                          width: 20,
-                          height: 20,
-                          iconSize: 10.5,
-                        ),
-                        const SizedBox(
-                          width: 6,
-                        ),
-                        Text(
-                          "${routineTemplates.length} ${pluralize(word: "Session", count: routineTemplates.length)}",
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 2,
-                        ),
-                      ],
-                    ),
-                  ],
-                )
-              ])),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.03),
+              ),
+            ),
+            child: Column(
+                spacing: 12,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Spacer(),
+                  Text(
+                    plan.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 3,
+                  ),
+                  Column(
+                    spacing: 6,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        children: [
+                          CustomIcon(
+                            FontAwesomeIcons.personWalking,
+                            color: Theme.of(context).colors.vibrantAccent,
+                            width: 20,
+                            height: 20,
+                            iconSize: 10.5,
+                          ),
+                          const SizedBox(
+                            width: 6,
+                          ),
+                          Text(
+                            "${exerciseTemplates.length} ${pluralize(word: "Exercise", count: exerciseTemplates.length)}",
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                          ),
+                        ],
+                      ),
+                      Wrap(
+                        children: [
+                          CustomIcon(
+                            FontAwesomeIcons.hashtag,
+                            color: Theme.of(context).colorScheme.secondary,
+                            width: 20,
+                            height: 20,
+                            iconSize: 10.5,
+                          ),
+                          const SizedBox(
+                            width: 6,
+                          ),
+                          Text(
+                            "${routineTemplates.length} ${pluralize(word: "Session", count: routineTemplates.length)}",
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                ]),
+          ),
+        ),
+      ),
     );
   }
 }

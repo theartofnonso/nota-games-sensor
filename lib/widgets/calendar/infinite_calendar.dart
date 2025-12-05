@@ -90,13 +90,21 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
     const approximateRowHeight = 60.0;
     if (approximateRowHeight <= 0) return;
 
+    // Calculate today's row index for comparison
+    final daysToToday = today.difference(firstMonday).inDays;
+    final todayRowIndex = daysToToday ~/ 7;
+    final todayScrollOffset = todayRowIndex * approximateRowHeight;
+
     // Estimate which row is currently at the top of the viewport.
     final rawRowIndex = (scrollOffset / approximateRowHeight).floor();
     final rowIndex = rawRowIndex < 0 ? 0 : rawRowIndex;
 
-    // Each row represents a full week (7 days).
-    final weekStart = firstMonday.add(Duration(days: rowIndex * 7));
-    final visibleMonthStart = DateTime(weekStart.year, weekStart.month);
+    // If we're at or near today's position, use today's month directly
+    final isNearToday =
+        (scrollOffset - todayScrollOffset).abs() < approximateRowHeight;
+    final visibleMonthStart = isNearToday
+        ? DateTime(today.year, today.month)
+        : _calculateMonthFromRow(rowIndex, firstMonday);
 
     if (_lastReportedMonthStart == null ||
         _lastReportedMonthStart!.year != visibleMonthStart.year ||
@@ -104,6 +112,15 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
       _lastReportedMonthStart = visibleMonthStart;
       widget.onMonthChanged?.call(visibleMonthStart);
     }
+  }
+
+  DateTime _calculateMonthFromRow(int rowIndex, DateTime firstMonday) {
+    // Each row represents a full week (7 days).
+    // Use the middle of the viewport to determine the visible month
+    // This handles cases where a week spans two months (e.g., week starting Nov 25 includes Dec 1)
+    final viewportCenterDays = rowIndex * 7 + 3; // Middle of the week (day 3-4)
+    final centerDate = firstMonday.add(Duration(days: viewportCenterDays));
+    return DateTime(centerDate.year, centerDate.month);
   }
 
   @override
@@ -211,7 +228,7 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
           // Floating "Back to Today" button
           if (_showScrollToTodayButton)
             Positioned(
-              bottom: 16,
+              bottom: 130,
               left: 0,
               right: 0,
               child: Center(
