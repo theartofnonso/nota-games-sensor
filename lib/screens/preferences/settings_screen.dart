@@ -99,7 +99,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
-        minimum: const EdgeInsets.all(10),
         bottom: false,
         child: Stack(
           children: [
@@ -109,20 +108,27 @@ class _SettingsScreenState extends State<SettingsScreen>
                 children: [
                   // Spacer for top buttons
                   const SizedBox(height: 50),
-                  _TrainingInsightsSection(
-                    yearStats: yearStats,
-                    predictionInfo: predictionInfo,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: _TrainingInsightsSection(
+                      yearStats: yearStats,
+                      predictionInfo: predictionInfo,
+                    ),
                   ),
                   const SizedBox(height: 16),
+                  // Routine Plans section - edge-to-edge, no padding
                   _RoutinePlansSection(),
                   const SizedBox(height: 16),
-                  InformationContainerWithBackgroundImage(
-                    image: 'images/background.jpg',
-                    subtitle:
-                        "Loving trainware? Your feedback helps us grow and improve.",
-                    color: Colors.black,
-                    onTap: _openStoreListing,
-                    alignmentGeometry: Alignment.center,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: InformationContainerWithBackgroundImage(
+                      image: 'images/background.jpg',
+                      subtitle:
+                          "Loving trainware? Your feedback helps us grow and improve.",
+                      color: Colors.black,
+                      onTap: _openStoreListing,
+                      alignmentGeometry: Alignment.center,
+                    ),
                   ),
                   const SizedBox(
                     height: 20,
@@ -302,69 +308,35 @@ class _SettingsScreenState extends State<SettingsScreen>
             Positioned(
               top: 0,
               right: 0,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Notification icon (only when cached session exists)
-                  if (_hasCachedSession)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colors
-                                  .vibrantAccent
-                                  .withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: IconButton(
-                                icon: const FaIcon(FontAwesomeIcons.bell,
-                                    size: 18),
-                                onPressed: () =>
-                                    showUnsavedWorkoutBottomSheet(context),
-                                tooltip: 'Unsaved workout',
-                                color: Colors.white,
-                                padding: const EdgeInsets.all(12),
-                                constraints: const BoxConstraints(),
-                              ),
-                            ),
-                          ),
-                        ),
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Notification icon (only when cached session exists)
+                    if (_hasCachedSession)
+                      IconButton(
+                        icon:
+                            const FaIcon(FontAwesomeIcons.solidBell, size: 18),
+                        onPressed: () => showUnsavedWorkoutBottomSheet(context),
+                        tooltip: 'Unsaved workout',
+                        color: Theme.of(context)
+                            .colors
+                            .vibrantAccent
+                            .withValues(alpha: 0.5),
+                        padding: const EdgeInsets.all(12),
+                        constraints: const BoxConstraints(),
                       ),
+                    // Close button
+                    IconButton(
+                      icon: FaIcon(FontAwesomeIcons.calendarDay,
+                          color: Colors.white.withValues(alpha: 0.9)),
+                      onPressed: widget.onClose ?? () => context.pop(),
+                      padding: const EdgeInsets.all(12),
+                      constraints: const BoxConstraints(),
                     ),
-                  // Close button
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.03),
-                          ),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: IconButton(
-                            icon: FaIcon(FontAwesomeIcons.calendarDay,
-                                color: Colors.white.withValues(alpha: 0.9)),
-                            onPressed: widget.onClose ?? () => context.pop(),
-                            padding: const EdgeInsets.all(12),
-                            constraints: const BoxConstraints(),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -1021,47 +993,60 @@ class _RoutinePlansSection extends StatelessWidget {
               height: 188, // Matches grid aspect ratio: 160 / 0.85
               child: GridView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.zero, // Edge-to-edge scroll
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 1,
                   childAspectRatio: 1,
-                  mainAxisSpacing: 12,
                 ),
                 itemCount: plans.length + 1, // +1 for create new plan card
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    // Create new plan card
-                    return _CreatePlanCard(
-                      onTap: () {
-                        final plan = RoutinePlanDto(
-                          id: "",
-                          name: "",
-                          notes: "",
-                        );
-                        final arguments = RoutinePlanArguments(plan: plan);
-                        navigateToRoutinePlanEditor(
-                          context: context,
-                          arguments: arguments,
-                        ).then((createdPlan) {
-                          if (createdPlan != null && context.mounted) {
-                            navigateWithSlideTransition(
-                              context: context,
-                              child: RoutinePlanScreen(id: createdPlan.id),
-                            );
-                          }
-                        });
-                      },
+                    // Create new plan card with left padding
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 10, right: 12),
+                      child: _CreatePlanCard(
+                        onTap: () {
+                          final plan = RoutinePlanDto(
+                            id: "",
+                            name: "",
+                            notes: "",
+                          );
+                          final arguments = RoutinePlanArguments(plan: plan);
+                          navigateToRoutinePlanEditor(
+                            context: context,
+                            arguments: arguments,
+                          ).then((createdPlan) {
+                            if (createdPlan != null && context.mounted) {
+                              navigateWithSlideTransition(
+                                context: context,
+                                child: RoutinePlanScreen(id: createdPlan.id),
+                              );
+                            }
+                          });
+                        },
+                      ),
                     );
                   }
                   final plan = plans[index - 1];
-                  return RoutinePlanGridItemWidget(
-                    plan: plan,
-                    onTap: () {
-                      navigateWithSlideTransition(
-                        context: context,
-                        child: RoutinePlanScreen(id: plan.id),
-                      );
-                    },
+                  // Add padding to individual cards
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      left: index == 1
+                          ? 0
+                          : 12, // No left padding after first card
+                      right: index == plans.length
+                          ? 10
+                          : 0, // Right padding on last card
+                    ),
+                    child: RoutinePlanGridItemWidget(
+                      plan: plan,
+                      onTap: () {
+                        navigateWithSlideTransition(
+                          context: context,
+                          child: RoutinePlanScreen(id: plan.id),
+                        );
+                      },
+                    ),
                   );
                 },
               ),
