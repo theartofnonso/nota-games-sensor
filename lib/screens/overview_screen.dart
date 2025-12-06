@@ -15,7 +15,6 @@ import 'package:trainware/utils/notifications_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/routine/preview/routine_log_widget.dart';
-import 'package:trainware/utils/theme/color_extensions.dart';
 import '../utils/unsaved_workout_utils.dart';
 import '../widgets/backgrounds/trkr_loading_screen.dart';
 import '../widgets/calendar/infinite_calendar.dart';
@@ -192,8 +191,8 @@ class _OverviewScreenState extends State<OverviewScreen>
                       monthLogs == 1 ? '1 session' : '$monthLogs sessions';
 
                   return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8),
@@ -214,10 +213,11 @@ class _OverviewScreenState extends State<OverviewScreen>
                         const SizedBox(height: 4),
                         Text(
                           countLabel,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontSize: 14,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 14,
+                                  ),
                         ),
                       ],
                     ),
@@ -233,10 +233,7 @@ class _OverviewScreenState extends State<OverviewScreen>
               right: 72, // Position to left of settings icon
               child: Container(
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colors
-                      .vibrantAccent
-                      .withValues(alpha: 0.5),
+                  color: const Color(0xFFf59e0b).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Material(
@@ -448,7 +445,6 @@ class _OverviewScreenState extends State<OverviewScreen>
     navigateToPastRoutineLogEditor(context: context, arguments: arguments);
   }
 
-
   void _hideLoadingScreen() {
     if (mounted) {
       setState(() {
@@ -456,6 +452,4 @@ class _OverviewScreenState extends State<OverviewScreen>
       });
     }
   }
-
 }
-
