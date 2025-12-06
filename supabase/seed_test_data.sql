@@ -331,7 +331,169 @@ INSERT INTO public.routine_logs (id, owner, "templateId", name, notes, "startTim
    {"superSetId": "", "exercise": {"id": "2b14611a-b196-4f9a-948b-932b74a27963", "name": "Lateral Raises", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 21, "value2": 15, "checked": true}, {"value1": 21, "value2": 15, "checked": true}, {"value1": 21, "value2": 14, "checked": true}]},
    {"superSetId": "", "exercise": {"id": "a43373b9-86d7-4684-9d26-70ad1ec0039d", "name": "Tricep Extensions", "type": "WR", "primaryMuscleGroup": "triceps", "notes": ""}, "notes": "", "sets": [{"value1": 31, "value2": 12, "checked": true}, {"value1": 31, "value2": 12, "checked": true}, {"value1": 31, "value2": 11, "checked": true}]}
  ]'::jsonb,
- NOW() - INTERVAL '0 days', NOW() - INTERVAL '0 days')
+ NOW() - INTERVAL '0 days', NOW() - INTERVAL '0 days'),
+
+-- Additional recent logs to fill gaps
+('d1e2f3a4-b5c6-d7e8-f9a0-b1c2d3e4f5a6', 'f997b7ab-fe1b-4530-a190-0967119aedea', '98fbe1f7-04ca-44cb-95ae-f4ce23add290', 'Pull Day', 'Solid back session',
+ NOW() - INTERVAL '2 days' + INTERVAL '18 hours',
+ NOW() - INTERVAL '2 days' + INTERVAL '19 hours 30 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "b824e690-5974-4634-b1bc-0cc31dda0804", "name": "Barbell Row", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 84, "value2": 10, "checked": true}, {"value1": 84, "value2": 10, "checked": true}, {"value1": 84, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "956353a6-488b-4673-8f18-4ffcadd49ada", "name": "Lat Pulldown", "type": "WR", "primaryMuscleGroup": "lats", "notes": ""}, "notes": "", "sets": [{"value1": 74, "value2": 12, "checked": true}, {"value1": 74, "value2": 12, "checked": true}, {"value1": 74, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "036a8ced-28e0-4226-a9fb-42c471d9c8b4", "name": "Pull-ups", "type": "BW", "primaryMuscleGroup": "lats", "notes": ""}, "notes": "", "sets": [{"value1": 0, "value2": 17, "checked": true}, {"value1": 0, "value2": 17, "checked": true}, {"value1": 0, "value2": 15, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "dfd348e2-4267-4d3b-8f15-c39b48d50539", "name": "Bicep Curls", "type": "WR", "primaryMuscleGroup": "biceps", "notes": ""}, "notes": "", "sets": [{"value1": 26, "value2": 15, "checked": true}, {"value1": 26, "value2": 15, "checked": true}, {"value1": 26, "value2": 14, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "b11c784e-88bc-4bee-bda1-6bc3862f409b", "name": "Shrugs", "type": "WR", "primaryMuscleGroup": "traps", "notes": ""}, "notes": "", "sets": [{"value1": 60, "value2": 15, "checked": true}, {"value1": 60, "value2": 15, "checked": true}, {"value1": 60, "value2": 14, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days'),
+
+('e2f3a4b5-c6d7-e8f9-a0b1-c2d3e4f5a6b7', 'f997b7ab-fe1b-4530-a190-0967119aedea', '1966afc8-11a3-4bd3-941f-87ab62a2904a', 'Full Body', 'Evening workout',
+ NOW() - INTERVAL '4 days' + INTERVAL '17 hours',
+ NOW() - INTERVAL '4 days' + INTERVAL '18 hours 45 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "8aafa06d-9f42-4946-ba18-f027fe792100", "name": "Bench Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 88, "value2": 10, "checked": true}, {"value1": 88, "value2": 10, "checked": true}, {"value1": 88, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "b824e690-5974-4634-b1bc-0cc31dda0804", "name": "Barbell Row", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 78, "value2": 10, "checked": true}, {"value1": 78, "value2": 10, "checked": true}, {"value1": 78, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "44db316c-54d9-4f99-8d43-f6f324e49c84", "name": "Squats", "type": "WR", "primaryMuscleGroup": "quadriceps", "notes": ""}, "notes": "", "sets": [{"value1": 108, "value2": 10, "checked": true}, {"value1": 108, "value2": 10, "checked": true}, {"value1": 108, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "70bf56e2-a7f7-4ed3-ac48-657d47c79d09", "name": "Hip Thrusts", "type": "WR", "primaryMuscleGroup": "glutes", "notes": ""}, "notes": "", "sets": [{"value1": 95, "value2": 12, "checked": true}, {"value1": 95, "value2": 12, "checked": true}, {"value1": 95, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "6d7215a0-f88b-4b80-96dd-3b414a865f60", "name": "Overhead Press", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 58, "value2": 10, "checked": true}, {"value1": 58, "value2": 10, "checked": true}, {"value1": 58, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "dfd348e2-4267-4d3b-8f15-c39b48d50539", "name": "Bicep Curls", "type": "WR", "primaryMuscleGroup": "biceps", "notes": ""}, "notes": "", "sets": [{"value1": 23, "value2": 15, "checked": true}, {"value1": 23, "value2": 15, "checked": true}, {"value1": 23, "value2": 14, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '4 days', NOW() - INTERVAL '4 days'),
+
+('f3a4b5c6-d7e8-f9a0-b1c2-d3e4f5a6b7c8', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'b9e2cf7e-9429-49b8-acc9-30dfc790b8b4', 'Push Day', '',
+ NOW() - INTERVAL '6 days' + INTERVAL '7 hours 30 minutes',
+ NOW() - INTERVAL '6 days' + INTERVAL '9 hours',
+ '[
+   {"superSetId": "", "exercise": {"id": "8aafa06d-9f42-4946-ba18-f027fe792100", "name": "Bench Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 91, "value2": 10, "checked": true}, {"value1": 91, "value2": 10, "checked": true}, {"value1": 91, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "d9b6d428-3bc7-4f68-bebb-d32287f13257", "name": "Incline Dumbbell Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 35, "value2": 12, "checked": true}, {"value1": 35, "value2": 12, "checked": true}, {"value1": 35, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "6d7215a0-f88b-4b80-96dd-3b414a865f60", "name": "Overhead Press", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 59, "value2": 10, "checked": true}, {"value1": 59, "value2": 10, "checked": true}, {"value1": 59, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "2b14611a-b196-4f9a-948b-932b74a27963", "name": "Lateral Raises", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 19, "value2": 15, "checked": true}, {"value1": 19, "value2": 15, "checked": true}, {"value1": 19, "value2": 14, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "a43373b9-86d7-4684-9d26-70ad1ec0039d", "name": "Tricep Extensions", "type": "WR", "primaryMuscleGroup": "triceps", "notes": ""}, "notes": "", "sets": [{"value1": 29, "value2": 12, "checked": true}, {"value1": 29, "value2": 12, "checked": true}, {"value1": 29, "value2": 11, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '6 days', NOW() - INTERVAL '6 days'),
+
+-- More logs from the past month
+('a4b5c6d7-e8f9-a0b1-c2d3-e4f5a6b7c8d9', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'fa0ca007-17f1-4af6-8343-0d9d88358e8c', 'Leg Day', '',
+ NOW() - INTERVAL '8 days' + INTERVAL '10 hours 15 minutes',
+ NOW() - INTERVAL '8 days' + INTERVAL '11 hours 40 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "44db316c-54d9-4f99-8d43-f6f324e49c84", "name": "Squats", "type": "WR", "primaryMuscleGroup": "quadriceps", "notes": ""}, "notes": "", "sets": [{"value1": 109, "value2": 10, "checked": true}, {"value1": 109, "value2": 10, "checked": true}, {"value1": 109, "value2": 9, "checked": true}, {"value1": 109, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "c8492040-383f-4e4a-9b58-e5cd04546c6c", "name": "Deadlift", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 129, "value2": 8, "checked": true}, {"value1": 129, "value2": 8, "checked": true}, {"value1": 129, "value2": 7, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "c2e0b60b-6e26-4e79-8435-e3e14cfd9625", "name": "Leg Press", "type": "WR", "primaryMuscleGroup": "quadriceps", "notes": ""}, "notes": "", "sets": [{"value1": 149, "value2": 12, "checked": true}, {"value1": 149, "value2": 12, "checked": true}, {"value1": 149, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "3b821ac0-c156-4d25-b185-d1fda4851b6a", "name": "Romanian Deadlift", "type": "WR", "primaryMuscleGroup": "hamstrings", "notes": ""}, "notes": "", "sets": [{"value1": 89, "value2": 10, "checked": true}, {"value1": 89, "value2": 10, "checked": true}, {"value1": 89, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "3910de44-2d17-41ef-8c9d-355b982cf1ba", "name": "Calf Raises", "type": "WR", "primaryMuscleGroup": "calves", "notes": ""}, "notes": "", "sets": [{"value1": 59, "value2": 20, "checked": true}, {"value1": 59, "value2": 20, "checked": true}, {"value1": 59, "value2": 19, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '8 days', NOW() - INTERVAL '8 days'),
+
+('b5c6d7e8-f9a0-b1c2-d3e4-f5a6b7c8d9e0', 'f997b7ab-fe1b-4530-a190-0967119aedea', '20764fbc-afac-44cd-8dbf-fe990e4ed56d', 'Upper Body', '',
+ NOW() - INTERVAL '11 days' + INTERVAL '8 hours 45 minutes',
+ NOW() - INTERVAL '11 days' + INTERVAL '10 hours 15 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "8aafa06d-9f42-4946-ba18-f027fe792100", "name": "Bench Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 87, "value2": 10, "checked": true}, {"value1": 87, "value2": 10, "checked": true}, {"value1": 87, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "b824e690-5974-4634-b1bc-0cc31dda0804", "name": "Barbell Row", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 77, "value2": 10, "checked": true}, {"value1": 77, "value2": 10, "checked": true}, {"value1": 77, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "6d7215a0-f88b-4b80-96dd-3b414a865f60", "name": "Overhead Press", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 57, "value2": 10, "checked": true}, {"value1": 57, "value2": 10, "checked": true}, {"value1": 57, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "dfd348e2-4267-4d3b-8f15-c39b48d50539", "name": "Bicep Curls", "type": "WR", "primaryMuscleGroup": "biceps", "notes": ""}, "notes": "", "sets": [{"value1": 23, "value2": 15, "checked": true}, {"value1": 23, "value2": 15, "checked": true}, {"value1": 23, "value2": 14, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "a43373b9-86d7-4684-9d26-70ad1ec0039d", "name": "Tricep Extensions", "type": "WR", "primaryMuscleGroup": "triceps", "notes": ""}, "notes": "", "sets": [{"value1": 28, "value2": 12, "checked": true}, {"value1": 28, "value2": 12, "checked": true}, {"value1": 28, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "afcb8f22-daac-46d8-9f19-d79cebe99ad1", "name": "Cable Flyes", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 23, "value2": 12, "checked": true}, {"value1": 23, "value2": 12, "checked": true}, {"value1": 23, "value2": 11, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '11 days', NOW() - INTERVAL '11 days'),
+
+('c6d7e8f9-a0b1-c2d3-e4f5-a6b7c8d9e0f1', 'f997b7ab-fe1b-4530-a190-0967119aedea', '98fbe1f7-04ca-44cb-95ae-f4ce23add290', 'Pull Day', '',
+ NOW() - INTERVAL '13 days' + INTERVAL '9 hours 30 minutes',
+ NOW() - INTERVAL '13 days' + INTERVAL '10 hours 50 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "b824e690-5974-4634-b1bc-0cc31dda0804", "name": "Barbell Row", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 79, "value2": 10, "checked": true}, {"value1": 79, "value2": 10, "checked": true}, {"value1": 79, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "956353a6-488b-4673-8f18-4ffcadd49ada", "name": "Lat Pulldown", "type": "WR", "primaryMuscleGroup": "lats", "notes": ""}, "notes": "", "sets": [{"value1": 69, "value2": 12, "checked": true}, {"value1": 69, "value2": 12, "checked": true}, {"value1": 69, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "036a8ced-28e0-4226-a9fb-42c471d9c8b4", "name": "Pull-ups", "type": "BW", "primaryMuscleGroup": "lats", "notes": ""}, "notes": "", "sets": [{"value1": 0, "value2": 14, "checked": true}, {"value1": 0, "value2": 14, "checked": true}, {"value1": 0, "value2": 12, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "dfd348e2-4267-4d3b-8f15-c39b48d50539", "name": "Bicep Curls", "type": "WR", "primaryMuscleGroup": "biceps", "notes": ""}, "notes": "", "sets": [{"value1": 23, "value2": 15, "checked": true}, {"value1": 23, "value2": 15, "checked": true}, {"value1": 23, "value2": 13, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "b11c784e-88bc-4bee-bda1-6bc3862f409b", "name": "Shrugs", "type": "WR", "primaryMuscleGroup": "traps", "notes": ""}, "notes": "", "sets": [{"value1": 56, "value2": 15, "checked": true}, {"value1": 56, "value2": 15, "checked": true}, {"value1": 56, "value2": 14, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '13 days', NOW() - INTERVAL '13 days'),
+
+-- More logs from 15-30 days ago
+('d7e8f9a0-b1c2-d3e4-f5a6-b7c8d9e0f1a2', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'b9e2cf7e-9429-49b8-acc9-30dfc790b8b4', 'Push Day', '',
+ NOW() - INTERVAL '15 days' + INTERVAL '8 hours',
+ NOW() - INTERVAL '15 days' + INTERVAL '9 hours 30 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "8aafa06d-9f42-4946-ba18-f027fe792100", "name": "Bench Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 89, "value2": 10, "checked": true}, {"value1": 89, "value2": 10, "checked": true}, {"value1": 89, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "d9b6d428-3bc7-4f68-bebb-d32287f13257", "name": "Incline Dumbbell Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 34, "value2": 12, "checked": true}, {"value1": 34, "value2": 12, "checked": true}, {"value1": 34, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "6d7215a0-f88b-4b80-96dd-3b414a865f60", "name": "Overhead Press", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 57, "value2": 10, "checked": true}, {"value1": 57, "value2": 10, "checked": true}, {"value1": 57, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "2b14611a-b196-4f9a-948b-932b74a27963", "name": "Lateral Raises", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 18, "value2": 15, "checked": true}, {"value1": 18, "value2": 15, "checked": true}, {"value1": 18, "value2": 14, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "a43373b9-86d7-4684-9d26-70ad1ec0039d", "name": "Tricep Extensions", "type": "WR", "primaryMuscleGroup": "triceps", "notes": ""}, "notes": "", "sets": [{"value1": 28, "value2": 12, "checked": true}, {"value1": 28, "value2": 12, "checked": true}, {"value1": 28, "value2": 11, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '15 days', NOW() - INTERVAL '15 days'),
+
+('e8f9a0b1-c2d3-e4f5-a6b7-c8d9e0f1a2b3', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'fa0ca007-17f1-4af6-8343-0d9d88358e8c', 'Leg Day', '',
+ NOW() - INTERVAL '17 days' + INTERVAL '10 hours',
+ NOW() - INTERVAL '17 days' + INTERVAL '11 hours 25 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "44db316c-54d9-4f99-8d43-f6f324e49c84", "name": "Squats", "type": "WR", "primaryMuscleGroup": "quadriceps", "notes": ""}, "notes": "", "sets": [{"value1": 107, "value2": 10, "checked": true}, {"value1": 107, "value2": 10, "checked": true}, {"value1": 107, "value2": 9, "checked": true}, {"value1": 107, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "c8492040-383f-4e4a-9b58-e5cd04546c6c", "name": "Deadlift", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 127, "value2": 8, "checked": true}, {"value1": 127, "value2": 8, "checked": true}, {"value1": 127, "value2": 7, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "c2e0b60b-6e26-4e79-8435-e3e14cfd9625", "name": "Leg Press", "type": "WR", "primaryMuscleGroup": "quadriceps", "notes": ""}, "notes": "", "sets": [{"value1": 147, "value2": 12, "checked": true}, {"value1": 147, "value2": 12, "checked": true}, {"value1": 147, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "3b821ac0-c156-4d25-b185-d1fda4851b6a", "name": "Romanian Deadlift", "type": "WR", "primaryMuscleGroup": "hamstrings", "notes": ""}, "notes": "", "sets": [{"value1": 87, "value2": 10, "checked": true}, {"value1": 87, "value2": 10, "checked": true}, {"value1": 87, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "3910de44-2d17-41ef-8c9d-355b982cf1ba", "name": "Calf Raises", "type": "WR", "primaryMuscleGroup": "calves", "notes": ""}, "notes": "", "sets": [{"value1": 57, "value2": 20, "checked": true}, {"value1": 57, "value2": 20, "checked": true}, {"value1": 57, "value2": 19, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '17 days', NOW() - INTERVAL '17 days'),
+
+('f9a0b1c2-d3e4-f5a6-b7c8-d9e0f1a2b3c4', 'f997b7ab-fe1b-4530-a190-0967119aedea', '98fbe1f7-04ca-44cb-95ae-f4ce23add290', 'Pull Day', '',
+ NOW() - INTERVAL '19 days' + INTERVAL '9 hours',
+ NOW() - INTERVAL '19 days' + INTERVAL '10 hours 20 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "b824e690-5974-4634-b1bc-0cc31dda0804", "name": "Barbell Row", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 77, "value2": 10, "checked": true}, {"value1": 77, "value2": 10, "checked": true}, {"value1": 77, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "956353a6-488b-4673-8f18-4ffcadd49ada", "name": "Lat Pulldown", "type": "WR", "primaryMuscleGroup": "lats", "notes": ""}, "notes": "", "sets": [{"value1": 67, "value2": 12, "checked": true}, {"value1": 67, "value2": 12, "checked": true}, {"value1": 67, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "036a8ced-28e0-4226-a9fb-42c471d9c8b4", "name": "Pull-ups", "type": "BW", "primaryMuscleGroup": "lats", "notes": ""}, "notes": "", "sets": [{"value1": 0, "value2": 14, "checked": true}, {"value1": 0, "value2": 14, "checked": true}, {"value1": 0, "value2": 12, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "dfd348e2-4267-4d3b-8f15-c39b48d50539", "name": "Bicep Curls", "type": "WR", "primaryMuscleGroup": "biceps", "notes": ""}, "notes": "", "sets": [{"value1": 22, "value2": 15, "checked": true}, {"value1": 22, "value2": 15, "checked": true}, {"value1": 22, "value2": 13, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "b11c784e-88bc-4bee-bda1-6bc3862f409b", "name": "Shrugs", "type": "WR", "primaryMuscleGroup": "traps", "notes": ""}, "notes": "", "sets": [{"value1": 54, "value2": 15, "checked": true}, {"value1": 54, "value2": 15, "checked": true}, {"value1": 54, "value2": 14, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '19 days', NOW() - INTERVAL '19 days'),
+
+('a0b1c2d3-e4f5-a6b7-c8d9-e0f1a2b3c4d5', 'f997b7ab-fe1b-4530-a190-0967119aedea', '1966afc8-11a3-4bd3-941f-87ab62a2904a', 'Full Body', '',
+ NOW() - INTERVAL '21 days' + INTERVAL '8 hours 30 minutes',
+ NOW() - INTERVAL '21 days' + INTERVAL '10 hours',
+ '[
+   {"superSetId": "", "exercise": {"id": "8aafa06d-9f42-4946-ba18-f027fe792100", "name": "Bench Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 86, "value2": 10, "checked": true}, {"value1": 86, "value2": 10, "checked": true}, {"value1": 86, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "b824e690-5974-4634-b1bc-0cc31dda0804", "name": "Barbell Row", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 76, "value2": 10, "checked": true}, {"value1": 76, "value2": 10, "checked": true}, {"value1": 76, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "44db316c-54d9-4f99-8d43-f6f324e49c84", "name": "Squats", "type": "WR", "primaryMuscleGroup": "quadriceps", "notes": ""}, "notes": "", "sets": [{"value1": 106, "value2": 10, "checked": true}, {"value1": 106, "value2": 10, "checked": true}, {"value1": 106, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "70bf56e2-a7f7-4ed3-ac48-657d47c79d09", "name": "Hip Thrusts", "type": "WR", "primaryMuscleGroup": "glutes", "notes": ""}, "notes": "", "sets": [{"value1": 93, "value2": 12, "checked": true}, {"value1": 93, "value2": 12, "checked": true}, {"value1": 93, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "6d7215a0-f88b-4b80-96dd-3b414a865f60", "name": "Overhead Press", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 56, "value2": 10, "checked": true}, {"value1": 56, "value2": 10, "checked": true}, {"value1": 56, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "dfd348e2-4267-4d3b-8f15-c39b48d50539", "name": "Bicep Curls", "type": "WR", "primaryMuscleGroup": "biceps", "notes": ""}, "notes": "", "sets": [{"value1": 22, "value2": 15, "checked": true}, {"value1": 22, "value2": 15, "checked": true}, {"value1": 22, "value2": 14, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '21 days', NOW() - INTERVAL '21 days'),
+
+('b1c2d3e4-f5a6-b7c8-d9e0-f1a2b3c4d5e6', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'b9e2cf7e-9429-49b8-acc9-30dfc790b8b4', 'Push Day', '',
+ NOW() - INTERVAL '23 days' + INTERVAL '8 hours',
+ NOW() - INTERVAL '23 days' + INTERVAL '9 hours 30 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "8aafa06d-9f42-4946-ba18-f027fe792100", "name": "Bench Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 85, "value2": 10, "checked": true}, {"value1": 85, "value2": 10, "checked": true}, {"value1": 85, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "d9b6d428-3bc7-4f68-bebb-d32287f13257", "name": "Incline Dumbbell Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 33, "value2": 12, "checked": true}, {"value1": 33, "value2": 12, "checked": true}, {"value1": 33, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "6d7215a0-f88b-4b80-96dd-3b414a865f60", "name": "Overhead Press", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 55, "value2": 10, "checked": true}, {"value1": 55, "value2": 10, "checked": true}, {"value1": 55, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "2b14611a-b196-4f9a-948b-932b74a27963", "name": "Lateral Raises", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 17, "value2": 15, "checked": true}, {"value1": 17, "value2": 15, "checked": true}, {"value1": 17, "value2": 14, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "a43373b9-86d7-4684-9d26-70ad1ec0039d", "name": "Tricep Extensions", "type": "WR", "primaryMuscleGroup": "triceps", "notes": ""}, "notes": "", "sets": [{"value1": 27, "value2": 12, "checked": true}, {"value1": 27, "value2": 12, "checked": true}, {"value1": 27, "value2": 11, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '23 days', NOW() - INTERVAL '23 days'),
+
+('c2d3e4f5-a6b7-c8d9-e0f1-a2b3c4d5e6f7', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'fa0ca007-17f1-4af6-8343-0d9d88358e8c', 'Leg Day', '',
+ NOW() - INTERVAL '25 days' + INTERVAL '10 hours',
+ NOW() - INTERVAL '25 days' + INTERVAL '11 hours 25 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "44db316c-54d9-4f99-8d43-f6f324e49c84", "name": "Squats", "type": "WR", "primaryMuscleGroup": "quadriceps", "notes": ""}, "notes": "", "sets": [{"value1": 105, "value2": 10, "checked": true}, {"value1": 105, "value2": 10, "checked": true}, {"value1": 105, "value2": 9, "checked": true}, {"value1": 105, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "c8492040-383f-4e4a-9b58-e5cd04546c6c", "name": "Deadlift", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 125, "value2": 8, "checked": true}, {"value1": 125, "value2": 8, "checked": true}, {"value1": 125, "value2": 7, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "c2e0b60b-6e26-4e79-8435-e3e14cfd9625", "name": "Leg Press", "type": "WR", "primaryMuscleGroup": "quadriceps", "notes": ""}, "notes": "", "sets": [{"value1": 145, "value2": 12, "checked": true}, {"value1": 145, "value2": 12, "checked": true}, {"value1": 145, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "3b821ac0-c156-4d25-b185-d1fda4851b6a", "name": "Romanian Deadlift", "type": "WR", "primaryMuscleGroup": "hamstrings", "notes": ""}, "notes": "", "sets": [{"value1": 85, "value2": 10, "checked": true}, {"value1": 85, "value2": 10, "checked": true}, {"value1": 85, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "3910de44-2d17-41ef-8c9d-355b982cf1ba", "name": "Calf Raises", "type": "WR", "primaryMuscleGroup": "calves", "notes": ""}, "notes": "", "sets": [{"value1": 55, "value2": 20, "checked": true}, {"value1": 55, "value2": 20, "checked": true}, {"value1": 55, "value2": 19, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '25 days', NOW() - INTERVAL '25 days'),
+
+('d3e4f5a6-b7c8-d9e0-f1a2-b3c4d5e6f7a8', 'f997b7ab-fe1b-4530-a190-0967119aedea', '98fbe1f7-04ca-44cb-95ae-f4ce23add290', 'Pull Day', '',
+ NOW() - INTERVAL '27 days' + INTERVAL '9 hours',
+ NOW() - INTERVAL '27 days' + INTERVAL '10 hours 20 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "b824e690-5974-4634-b1bc-0cc31dda0804", "name": "Barbell Row", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 75, "value2": 10, "checked": true}, {"value1": 75, "value2": 10, "checked": true}, {"value1": 75, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "956353a6-488b-4673-8f18-4ffcadd49ada", "name": "Lat Pulldown", "type": "WR", "primaryMuscleGroup": "lats", "notes": ""}, "notes": "", "sets": [{"value1": 65, "value2": 12, "checked": true}, {"value1": 65, "value2": 12, "checked": true}, {"value1": 65, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "036a8ced-28e0-4226-a9fb-42c471d9c8b4", "name": "Pull-ups", "type": "BW", "primaryMuscleGroup": "lats", "notes": ""}, "notes": "", "sets": [{"value1": 0, "value2": 13, "checked": true}, {"value1": 0, "value2": 13, "checked": true}, {"value1": 0, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "dfd348e2-4267-4d3b-8f15-c39b48d50539", "name": "Bicep Curls", "type": "WR", "primaryMuscleGroup": "biceps", "notes": ""}, "notes": "", "sets": [{"value1": 21, "value2": 15, "checked": true}, {"value1": 21, "value2": 15, "checked": true}, {"value1": 21, "value2": 13, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "b11c784e-88bc-4bee-bda1-6bc3862f409b", "name": "Shrugs", "type": "WR", "primaryMuscleGroup": "traps", "notes": ""}, "notes": "", "sets": [{"value1": 53, "value2": 15, "checked": true}, {"value1": 53, "value2": 15, "checked": true}, {"value1": 53, "value2": 14, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '27 days', NOW() - INTERVAL '27 days')
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
@@ -341,7 +503,8 @@ ON CONFLICT (id) DO NOTHING;
 -- - 27 exercises (weights, bodyweight, duration)
 -- - 4 routine plans
 -- - 6 routine templates (linked to plans)
--- - 15 routine logs with exercise logs containing sets with weight and reps values
+-- - 28 routine logs with exercise logs containing sets with weight and reps values
 -- All data is linked properly and spans the last 3 months, including today
+-- Recent logs added for better coverage of the last month
 -- ============================================================================
 
