@@ -41,7 +41,7 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF8b5cf6).withValues(alpha: 0.2),
+                  const Color(0xFF3b82f6).withValues(alpha: 0.2),
                   Colors.black.withValues(alpha: 0.4),
                   Colors.black.withValues(alpha: 0.5),
                 ],
