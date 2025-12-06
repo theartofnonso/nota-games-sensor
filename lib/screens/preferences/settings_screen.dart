@@ -213,8 +213,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                     color: Theme.of(context)
                                         .colors
                                         .borderLight
-                                        .withValues(
-                                            alpha: isDarkMode ? 0.3 : 0.3),
+                                        .withValues(alpha: 0.1),
                                   ),
                                 ),
                                 child: ListTile(
@@ -708,7 +707,7 @@ class _TrainingInsightsSection extends StatelessWidget {
                   child: _FrostedCard(
                     gradientColors: [
                       const Color(0xFF3b82f6).withValues(alpha: 0.3),
-                      const Color(0xFF8b5cf6).withValues(alpha: 0.2),
+                      const Color(0xFF60a5fa).withValues(alpha: 0.2),
                       Colors.black.withValues(alpha: 0.5),
                     ],
                     child: Column(
@@ -781,8 +780,25 @@ class _FrostedCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
-          padding: const EdgeInsets.all(22),
-          child: child,
+          child: Stack(
+            children: [
+              // Texture overlay
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0.15,
+                  child: Image.asset(
+                    'images/1k_Dissolve_Noise_Texture.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(22),
+                child: child,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1076,7 +1092,7 @@ class _RoutinePlansSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Text(
-                'Routine Plans',
+                'routine Plans',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.white

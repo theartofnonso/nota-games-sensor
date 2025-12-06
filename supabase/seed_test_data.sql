@@ -46,7 +46,8 @@ INSERT INTO public.exercises (id, owner, name, type, "primaryMuscleGroup", notes
 ('6b3eeeba-6e16-41e8-96ee-9e47024e6b30', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Running', 'DR', 'fullBody', '', NOW() - INTERVAL '67 days', NOW() - INTERVAL '67 days'),
 ('102a4d61-b69d-40d0-9667-427edc6cd8d5', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Cycling', 'DR', 'quadriceps', '', NOW() - INTERVAL '66 days', NOW() - INTERVAL '66 days'),
 ('fba36c2d-e3ff-43c0-ab30-d4bed32364f0', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Rowing', 'DR', 'back', '', NOW() - INTERVAL '65 days', NOW() - INTERVAL '65 days'),
-('1b972641-4272-48a9-be81-76b125f66f5f', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Plank', 'DR', 'abs', '', NOW() - INTERVAL '64 days', NOW() - INTERVAL '64 days');
+('1b972641-4272-48a9-be81-76b125f66f5f', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Plank', 'DR', 'abs', '', NOW() - INTERVAL '64 days', NOW() - INTERVAL '64 days')
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
 -- ROUTINE PLANS
@@ -56,7 +57,8 @@ INSERT INTO public.routine_plans (id, owner, name, notes, "createdAt", "updatedA
 ('3e0e79b1-6fbe-436d-b9e7-4a7d4e19aa96', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Push Pull Legs', 'A comprehensive 6-day split focusing on push, pull, and leg movements', NOW() - INTERVAL '90 days', NOW() - INTERVAL '90 days'),
 ('7115de21-1ab7-400a-8b52-6ecfd6d4ede4', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Upper Lower', 'A 4-day split alternating between upper and lower body workouts', NOW() - INTERVAL '89 days', NOW() - INTERVAL '89 days'),
 ('74130dbe-179b-41ba-897a-ffc5f8283578', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Full Body', 'Complete body workouts for maximum efficiency', NOW() - INTERVAL '88 days', NOW() - INTERVAL '88 days'),
-('40896f06-6f30-472e-b3be-35dbbf0d5729', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Strength Focus', 'Heavy compound movements for building strength', NOW() - INTERVAL '87 days', NOW() - INTERVAL '87 days');
+('40896f06-6f30-472e-b3be-35dbbf0d5729', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'Strength Focus', 'Heavy compound movements for building strength', NOW() - INTERVAL '87 days', NOW() - INTERVAL '87 days')
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
 -- ROUTINE TEMPLATES
@@ -129,7 +131,8 @@ INSERT INTO public.routine_templates (id, owner, "planId", name, notes, exercise
    {"superSetId": "", "exercise": {"id": "b824e690-5974-4634-b1bc-0cc31dda0804", "name": "Barbell Row", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 90, "value2": 5, "checked": false}, {"value1": 90, "value2": 5, "checked": false}, {"value1": 90, "value2": 5, "checked": false}, {"value1": 90, "value2": 5, "checked": false}]},
    {"superSetId": "", "exercise": {"id": "6d7215a0-f88b-4b80-96dd-3b414a865f60", "name": "Overhead Press", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 60, "value2": 5, "checked": false}, {"value1": 60, "value2": 5, "checked": false}, {"value1": 60, "value2": 5, "checked": false}, {"value1": 60, "value2": 5, "checked": false}]}
  ]'::jsonb,
- NOW() - INTERVAL '85 days', NOW() - INTERVAL '85 days');
+ NOW() - INTERVAL '85 days', NOW() - INTERVAL '85 days')
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
 -- ROUTINE LOGS (Last 3 months of workout history)
@@ -315,7 +318,21 @@ INSERT INTO public.routine_logs (id, owner, "templateId", name, notes, "startTim
    {"superSetId": "", "exercise": {"id": "b824e690-5974-4634-b1bc-0cc31dda0804", "name": "Barbell Row", "type": "WR", "primaryMuscleGroup": "back", "notes": ""}, "notes": "", "sets": [{"value1": 95, "value2": 5, "checked": true}, {"value1": 95, "value2": 5, "checked": true}, {"value1": 95, "value2": 5, "checked": true}, {"value1": 95, "value2": 5, "checked": true}]},
    {"superSetId": "", "exercise": {"id": "6d7215a0-f88b-4b80-96dd-3b414a865f60", "name": "Overhead Press", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 65, "value2": 5, "checked": true}, {"value1": 65, "value2": 5, "checked": true}, {"value1": 65, "value2": 5, "checked": true}, {"value1": 65, "value2": 5, "checked": true}]}
  ]'::jsonb,
- NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day');
+ NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day'),
+
+-- Very recent logs (last few days)
+('c91e8f4d-2a3b-4c5d-6e7f-8a9b0c1d2e3f', 'f997b7ab-fe1b-4530-a190-0967119aedea', 'b9e2cf7e-9429-49b8-acc9-30dfc790b8b4', 'Push Day', 'Great session!',
+ NOW() - INTERVAL '0 days' + INTERVAL '8 hours',
+ NOW() - INTERVAL '0 days' + INTERVAL '9 hours 30 minutes',
+ '[
+   {"superSetId": "", "exercise": {"id": "8aafa06d-9f42-4946-ba18-f027fe792100", "name": "Bench Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "Felt strong today", "sets": [{"value1": 94, "value2": 10, "checked": true}, {"value1": 94, "value2": 10, "checked": true}, {"value1": 94, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "d9b6d428-3bc7-4f68-bebb-d32287f13257", "name": "Incline Dumbbell Press", "type": "WR", "primaryMuscleGroup": "chest", "notes": ""}, "notes": "", "sets": [{"value1": 37, "value2": 12, "checked": true}, {"value1": 37, "value2": 12, "checked": true}, {"value1": 37, "value2": 11, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "6d7215a0-f88b-4b80-96dd-3b414a865f60", "name": "Overhead Press", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 61, "value2": 10, "checked": true}, {"value1": 61, "value2": 10, "checked": true}, {"value1": 61, "value2": 9, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "2b14611a-b196-4f9a-948b-932b74a27963", "name": "Lateral Raises", "type": "WR", "primaryMuscleGroup": "frontShoulders", "notes": ""}, "notes": "", "sets": [{"value1": 21, "value2": 15, "checked": true}, {"value1": 21, "value2": 15, "checked": true}, {"value1": 21, "value2": 14, "checked": true}]},
+   {"superSetId": "", "exercise": {"id": "a43373b9-86d7-4684-9d26-70ad1ec0039d", "name": "Tricep Extensions", "type": "WR", "primaryMuscleGroup": "triceps", "notes": ""}, "notes": "", "sets": [{"value1": 31, "value2": 12, "checked": true}, {"value1": 31, "value2": 12, "checked": true}, {"value1": 31, "value2": 11, "checked": true}]}
+ ]'::jsonb,
+ NOW() - INTERVAL '0 days', NOW() - INTERVAL '0 days')
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA COMPLETE
@@ -324,7 +341,7 @@ INSERT INTO public.routine_logs (id, owner, "templateId", name, notes, "startTim
 -- - 27 exercises (weights, bodyweight, duration)
 -- - 4 routine plans
 -- - 6 routine templates (linked to plans)
--- - 14 routine logs with exercise logs containing sets with weight and reps values
--- All data is linked properly and spans the last 3 months
+-- - 15 routine logs with exercise logs containing sets with weight and reps values
+-- All data is linked properly and spans the last 3 months, including today
 -- ============================================================================
 

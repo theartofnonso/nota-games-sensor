@@ -40,72 +40,98 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.35),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.2),
+                  Colors.black.withValues(alpha: 0.4),
+                  Colors.black.withValues(alpha: 0.5),
+                ],
+              ),
               borderRadius: BorderRadius.circular(radius),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.03),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
-            child: Column(
-                spacing: 12,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Spacer(),
-                  Text(
-                    plan.name,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 3,
+            child: Stack(
+              children: [
+                // Texture overlay
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.15,
+                    child: Image.asset(
+                      'images/1k_Dissolve_Noise_Texture.jpg',
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  Column(
-                    spacing: 6,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        children: [
-                          CustomIcon(
-                            FontAwesomeIcons.personWalking,
-                            color: Theme.of(context).colors.vibrantAccent,
-                            width: 20,
-                            height: 20,
-                            iconSize: 10.5,
-                          ),
-                          const SizedBox(
-                            width: 6,
-                          ),
-                          Text(
-                            "${exerciseTemplates.length} ${pluralize(word: "Exercise", count: exerciseTemplates.length)}",
-                            style: Theme.of(context).textTheme.bodyMedium,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 2,
-                          ),
-                        ],
-                      ),
-                      Wrap(
-                        children: [
-                          CustomIcon(
-                            FontAwesomeIcons.hashtag,
-                            color: Theme.of(context).colorScheme.secondary,
-                            width: 20,
-                            height: 20,
-                            iconSize: 10.5,
-                          ),
-                          const SizedBox(
-                            width: 6,
-                          ),
-                          Text(
-                            "${routineTemplates.length} ${pluralize(word: "Session", count: routineTemplates.length)}",
-                            style: Theme.of(context).textTheme.bodyMedium,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 2,
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                ]),
+                ),
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                      spacing: 12,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Spacer(),
+                        Text(
+                          plan.name,
+                          style: Theme.of(context).textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 3,
+                        ),
+                        Column(
+                          spacing: 6,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              children: [
+                                CustomIcon(
+                                  FontAwesomeIcons.personWalking,
+                                  color: Theme.of(context).colors.vibrantAccent,
+                                  width: 20,
+                                  height: 20,
+                                  iconSize: 10.5,
+                                ),
+                                const SizedBox(
+                                  width: 6,
+                                ),
+                                Text(
+                                  "${exerciseTemplates.length} ${pluralize(word: "Exercise", count: exerciseTemplates.length)}",
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                              ],
+                            ),
+                            Wrap(
+                              children: [
+                                CustomIcon(
+                                  FontAwesomeIcons.hashtag,
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
+                                  width: 20,
+                                  height: 20,
+                                  iconSize: 10.5,
+                                ),
+                                const SizedBox(
+                                  width: 6,
+                                ),
+                                Text(
+                                  "${routineTemplates.length} ${pluralize(word: "Session", count: routineTemplates.length)}",
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      ]),
+                ),
+              ],
+            ),
           ),
         ),
       ),
