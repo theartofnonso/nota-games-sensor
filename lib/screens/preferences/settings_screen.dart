@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
@@ -18,6 +19,8 @@ import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
+import '../../dtos/viewmodels/past_routine_log_arguments.dart';
+import '../../extensions/duration_extension.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
@@ -26,9 +29,11 @@ import '../../utils/uri_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
+import '../../widgets/calendar/calendar.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
 import '../../widgets/routine/preview/routine_plan_grid_item.dart';
+import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../screens/routines/routine_plan.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
@@ -104,38 +109,31 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top buttons row
+                  // Calendar widget at top
                   Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // Notification icon (only when cached session exists)
-                        if (_hasCachedSession)
-                          IconButton(
-                            icon: const FaIcon(FontAwesomeIcons.solidBell,
-                                size: 18),
-                            onPressed: () =>
-                                showUnsavedWorkoutBottomSheet(context),
-                            tooltip: 'Unsaved workout',
-                            color: Theme.of(context)
-                                .colors
-                                .vibrantAccent
-                                .withValues(alpha: 0.5),
-                            padding: const EdgeInsets.all(12),
-                            constraints: const BoxConstraints(),
-                          ),
-                        // Close button
-                        IconButton(
-                          icon: FaIcon(FontAwesomeIcons.calendarDay,
-                              color: Colors.white.withValues(alpha: 0.9)),
-                          onPressed: widget.onClose ?? () => context.pop(),
-                          padding: const EdgeInsets.all(12),
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Calendar(
+                      logs: logs,
+                      onSelectDate: (date) => _showLogsForDate(context, date),
+                      onChevronTap: () {
+                        if (widget.onClose != null) {
+                          widget.onClose!();
+                        } else {
+                          context.pop();
+                        }
+                      },
                     ),
                   ),
+                  // Unsaved session card
+                  if (_hasCachedSession) ...[
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: _UnsavedSessionCard(
+                        onTap: () => showUnsavedWorkoutBottomSheet(context),
+                      ),
+                    ),
+                  ],
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: _TrainingInsightsSection(
@@ -556,6 +554,162 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
     }
   }
+
+  void _showLogsForDate(BuildContext context, DateTime date) {
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    final logs = controller.whereLogsIsSameDay(dateTime: date).toList();
+    final hasLogs = logs.isNotEmpty;
+
+    // Determine date label (Today, Yesterday, or full date)
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final selectedDate = DateTime(date.year, date.month, date.day);
+
+    final isToday = selectedDate == today;
+    final isPast = selectedDate.isBefore(today);
+    final isFuture = selectedDate.isAfter(today);
+
+    // Check if this is a predicted training day
+    final historicDates = controller.logs.map((log) => log.startTime).toList();
+    final predictedDates = getPredictedTrainingDates(
+      historicDateTimes: historicDates,
+      daysAhead: 7,
+    );
+    // Check if this is a predicted training day (today or future, no existing log)
+    final isPredicted = (isToday || isFuture) &&
+        predictedDates.contains(selectedDate) &&
+        !hasLogs;
+
+    String dateLabel;
+    if (isToday) {
+      dateLabel = 'Today';
+    } else if (selectedDate == yesterday) {
+      dateLabel = 'Yesterday';
+    } else {
+      dateLabel = DateFormat('EEEE').format(date);
+    }
+
+    showAppBottomSheet(
+      context: context,
+      isDraggable: true,
+      builder: (sheetContext, scrollController) {
+        final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
+
+        return Column(
+          children: [
+            // Header row with date and "Log workout" button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Date display
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dateLabel,
+                          style: Theme.of(sheetContext)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        Text(
+                          DateFormat('MMMM d').format(date),
+                          style: Theme.of(sheetContext)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Colors.grey.shade400,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Log workout button (hide for future dates)
+                  if (!isFuture)
+                    IconButton(
+                      onPressed: () {
+                        Navigator.pop(sheetContext); // Close bottom sheet
+                        if (isToday) {
+                          // Log a fresh session for today
+                          logEmptyRoutine(context: context);
+                        } else if (isPast) {
+                          // Log a past session for the selected date
+                          _logPastSessionForDate(context, date);
+                        }
+                      },
+                      icon: FaIcon(
+                        FontAwesomeIcons.circlePlus,
+                        size: 22,
+                        color: isDarkMode ? Colors.white : Colors.black,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: hasLogs
+                  ? ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      itemCount: logs.length,
+                      itemBuilder: (context, index) {
+                        final log = logs[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: RoutineLogWidget(
+                            log: log,
+                            trailing: log.duration().hmsAnalog(),
+                            onTap: () {
+                              Navigator.pop(sheetContext);
+                              navigateToRoutineLogPreview(
+                                context: context,
+                                log: log,
+                                isEditable: true,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    )
+                  : Center(
+                      child: Text(
+                        isPredicted
+                            ? 'This is a day you\'re likely to train based on your previous workout history.'
+                            : 'No workouts logged this date',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Colors.grey.shade400,
+                            ),
+                      ),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _logPastSessionForDate(BuildContext context, DateTime date) {
+    final log = RoutineLogDto(
+      id: "",
+      templateId: "",
+      name: "${timeOfDay()} Session",
+      exerciseLogs: [],
+      startTime: date,
+      endTime: date,
+    );
+    final arguments = PastRoutineLogArguments(log: log);
+    navigateToPastRoutineLogEditor(context: context, arguments: arguments);
+  }
 }
 
 class _TrainingInsightsSection extends StatelessWidget {
@@ -805,6 +959,90 @@ class _FrostedCard extends StatelessWidget {
   }
 }
 
+class _UnsavedSessionCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _UnsavedSessionCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cache = SharedPrefs().routineLog;
+
+    String workoutName = 'Unsaved Workout';
+    String exerciseCount = '0 exercises';
+
+    if (cache.isNotEmpty) {
+      try {
+        final json = jsonDecode(cache);
+        final routineLog = RoutineLogDto.fromJson(json: json);
+        workoutName = routineLog.name;
+        exerciseCount =
+            '${routineLog.exerciseLogs.length} ${routineLog.exerciseLogs.length == 1 ? 'exercise' : 'exercises'}';
+      } catch (e) {
+        // Use defaults if parsing fails
+      }
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: _FrostedCard(
+        gradientColors: [
+          const Color(0xFFf59e0b).withValues(alpha: 0.3),
+          const Color(0xFFfbbf24).withValues(alpha: 0.2),
+          Colors.black.withValues(alpha: 0.5),
+        ],
+        child: Row(
+          children: [
+            Icon(
+              Icons.cloud_off_rounded,
+              color: Colors.white.withValues(alpha: 0.9),
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Unsaved Workout',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    workoutName,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white70,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    exerciseCount,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            FaIcon(
+              FontAwesomeIcons.solidBell,
+              color: Colors.white.withValues(alpha: 0.6),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PredictionInfo {
   final DateTime? date;
   final TimeOfDay? time;
@@ -813,24 +1051,24 @@ class _PredictionInfo {
 
   static _PredictionInfo fromLogs(List<RoutineLogDto> logs) {
     if (logs.isEmpty) return const _PredictionInfo(date: null, time: null);
-    
+
     // Create a set of dates that already have logs (normalized to day level)
     final loggedDates = logs.map((log) {
       final date = log.startTime;
       return DateTime(date.year, date.month, date.day);
     }).toSet();
-    
+
     final predictedSet = getPredictedTrainingDates(
       historicDateTimes: logs.map((log) => log.startTime).toList(),
       daysAhead: 14,
     );
-    
+
     // Filter out predicted dates that already have logs
     final predictedDaysWithoutLogs = predictedSet
         .where((date) => !loggedDates.contains(date))
         .toList()
       ..sort((a, b) => a.compareTo(b));
-    
+
     if (predictedDaysWithoutLogs.isEmpty) {
       return const _PredictionInfo(date: null, time: null);
     }
@@ -1102,19 +1340,6 @@ class _RoutinePlansSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Text(
-                'routine Plans',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-            const SizedBox(height: 12),
             SizedBox(
               height: 188, // Matches grid aspect ratio: 160 / 0.85
               child: GridView.builder(

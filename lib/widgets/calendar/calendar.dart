@@ -31,7 +31,8 @@ class Calendar extends StatefulWidget {
       this.onSelectDate,
       this.logs,
       this.onMonthChanged,
-      this.initiallyExpanded = false});
+      this.initiallyExpanded = false,
+      this.onChevronTap});
 
   /// Fired whenever the user selects a day.
   final void Function(DateTime dateTime)? onSelectDate;
@@ -39,6 +40,10 @@ class Calendar extends StatefulWidget {
 
   /// Whether the calendar should start in expanded (month) view
   final bool initiallyExpanded;
+
+  /// Optional callback for chevron tap. If provided, chevron tap will call this
+  /// instead of toggling the calendar expansion.
+  final VoidCallback? onChevronTap;
 
   final List<RoutineLogDto>? logs;
 
@@ -116,7 +121,7 @@ class _CalendarState extends State<Calendar>
         _CalendarTitleHeader(
           date: _focused,
           isExpanded: _expanded,
-          onToggle: _toggleView,
+          onToggle: widget.onChevronTap ?? _toggleView,
           isDarkMode: isDark,
         ),
         const SizedBox(height: 10),
@@ -412,7 +417,7 @@ class _Day extends StatelessWidget {
         padding: selected ? const EdgeInsets.all(2) : null,
         decoration: BoxDecoration(
           border: border,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Container(
           margin: const EdgeInsets.all(2),
