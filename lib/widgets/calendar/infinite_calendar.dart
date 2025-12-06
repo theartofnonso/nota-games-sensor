@@ -518,7 +518,7 @@ class _DateCellState extends State<_DateCell>
           padding: widget.isSelected ? const EdgeInsets.all(2) : null,
           decoration: BoxDecoration(
             border: border,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Stack(
             children: [
