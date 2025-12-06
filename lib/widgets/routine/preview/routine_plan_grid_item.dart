@@ -45,7 +45,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.2),
+                  Colors.grey.withValues(alpha: 0.2),
                   Colors.black.withValues(alpha: 0.4),
                   Colors.black.withValues(alpha: 0.5),
                 ],
