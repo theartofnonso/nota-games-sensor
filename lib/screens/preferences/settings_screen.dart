@@ -813,20 +813,33 @@ class _PredictionInfo {
 
   static _PredictionInfo fromLogs(List<RoutineLogDto> logs) {
     if (logs.isEmpty) return const _PredictionInfo(date: null, time: null);
+    
+    // Create a set of dates that already have logs (normalized to day level)
+    final loggedDates = logs.map((log) {
+      final date = log.startTime;
+      return DateTime(date.year, date.month, date.day);
+    }).toSet();
+    
     final predictedSet = getPredictedTrainingDates(
       historicDateTimes: logs.map((log) => log.startTime).toList(),
       daysAhead: 14,
     );
-    final predictedDays = predictedSet.toList()..sort((a, b) => a.compareTo(b));
-    if (predictedDays.isEmpty) {
+    
+    // Filter out predicted dates that already have logs
+    final predictedDaysWithoutLogs = predictedSet
+        .where((date) => !loggedDates.contains(date))
+        .toList()
+      ..sort((a, b) => a.compareTo(b));
+    
+    if (predictedDaysWithoutLogs.isEmpty) {
       return const _PredictionInfo(date: null, time: null);
     }
 
     final now = DateTime.now();
     final startOfToday = DateTime(now.year, now.month, now.day);
-    final nextDate = predictedDays.firstWhere(
+    final nextDate = predictedDaysWithoutLogs.firstWhere(
       (date) => !date.isBefore(startOfToday),
-      orElse: () => predictedDays.first,
+      orElse: () => predictedDaysWithoutLogs.first,
     );
 
     final time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
