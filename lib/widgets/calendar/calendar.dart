@@ -412,21 +412,19 @@ class _Day extends StatelessWidget {
         padding: selected ? const EdgeInsets.all(2) : null,
         decoration: BoxDecoration(
           border: border,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
             child: Text(
               "${dateTime.day}",
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: textColor),
+                  fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
             ),
           ),
         ),
