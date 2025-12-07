@@ -572,9 +572,12 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     // Check if this is a predicted training day
     final historicDates = controller.logs.map((log) => log.startTime).toList();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final endOfYear = DateTime(now.year, 12, 31);
+    final daysAhead = endOfYear.difference(todayStart).inDays;
     final predictedDates = getPredictedTrainingDates(
       historicDateTimes: historicDates,
-      daysAhead: 7,
+      daysAhead: daysAhead,
     );
     // Check if this is a predicted training day (today or future, no existing log)
     final isPredicted = (isToday || isFuture) &&
@@ -1058,9 +1061,13 @@ class _PredictionInfo {
       return DateTime(date.year, date.month, date.day);
     }).toSet();
 
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final endOfYear = DateTime(now.year, 12, 31);
+    final daysAhead = endOfYear.difference(todayStart).inDays;
     final predictedSet = getPredictedTrainingDates(
       historicDateTimes: logs.map((log) => log.startTime).toList(),
-      daysAhead: 14,
+      daysAhead: daysAhead,
     );
 
     // Filter out predicted dates that already have logs
@@ -1073,7 +1080,6 @@ class _PredictionInfo {
       return const _PredictionInfo(date: null, time: null);
     }
 
-    final now = DateTime.now();
     final startOfToday = DateTime(now.year, now.month, now.day);
     final nextDate = predictedDaysWithoutLogs.firstWhere(
       (date) => !date.isBefore(startOfToday),
