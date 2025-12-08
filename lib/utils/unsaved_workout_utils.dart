@@ -100,29 +100,9 @@ class _UnsavedWorkoutBottomSheetContentState
     return duration.inHours >= 1 ? duration.hmsDigital() : duration.msDigital();
   }
 
-  double _calculatePercentageCompleted() {
-    int totalSets = 0;
-    int completedSets = 0;
-
-    for (final exerciseLog in widget.routineLog.exerciseLogs) {
-      for (final set in exerciseLog.sets) {
-        if (set.isNotEmpty()) {
-          totalSets++;
-          if (set.checked) {
-            completedSets++;
-          }
-        }
-      }
-    }
-
-    if (totalSets == 0) return 0.0;
-    return (completedSets / totalSets) * 100;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final percentage = _calculatePercentageCompleted();
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -153,7 +133,7 @@ class _UnsavedWorkoutBottomSheetContentState
           ),
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.black12,
               borderRadius: BorderRadius.circular(8),
@@ -171,13 +151,6 @@ class _UnsavedWorkoutBottomSheetContentState
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${percentage.toStringAsFixed(0)}% completed',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
                       const SizedBox(height: 4),
                       Text(
                         '${widget.routineLog.exerciseLogs.length} exercises • ${DateFormat('MMM d, y').format(widget.routineLog.startTime)}',
@@ -186,10 +159,13 @@ class _UnsavedWorkoutBottomSheetContentState
                     ],
                   ),
                 ),
-                Text(
-                  _formatElapsedDuration(_elapsed),
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
+                Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Text(
+                    _formatElapsedDuration(_elapsed),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],

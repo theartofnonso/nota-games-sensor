@@ -1015,40 +1015,29 @@ class _UnsavedSessionCardState extends State<_UnsavedSessionCard> {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      if (_routineLog == null) return;
 
-      setState(() {
-        _elapsed = DateTime.now().difference(_routineLog!.startTime);
-        if (_elapsed.isNegative) {
-          _elapsed = Duration.zero;
+      // Reload cached log to get latest checked sets
+      final cache = SharedPrefs().routineLog;
+      if (cache.isNotEmpty) {
+        try {
+          final json = jsonDecode(cache);
+          final updatedLog = RoutineLogDto.fromJson(json: json);
+          setState(() {
+            _routineLog = updatedLog;
+            _elapsed = DateTime.now().difference(_routineLog!.startTime);
+            if (_elapsed.isNegative) {
+              _elapsed = Duration.zero;
+            }
+          });
+        } catch (e) {
+          debugPrint('Error reloading cached routine log: $e');
         }
-      });
+      }
     });
   }
 
   String _formatElapsedDuration(Duration duration) {
     return duration.inHours >= 1 ? duration.hmsDigital() : duration.msDigital();
-  }
-
-  double _calculatePercentageCompleted() {
-    if (_routineLog == null) return 0.0;
-
-    int totalSets = 0;
-    int completedSets = 0;
-
-    for (final exerciseLog in _routineLog!.exerciseLogs) {
-      for (final set in exerciseLog.sets) {
-        if (set.isNotEmpty()) {
-          totalSets++;
-          if (set.checked) {
-            completedSets++;
-          }
-        }
-      }
-    }
-
-    if (totalSets == 0) return 0.0;
-    return (completedSets / totalSets) * 100;
   }
 
   @override
@@ -1057,7 +1046,6 @@ class _UnsavedSessionCardState extends State<_UnsavedSessionCard> {
 
     String workoutName = 'Unsaved Workout';
     String exerciseCount = '0 exercises';
-    final percentage = _calculatePercentageCompleted();
 
     if (_routineLog != null) {
       workoutName = _routineLog!.name;
@@ -1102,15 +1090,6 @@ class _UnsavedSessionCardState extends State<_UnsavedSessionCard> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${percentage.toStringAsFixed(0)}% completed',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
                   Text(
                     exerciseCount,
                     style: theme.textTheme.bodySmall?.copyWith(
