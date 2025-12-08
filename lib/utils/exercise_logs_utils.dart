@@ -362,8 +362,9 @@ Map<MuscleGroup, double> muscleGroupFrequency(
 /// and reps for a weights-based exercise across recent sessions.
 ///
 /// We look at up to [recentLogs] (most recent first) and:
-/// - Extract the last non-empty set from each log
-/// - Require at least [minSessions] logs with valid sets
+/// - Group by routineLogId to ensure we count only one set per session
+/// - Extract the last non-empty set from each distinct session
+/// - Require at least [minSessions] distinct sessions with valid sets
 /// - Consider it "stalled" if all (weight, reps) pairs are identical.
 bool isStalledAtSameWeightAndReps({
   required List<ExerciseLogDto> recentLogs,
@@ -371,9 +372,22 @@ bool isStalledAtSameWeightAndReps({
 }) {
   if (recentLogs.isEmpty) return false;
 
+  // Group by routineLogId to ensure we count only one set per session
+  // even if the same exercise appears multiple times in a session
+  final sessionsByRoutineLogId = <String?, ExerciseLogDto>{};
+  for (final log in recentLogs) {
+    final routineLogId = log.routineLogId;
+    // If we haven't seen this session yet, or if this is a more recent entry
+    // (though recentLogs should already be sorted), keep the first one we encounter
+    if (!sessionsByRoutineLogId.containsKey(routineLogId)) {
+      sessionsByRoutineLogId[routineLogId] = log;
+    }
+  }
+
   final samples = <(double weight, int reps)>[];
 
-  for (final log in recentLogs) {
+  // Process each distinct session
+  for (final log in sessionsByRoutineLogId.values) {
     final weightSets = log.sets
         .where((s) => s.type == ExerciseType.weights)
         .map((s) => s as WeightAndRepsSetDto)

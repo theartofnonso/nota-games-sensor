@@ -613,16 +613,23 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Returns the most recent [limit] exercise logs for a given exercise,
   /// ordered from most recent to oldest.
+  /// 
+  /// Only returns one exercise log per distinct session (routineLogId),
+  /// even if the same exercise appears multiple times in a session.
   List<ExerciseLogDto> whereRecentExerciseLogsForExercise({
     required ExerciseDto exercise,
     int limit = 4,
   }) {
-    final matches = <({ExerciseLogDto log, DateTime timestamp})>[];
+    final matches = <({ExerciseLogDto log, DateTime timestamp, String? routineLogId})>[];
 
     for (final routineLog in logs) {
       for (final exerciseLog in routineLog.exerciseLogs) {
         if (exerciseLog.exercise.id == exercise.id) {
-          matches.add((log: exerciseLog, timestamp: routineLog.startTime));
+          matches.add((
+            log: exerciseLog,
+            timestamp: routineLog.startTime,
+            routineLogId: routineLog.id,
+          ));
         }
       }
     }
@@ -631,7 +638,19 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
     matches.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-    return matches.take(limit).map((e) => e.log).toList();
+    // Group by routineLogId to ensure we only return one exercise log per session
+    final seenRoutineLogIds = <String?>{};
+    final distinctMatches = <ExerciseLogDto>[];
+    
+    for (final match in matches) {
+      if (!seenRoutineLogIds.contains(match.routineLogId)) {
+        seenRoutineLogIds.add(match.routineLogId);
+        distinctMatches.add(match.log);
+        if (distinctMatches.length >= limit) break;
+      }
+    }
+
+    return distinctMatches;
   }
 
   List<SetDto> wherePrevSetsForExercise({required ExerciseDto exercise}) {
