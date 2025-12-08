@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
@@ -962,33 +963,110 @@ class _FrostedCard extends StatelessWidget {
   }
 }
 
-class _UnsavedSessionCard extends StatelessWidget {
+class _UnsavedSessionCard extends StatefulWidget {
   final VoidCallback onTap;
 
   const _UnsavedSessionCard({required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  State<_UnsavedSessionCard> createState() => _UnsavedSessionCardState();
+}
+
+class _UnsavedSessionCardState extends State<_UnsavedSessionCard> {
+  Timer? _timer;
+  Duration _elapsed = Duration.zero;
+  RoutineLogDto? _routineLog;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedLog();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _loadCachedLog() {
     final cache = SharedPrefs().routineLog;
-
-    String workoutName = 'Unsaved Workout';
-    String exerciseCount = '0 exercises';
-
     if (cache.isNotEmpty) {
       try {
         final json = jsonDecode(cache);
-        final routineLog = RoutineLogDto.fromJson(json: json);
-        workoutName = routineLog.name;
-        exerciseCount =
-            '${routineLog.exerciseLogs.length} ${routineLog.exerciseLogs.length == 1 ? 'exercise' : 'exercises'}';
+        setState(() {
+          _routineLog = RoutineLogDto.fromJson(json: json);
+        });
+        _startTimer();
       } catch (e) {
-        // Use defaults if parsing fails
+        debugPrint('Error loading cached routine log: $e');
+      }
+    }
+  }
+
+  void _startTimer() {
+    if (_routineLog == null) return;
+
+    _elapsed = DateTime.now().difference(_routineLog!.startTime);
+    if (_elapsed.isNegative) {
+      _elapsed = Duration.zero;
+    }
+
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      if (_routineLog == null) return;
+
+      setState(() {
+        _elapsed = DateTime.now().difference(_routineLog!.startTime);
+        if (_elapsed.isNegative) {
+          _elapsed = Duration.zero;
+        }
+      });
+    });
+  }
+
+  String _formatElapsedDuration(Duration duration) {
+    return duration.inHours >= 1 ? duration.hmsDigital() : duration.msDigital();
+  }
+
+  double _calculatePercentageCompleted() {
+    if (_routineLog == null) return 0.0;
+
+    int totalSets = 0;
+    int completedSets = 0;
+
+    for (final exerciseLog in _routineLog!.exerciseLogs) {
+      for (final set in exerciseLog.sets) {
+        if (set.isNotEmpty()) {
+          totalSets++;
+          if (set.checked) {
+            completedSets++;
+          }
+        }
       }
     }
 
+    if (totalSets == 0) return 0.0;
+    return (completedSets / totalSets) * 100;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    String workoutName = 'Unsaved Workout';
+    String exerciseCount = '0 exercises';
+    final percentage = _calculatePercentageCompleted();
+
+    if (_routineLog != null) {
+      workoutName = _routineLog!.name;
+      exerciseCount =
+          '${_routineLog!.exerciseLogs.length} ${_routineLog!.exerciseLogs.length == 1 ? 'exercise' : 'exercises'}';
+    }
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: _FrostedCard(
         gradientColors: [
           const Color(0xFFf59e0b).withValues(alpha: 0.3),
@@ -1023,6 +1101,15 @@ class _UnsavedSessionCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${percentage.toStringAsFixed(0)}% completed',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     exerciseCount,
@@ -1034,10 +1121,12 @@ class _UnsavedSessionCard extends StatelessWidget {
                 ],
               ),
             ),
-            FaIcon(
-              FontAwesomeIcons.solidBell,
-              color: Colors.white.withValues(alpha: 0.6),
-              size: 16,
+            Text(
+              _formatElapsedDuration(_elapsed),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/viewmodels/routine_log_arguments.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
+import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -35,72 +37,176 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
     showAppBottomSheet(
       context: context,
       isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.cloud_off_rounded,
-                  color: Theme.of(context).colors.vibrantAccent,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Unsaved Workout',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'You have a workout session ready to resume:',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black12,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    routineLog.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${routineLog.exerciseLogs.length} exercises • ${DateFormat('MMM d, y').format(routineLog.startTime)}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-                  child: OpacityButtonWidgetTwo(
-                label: 'Resume workout',
-                    buttonColor: Theme.of(context).colors.vibrantAccent,
-                    showArrowRight: false,
-                    onPressed: resumeTraining,
-                  ),
-            ),
-          ],
-        ),
+      child: _UnsavedWorkoutBottomSheetContent(
+        routineLog: routineLog,
+        onResume: resumeTraining,
       ),
     );
   } catch (e) {
     debugPrint('[Retry] Error showing retry sheet: $e');
+  }
+}
+
+class _UnsavedWorkoutBottomSheetContent extends StatefulWidget {
+  final RoutineLogDto routineLog;
+  final VoidCallback onResume;
+
+  const _UnsavedWorkoutBottomSheetContent({
+    required this.routineLog,
+    required this.onResume,
+  });
+
+  @override
+  State<_UnsavedWorkoutBottomSheetContent> createState() =>
+      _UnsavedWorkoutBottomSheetContentState();
+}
+
+class _UnsavedWorkoutBottomSheetContentState
+    extends State<_UnsavedWorkoutBottomSheetContent> {
+  Timer? _timer;
+  Duration _elapsed = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _elapsed = DateTime.now().difference(widget.routineLog.startTime);
+    if (_elapsed.isNegative) {
+      _elapsed = Duration.zero;
+    }
+
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _elapsed = DateTime.now().difference(widget.routineLog.startTime);
+        if (_elapsed.isNegative) {
+          _elapsed = Duration.zero;
+        }
+      });
+    });
+  }
+
+  String _formatElapsedDuration(Duration duration) {
+    return duration.inHours >= 1 ? duration.hmsDigital() : duration.msDigital();
+  }
+
+  double _calculatePercentageCompleted() {
+    int totalSets = 0;
+    int completedSets = 0;
+
+    for (final exerciseLog in widget.routineLog.exerciseLogs) {
+      for (final set in exerciseLog.sets) {
+        if (set.isNotEmpty()) {
+          totalSets++;
+          if (set.checked) {
+            completedSets++;
+          }
+        }
+      }
+    }
+
+    if (totalSets == 0) return 0.0;
+    return (completedSets / totalSets) * 100;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final percentage = _calculatePercentageCompleted();
+
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.cloud_off_rounded,
+                color: theme.colors.vibrantAccent,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Unsaved Workout',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'You have a workout session ready to resume:',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.routineLog.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${percentage.toStringAsFixed(0)}% completed',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${widget.routineLog.exerciseLogs.length} exercises • ${DateFormat('MMM d, y').format(widget.routineLog.startTime)}',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  _formatElapsedDuration(_elapsed),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              label: 'Resume workout',
+              buttonColor: theme.colors.vibrantAccent,
+              showArrowRight: false,
+              onPressed: widget.onResume,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
