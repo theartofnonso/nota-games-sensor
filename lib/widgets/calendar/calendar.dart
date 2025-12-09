@@ -8,17 +8,20 @@ import 'package:trainware/controllers/supabase_exercise_and_routine_controller.d
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/date_utils.dart';
+import 'package:trainware/utils/notifications_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
 class _DateViewModel {
   final DateTime dateTime;
   final DateTime selectedDateTime;
   final bool hasRoutineLog;
+  final bool isPredicted;
 
   _DateViewModel(
       {required this.dateTime,
       required this.selectedDateTime,
-      this.hasRoutineLog = false});
+      this.hasRoutineLog = false,
+      this.isPredicted = false});
 }
 
 const int _kMonthOrigin = 1000;
@@ -158,6 +161,18 @@ class _CalendarState extends State<Calendar>
     final logs = widget.logs ??
         context.read<SupabaseExerciseAndRoutineController>().logs;
 
+    // Get predicted training dates
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    final historicDates = controller.logs.map((log) => log.startTime).toList();
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final endOfYear = DateTime(now.year, 12, 31);
+    final daysAhead = endOfYear.difference(todayStart).inDays;
+    final predictedDates = getPredictedTrainingDates(
+      historicDateTimes: historicDates,
+      daysAhead: daysAhead,
+    );
+
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(), // <— not scrollable
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -170,11 +185,14 @@ class _CalendarState extends State<Calendar>
       itemBuilder: (_, i) {
         final d = days[i];
         final has = logs.any((l) => l.startTime.isSameDayMonthYear(d));
+        final cellDateNormalized = DateTime(d.year, d.month, d.day);
+        final isPredicted = predictedDates.contains(cellDateNormalized);
         return _Day(
           dateTime: d,
           selected: d.isSameDayMonthYear(_selected),
           currentDate: d.isSameDayMonthYear(DateTime.now()),
           hasRoutineLog: has,
+          isPredicted: isPredicted,
           onTap: _onDateTap,
           isDarkMode: isDark,
         );
@@ -221,6 +239,18 @@ class _CalendarState extends State<Calendar>
         context.read<SupabaseExerciseAndRoutineController>().logs.where(
             (l) => l.startTime.isBetweenInclusive(from: first, to: last));
 
+    // Get predicted training dates
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    final historicDates = controller.logs.map((log) => log.startTime).toList();
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final endOfYear = DateTime(now.year, 12, 31);
+    final daysAhead = endOfYear.difference(todayStart).inDays;
+    final predictedDates = getPredictedTrainingDates(
+      historicDateTimes: historicDates,
+      daysAhead: daysAhead,
+    );
+
     final List<_DateViewModel?> out = [];
     for (int i = 1; i < first.weekday; i++) {
       out.add(null);
@@ -228,8 +258,13 @@ class _CalendarState extends State<Calendar>
     for (int d = 1; d <= last.day; d++) {
       final date = DateTime(monthStart.year, monthStart.month, d);
       final has = logs.any((l) => l.startTime.isSameDayMonthYear(date));
+      final cellDateNormalized = DateTime(date.year, date.month, date.day);
+      final isPredicted = predictedDates.contains(cellDateNormalized);
       out.add(_DateViewModel(
-          dateTime: date, selectedDateTime: _selected, hasRoutineLog: has));
+          dateTime: date,
+          selectedDateTime: _selected,
+          hasRoutineLog: has,
+          isPredicted: isPredicted));
     }
     while (out.length % 7 != 0) {
       out.add(null);
@@ -340,6 +375,7 @@ class _Month extends StatelessWidget {
               currentDate:
                   dates[index]!.dateTime.isSameDayMonthYear(DateTime.now()),
               hasRoutineLog: dates[index]!.hasRoutineLog,
+              isPredicted: dates[index]!.isPredicted,
               onTap: onTap,
               isDarkMode: isDarkMode,
             ),
@@ -347,11 +383,12 @@ class _Month extends StatelessWidget {
   }
 }
 
-class _Day extends StatelessWidget {
+class _Day extends StatefulWidget {
   final DateTime dateTime;
   final bool selected;
   final bool hasRoutineLog;
   final bool currentDate;
+  final bool isPredicted;
   final void Function(DateTime dateTime) onTap;
   final bool isDarkMode;
 
@@ -361,8 +398,61 @@ class _Day extends StatelessWidget {
     required this.currentDate,
     required this.onTap,
     this.hasRoutineLog = false,
+    this.isPredicted = false,
     required this.isDarkMode,
   });
+
+  @override
+  State<_Day> createState() => _DayState();
+}
+
+class _DayState extends State<_Day> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _pulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // Only animate if predicted and not hasLog
+    if (widget.isPredicted && !widget.hasRoutineLog) {
+      _animationController.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_Day oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPredicted != oldWidget.isPredicted ||
+        widget.hasRoutineLog != oldWidget.hasRoutineLog) {
+      if (widget.isPredicted && !widget.hasRoutineLog) {
+        _animationController.repeat(reverse: true);
+      } else {
+        _animationController.stop();
+        _animationController.reset();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -370,35 +460,40 @@ class _Day extends StatelessWidget {
     // - Days without logs: transparent background, low‑opacity text
     // - Selected day: 2px border (accent if has log, white otherwise)
     // - Today: always white text
+    // - Predicted days: green badge indicator
 
     // Background
-    final Color backgroundColor = hasRoutineLog
-        ? (isDarkMode
+    final Color backgroundColor = widget.hasRoutineLog
+        ? (widget.isDarkMode
             ? Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.1)
             : Theme.of(context).colors.vibrantAccent)
         : Colors.transparent;
 
     // Text color
     Color textColor;
-    if (currentDate) {
+    if (widget.currentDate) {
       // Today: always white
       textColor = Colors.white;
-    } else if (hasRoutineLog) {
-      textColor =
-          isDarkMode ? Theme.of(context).colors.vibrantAccent : Colors.black;
+    } else if (widget.hasRoutineLog) {
+      textColor = widget.isDarkMode
+          ? Theme.of(context).colors.vibrantAccent
+          : Colors.black;
+    } else if (widget.isPredicted) {
+      // Predicted days: white text (badge will show green indicator)
+      textColor = Colors.white;
     } else {
       // No log: reduced opacity, similar to InfiniteCalendar
-      textColor = isDarkMode
+      textColor = widget.isDarkMode
           ? Colors.white.withValues(alpha: 0.3)
           : Colors.black.withOpacity(0.3);
     }
 
     // Border for selected date (date selector)
     Border? border;
-    if (selected) {
-      if (hasRoutineLog) {
+    if (widget.selected) {
+      if (widget.hasRoutineLog) {
         border = Border.all(
-          color: isDarkMode
+          color: widget.isDarkMode
               ? Theme.of(context).colors.vibrantAccent
               : Theme.of(context).colors.vibrantAccent.withValues(alpha: 0.8),
           width: 2,
@@ -411,29 +506,69 @@ class _Day extends StatelessWidget {
       }
     }
 
-    return GestureDetector(
-      onTap: () => onTap(dateTime),
+    Widget dateCell = GestureDetector(
+      onTap: () => widget.onTap(widget.dateTime),
       child: Container(
-        padding: selected ? const EdgeInsets.all(2) : null,
+        padding: widget.selected ? const EdgeInsets.all(2) : null,
         decoration: BoxDecoration(
           border: border,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Container(
-          margin: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: Text(
-              "${dateTime.day}",
-              style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
+        child: Stack(
+          children: [
+            Container(
+              margin: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  "${widget.dateTime.day}",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: widget.hasRoutineLog || widget.isPredicted
+                          ? FontWeight.bold
+                          : FontWeight.w500,
+                      color: textColor),
+                ),
+              ),
             ),
-          ),
+            // Green badge for predicted days
+            if (widget.isPredicted && !widget.hasRoutineLog)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colors.vibrantAccent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
+
+    // Apply pulse animation for predicted days
+    if (widget.isPredicted && !widget.hasRoutineLog) {
+      return AnimatedBuilder(
+        animation: _pulseAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _pulseAnimation.value,
+            child: Opacity(
+              opacity: 0.7 + (_pulseAnimation.value - 0.8) * 0.3,
+              child: dateCell,
+            ),
+          );
+        },
+      );
+    }
+
+    return dateCell;
   }
 }

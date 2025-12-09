@@ -25,7 +25,6 @@ import '../../utils/string_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
 import '../../widgets/icons/custom_icon.dart';
-import '../../widgets/monthly_insights/muscle_groups_family_frequency_widget.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
 
@@ -84,9 +83,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     final numberOfCompletedSets =
         completedExerciseLogs.expand((exerciseLog) => exerciseLog.sets);
-
-    final muscleGroupFamilyFrequencies =
-        muscleGroupFrequency(exerciseLogs: completedExerciseLogs);
 
     // PBs removed from project
 
@@ -192,12 +188,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                       spacing: 20,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        MuscleGroupSplitChart(
-                            title: "Muscle Groups Split",
-                            description:
-                                "Here's a breakdown of the muscle groups in your ${updatedLog.name} workout session.",
-                            muscleGroup: muscleGroupFamilyFrequencies,
-                            minimized: false),
                         ExerciseLogListView(
                             exerciseLogs: completedExerciseLogs),
                         const SizedBox(
