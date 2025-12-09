@@ -130,7 +130,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             bottom: false,
             child: SingleChildScrollView(
               child: Column(
-                  spacing: 16,
+                  spacing: 20,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -163,16 +163,10 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                           child: CustomIcon(FontAwesomeIcons.hashtag,
                               color: Theme.of(context).colorScheme.secondary)),
                     ]),
-                    Column(
-                      spacing: 4,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Calendar(
-                          onSelectDate: (date) =>
-                              _showLogsForDate(context, date, logs),
-                          logs: logs,
-                        ),
-                      ],
+                    Calendar(
+                      onSelectDate: (date) =>
+                          _showLogsForDate(context, date, logs),
+                      logs: logs,
                     ),
                     routineTemplates.isNotEmpty
                         ? GridView.count(
