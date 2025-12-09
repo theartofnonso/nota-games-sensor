@@ -24,15 +24,42 @@ class ExerciseLogController extends ChangeNotifier {
       _exerciseLogRepository.exerciseLogs;
 
   RoutineLogDto? _initialRoutineLog;
+  bool _shouldCacheToSharedPrefs = false;
 
-  void loadRoutineLog({required RoutineLogDto routineLog}) {
+  void loadRoutineLog(
+      {required RoutineLogDto routineLog, bool shouldCache = false}) {
     _initialRoutineLog = routineLog;
+
+    // Only enable caching if explicitly requested (for live workout sessions)
+    // and if this matches the cached workout (to prevent mixing data)
+    if (shouldCache) {
+      final cachedLog = SharedPrefs().routineLog;
+      if (cachedLog.isNotEmpty) {
+        try {
+          final cachedJson = jsonDecode(cachedLog);
+          final cachedRoutineLog = RoutineLogDto.fromJson(json: cachedJson);
+          // Only cache if we're editing the same workout that's cached
+          _shouldCacheToSharedPrefs = cachedRoutineLog.id == routineLog.id;
+        } catch (e) {
+          // If we can't parse cached log, don't cache
+          _shouldCacheToSharedPrefs = false;
+        }
+      } else {
+        // No cached workout, enable caching for new workout
+        _shouldCacheToSharedPrefs = true;
+      }
+    } else {
+      // Not a live workout session, don't cache
+      _shouldCacheToSharedPrefs = false;
+    }
     _cache();
   }
 
   void loadExerciseLogs({required List<ExerciseLogDto> exerciseLogs}) {
     _exerciseLogRepository.loadExerciseLogs(exerciseLogs: exerciseLogs);
-    _cache();
+    // Disable caching when loading exercise logs (used for templates/past logs)
+    _shouldCacheToSharedPrefs = false;
+    _initialRoutineLog = null;
     logger.i("load exercise logs");
   }
 
@@ -177,6 +204,7 @@ class ExerciseLogController extends ChangeNotifier {
   void clearLocal() {
     _exerciseLogRepository.clear();
     _initialRoutineLog = null;
+    _shouldCacheToSharedPrefs = false;
   }
 
   /// Clear both in-memory state and the cached pending routine log.
@@ -187,6 +215,9 @@ class ExerciseLogController extends ChangeNotifier {
   }
 
   void _cache() {
+    // Only cache if we're editing the active unsaved workout
+    if (!_shouldCacheToSharedPrefs) return;
+
     final routineLog = _initialRoutineLog?.copyWith(
         exerciseLogs: exerciseLogs, endTime: DateTime.now());
     if (routineLog != null) {

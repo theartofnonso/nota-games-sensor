@@ -638,7 +638,10 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
 
-    exerciseLogController.loadRoutineLog(routineLog: widget.log);
+    // Only cache if this is a live workout session (log mode) and either cached or new workout
+    final shouldCache = widget.mode == RoutineEditorMode.log;
+    exerciseLogController.loadRoutineLog(
+        routineLog: widget.log, shouldCache: shouldCache);
 
     final exerciseLogs = widget.mode == RoutineEditorMode.log
         ? widget.log.exerciseLogs.map((exerciseLog) {
