@@ -522,8 +522,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _checkCachedSession() {
     final hasCached = SharedPrefs().routineLog.isNotEmpty;
     if (hasCached != _hasCachedSession) {
-      setState(() {
-        _hasCachedSession = hasCached;
+      // Defer setState to avoid calling it during build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _hasCachedSession = hasCached;
+          });
+        }
       });
     }
   }
@@ -587,11 +592,11 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     String dateLabel;
     if (isToday) {
-      dateLabel = 'Today';
+      dateLabel = 'today';
     } else if (selectedDate == yesterday) {
-      dateLabel = 'Yesterday';
+      dateLabel = 'yesterday';
     } else {
-      dateLabel = DateFormat('EEEE').format(date);
+      dateLabel = DateFormat('EEEE').format(date).toLowerCase();
     }
 
     showAppBottomSheet(
@@ -733,7 +738,7 @@ class _TrainingInsightsSection extends StatelessWidget {
         ? _formatRelativeDate(predictionInfo.date!)
         : 'Need more workouts logged';
     final timeLabel = predictionInfo.time != null
-        ? 'Around ${_formatTime(predictionInfo.time!)}'
+        ? 'around ${_formatTime(predictionInfo.time!)}'
         : 'Log a few sessions to learn your timing';
     final percentLabel =
         (yearStats.progress * 100).clamp(0, 100).toStringAsFixed(0);
@@ -866,15 +871,83 @@ class _TrainingInsightsSection extends StatelessWidget {
                 ),
                 SizedBox(
                   width: cardWidth,
-                  child: _FrostedCard(
-                    gradientColors: [
-                      const Color(0xFF3b82f6).withValues(alpha: 0.3),
-                      const Color(0xFF60a5fa).withValues(alpha: 0.2),
-                      Colors.black.withValues(alpha: 0.5),
-                    ],
+                  child: _PredictionCard(
+                    predictionInfo: predictionInfo,
+                    hasTodayPrediction: hasTodayPrediction,
+                    hasNextPrediction: hasNextPrediction,
+                    dateLabel: dateLabel,
+                    timeLabel: timeLabel,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _PredictionCard extends StatelessWidget {
+  final _PredictionInfo predictionInfo;
+  final bool hasTodayPrediction;
+  final bool hasNextPrediction;
+  final String dateLabel;
+  final String timeLabel;
+
+  const _PredictionCard({
+    required this.predictionInfo,
+    required this.hasTodayPrediction,
+    required this.hasNextPrediction,
+    required this.dateLabel,
+    required this.timeLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF3b82f6).withValues(alpha: 0.3),
+                const Color(0xFF60a5fa).withValues(alpha: 0.2),
+                Colors.black.withValues(alpha: 0.5),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+          child: Stack(
+            children: [
+              // Texture overlay
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0.15,
+                  child: Image.asset(
+                    'images/1k_Dissolve_Noise_Texture.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              // Content with proper structure for edge-to-edge divider
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top section with padding
+                  Padding(
+                    padding: const EdgeInsets.all(22),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Title
                         Text(
                           hasTodayPrediction
                               ? 'today is the day to train'
@@ -885,10 +958,10 @@ class _TrainingInsightsSection extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Show today's prediction if available
+                        // Today's prediction section
                         if (hasTodayPrediction) ...[
                           Text(
-                            'Today',
+                            'today',
                             style: theme.textTheme.displayMedium?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,
@@ -904,59 +977,14 @@ class _TrainingInsightsSection extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             predictionInfo.todayTime != null
-                                ? 'Around ${_formatTime(predictionInfo.todayTime!)}'
+                                ? 'around ${_formatTime(predictionInfo.todayTime!)}'
                                 : 'Time to train',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.white70,
                             ),
                           ),
-                          // Show next predicted session if available
-                          if (hasNextPrediction) ...[
-                            const SizedBox(height: 20),
-                            // Edge-to-edge divider
-                            Container(
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: -22),
-                              height: 1,
-                              color: Colors.white.withValues(alpha: 0.2),
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'Next predicted session',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              dateLabel,
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.0,
-                                  ) ??
-                                  const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.0,
-                                  ),
-                            ),
-                            const SizedBox(height: 4),
-                            if (timeLabel !=
-                                'Log a few sessions to learn your timing') ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                timeLabel,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ],
-                          ],
                         ] else ...[
-                          // Show next predicted session (no today prediction)
+                          // Next predicted session (no today prediction)
                           Text(
                             dateLabel,
                             style: theme.textTheme.displayMedium?.copyWith(
@@ -972,22 +1000,74 @@ class _TrainingInsightsSection extends StatelessWidget {
                                 ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            timeLabel,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white70,
+                          if (timeLabel !=
+                              'Log a few sessions to learn your timing') ...[
+                            Text(
+                              timeLabel,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white70,
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ],
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                  // Edge-to-edge divider (only if today is predicted and next exists)
+                  if (hasTodayPrediction && hasNextPrediction)
+                    Container(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                  // Bottom section with padding (only if today is predicted and next exists)
+                  if (hasTodayPrediction && hasNextPrediction)
+                    Padding(
+                      padding: const EdgeInsets.all(22),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'next predicted session',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            dateLabel,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ) ??
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          if (timeLabel !=
+                              'Log a few sessions to learn your timing') ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              timeLabel,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -1513,13 +1593,19 @@ String _formatRelativeDate(DateTime date) {
   final daysDifference = dateOnly.difference(today).inDays;
 
   if (dateOnly == today) {
-    return 'Today';
+    return 'today';
   } else if (dateOnly == tomorrow) {
-    return 'Tomorrow';
+    return 'tomorrow';
   } else if (daysDifference >= 2 && daysDifference <= 7) {
-    return 'In $daysDifference days';
+    return 'in $daysDifference days';
   } else {
-    return DateFormat('EEEE, MMM d').format(date);
+    final formatted = DateFormat('EEEE, MMM d').format(date);
+    // Make the day name lowercase
+    final parts = formatted.split(', ');
+    if (parts.length == 2) {
+      return '${parts[0].toLowerCase()}, ${parts[1]}';
+    }
+    return formatted.toLowerCase();
   }
 }
 

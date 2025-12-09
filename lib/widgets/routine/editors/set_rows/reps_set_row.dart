@@ -79,32 +79,36 @@ class RepsSetRow extends StatelessWidget {
               suffix: 'reps',
             ),
           ),
-          if (showCheck) ...[
-            const SizedBox(width: 12),
-            // Check button on right (fully rounded)
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onCheck,
-                borderRadius: BorderRadius.circular(50),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: setDto.checked
-                        ? colors.vibrantAccent
-                        : colors.vibrantAccent.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: FaIcon(
-                    FontAwesomeIcons.check,
-                    color: setDto.checked ? Colors.black : colors.vibrantAccent,
-                    size: 14,
+          const SizedBox(width: 12),
+          // Check button on right (fully rounded) - always visible, disabled when showCheck is false
+          IgnorePointer(
+            ignoring: !showCheck,
+            child: Opacity(
+              opacity: showCheck ? 1.0 : 0.5,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: showCheck ? onCheck : null,
+                  borderRadius: BorderRadius.circular(50),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: setDto.checked
+                          ? colors.vibrantAccent
+                          : colors.vibrantAccent.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: FaIcon(
+                      FontAwesomeIcons.check,
+                      color: setDto.checked ? Colors.black : colors.vibrantAccent,
+                      size: 14,
+                    ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );

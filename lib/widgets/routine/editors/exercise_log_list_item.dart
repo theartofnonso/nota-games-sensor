@@ -35,26 +35,29 @@ class ExerciseLogListItem extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
         onTap: onTap,
-        leading: showStatusIcon
-            ? Container(
-                width: 33,
-                height: 33,
-                decoration: BoxDecoration(
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(8),
-                  color: isCompleted
-                      ? Theme.of(context).colors.vibrantAccent
-                      : Colors.white.withValues(alpha: 0.10),
-                ),
-                child: Center(
-                  child: FaIcon(
-                    FontAwesomeIcons.check,
-                    size: 14,
-                    color: isCompleted ? Colors.black : Colors.white54,
-                  ),
-                ),
-              )
-            : null,
+        leading: Opacity(
+          opacity: showStatusIcon ? 1.0 : 0.5,
+          child: Container(
+            width: 33,
+            height: 33,
+            decoration: BoxDecoration(
+              shape: BoxShape.rectangle,
+              borderRadius: BorderRadius.circular(8),
+              color: showStatusIcon && isCompleted
+                  ? Theme.of(context).colors.vibrantAccent
+                  : Colors.white.withValues(alpha: 0.10),
+            ),
+            child: Center(
+              child: FaIcon(
+                FontAwesomeIcons.check,
+                size: 14,
+                color: showStatusIcon && isCompleted
+                    ? Colors.black
+                    : Colors.white54,
+              ),
+            ),
+          ),
+        ),
         title: Text(
           exerciseLogDto.exercise.name,
           maxLines: 1,

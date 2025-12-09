@@ -57,9 +57,15 @@ class ExerciseLogController extends ChangeNotifier {
 
   void loadExerciseLogs({required List<ExerciseLogDto> exerciseLogs}) {
     _exerciseLogRepository.loadExerciseLogs(exerciseLogs: exerciseLogs);
-    // Disable caching when loading exercise logs (used for templates/past logs)
-    _shouldCacheToSharedPrefs = false;
-    _initialRoutineLog = null;
+    // Only disable caching if we're not in a live workout session
+    // (i.e., if _initialRoutineLog is null, meaning we're editing templates/past logs)
+    if (_initialRoutineLog == null) {
+      _shouldCacheToSharedPrefs = false;
+    } else {
+      // If we're in a live workout session, cache the updated exercise logs
+      _cache();
+    }
+    // Don't clear _initialRoutineLog here - it's needed for caching during live workouts
     logger.i("load exercise logs");
   }
 

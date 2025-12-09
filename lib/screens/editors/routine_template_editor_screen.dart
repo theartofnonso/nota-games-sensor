@@ -349,7 +349,7 @@ class _RoutineTemplateEditorScreenState
                                             ExerciseLogListItem(
                                               exerciseLogDto: exerciseLog,
                                               showOnlyTotalSets: true,
-                                              showStatusIcon: false,
+                                              showStatusIcon: true,
                                               onTap: () {
                                                 showExerciseLogEditor(
                                                   context: context,
