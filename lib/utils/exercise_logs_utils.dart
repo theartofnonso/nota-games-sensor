@@ -366,11 +366,13 @@ Map<MuscleGroup, double> muscleGroupFrequency(
 /// - Extract the last non-empty set from each distinct session
 /// - Require at least [minSessions] distinct sessions with valid sets
 /// - Consider it "stalled" if all (weight, reps) pairs are identical.
-bool isStalledAtSameWeightAndReps({
+/// Returns the count of stalled sessions if stalled, or 0 if not stalled.
+/// A session is considered stalled if all sessions have the same weight and reps.
+int getStalledSessionsCountAtSameWeightAndReps({
   required List<ExerciseLogDto> recentLogs,
   int minSessions = 5,
 }) {
-  if (recentLogs.isEmpty) return false;
+  if (recentLogs.isEmpty) return 0;
 
   // Group by routineLogId to ensure we count only one set per session
   // even if the same exercise appears multiple times in a session
@@ -401,19 +403,33 @@ bool isStalledAtSameWeightAndReps({
     samples.add((last.weight, last.reps));
   }
 
-  if (samples.length < minSessions) return false;
+  if (samples.length < minSessions) return 0;
 
   final (firstWeight, firstReps) = samples.first;
-  return samples.every((sample) =>
+  final isStalled = samples.every((sample) =>
       sample.$1 == firstWeight &&
       sample.$2 == firstReps);
+  
+  return isStalled ? samples.length : 0;
 }
 
-bool isStalledAtSameReps({
+bool isStalledAtSameWeightAndReps({
   required List<ExerciseLogDto> recentLogs,
   int minSessions = 5,
 }) {
-  if (recentLogs.isEmpty) return false;
+  return getStalledSessionsCountAtSameWeightAndReps(
+    recentLogs: recentLogs,
+    minSessions: minSessions,
+  ) > 0;
+}
+
+/// Returns the count of stalled sessions if stalled, or 0 if not stalled.
+/// A session is considered stalled if all sessions have the same reps.
+int getStalledSessionsCountAtSameReps({
+  required List<ExerciseLogDto> recentLogs,
+  int minSessions = 5,
+}) {
+  if (recentLogs.isEmpty) return 0;
 
   // Group by routineLogId to ensure we count only one set per session
   // even if the same exercise appears multiple times in a session
@@ -444,10 +460,22 @@ bool isStalledAtSameReps({
     samples.add(last.reps);
   }
 
-  if (samples.length < minSessions) return false;
+  if (samples.length < minSessions) return 0;
 
   final firstReps = samples.first;
-  return samples.every((reps) => reps == firstReps);
+  final isStalled = samples.every((reps) => reps == firstReps);
+  
+  return isStalled ? samples.length : 0;
+}
+
+bool isStalledAtSameReps({
+  required List<ExerciseLogDto> recentLogs,
+  int minSessions = 5,
+}) {
+  return getStalledSessionsCountAtSameReps(
+    recentLogs: recentLogs,
+    minSessions: minSessions,
+  ) > 0;
 }
 
 bool withWeightsOnly({required ExerciseType type}) {

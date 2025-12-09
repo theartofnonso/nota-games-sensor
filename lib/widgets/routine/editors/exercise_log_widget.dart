@@ -287,11 +287,12 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     );
 
     final exerciseType = _currentExerciseLog.exercise.type;
-    final isStalled = exerciseType == ExerciseType.weights
-        ? isStalledAtSameWeightAndReps(recentLogs: recentLogs)
-        : isStalledAtSameReps(recentLogs: recentLogs);
+    final stalledCount = exerciseType == ExerciseType.weights
+        ? getStalledSessionsCountAtSameWeightAndReps(recentLogs: recentLogs)
+        : getStalledSessionsCountAtSameReps(recentLogs: recentLogs);
 
-    if (!isStalled) return;
+    // Only show reminder at multiples of 5 (5, 10, 15, 20, etc.)
+    if (stalledCount == 0 || stalledCount % 5 != 0) return;
 
     _hasShownProgressionPrompt = true;
 
