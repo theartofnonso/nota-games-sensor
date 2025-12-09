@@ -264,13 +264,13 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     _loadControllers();
 
-    // After successfully logging a set in live log mode for a weights exercise,
+    // After successfully logging a set in live log mode for a weights or bodyweight exercise,
     // optionally prompt the user about progression if they've been stalled.
     final exerciseType = _currentExerciseLog.exercise.type;
     final isLogMode = widget.editorType == RoutineEditorMode.log;
     if (checked &&
         isLogMode &&
-        withWeightsOnly(type: exerciseType) &&
+        withReps(type: exerciseType) &&
         !_hasShownProgressionPrompt) {
       _maybeShowProgressionPrompt();
     }
@@ -283,28 +283,57 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     final recentLogs = controller.whereRecentExerciseLogsForExercise(
       exercise: _currentExerciseLog.exercise,
-      limit: 4,
+      limit: 6,
     );
 
-    if (!isStalledAtSameWeightAndReps(recentLogs: recentLogs)) return;
+    final exerciseType = _currentExerciseLog.exercise.type;
+    final isStalled = exerciseType == ExerciseType.weights
+        ? isStalledAtSameWeightAndReps(recentLogs: recentLogs)
+        : isStalledAtSameReps(recentLogs: recentLogs);
+
+    if (!isStalled) return;
 
     _hasShownProgressionPrompt = true;
 
     if (!mounted) return;
 
-    final stalledSample = recentLogs
-        .expand((log) => log.sets)
-        .where((s) => s.type == ExerciseType.weights)
-        .map((s) => s as WeightAndRepsSetDto)
-        .where((s) => s.weight > 0 && s.reps > 0)
-        .toList()
-        .lastOrNull;
-
     final exerciseName = _currentExerciseLog.exercise.name;
-    final weightText =
-        stalledSample != null ? "${stalledSample.weight} kg" : "this weight";
-    final repsText =
-        stalledSample != null ? "${stalledSample.reps} reps" : "this rep range";
+    String messageText;
+
+    if (exerciseType == ExerciseType.weights) {
+      final stalledSample = recentLogs
+          .expand((log) => log.sets)
+          .where((s) => s.type == ExerciseType.weights)
+          .map((s) => s as WeightAndRepsSetDto)
+          .where((s) => s.weight > 0 && s.reps > 0)
+          .toList()
+          .lastOrNull;
+
+      final weightText =
+          stalledSample != null ? "${stalledSample.weight} kg" : "this weight";
+      final repsText =
+          stalledSample != null ? "${stalledSample.reps} reps" : "this rep range";
+
+      messageText =
+          "You've been consistently logging $weightText for $repsText over your recent sessions. "
+          "You might be ready to increase the weight slightly, or tighten your target rep range.";
+    } else {
+      // Bodyweight exercise
+      final stalledSample = recentLogs
+          .expand((log) => log.sets)
+          .where((s) => s.type == ExerciseType.bodyWeight)
+          .map((s) => s as RepsSetDto)
+          .where((s) => s.reps > 0)
+          .toList()
+          .lastOrNull;
+
+      final repsText =
+          stalledSample != null ? "${stalledSample.reps} reps" : "this rep range";
+
+      messageText =
+          "You've been consistently logging $repsText over your recent sessions. "
+          "You might be ready to increase the reps, add more sets, or try a more challenging variation.";
+    }
 
     if (!mounted) return;
 
@@ -326,8 +355,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             ),
             const SizedBox(height: 8),
             Text(
-              "You've been consistently logging $weightText for $repsText over your recent sessions. "
-              "You might be ready to increase the weight slightly, or tighten your target rep range.",
+              messageText,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),

@@ -586,8 +586,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       daysAhead: daysAhead,
     );
     // Check if this is a predicted training day (today or future, no existing log)
+    final selectedDateNormalized = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final isPredicted = (isToday || isFuture) &&
-        predictedDates.contains(selectedDate) &&
+        predictedDates.contains(selectedDateNormalized) &&
         !hasLogs;
 
     String dateLabel;

@@ -104,13 +104,15 @@ Set<int> _getCalendarLikelyTrainingWeekdays(
     {required List<DateTime> historicDateTimes}) {
   if (historicDateTimes.isEmpty) return {};
 
-  final cutoff = DateTime.now().subtract(_calendarHistoryWindow);
+  final now = DateTime.now();
+  final cutoff = DateTime(now.year, now.month, now.day)
+      .subtract(_calendarHistoryWindow);
   final Map<int, int> weekdayCounts = {};
   final Set<DateTime> seenDates = <DateTime>{};
 
   for (final date in historicDateTimes) {
-    if (date.isBefore(cutoff)) continue;
     final normalized = DateTime(date.year, date.month, date.day);
+    if (normalized.isBefore(cutoff)) continue;
     if (!seenDates.add(normalized)) continue;
     weekdayCounts[normalized.weekday] =
         (weekdayCounts[normalized.weekday] ?? 0) + 1;

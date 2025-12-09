@@ -368,7 +368,7 @@ Map<MuscleGroup, double> muscleGroupFrequency(
 /// - Consider it "stalled" if all (weight, reps) pairs are identical.
 bool isStalledAtSameWeightAndReps({
   required List<ExerciseLogDto> recentLogs,
-  int minSessions = 3,
+  int minSessions = 5,
 }) {
   if (recentLogs.isEmpty) return false;
 
@@ -407,6 +407,47 @@ bool isStalledAtSameWeightAndReps({
   return samples.every((sample) =>
       sample.$1 == firstWeight &&
       sample.$2 == firstReps);
+}
+
+bool isStalledAtSameReps({
+  required List<ExerciseLogDto> recentLogs,
+  int minSessions = 5,
+}) {
+  if (recentLogs.isEmpty) return false;
+
+  // Group by routineLogId to ensure we count only one set per session
+  // even if the same exercise appears multiple times in a session
+  final sessionsByRoutineLogId = <String?, ExerciseLogDto>{};
+  for (final log in recentLogs) {
+    final routineLogId = log.routineLogId;
+    // If we haven't seen this session yet, or if this is a more recent entry
+    // (though recentLogs should already be sorted), keep the first one we encounter
+    if (!sessionsByRoutineLogId.containsKey(routineLogId)) {
+      sessionsByRoutineLogId[routineLogId] = log;
+    }
+  }
+
+  final samples = <int>[];
+
+  // Process each distinct session
+  for (final log in sessionsByRoutineLogId.values) {
+    final repsSets = log.sets
+        .where((s) => s.type == ExerciseType.bodyWeight)
+        .map((s) => s as RepsSetDto)
+        .where((s) => s.reps > 0)
+        .toList();
+
+    if (repsSets.isEmpty) continue;
+
+    // Use the last filled set in this session as the "top set"
+    final last = repsSets.last;
+    samples.add(last.reps);
+  }
+
+  if (samples.length < minSessions) return false;
+
+  final firstReps = samples.first;
+  return samples.every((reps) => reps == firstReps);
 }
 
 bool withWeightsOnly({required ExerciseType type}) {
