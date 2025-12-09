@@ -16,6 +16,9 @@ import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
+import '../../utils/notifications_utils.dart';
+import '../../dtos/viewmodels/past_routine_log_arguments.dart';
+import '../../extensions/duration_extension.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
@@ -199,17 +202,34 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
   void _showLogsForDate(
       BuildContext context, DateTime date, List<RoutineLogDto> allLogs) {
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
     final logsForDate =
         allLogs.where((log) => log.startTime.isSameDayMonthYear(date)).toList();
     final hasLogs = logsForDate.isNotEmpty;
 
-    // Determine date label
+    // Determine date label (Today, Yesterday, or full date)
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     final selectedDate = DateTime(date.year, date.month, date.day);
 
     final isToday = selectedDate == today;
+    final isPast = selectedDate.isBefore(today);
+    final isFuture = selectedDate.isAfter(today);
+
+    // Check if this is a predicted training day
+    final historicDates = controller.logs.map((log) => log.startTime).toList();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final endOfYear = DateTime(now.year, 12, 31);
+    final daysAhead = endOfYear.difference(todayStart).inDays;
+    final predictedDates = getPredictedTrainingDates(
+      historicDateTimes: historicDates,
+      daysAhead: daysAhead,
+    );
+    // Check if this is a predicted training day (today or future, no existing log)
+    final isPredicted = (isToday || isFuture) &&
+        predictedDates.contains(selectedDate) &&
+        !hasLogs;
 
     String dateLabel;
     if (isToday) {
@@ -217,61 +237,127 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     } else if (selectedDate == yesterday) {
       dateLabel = 'Yesterday';
     } else {
-      dateLabel = DateFormat('EEEE, MMM d').format(date);
+      dateLabel = DateFormat('EEEE').format(date);
     }
 
     showAppBottomSheet(
       context: context,
-      isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      isDraggable: true,
+      builder: (sheetContext, scrollController) {
+        final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
+
+        return Column(
           children: [
-            // Header with date
-            Text(
-              dateLabel,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            Text(
-              DateFormat('MMM d, yyyy').format(date),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade400,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            // Logs list
-            if (hasLogs)
-              ...logsForDate.map((log) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: RoutineLogWidget(
-                      log: log,
-                      trailing: DateFormat.jm().format(log.startTime),
-                      onTap: () {
-                        Navigator.pop(context);
-                        navigateToRoutineLogPreview(context: context, log: log);
-                      },
-                    ),
-                  ))
-            else
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    'No workouts logged on this day',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade400,
+            // Header row with date and "Log workout" button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Date display
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dateLabel,
+                          style: Theme.of(sheetContext)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
+                        Text(
+                          DateFormat('MMMM d').format(date),
+                          style: Theme.of(sheetContext)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Colors.grey.shade400,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  // Log workout button (hide for future dates)
+                  if (!isFuture)
+                    IconButton(
+                      onPressed: () {
+                        Navigator.pop(sheetContext); // Close bottom sheet
+                        if (isToday) {
+                          // Log a fresh session for today
+                          logEmptyRoutine(context: context);
+                        } else if (isPast) {
+                          // Log a past session for the selected date
+                          _logPastSessionForDate(context, date);
+                        }
+                      },
+                      icon: FaIcon(
+                        FontAwesomeIcons.circlePlus,
+                        size: 22,
+                        color: isDarkMode ? Colors.white : Colors.black,
+                      ),
+                    ),
+                ],
               ),
+            ),
+            Expanded(
+              child: hasLogs
+                  ? ListView.builder(
+                      controller: scrollController,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      itemCount: logsForDate.length,
+                      itemBuilder: (context, index) {
+                        final log = logsForDate[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: RoutineLogWidget(
+                            log: log,
+                            trailing: log.duration().hmsAnalog(),
+                            onTap: () {
+                              navigateToRoutineLogPreview(
+                                context: context,
+                                log: log,
+                                isEditable: true,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    )
+                  : Center(
+                      child: Text(
+                        isPredicted
+                            ? 'This is a day you\'re likely to train based on your previous workout history.'
+                            : 'No workouts logged this date',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Colors.grey.shade400,
+                            ),
+                      ),
+                    ),
+            ),
           ],
-        ),
-      ),
+        );
+      },
     );
+  }
+
+  void _logPastSessionForDate(BuildContext context, DateTime date) {
+    final log = RoutineLogDto(
+      id: "",
+      templateId: "",
+      name: "${timeOfDay()} Session",
+      exerciseLogs: [],
+      startTime: date,
+      endTime: date,
+    );
+    final arguments = PastRoutineLogArguments(log: log);
+    navigateToPastRoutineLogEditor(context: context, arguments: arguments);
   }
 
   void _deleteRoutinePlan({required RoutinePlanDto plan}) async {
