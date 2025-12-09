@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -202,44 +201,13 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     // Get all exercises for grid
     final allExercises = _filteredExercises;
 
-    // Get total count of all exercises (before filtering)
-    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context,
-        listen: false);
-    final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
-    final totalExercises = controller.exercises
-        .where((exercise) => !excludeExerciseIds.contains(exercise.id))
-        .where((exercise) =>
-            widget.type != null ? exercise.type == widget.type : true)
-        .length;
-
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: appBarBackgroundColor(context: context),
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
-          onPressed: () => context.pop(),
-        ),
-        title: Column(
-          children: [
-            Text("Exercise Library".toUpperCase()),
-            Text(
-              "$totalExercises ${totalExercises == 1 ? 'exercise' : 'exercises'}",
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                  ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-              onPressed: _navigateToExerciseEditor,
-              icon: const FaIcon(FontAwesomeIcons.circlePlus, size: 22)),
-        ],
+      floatingActionButton: FloatingActionButton(
+        heroTag: UniqueKey(),
+        backgroundColor: themeGradient(context: context).colors.first,
+        elevation: 8.0,
+        onPressed: _navigateToExerciseEditor,
+        child: const FaIcon(FontAwesomeIcons.plus, size: 24),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -247,7 +215,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         ),
         child: SafeArea(
           bottom: false,
-          minimum: const EdgeInsets.only(bottom: 10),
+          minimum: const EdgeInsets.only(top: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

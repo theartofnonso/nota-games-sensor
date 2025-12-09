@@ -158,20 +158,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             onPressed: () =>
                 _launchRoutineLogEditor(muscleGroups: muscleGroups),
             child: const FaIcon(FontAwesomeIcons.play, size: 24)),
-        appBar: AppBar(
-          backgroundColor: appBarBackgroundColor(context: context),
-          surfaceTintColor: Colors.transparent,
-          scrolledUnderElevation: 0,
-          leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
-            onPressed: context.pop,
-          ),
-          actions: [
-            IconButton(
-                onPressed: () => _showMenuBottomSheet(planDto: plan),
-                icon: const FaIcon(Icons.more_vert_rounded))
-          ],
-        ),
         body: Container(
           height: double.infinity,
           decoration: BoxDecoration(
@@ -186,35 +172,52 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                 spacing: 20,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    padding: const EdgeInsets.only(
+                        top: 12.0, left: 10.0, right: 10.0),
                     child: Column(
                       spacing: 20,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 4,
                           children: [
-                            Text(
-                              template.name,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                height: 1.5,
-                                fontWeight: FontWeight.w900,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: 4,
+                                children: [
+                                  Text(
+                                    template.name,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      height: 1.5,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  if (template.notes.isNotEmpty)
+                                    Text(
+                                      template.notes,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDarkMode
+                                            ? Colors.white70
+                                            : Colors.black,
+                                        height: 1.6,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                            if (template.notes.isNotEmpty)
-                              Text(
-                                template.notes,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isDarkMode
-                                      ? Colors.white70
-                                      : Colors.black,
-                                  height: 1.6,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
+                            IconButton(
+                              onPressed: () =>
+                                  _showMenuBottomSheet(planDto: plan),
+                              icon: const FaIcon(
+                                  FontAwesomeIcons.ellipsisVertical),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
                           ],
                         ),
                         ChipOne(
@@ -655,9 +658,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     if (template != null) {
       // Filter out plans the template already belongs to
-      final eligiblePlans = allPlans
-          .where((plan) => plan.id != template.planId)
-          .toList();
+      final eligiblePlans =
+          allPlans.where((plan) => plan.id != template.planId).toList();
 
       showAppBottomSheet(
         context: context,

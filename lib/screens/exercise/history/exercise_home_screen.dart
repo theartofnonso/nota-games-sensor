@@ -180,8 +180,8 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
             actions: [
               IconButton(
                 onPressed: _showMenuBottomSheet,
-                icon: const Icon(
-                  Icons.more_vert_rounded,
+                icon: const FaIcon(
+                  FontAwesomeIcons.ellipsisVertical,
                   size: 24,
                 ),
                 tooltip: 'Show menu',

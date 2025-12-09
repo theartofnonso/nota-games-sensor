@@ -60,11 +60,17 @@ void showExercisesInLibrary(
     required List<ExerciseDto> exercisesToExclude,
     required void Function(List<ExerciseDto> selectedExercises) onSelected,
     ExerciseType? type}) async {
-  final selectedExercises = await Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => ExerciseLibraryScreen(
-            excludeExercises: exercisesToExclude,
-            type: type,
-          ))) as List<ExerciseDto>?;
+  final selectedExercises = await showAppBottomSheet<List<ExerciseDto>>(
+    context: context,
+    isDraggable: true,
+    initialChildSize: 0.9,
+    minChildSize: 0.6,
+    maxChildSize: 0.98,
+    child: ExerciseLibraryScreen(
+      excludeExercises: exercisesToExclude,
+      type: type,
+    ),
+  );
 
   if (context.mounted) {
     if (selectedExercises != null && selectedExercises.isNotEmpty) {

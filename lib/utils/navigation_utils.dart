@@ -151,9 +151,17 @@ Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
   return log;
 }
 
-void navigateToRoutineTemplatePreview(
-    {required BuildContext context, required RoutineTemplateDto template}) {
-  context.push(RoutineTemplateScreen.routeName, extra: template);
+Future<void> navigateToRoutineTemplatePreview(
+    {required BuildContext context,
+    required RoutineTemplateDto template}) async {
+  await showAppBottomSheet<void>(
+    context: context,
+    isDraggable: true,
+    initialChildSize: 0.9,
+    minChildSize: 0.6,
+    maxChildSize: 0.98,
+    child: RoutineTemplateScreen(id: template.id),
+  );
 }
 
 void navigateToRoutinePlanPreview(
