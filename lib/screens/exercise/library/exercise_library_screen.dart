@@ -65,6 +65,38 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     return score;
   }
 
+  DateTime? _getMostRecentLogDateWithin30Days(ExerciseDto exercise) {
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+
+    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+
+    // Get all routine logs within the last 30 days
+    final recentLogs = controller.logs
+        .where((log) => log.startTime.isAfter(thirtyDaysAgo))
+        .toList();
+
+    if (recentLogs.isEmpty) return null;
+
+    // Find the most recent log date for this exercise
+    DateTime? mostRecentDate;
+    for (final routineLog in recentLogs) {
+      // Check if this routine log contains the exercise
+      final hasExercise = routineLog.exerciseLogs
+          .any((exerciseLog) => exerciseLog.exercise.id == exercise.id);
+
+      if (hasExercise) {
+        final logDate = routineLog.startTime;
+        if (mostRecentDate == null || logDate.isAfter(mostRecentDate)) {
+          mostRecentDate = logDate;
+        }
+      }
+    }
+
+    return mostRecentDate;
+  }
+
   void _runSearch() {
     final query = _searchController.text.trim().toLowerCase();
     final exerciseType = widget.type;
@@ -91,10 +123,24 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       filteredExercises = allExercises;
     }
 
-    // If the user typed nothing, you can simply show the entire filtered list
-    // Or skip ranking and set directly — depends on your UI needs
+    // If the user typed nothing, sort by most recently logged within last 30 days
     if (queryParts.isEmpty) {
-      filteredExercises.sort((a, b) => a.name.compareTo(b.name));
+      filteredExercises.sort((a, b) {
+        final aDate = _getMostRecentLogDateWithin30Days(a);
+        final bDate = _getMostRecentLogDateWithin30Days(b);
+
+        // Exercises with recent logs come first
+        if (aDate != null && bDate != null) {
+          return bDate.compareTo(aDate); // Most recent first
+        } else if (aDate != null) {
+          return -1; // a has recent log, b doesn't
+        } else if (bDate != null) {
+          return 1; // b has recent log, a doesn't
+        } else {
+          // Neither has recent logs, sort alphabetically
+          return a.name.compareTo(b.name);
+        }
+      });
       setState(() {
         _filteredExercises = filteredExercises;
       });
@@ -156,6 +202,17 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     // Get all exercises for grid
     final allExercises = _filteredExercises;
 
+    // Get total count of all exercises (before filtering)
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
+    final totalExercises = controller.exercises
+        .where((exercise) => !excludeExerciseIds.contains(exercise.id))
+        .where((exercise) =>
+            widget.type != null ? exercise.type == widget.type : true)
+        .length;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: appBarBackgroundColor(context: context),
@@ -165,7 +222,18 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
           icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
           onPressed: () => context.pop(),
         ),
-        title: Text("Exercise Library".toUpperCase()),
+        title: Column(
+          children: [
+            Text("Exercise Library".toUpperCase()),
+            Text(
+              "$totalExercises ${totalExercises == 1 ? 'exercise' : 'exercises'}",
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+            ),
+          ],
+        ),
         centerTitle: true,
         actions: [
           IconButton(
