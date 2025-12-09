@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -140,7 +142,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      spacing: 2,
+                      spacing: 4,
                       children: [
                         _StatisticWidget(
                           title: "${completedExerciseLogs.length}",
@@ -496,77 +498,101 @@ class _StatisticWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+
+    // Use the same blue gradient for all statistics cards
+    final gradientColors = [
+      const Color(0xFF3b82f6).withValues(alpha: 0.3),
+      const Color(0xFF60a5fa).withValues(alpha: 0.2),
+      Colors.black.withValues(alpha: 0.5),
+    ];
 
     return GestureDetector(
       onTap: () => showBottomSheetWithNoAction(
           context: context,
           title: information.title,
           description: information.description),
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 120),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.black.withValues(alpha: 0.3)
-              : Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.grey.shade200,
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icon and label row
-            Row(
-              mainAxisSize: MainAxisSize.min,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 120),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: gradientColors,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            ),
+            child: Stack(
               children: [
-                if (icon != null) ...[
-                  FaIcon(
-                    icon,
-                    size: 12,
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.6)
-                        : Colors.grey.shade600,
+                // Texture overlay
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.15,
+                    child: Image.asset(
+                      'images/1k_Dissolve_Noise_Texture.jpg',
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  const SizedBox(width: 6),
-                ],
-                Flexible(
-                  child: Text(
-                    subtitle.toUpperCase(),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 10,
-                          letterSpacing: 0.5,
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.6)
-                              : Colors.grey.shade600,
-                          fontWeight: FontWeight.w600,
+                ),
+                // Content
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Icon and label row
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (icon != null) ...[
+                            FaIcon(
+                              icon,
+                              size: 12,
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          Flexible(
+                            child: Text(
+                              subtitle.toUpperCase(),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: 10,
+                                letterSpacing: 0.5,
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Large number - no overflow for duration
+                      Text(
+                        title,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          height: 1.1,
                         ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            // Large number - no overflow for duration
-            Text(
-              title,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: isDarkMode ? Colors.white : Colors.black87,
-                    height: 1.1,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+          ),
         ),
       ),
     );
