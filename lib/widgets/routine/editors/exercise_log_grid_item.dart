@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../utils/routine_editors_utils.dart';
+import '../../../utils/string_utils.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
 
 class ExerciseLogGridItemWidget extends StatelessWidget {
@@ -38,7 +39,8 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
     final totalSets = exerciseLogDto.sets.length;
     final completedSets =
         exerciseLogDto.sets.where((set) => set.checked).length;
-    final progressText = '$completedSets/$totalSets sets';
+    final progressText =
+        '$completedSets/$totalSets ${pluralize(word: "set", count: totalSets)}';
 
     return GestureDetector(
       onTap: () {

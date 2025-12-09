@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
+import 'package:trainware/utils/string_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/list_tile.dart';
 
@@ -23,11 +24,12 @@ class ExerciseLogListItem extends StatelessWidget {
     final totalSets = exerciseLogDto.sets.length;
     final completedSets =
         exerciseLogDto.sets.where((set) => set.checked).length;
+    // Exercise is completed if all sets are checked (including acknowledgement sets with 0 sets)
     final isCompleted = totalSets > 0 && completedSets == totalSets;
 
     final progressText = showOnlyTotalSets
-        ? '$totalSets sets'
-        : '$completedSets/$totalSets sets';
+        ? '$totalSets ${pluralize(word: "set", count: totalSets)}'
+        : '$completedSets/$totalSets ${pluralize(word: "set", count: totalSets)}';
 
     return ThemeListTile(
       child: ListTile(
