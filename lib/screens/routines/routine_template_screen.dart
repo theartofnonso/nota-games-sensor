@@ -13,6 +13,7 @@ import 'package:trainware/controllers/supabase_exercise_and_routine_controller.d
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
+import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../dtos/viewmodels/routine_template_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
@@ -28,7 +29,6 @@ import '../../widgets/calendar/calendar.dart';
 import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../widgets/icons/custom_icon.dart';
-import '../../widgets/monthly_insights/muscle_groups_family_frequency_widget.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
@@ -102,9 +102,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     }
 
     final plan = exerciseAndRoutineController.planWhere(id: template.planId);
-
-    final muscleGroupFamilyFrequencies =
-        muscleGroupFrequency(exerciseLogs: template.exerciseTemplates);
 
     final allLogsForTemplate = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: template.id)
@@ -230,14 +227,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                               context, date, allLogsForTemplate),
                           logs: allLogsForTemplate,
                         ),
-                        if (template.exerciseTemplates.isNotEmpty)
-                          MuscleGroupSplitChart(
-                            title: "Muscle Groups Split",
-                            description:
-                                "Here's a breakdown of the muscle groups in your ${template.name} workout plan.",
-                            muscleGroup: muscleGroupFamilyFrequencies,
-                            minimized: false,
-                          ),
                       ],
                     ),
                   ),
@@ -607,17 +596,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                   horizontalTitleGap: 6,
                   title: Text("Move to another plan",
                       style: Theme.of(context).textTheme.bodyLarge),
-                  onTap: () async {
+                  onTap: () {
                     Navigator.of(context).pop();
                     _showPlanPicker();
-                    // Re-open this menu after the plan picker closes
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        Future.delayed(const Duration(milliseconds: 200), () {
-                          if (mounted) _showMenuBottomSheet(planDto: planDto);
-                        });
-                      }
-                    });
                   },
                 ),
                 ListTile(
@@ -670,9 +651,14 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
     final template = exerciseAndRoutineController.templateWhere(id: widget.id);
-    final plans = exerciseAndRoutineController.plans;
+    final allPlans = exerciseAndRoutineController.plans;
 
     if (template != null) {
+      // Filter out plans the template already belongs to
+      final eligiblePlans = allPlans
+          .where((plan) => plan.id != template.planId)
+          .toList();
+
       showAppBottomSheet(
         context: context,
         isScrollControlled: false,
@@ -680,7 +666,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           padding: const EdgeInsets.all(26),
           child: PlanPicker(
             title: "Move ${template.name} to . . .",
-            plans: plans,
+            plans: eligiblePlans,
             onSelect: (selectedPlan) async {
               Navigator.of(context).pop();
 
@@ -697,7 +683,30 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               if (mounted) {
                 showSnackbar(
                     context: context,
-                    message: "Add ${template.name} to ${selectedPlan.name}");
+                    message: "Moved ${template.name} to ${selectedPlan.name}");
+              }
+            },
+            onCreatePlan: () async {
+              Navigator.of(context).pop();
+              final arguments = RoutinePlanArguments(
+                  plan: RoutinePlanDto(id: "", name: "", notes: ""));
+              final newPlan = await navigateToRoutinePlanEditor(
+                context: context,
+                arguments: arguments,
+              );
+              if (newPlan != null && mounted) {
+                final templateProvider =
+                    Provider.of<SupabaseExerciseAndRoutineController>(context,
+                        listen: false);
+                final updatedRoutineTemplate =
+                    template.copyWith(planId: newPlan.id);
+                await templateProvider.updateTemplate(
+                    template: updatedRoutineTemplate);
+                if (mounted) {
+                  showSnackbar(
+                      context: context,
+                      message: "Moved ${template.name} to ${newPlan.name}");
+                }
               }
             },
           ),
