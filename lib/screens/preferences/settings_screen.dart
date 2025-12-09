@@ -738,6 +738,10 @@ class _TrainingInsightsSection extends StatelessWidget {
     final percentLabel =
         (yearStats.progress * 100).clamp(0, 100).toStringAsFixed(0);
 
+    final hasTodayPrediction = predictionInfo.todayDate != null;
+    final hasNextPrediction =
+        predictionInfo.date != null && predictionInfo.daysUntilNext != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -872,34 +876,109 @@ class _TrainingInsightsSection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'next predicted session',
+                          hasTodayPrediction
+                              ? 'today is the day to train'
+                              : 'next predicted session',
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Text(
-                          dateLabel,
-                          style: theme.textTheme.displayMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                height: 1.0,
-                              ) ??
-                              const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.w700,
-                                height: 1.0,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          timeLabel,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white70,
+                        // Show today's prediction if available
+                        if (hasTodayPrediction) ...[
+                          Text(
+                            'Today',
+                            style: theme.textTheme.displayMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ) ??
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ),
                           ),
-                        ),
+                          const SizedBox(height: 4),
+                          Text(
+                            predictionInfo.todayTime != null
+                                ? 'Around ${_formatTime(predictionInfo.todayTime!)}'
+                                : 'Time to train',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                          // Show next predicted session if available
+                          if (hasNextPrediction) ...[
+                            const SizedBox(height: 20),
+                            // Edge-to-edge divider
+                            Container(
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: -22),
+                              height: 1,
+                              color: Colors.white.withValues(alpha: 0.2),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Next predicted session',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              dateLabel,
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.0,
+                                  ) ??
+                                  const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.0,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            if (timeLabel !=
+                                'Log a few sessions to learn your timing') ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                timeLabel,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ] else ...[
+                          // Show next predicted session (no today prediction)
+                          Text(
+                            dateLabel,
+                            style: theme.textTheme.displayMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ) ??
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            timeLabel,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -1117,11 +1196,22 @@ class _UnsavedSessionCardState extends State<_UnsavedSessionCard> {
 class _PredictionInfo {
   final DateTime? date;
   final TimeOfDay? time;
+  final DateTime? todayDate;
+  final TimeOfDay? todayTime;
+  final int? daysUntilNext;
 
-  const _PredictionInfo({required this.date, required this.time});
+  const _PredictionInfo({
+    required this.date,
+    required this.time,
+    this.todayDate,
+    this.todayTime,
+    this.daysUntilNext,
+  });
 
   static _PredictionInfo fromLogs(List<RoutineLogDto> logs) {
-    if (logs.isEmpty) return const _PredictionInfo(date: null, time: null);
+    if (logs.isEmpty) {
+      return const _PredictionInfo(date: null, time: null);
+    }
 
     // Create a set of dates that already have logs (normalized to day level)
     final loggedDates = logs.map((log) {
@@ -1149,13 +1239,43 @@ class _PredictionInfo {
     }
 
     final startOfToday = DateTime(now.year, now.month, now.day);
-    final nextDate = predictedDaysWithoutLogs.firstWhere(
-      (date) => !date.isBefore(startOfToday),
-      orElse: () => predictedDaysWithoutLogs.first,
-    );
 
-    final time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
-    return _PredictionInfo(date: nextDate, time: time);
+    // Check if today is predicted
+    final isTodayPredicted = predictedDaysWithoutLogs.contains(startOfToday);
+    DateTime? todayDate;
+    TimeOfDay? todayTime;
+
+    if (isTodayPredicted) {
+      todayDate = startOfToday;
+      todayTime = _deriveTypicalTimeForWeekday(logs, startOfToday.weekday);
+    }
+
+    // Find the next predicted date after today
+    DateTime? nextDate;
+    TimeOfDay? time;
+    int? daysUntilNext;
+
+    final futurePredictedDates = predictedDaysWithoutLogs
+        .where((date) => date.isAfter(startOfToday))
+        .toList();
+
+    if (futurePredictedDates.isNotEmpty) {
+      nextDate = futurePredictedDates.first;
+      time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
+      daysUntilNext = nextDate.difference(startOfToday).inDays;
+    } else if (!isTodayPredicted) {
+      // If today is not predicted and no future dates, use the first available predicted date
+      nextDate = predictedDaysWithoutLogs.first;
+      time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
+    }
+
+    return _PredictionInfo(
+      date: nextDate,
+      time: time,
+      todayDate: todayDate,
+      todayTime: todayTime,
+      daysUntilNext: daysUntilNext,
+    );
   }
 }
 
