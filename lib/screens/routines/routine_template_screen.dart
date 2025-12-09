@@ -54,8 +54,10 @@ class RoutineTemplateScreen extends StatefulWidget {
   static const routeName = '/routine_template_screen';
 
   final String id;
+  final ScrollController? scrollController;
 
-  const RoutineTemplateScreen({super.key, required this.id});
+  const RoutineTemplateScreen(
+      {super.key, required this.id, this.scrollController});
 
   @override
   State<RoutineTemplateScreen> createState() => _RoutineTemplateScreenState();
@@ -167,6 +169,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             bottom: false,
             minimum: const EdgeInsets.only(top: 10.0),
             child: SingleChildScrollView(
+              controller: widget.scrollController,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 20,

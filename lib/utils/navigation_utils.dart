@@ -160,7 +160,12 @@ Future<void> navigateToRoutineTemplatePreview(
     initialChildSize: 0.9,
     minChildSize: 0.6,
     maxChildSize: 0.98,
-    child: RoutineTemplateScreen(id: template.id),
+    builder: (context, scrollController) {
+      return RoutineTemplateScreen(
+        id: template.id,
+        scrollController: scrollController,
+      );
+    },
   );
 }
 
