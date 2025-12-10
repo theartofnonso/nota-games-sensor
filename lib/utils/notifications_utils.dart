@@ -14,8 +14,8 @@ const String _postWorkoutChannelDescription =
 const int _defaultPostWorkoutReminderHour = 9;
 const Duration _trainingHistoryWindow = Duration(days: 30);
 const Duration _trainingHistoryFallbackWindow = Duration(days: 365);
-const Duration _calendarHistoryWindow = Duration(days: 14);
-const int _calendarWeekdayThreshold = 2;
+const Duration _calendarHistoryWindow = Duration(days: 30); // 4 weeks for prediction
+const int _calendarWeekdayThreshold = 3; // At least 3 sessions per weekday in the window
 const String _trainingReminderChannelId = 'preferred_training_reminders';
 const String _trainingReminderChannelName = 'Preferred training reminders';
 const String _trainingReminderChannelDescription =
@@ -98,15 +98,18 @@ Set<int> getLikelyTrainingWeekdays(
 }
 
 /// Determine "likely" training weekdays for calendar surfacing.
-/// A weekday qualifies if it has workouts logged on at least two distinct days
-/// within the past [_calendarHistoryWindow] (14 days).
+/// Looks at the last 30 days (4 weeks) and predicts weekdays that have
+/// at least 3 sessions logged within that window.
+/// This captures consistent patterns without requiring strict back-to-back weeks.
 Set<int> _getCalendarLikelyTrainingWeekdays(
     {required List<DateTime> historicDateTimes}) {
   if (historicDateTimes.isEmpty) return {};
 
   final now = DateTime.now();
-  final cutoff = DateTime(now.year, now.month, now.day)
-      .subtract(_calendarHistoryWindow);
+  final today = DateTime(now.year, now.month, now.day);
+  final cutoff = today.subtract(_calendarHistoryWindow);
+
+  // Count sessions per weekday within the last 30 days
   final Map<int, int> weekdayCounts = {};
   final Set<DateTime> seenDates = <DateTime>{};
 
@@ -114,10 +117,12 @@ Set<int> _getCalendarLikelyTrainingWeekdays(
     final normalized = DateTime(date.year, date.month, date.day);
     if (normalized.isBefore(cutoff)) continue;
     if (!seenDates.add(normalized)) continue;
-    weekdayCounts[normalized.weekday] =
-        (weekdayCounts[normalized.weekday] ?? 0) + 1;
+
+    final weekday = normalized.weekday;
+    weekdayCounts[weekday] = (weekdayCounts[weekday] ?? 0) + 1;
   }
 
+  // Return weekdays that have at least 3 sessions in the last 30 days
   return weekdayCounts.entries
       .where((entry) => entry.value >= _calendarWeekdayThreshold)
       .map((entry) => entry.key)
@@ -125,7 +130,7 @@ Set<int> _getCalendarLikelyTrainingWeekdays(
 }
 
 /// Get predicted training dates (calendar only) by projecting weekdays that
-/// have at least two distinct workout days logged within the past two weeks.
+/// have at least 3 sessions logged within the last 30 days (4 weeks).
 /// Includes today if today matches a likely training weekday.
 Set<DateTime> getPredictedTrainingDates({
   required List<DateTime> historicDateTimes,
