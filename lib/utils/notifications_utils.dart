@@ -98,46 +98,40 @@ Set<int> getLikelyTrainingWeekdays(
 }
 
 /// Determine "likely" training weekdays for calendar surfacing.
-/// Looks at the last 30 days (4 weeks) and predicts weekdays that have
-/// at least 3 sessions logged within that window.
-/// This captures consistent patterns without requiring strict back-to-back weeks.
+/// Looks at the last 30 days and predicts weekdays that have at least 3 sessions.
 Set<int> _getCalendarLikelyTrainingWeekdays(
     {required List<DateTime> historicDateTimes}) {
   if (historicDateTimes.isEmpty) return {};
 
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final cutoff = today.subtract(_calendarHistoryWindow);
+  final today = DateTime.now();
+  final todayNormalized = DateTime(today.year, today.month, today.day);
+  final cutoff = todayNormalized.subtract(_calendarHistoryWindow);
 
-  // Count sessions per weekday within the last 30 days
+  // Count distinct dates per weekday within the last 30 days
   final Map<int, int> weekdayCounts = {};
   final Set<DateTime> seenDates = <DateTime>{};
 
   for (final date in historicDateTimes) {
     final normalized = DateTime(date.year, date.month, date.day);
     if (normalized.isBefore(cutoff)) continue;
-    if (!seenDates.add(normalized)) continue;
+    if (!seenDates.add(normalized)) continue; // Count each date only once
 
-    final weekday = normalized.weekday;
-    weekdayCounts[weekday] = (weekdayCounts[weekday] ?? 0) + 1;
+    weekdayCounts[normalized.weekday] = (weekdayCounts[normalized.weekday] ?? 0) + 1;
   }
 
-  // Return weekdays that have at least 3 sessions in the last 30 days
+  // Return weekdays with 3+ sessions
   return weekdayCounts.entries
       .where((entry) => entry.value >= _calendarWeekdayThreshold)
       .map((entry) => entry.key)
       .toSet();
 }
 
-/// Get predicted training dates (calendar only) by projecting weekdays that
-/// have at least 3 sessions logged within the last 30 days (4 weeks).
-/// Includes today if today matches a likely training weekday.
+/// Get predicted training dates by projecting weekdays that have 3+ sessions
+/// in the last 30 days. Includes today if it matches a likely training weekday.
 Set<DateTime> getPredictedTrainingDates({
   required List<DateTime> historicDateTimes,
   int daysAhead = 14,
 }) {
-  // Calendar predictions only consider weekdays with at least two sessions
-  // recorded in the past two weeks to avoid over-highlighting.
   final likelyWeekdays =
       _getCalendarLikelyTrainingWeekdays(historicDateTimes: historicDateTimes);
   if (likelyWeekdays.isEmpty) return {};
@@ -145,7 +139,6 @@ Set<DateTime> getPredictedTrainingDates({
   final today = DateTime.now();
   final predictedDates = <DateTime>{};
 
-  // Include today (i = 0) and next N days
   for (int i = 0; i <= daysAhead; i++) {
     final date = today.add(Duration(days: i));
     final dateNormalized = DateTime(date.year, date.month, date.day);
