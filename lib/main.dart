@@ -282,9 +282,13 @@ final _router = GoRouter(
         final extra = state.extra as Map<String, dynamic>;
         final log = extra["log"] as RoutineLogDto?;
         final isEditable = extra['isEditable'] as bool;
+        final showShareOnLoad = (extra['showShareOnLoad'] as bool?) ?? false;
 
         return CustomTransitionPage(
-            child: RoutineLogScreen(id: log?.id ?? "", isEditable: isEditable),
+            child: RoutineLogScreen(
+                id: log?.id ?? "",
+                isEditable: isEditable,
+                showShareOnLoad: showShareOnLoad),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               const begin = Offset(0.0, 1.0);

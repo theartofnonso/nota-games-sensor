@@ -11,6 +11,7 @@ import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/share/routine_share_service.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
@@ -35,8 +36,14 @@ class RoutineLogScreen extends StatefulWidget {
 
   final String id;
   final bool isEditable;
+  final bool showShareOnLoad;
 
-  const RoutineLogScreen({super.key, required this.id, this.isEditable = true});
+  const RoutineLogScreen({
+    super.key,
+    required this.id,
+    this.isEditable = true,
+    this.showShareOnLoad = false,
+  });
 
   @override
   State<RoutineLogScreen> createState() => _RoutineLogScreenState();
@@ -44,6 +51,9 @@ class RoutineLogScreen extends StatefulWidget {
 
 class _RoutineLogScreenState extends State<RoutineLogScreen> {
   bool _loading = false;
+  bool _hasAutoShared = false;
+  bool _hasWarmedShare = false;
+  final RoutineShareService _shareService = RoutineShareService();
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +92,20 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         loggedExercises(exerciseLogs: log.exerciseLogs);
 
     final updatedLog = log.copyWith(exerciseLogs: completedExerciseLogs);
+
+    if (widget.showShareOnLoad && !_hasAutoShared) {
+      _hasAutoShared = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _shareLog(log: updatedLog),
+      );
+    }
+
+    if (!_hasWarmedShare) {
+      _hasWarmedShare = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _shareService.ensureCached(context: context, log: updatedLog),
+      );
+    }
 
     final numberOfCompletedSets =
         completedExerciseLogs.expand((exerciseLog) => exerciseLog.sets);
@@ -212,6 +236,22 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(FontAwesomeIcons.shareNodes, size: 18),
+              horizontalTitleGap: 6,
+              title: const Text("Share summary"),
+              onTap: () {
+                Navigator.of(context).pop();
+                final controller =
+                    Provider.of<SupabaseExerciseAndRoutineController>(context,
+                        listen: false);
+                final log = controller.logWhereId(id: widget.id);
+                if (log != null) {
+                  _shareLog(log: log);
+                }
+              },
+            ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading:
@@ -475,6 +515,19 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   }
 
   // PBs bottom sheet removed
+
+  Future<void> _shareLog({required RoutineLogDto log}) async {
+    try {
+      await _shareService.shareRoutineLog(context: context, log: log);
+    } catch (_) {
+      if (mounted) {
+        showSnackbar(
+          context: context,
+          message: "Could not share this session. Please try again.",
+        );
+      }
+    }
+  }
 }
 
 class _StatisticsInformation {

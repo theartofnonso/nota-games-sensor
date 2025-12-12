@@ -19,6 +19,7 @@ import '../dtos/viewmodels/past_routine_log_arguments.dart';
 import '../dtos/viewmodels/routine_log_arguments.dart';
 import '../dtos/viewmodels/routine_plan_arguments.dart';
 import '../dtos/viewmodels/routine_template_arguments.dart';
+import '../enums/routine_editor_type_enums.dart';
 import '../screens/editors/past_routine_log_editor_screen.dart';
 import '../screens/editors/routine_template_editor_screen.dart';
 import '../screens/logs/routine_log_screen.dart';
@@ -103,7 +104,11 @@ void navigateToPastRoutineLogEditor(
   if (log != null && context.mounted) {
     navigateWithSlideTransition(
       context: context,
-      child: RoutineLogScreen(id: log.id, isEditable: true),
+      child: RoutineLogScreen(
+        id: log.id,
+        isEditable: true,
+        showShareOnLoad: false,
+      ),
     );
   }
 }
@@ -127,7 +132,11 @@ Future<void> navigateToRoutineLogEditor(
     if (context.mounted) {
       navigateWithSlideTransition(
         context: context,
-        child: RoutineLogScreen(id: log.id, isEditable: true),
+        child: RoutineLogScreen(
+          id: log.id,
+          isEditable: true,
+          showShareOnLoad: arguments.editorMode == RoutineEditorMode.log,
+        ),
       );
     }
   }
@@ -177,10 +186,15 @@ void navigateToRoutinePlanPreview(
 Future<void> navigateToRoutineLogPreview(
     {required BuildContext context,
     required RoutineLogDto log,
-    bool isEditable = true}) {
+    bool isEditable = true,
+    bool showShareOnLoad = false}) {
   return navigateWithSlideTransition(
     context: context,
-    child: RoutineLogScreen(id: log.id, isEditable: isEditable),
+    child: RoutineLogScreen(
+      id: log.id,
+      isEditable: isEditable,
+      showShareOnLoad: showShareOnLoad,
+    ),
   );
 }
 

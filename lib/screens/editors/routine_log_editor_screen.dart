@@ -409,6 +409,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                     child: ReorderableListView.builder(
                                       padding: const EdgeInsets.only(
                                         top: 8,
+                                        bottom: 72,
                                       ),
                                       itemCount: exerciseLogs.length,
                                       onReorder: (oldIndex, newIndex) {
