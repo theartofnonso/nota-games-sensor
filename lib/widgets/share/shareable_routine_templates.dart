@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:trainware/colors.dart';
 import 'package:trainware/dtos/shareable_routine_summary.dart';
 
 /// Primary shareable asset: vertical card with transparent background.
@@ -7,7 +6,7 @@ class ShareableRoutineVerticalCard extends StatelessWidget {
   const ShareableRoutineVerticalCard({
     super.key,
     required this.summary,
-    this.size = const Size(1080, 1350),
+    this.size = const Size(1080, 1080),
   });
 
   final ShareableRoutineSummary summary;
@@ -24,8 +23,9 @@ class ShareableRoutineVerticalCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Header(routineName: summary.routineName),
             const Spacer(),
+            _Header(routineName: summary.routineName),
+            const SizedBox(height: 16),
             _MetricGroup(
               summary: summary,
               layout: Axis.vertical,
@@ -49,24 +49,6 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 10,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: success.withOpacity(0.16),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: success.withOpacity(0.6), width: 1),
-          ),
-          child: const Text(
-            "trackr / session",
-            style: TextStyle(
-              fontFamily: 'Grift',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: textPrimary,
-              letterSpacing: 0.4,
-            ),
-          ),
-        ),
         Text(
           routineName,
           maxLines: 2,
@@ -75,7 +57,7 @@ class _Header extends StatelessWidget {
             fontFamily: 'Grift',
             fontSize: 28,
             fontWeight: FontWeight.w700,
-            color: textPrimary,
+            color: Colors.white,
             height: 1.0,
             letterSpacing: -1.2,
           ),
@@ -106,23 +88,11 @@ class _MetricGroup extends StatelessWidget {
       _Metric(label: "Duration", value: summary.durationLabel),
     ];
 
-    // Render exercises + sets on the same horizontal plane, duration below.
-    final topRow = Row(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: spaced ? 24 : 16,
-      children: children.take(2).toList(),
-    );
-
-    final duration = children.last;
-
-    return Column(
-      crossAxisAlignment: alignment,
-      spacing: spaced ? 20 : 12,
-      children: [
-        topRow,
-        duration,
-      ],
+      children: children,
     );
   }
 }
@@ -144,7 +114,7 @@ class _Metric extends StatelessWidget {
             fontFamily: 'Grift',
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: textSecondary.withOpacity(0.8),
+            color: Colors.white.withOpacity(0.9),
             letterSpacing: 1.6,
           ),
         ),
@@ -155,7 +125,7 @@ class _Metric extends StatelessWidget {
             fontFamily: 'Grift',
             fontSize: 26,
             fontWeight: FontWeight.w700,
-            color: textPrimary,
+            color: Colors.white,
             letterSpacing: -0.6,
           ),
         ),

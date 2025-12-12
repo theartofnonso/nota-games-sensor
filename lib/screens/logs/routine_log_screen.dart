@@ -52,7 +52,6 @@ class RoutineLogScreen extends StatefulWidget {
 class _RoutineLogScreenState extends State<RoutineLogScreen> {
   bool _loading = false;
   bool _hasAutoShared = false;
-  bool _hasWarmedShare = false;
   final RoutineShareService _shareService = RoutineShareService();
 
   @override
@@ -97,13 +96,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       _hasAutoShared = true;
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _shareLog(log: updatedLog),
-      );
-    }
-
-    if (!_hasWarmedShare) {
-      _hasWarmedShare = true;
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _shareService.ensureCached(context: context, log: updatedLog),
       );
     }
 

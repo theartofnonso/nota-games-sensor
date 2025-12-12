@@ -26,17 +26,15 @@ class ShareableRoutineRenderer {
   }) async {
     final repaintKey = GlobalKey();
     final overlayState = Overlay.of(context, rootOverlay: true);
+    if (overlayState == null) {
+      throw StateError('Overlay is not available for rendering share assets.');
+    }
 
     final entry = OverlayEntry(
-      builder: (_) => Positioned.fill(
-        child: Material(
-          type: MaterialType.transparency,
-          child: Center(
-            child: RepaintBoundary(
-              key: repaintKey,
-              child: widget,
-            ),
-          ),
+      builder: (_) => Center(
+        child: RepaintBoundary(
+          key: repaintKey,
+          child: widget,
         ),
       ),
     );
