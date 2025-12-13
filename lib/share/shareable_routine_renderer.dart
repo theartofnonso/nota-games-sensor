@@ -16,12 +16,13 @@ class ShareableRoutineRenderer {
     required BuildContext context,
     required ShareableRoutineSummary summary,
   }) {
+    const double exportSize = 1080;
     final widget = Center(
-      child: SizedBox(
-        width: 420,
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: ShareableRoutineVerticalCard(summary: summary),
+      child: SizedBox.square(
+        dimension: exportSize,
+        child: ShareableRoutineVerticalCard(
+          summary: summary,
+          size: const Size(exportSize, exportSize),
         ),
       ),
     );
