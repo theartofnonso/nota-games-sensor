@@ -9,6 +9,7 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
   final TextStyle? textStyle;
   final VisualDensity? visualDensity;
   final bool showArrowRight;
+  final bool solidBackground;
 
   const OpacityButtonWidgetTwo({
     super.key,
@@ -19,13 +20,19 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
     this.textStyle,
     this.visualDensity = VisualDensity.compact,
     this.showArrowRight = true,
+    this.solidBackground = false,
   });
 
-  Color? _themeForegroundColor({required bool isDarkMode}) {
-    return isDarkMode ? buttonColor : Colors.black;
+  Color _themeForegroundColor({required bool isDarkMode}) {
+    if (solidBackground && buttonColor != null) {
+      final brightness = ThemeData.estimateBrightnessForColor(buttonColor!);
+      return brightness == Brightness.dark ? Colors.white : Colors.black;
+    }
+    return isDarkMode ? (buttonColor ?? Colors.white) : Colors.black;
   }
 
   Color? _themeBackgroundColor({required bool isDarkMode}) {
+    if (solidBackground && buttonColor != null) return buttonColor;
     return isDarkMode ? buttonColor?.withValues(alpha: 0.15) : buttonColor;
   }
 

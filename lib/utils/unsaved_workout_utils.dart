@@ -172,13 +172,16 @@ class _UnsavedWorkoutBottomSheetContentState
             ),
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: OpacityButtonWidgetTwo(
-              label: 'Resume workout',
-              buttonColor: theme.colors.vibrantAccent,
-              showArrowRight: false,
-              onPressed: widget.onResume,
+          Center(
+            child: SizedBox(
+              width: 240,
+              child: OpacityButtonWidgetTwo(
+                label: 'Resume workout',
+                buttonColor: theme.colors.vibrantAccent,
+                solidBackground: true,
+                showArrowRight: false,
+                onPressed: widget.onResume,
+              ),
             ),
           ),
         ],

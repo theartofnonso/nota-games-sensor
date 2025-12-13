@@ -12,6 +12,10 @@ import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/share/routine_share_service.dart';
+import 'package:trainware/dtos/shareable_routine_summary.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
+import 'package:trainware/widgets/share/shareable_routine_templates.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
@@ -233,16 +237,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               leading: const FaIcon(FontAwesomeIcons.shareNodes, size: 18),
               horizontalTitleGap: 6,
               title: const Text("Share summary"),
-              onTap: () {
-                Navigator.of(context).pop();
-                final controller =
-                    Provider.of<SupabaseExerciseAndRoutineController>(context,
-                        listen: false);
-                final log = controller.logWhereId(id: widget.id);
-                if (log != null) {
-                  _shareLog(log: log);
-                }
-              },
+              onTap: () => _showSharePreview(),
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -519,6 +514,68 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         );
       }
     }
+  }
+
+  void _showSharePreview() {
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final log = controller.logWhereId(id: widget.id);
+    if (log == null) return;
+
+    final summary = ShareableRoutineSummary.fromRoutineLog(log);
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useBlurredTransparentBackground: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Share preview",
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: ShareableRoutineVerticalCard(summary: summary),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: SizedBox(
+                width: 240,
+                child: OpacityButtonWidgetTwo(
+                  solidBackground: true,
+                  buttonColor: Theme.of(context).colors.vibrantAccent,
+                  showArrowRight: false,
+                  label: "Share",
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _shareLog(log: log);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

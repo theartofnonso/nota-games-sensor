@@ -207,6 +207,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     showAppBottomSheet(
       context: context,
       isScrollControlled: false,
+      useBlurredTransparentBackground: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(
@@ -532,6 +533,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     await showAppBottomSheet(
       context: context,
       isScrollControlled: false,
+      useBlurredTransparentBackground: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(

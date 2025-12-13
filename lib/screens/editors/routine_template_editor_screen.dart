@@ -412,6 +412,7 @@ class _RoutineTemplateEditorScreenState
     showAppBottomSheet(
         context: context,
         isScrollControlled: false,
+        useBlurredTransparentBackground: false,
         child: WeightPlateCalculator(
             target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0));
   }

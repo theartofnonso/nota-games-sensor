@@ -16,7 +16,15 @@ class ShareableRoutineRenderer {
     required BuildContext context,
     required ShareableRoutineSummary summary,
   }) {
-    final widget = ShareableRoutineVerticalCard(summary: summary);
+    final widget = Center(
+      child: SizedBox(
+        width: 420,
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: ShareableRoutineVerticalCard(summary: summary),
+        ),
+      ),
+    );
     return _renderWidgetToImage(context: context, widget: widget);
   }
 
@@ -26,9 +34,6 @@ class ShareableRoutineRenderer {
   }) async {
     final repaintKey = GlobalKey();
     final overlayState = Overlay.of(context, rootOverlay: true);
-    if (overlayState == null) {
-      throw StateError('Overlay is not available for rendering share assets.');
-    }
 
     final entry = OverlayEntry(
       builder: (_) => Center(
