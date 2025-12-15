@@ -155,6 +155,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           }()
         : template.exerciseTemplates;
 
+    final totalSets = template.exerciseTemplates
+        .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
+
     return Scaffold(
         floatingActionButton: FloatingActionButton(
             heroTag: UniqueKey,
@@ -226,11 +229,26 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             ),
                           ],
                         ),
-                        ChipOne(
-                            label:
-                                "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
-                            child: CustomIcon(FontAwesomeIcons.personWalking,
-                                color: Theme.of(context).colors.vibrantAccent)),
+                        Row(
+                          spacing: 8,
+                          children: [
+                            ChipOne(
+                                label:
+                                    "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
+                                child: CustomIcon(
+                                    FontAwesomeIcons.personWalking,
+                                    color: Theme.of(context)
+                                        .colors
+                                        .vibrantAccent)),
+                            ChipOne(
+                                label:
+                                    "$totalSets ${pluralize(word: "Set", count: totalSets)}",
+                                child: CustomIcon(FontAwesomeIcons.hashtag,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .secondary)),
+                          ],
+                        ),
                         Calendar(
                           onSelectDate: (date) => _showLogsForDate(
                               context, date, allLogsForTemplate),
