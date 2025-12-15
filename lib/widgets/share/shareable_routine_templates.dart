@@ -6,42 +6,150 @@ class ShareableRoutineVerticalCard extends StatelessWidget {
   const ShareableRoutineVerticalCard({
     super.key,
     required this.summary,
-    this.size = const Size(1080, 1080),
+    this.size,
   });
 
   final ShareableRoutineSummary summary;
-  final Size size;
+  final Size? size;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size.width,
-      height: size.height,
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Spacer(),
-            _Header(routineName: summary.routineName),
-            const SizedBox(height: 16),
-            _MetricGroup(
-              summary: summary,
-              layout: Axis.vertical,
-              alignment: CrossAxisAlignment.start,
-            ),
-          ],
-        ),
+    final content = Container(
+      color: Colors.transparent,
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Header(routineName: summary.routineName),
+          const SizedBox(height: 16),
+          _MetricGroup(
+            summary: summary,
+            layout: Axis.vertical,
+            alignment: CrossAxisAlignment.start,
+          ),
+        ],
       ),
+    );
+
+    if (size == null) return content;
+
+    return SizedBox(
+      width: size!.width,
+      height: size!.height,
+      child: content,
+    );
+  }
+}
+
+/// Alternate shareable asset: duration on its own line beneath metrics.
+class ShareableRoutineVerticalCardDurationSplit extends StatelessWidget {
+  const ShareableRoutineVerticalCardDurationSplit({
+    super.key,
+    required this.summary,
+    this.size,
+  });
+
+  final ShareableRoutineSummary summary;
+  final Size? size;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      color: Colors.transparent,
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Header(routineName: summary.routineName),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 16,
+            children: [
+              _Metric(label: "Exercises", value: "${summary.exerciseCount}"),
+              _Metric(label: "Sets", value: "${summary.setCount}"),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _Metric(label: "Duration", value: summary.durationLabel),
+        ],
+      ),
+    );
+
+    if (size == null) return content;
+
+    return SizedBox(
+      width: size!.width,
+      height: size!.height,
+      child: content,
+    );
+  }
+}
+
+/// Centered variant: duration on its own line, all content centered.
+class ShareableRoutineVerticalCardDurationSplitCentered
+    extends StatelessWidget {
+  const ShareableRoutineVerticalCardDurationSplitCentered({
+    super.key,
+    required this.summary,
+    this.size,
+  });
+
+  final ShareableRoutineSummary summary;
+  final Size? size;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      color: Colors.transparent,
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _Header(
+            routineName: summary.routineName,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          _Metric(
+            label: "Duration",
+            value: summary.durationLabel,
+            textAlign: TextAlign.center,
+            crossAxis: CrossAxisAlignment.center,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 16,
+            children: [
+              _Metric(label: "Exercises", value: "${summary.exerciseCount}"),
+              _Metric(label: "Sets", value: "${summary.setCount}"),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (size == null) return content;
+
+    return SizedBox(
+      width: size!.width,
+      height: size!.height,
+      child: content,
     );
   }
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.routineName});
+  const _Header({required this.routineName, this.textAlign});
 
   final String routineName;
+  final TextAlign? textAlign;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +161,7 @@ class _Header extends StatelessWidget {
           routineName,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
+          textAlign: textAlign,
           style: const TextStyle(
             fontFamily: 'Grift',
             fontSize: 28,
@@ -97,15 +206,22 @@ class _MetricGroup extends StatelessWidget {
 }
 
 class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
+  const _Metric({
+    required this.label,
+    required this.value,
+    this.textAlign,
+    this.crossAxis,
+  });
 
   final String label;
   final String value;
+  final TextAlign? textAlign;
+  final CrossAxisAlignment? crossAxis;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: crossAxis ?? CrossAxisAlignment.start,
       children: [
         Text(
           label.toUpperCase(),
@@ -121,6 +237,7 @@ class _Metric extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           value,
+          textAlign: textAlign,
           style: const TextStyle(
             fontFamily: 'Grift',
             fontSize: 26,

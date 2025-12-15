@@ -23,10 +23,11 @@ class RoutineShareService {
   Future<void> shareRoutineLog({
     required BuildContext context,
     required RoutineLogDto log,
+    ShareVariant variant = ShareVariant.standard,
   }) async {
     final summary = ShareableRoutineSummary.fromRoutineLog(log);
-    final file =
-        await ensureCached(context: context, log: log, summary: summary);
+    final file = await ensureCached(
+        context: context, log: log, summary: summary, variant: variant);
 
     await Share.shareXFiles(
       [file],
@@ -38,8 +39,9 @@ class RoutineShareService {
     required BuildContext context,
     required RoutineLogDto log,
     ShareableRoutineSummary? summary,
+    ShareVariant variant = ShareVariant.standard,
   }) async {
-    final key = _cacheKey(log);
+    final key = "${_cacheKey(log)}-${variant.name}";
     final cached = _cache[key];
     if (cached != null) return cached;
 
@@ -47,8 +49,8 @@ class RoutineShareService {
     _cache.removeWhere((k, _) => k.startsWith("${log.id}-"));
 
     final summaryToUse = summary ?? ShareableRoutineSummary.fromRoutineLog(log);
-    final imageBytes =
-        await renderer.renderPrimary(context: context, summary: summaryToUse);
+    final imageBytes = await renderer.renderPrimary(
+        context: context, summary: summaryToUse, variant: variant);
 
     final file = await _persistImage(
       imageBytes: imageBytes,

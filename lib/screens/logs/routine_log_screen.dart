@@ -12,6 +12,7 @@ import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/share/routine_share_service.dart';
+import 'package:trainware/share/shareable_routine_renderer.dart';
 import 'package:trainware/dtos/shareable_routine_summary.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 import 'package:trainware/widgets/share/shareable_routine_templates.dart';
@@ -503,9 +504,12 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   // PBs bottom sheet removed
 
-  Future<void> _shareLog({required RoutineLogDto log}) async {
+  Future<void> _shareLog(
+      {required RoutineLogDto log,
+      ShareVariant variant = ShareVariant.standard}) async {
     try {
-      await _shareService.shareRoutineLog(context: context, log: log);
+      await _shareService.shareRoutineLog(
+          context: context, log: log, variant: variant);
     } catch (_) {
       if (mounted) {
         showSnackbar(
@@ -524,6 +528,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     if (log == null) return;
 
     final summary = ShareableRoutineSummary.fromRoutineLog(log);
+    final pageController = PageController();
+    int selectedVariant = 0;
 
     showAppBottomSheet(
       context: context,
@@ -531,48 +537,89 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       useBlurredTransparentBackground: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "Share preview",
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: ShareableRoutineVerticalCard(summary: summary),
+        child: StatefulBuilder(
+          builder: (context, setModalState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Share preview",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: PageView(
+                          controller: pageController,
+                          onPageChanged: (index) {
+                            setModalState(() {
+                              selectedVariant = index;
+                            });
+                          },
+                          children: [
+                            ShareableRoutineVerticalCard(summary: summary),
+                            ShareableRoutineVerticalCardDurationSplit(
+                                summary: summary),
+                            ShareableRoutineVerticalCardDurationSplitCentered(
+                                summary: summary),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: SizedBox(
-                width: 240,
-                child: OpacityButtonWidgetTwo(
-                  solidBackground: true,
-                  buttonColor: Theme.of(context).colors.vibrantAccent,
-                  showArrowRight: false,
-                  label: "Share",
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _shareLog(log: log);
-                  },
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: 8,
+                  children: List.generate(
+                    3,
+                    (index) => Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: index == selectedVariant
+                            ? Theme.of(context).colors.vibrantAccent
+                            : Colors.white.withOpacity(0.3),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+                const SizedBox(height: 20),
+                Center(
+                  child: SizedBox(
+                    width: 240,
+                    child: OpacityButtonWidgetTwo(
+                      solidBackground: true,
+                      buttonColor: Theme.of(context).colors.vibrantAccent,
+                      showArrowRight: false,
+                      label: "Share",
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        final variant = switch (selectedVariant) {
+                          0 => ShareVariant.standard,
+                          1 => ShareVariant.durationSplit,
+                          _ => ShareVariant.durationSplitCentered,
+                        };
+                        _shareLog(log: log, variant: variant);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

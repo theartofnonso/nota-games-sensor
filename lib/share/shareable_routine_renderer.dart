@@ -7,6 +7,8 @@ import 'package:flutter/rendering.dart';
 import 'package:trainware/dtos/shareable_routine_summary.dart';
 import 'package:trainware/widgets/share/shareable_routine_templates.dart';
 
+enum ShareVariant { standard, durationSplit, durationSplitCentered }
+
 class ShareableRoutineRenderer {
   ShareableRoutineRenderer({this.pixelRatio = 3.0});
 
@@ -15,16 +17,19 @@ class ShareableRoutineRenderer {
   Future<Uint8List> renderPrimary({
     required BuildContext context,
     required ShareableRoutineSummary summary,
+    ShareVariant variant = ShareVariant.standard,
   }) {
-    const double exportSize = 1080;
-    final widget = Center(
-      child: SizedBox.square(
-        dimension: exportSize,
-        child: ShareableRoutineVerticalCard(
-          summary: summary,
-          size: const Size(exportSize, exportSize),
-        ),
-      ),
+    final widget = UnconstrainedBox(
+      clipBehavior: Clip.none,
+      child: switch (variant) {
+        ShareVariant.standard =>
+          ShareableRoutineVerticalCard(summary: summary),
+        ShareVariant.durationSplit =>
+          ShareableRoutineVerticalCardDurationSplit(summary: summary),
+        ShareVariant.durationSplitCentered =>
+          ShareableRoutineVerticalCardDurationSplitCentered(
+              summary: summary),
+      },
     );
     return _renderWidgetToImage(context: context, widget: widget);
   }
