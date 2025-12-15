@@ -90,7 +90,8 @@ class _EmptyState extends StatelessWidget {
               child: OpacityButtonWidgetTwo(
                   onPressed: onPressed,
                   label: "Create a workout plan",
-                  buttonColor: vibrantGreen))
+                  buttonColor: vibrantGreen,
+                  solidBackground: true))
         ],
       ),
     );

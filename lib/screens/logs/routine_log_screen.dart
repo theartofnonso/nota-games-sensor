@@ -234,7 +234,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.shareNodes, size: 18),
+              leading: const FaIcon(FontAwesomeIcons.share, size: 18),
               horizontalTitleGap: 6,
               title: const Text("Share summary"),
               onTap: () => _showSharePreview(),
@@ -363,7 +363,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       context: context,
       isScrollControlled: false,
       child: Padding(
-        padding: const EdgeInsets.all(26),
+        padding: const EdgeInsets.fromLTRB(26, 26, 26, 0),
         child: PlanPicker(
           title: "Save as workout into...",
           plans: plans,

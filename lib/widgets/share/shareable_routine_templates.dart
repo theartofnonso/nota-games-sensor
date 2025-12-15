@@ -78,7 +78,6 @@ class _MetricGroup extends StatelessWidget {
   final ShareableRoutineSummary summary;
   final Axis layout;
   final CrossAxisAlignment alignment;
-  final bool spaced;
 
   @override
   Widget build(BuildContext context) {
@@ -90,8 +89,8 @@ class _MetricGroup extends StatelessWidget {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: spaced ? 24 : 16,
+      crossAxisAlignment: alignment,
+      spacing: 16,
       children: children,
     );
   }
