@@ -25,8 +25,9 @@ class RoutineShareService {
     required RoutineLogDto log,
     ShareVariant variant = ShareVariant.standard,
   }) async {
+    // Only generate the summary image when user actually shares, not pre-generate
     final summary = ShareableRoutineSummary.fromRoutineLog(log);
-    final file = await ensureCached(
+    final file = await _generateSummaryImage(
         context: context, log: log, summary: summary, variant: variant);
 
     await Share.shareXFiles(
@@ -35,7 +36,7 @@ class RoutineShareService {
     );
   }
 
-  Future<XFile> ensureCached({
+  Future<XFile> _generateSummaryImage({
     required BuildContext context,
     required RoutineLogDto log,
     ShareableRoutineSummary? summary,
@@ -59,6 +60,19 @@ class RoutineShareService {
 
     _cache[key] = file;
     return file;
+  }
+
+  // Deprecated: Use shareRoutineLog directly instead of pre-generating
+  @Deprecated('Summary images are now only generated when user shares')
+  Future<XFile> ensureCached({
+    required BuildContext context,
+    required RoutineLogDto log,
+    ShareableRoutineSummary? summary,
+    ShareVariant variant = ShareVariant.standard,
+  }) async {
+    // Delegate to _generateSummaryImage but mark as deprecated
+    return _generateSummaryImage(
+        context: context, log: log, summary: summary, variant: variant);
   }
 
   Future<XFile> _persistImage({

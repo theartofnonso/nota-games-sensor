@@ -56,7 +56,6 @@ class RoutineLogScreen extends StatefulWidget {
 
 class _RoutineLogScreenState extends State<RoutineLogScreen> {
   bool _loading = false;
-  bool _hasAutoShared = false;
   final RoutineShareService _shareService = RoutineShareService();
 
   @override
@@ -97,12 +96,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     final updatedLog = log.copyWith(exerciseLogs: completedExerciseLogs);
 
-    if (widget.showShareOnLoad && !_hasAutoShared) {
-      _hasAutoShared = true;
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _shareLog(log: updatedLog),
-      );
-    }
+    // Auto-share on load disabled
 
     final numberOfCompletedSets =
         completedExerciseLogs.expand((exerciseLog) => exerciseLog.sets);
