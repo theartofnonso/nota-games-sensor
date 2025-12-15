@@ -73,7 +73,6 @@ class _MetricGroup extends StatelessWidget {
     required this.summary,
     required this.layout,
     required this.alignment,
-    this.spaced = false,
   });
 
   final ShareableRoutineSummary summary;
