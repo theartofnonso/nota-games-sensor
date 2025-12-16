@@ -1,7 +1,9 @@
 String capitalizeFirstLetter({required String text}) {
   return text
       .split(' ')
-      .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : word)
+      .map((word) => word.isNotEmpty
+          ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+          : word)
       .join(' ');
 }
 
@@ -9,7 +11,8 @@ String capitalizeWords({required String text}) {
   List<String> words = text.split(' ');
   for (int i = 0; i < words.length; i++) {
     if (words[i].isNotEmpty) {
-      words[i] = words[i][0].toUpperCase() + words[i].substring(1).toLowerCase();
+      words[i] =
+          words[i][0].toUpperCase() + words[i].substring(1).toLowerCase();
     }
   }
   return words.join(' ');
@@ -78,7 +81,5 @@ String substringByLength({required String text, required int length}) {
   }
 
   // Return the substring up to length if text is longer, else return text
-  return text.length > length
-      ? text.substring(0, length)
-      : text;
+  return text.length > length ? text.substring(0, length) : text;
 }

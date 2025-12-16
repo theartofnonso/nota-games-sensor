@@ -7,6 +7,7 @@ import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/notifications_utils.dart';
+import 'package:trainware/utils/string_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
 /// Infinite scrollable calendar with continuous date flow
@@ -81,30 +82,63 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
   void _updateVisibleMonth(double scrollOffset) {
     if (widget.onMonthChanged == null) return;
 
-    // Mirror the same date range logic used by _ContinuousCalendarGrid.
     final today = DateTime.now();
     final startDate = DateTime(today.year - 1, today.month, today.day);
-    final firstMonday = _findPreviousMonday(startDate);
+    final endDate = DateTime(today.year, 12, 31);
 
-    // Use the same approximate row height as in _scrollToCurrentDate.
-    const approximateRowHeight = 60.0;
-    if (approximateRowHeight <= 0) return;
+    // Group dates by month (same logic as _ContinuousCalendarGrid)
+    final months = <DateTime>[];
+    var currentDate = startDate;
+    while (currentDate.isBefore(endDate) ||
+        currentDate.isAtSameMomentAs(endDate)) {
+      final monthKey = DateTime(currentDate.year, currentDate.month);
+      if (months.isEmpty ||
+          months.last.year != monthKey.year ||
+          months.last.month != monthKey.month) {
+        months.add(monthKey);
+      }
+      currentDate = currentDate.add(const Duration(days: 1));
+    }
 
-    // Calculate today's row index for comparison
-    final daysToToday = today.difference(firstMonday).inDays;
-    final todayRowIndex = daysToToday ~/ 7;
-    final todayScrollOffset = todayRowIndex * approximateRowHeight;
+    // Find which month is currently visible based on scroll offset
+    double accumulatedHeight = 8.0; // ListView top padding
+    DateTime? visibleMonthStart;
 
-    // Estimate which row is currently at the top of the viewport.
-    final rawRowIndex = (scrollOffset / approximateRowHeight).floor();
-    final rowIndex = rawRowIndex < 0 ? 0 : rawRowIndex;
+    for (int i = 0; i < months.length; i++) {
+      final month = months[i];
+      final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+      final firstDayOfMonth = DateTime(month.year, month.month, 1);
+      final firstMonday = _findPreviousMonday(firstDayOfMonth);
+      final leadingEmptyCells = firstDayOfMonth.difference(firstMonday).inDays;
+      final daysInWeek = (daysInMonth + leadingEmptyCells) % 7;
+      final trailingEmptyCells = daysInWeek == 0 ? 0 : 7 - daysInWeek;
+      final totalCells = leadingEmptyCells + daysInMonth + trailingEmptyCells;
+      final rows = (totalCells / 7).ceil();
 
-    // If we're at or near today's position, use today's month directly
-    final isNearToday =
-        (scrollOffset - todayScrollOffset).abs() < approximateRowHeight;
-    final visibleMonthStart = isNearToday
-        ? DateTime(today.year, today.month)
-        : _calculateMonthFromRow(rowIndex, firstMonday);
+      const containerPadding = 20.0 + 12.0;
+      const headerHeight = 50.0;
+      const headerSpacing = 16.0;
+      const gridRowHeight = 60.0;
+      const monthBottomPadding = 24.0;
+
+      final monthHeight = containerPadding +
+          headerHeight +
+          headerSpacing +
+          (rows * gridRowHeight) +
+          monthBottomPadding;
+
+      // Check if scroll offset is within this month's range
+      if (scrollOffset >= accumulatedHeight &&
+          scrollOffset < accumulatedHeight + monthHeight) {
+        visibleMonthStart = month;
+        break;
+      }
+
+      accumulatedHeight += monthHeight;
+    }
+
+    // Fallback to today's month if we couldn't determine
+    visibleMonthStart ??= DateTime(today.year, today.month);
 
     if (_lastReportedMonthStart == null ||
         _lastReportedMonthStart!.year != visibleMonthStart.year ||
@@ -112,15 +146,6 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
       _lastReportedMonthStart = visibleMonthStart;
       widget.onMonthChanged?.call(visibleMonthStart);
     }
-  }
-
-  DateTime _calculateMonthFromRow(int rowIndex, DateTime firstMonday) {
-    // Each row represents a full week (7 days).
-    // Use the middle of the viewport to determine the visible month
-    // This handles cases where a week spans two months (e.g., week starting Nov 25 includes Dec 1)
-    final viewportCenterDays = rowIndex * 7 + 3; // Middle of the week (day 3-4)
-    final centerDate = firstMonday.add(Duration(days: viewportCenterDays));
-    return DateTime(centerDate.year, centerDate.month);
   }
 
   @override
@@ -134,36 +159,88 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
 
     final today = DateTime.now();
     final startDate = DateTime(today.year - 1, today.month, today.day);
-    final firstMonday = _findPreviousMonday(startDate);
+    final endDate = DateTime(today.year, 12, 31);
 
-    // Calculate days from first Monday to today
-    final daysToToday = today.difference(firstMonday).inDays;
+    // Group dates by month to find the index of today's month
+    final months = <DateTime>[];
+    var currentDate = startDate;
+    while (currentDate.isBefore(endDate) ||
+        currentDate.isAtSameMomentAs(endDate)) {
+      final monthKey = DateTime(currentDate.year, currentDate.month);
+      if (months.isEmpty ||
+          months.last.year != monthKey.year ||
+          months.last.month != monthKey.month) {
+        months.add(monthKey);
+      }
+      currentDate = currentDate.add(const Duration(days: 1));
+    }
 
-    // Calculate which row today is in
-    final rowIndex = daysToToday ~/ 7;
+    // Find the index of the month containing today
+    final todayMonth = DateTime(today.year, today.month);
+    final monthIndex = months.indexWhere((month) =>
+        month.year == todayMonth.year && month.month == todayMonth.month);
 
-    // Calculate scroll offset (approximate row height)
-    // childAspectRatio = 0.9, mainAxisSpacing = 8
-    // We'll use an approximate row height
-    final approximateRowHeight = 60.0;
-    final scrollOffset = rowIndex * approximateRowHeight;
+    if (monthIndex == -1) return;
 
-    // Ensure we don't exceed max scroll extent
-    final maxExtent = _scrollController.position.maxScrollExtent;
-    final targetOffset = scrollOffset.clamp(0.0, maxExtent);
+    // Wait for the ListView to build and measure items
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
 
-    // Save today's scroll position for comparison
-    _todayScrollOffset = targetOffset;
+      // Calculate accumulated height up to the target month
+      // Each month section includes:
+      // - ListView padding: 8px top (only for first item)
+      // - Container padding: 20px top + 12px bottom = 32px
+      // - Month header: ~50px (with padding)
+      // - Header spacing: 16px
+      // - Grid height: rows * ~60px per row (childAspectRatio 0.9, mainAxisSpacing 8)
+      // - Month bottom padding: 24px
 
-    // Ensure the initial visible month overlay matches where we scrolled.
-    _updateVisibleMonth(targetOffset);
+      double accumulatedHeight = 8.0; // ListView top padding
 
-    // Animate to position for smoother scrolling
-    _scrollController.animateTo(
-      targetOffset,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+      for (int i = 0; i < monthIndex; i++) {
+        final month = months[i];
+        final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+        final firstDayOfMonth = DateTime(month.year, month.month, 1);
+        final firstMonday = _findPreviousMonday(firstDayOfMonth);
+        final leadingEmptyCells =
+            firstDayOfMonth.difference(firstMonday).inDays;
+        final daysInWeek = (daysInMonth + leadingEmptyCells) % 7;
+        final trailingEmptyCells = daysInWeek == 0 ? 0 : 7 - daysInWeek;
+        final totalCells = leadingEmptyCells + daysInMonth + trailingEmptyCells;
+        final rows = (totalCells / 7).ceil();
+
+        // Month section height calculation
+        const containerPadding = 20.0 + 12.0; // top + bottom
+        const headerHeight = 50.0;
+        const headerSpacing = 16.0;
+        const gridRowHeight = 60.0; // approximate based on childAspectRatio 0.9
+        const monthBottomPadding = 24.0;
+
+        final monthHeight = containerPadding +
+            headerHeight +
+            headerSpacing +
+            (rows * gridRowHeight) +
+            monthBottomPadding;
+        accumulatedHeight += monthHeight;
+      }
+
+      // Ensure we don't exceed max scroll extent
+      final maxExtent = _scrollController.position.maxScrollExtent;
+      final targetOffset = accumulatedHeight.clamp(0.0, maxExtent);
+
+      // Save today's scroll position for comparison
+      _todayScrollOffset = targetOffset;
+
+      // Ensure the initial visible month overlay matches where we scrolled.
+      _updateVisibleMonth(targetOffset);
+
+      // Animate to position for smoother scrolling
+      _scrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   DateTime _findPreviousMonday(DateTime date) {
@@ -182,7 +259,6 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _DaysOfWeekHeader(),
               Expanded(
                 child: Consumer<SupabaseExerciseAndRoutineController>(
                   builder: (context, controller, _) {
@@ -284,35 +360,6 @@ class _InfiniteCalendarState extends State<InfiniteCalendar> {
   }
 }
 
-class _DaysOfWeekHeader extends StatelessWidget {
-  const _DaysOfWeekHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: days
-            .map((day) => Expanded(
-                  child: Center(
-                    child: Text(
-                      day.toLowerCase(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w300,
-                            fontSize: 16,
-                          ),
-                    ),
-                  ),
-                ))
-            .toList(),
-      ),
-    );
-  }
-}
-
 class _ContinuousCalendarGrid extends StatelessWidget {
   final ScrollController scrollController;
   final DateTime selectedDate;
@@ -334,51 +381,171 @@ class _ContinuousCalendarGrid extends StatelessWidget {
     final today = DateTime.now();
     final startDate = DateTime(today.year - 1, today.month, today.day);
     final endDate = DateTime(today.year, 12, 31); // End of current year
-    final totalDays = endDate.difference(startDate).inDays + 1;
 
-    final firstMonday = _findPreviousMonday(startDate);
-    final leadingEmptyCells = startDate.difference(firstMonday).inDays;
-    final totalCells = leadingEmptyCells + totalDays;
+    // Group dates by month
+    final months = <DateTime, List<DateTime>>{};
+    var currentDate = startDate;
+    while (currentDate.isBefore(endDate) ||
+        currentDate.isAtSameMomentAs(endDate)) {
+      final monthKey = DateTime(currentDate.year, currentDate.month);
+      months.putIfAbsent(monthKey, () => []).add(currentDate);
+      currentDate = currentDate.add(const Duration(days: 1));
+    }
 
     return ScrollConfiguration(
       behavior: ScrollConfiguration.of(context).copyWith(
         overscroll: false,
       ),
-      child: GridView.builder(
+      child: ListView.builder(
         controller: scrollController,
-        padding: EdgeInsets.zero,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 7,
-          childAspectRatio: 0.9,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 4,
-        ),
-        itemCount: totalCells,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        itemCount: months.length,
         itemBuilder: (context, index) {
-          final cellDate = firstMonday.add(Duration(days: index));
-          if (cellDate.isBefore(startDate) || cellDate.isAfter(endDate)) {
-            return const SizedBox();
-          }
+          final monthEntry = months.entries.elementAt(index);
+          final monthStart = monthEntry.key;
+          final daysInMonth = monthEntry.value;
 
-          final hasLog =
-              logs.any((log) => log.startTime.isSameDayMonthYear(cellDate));
-          final cellDateNormalized =
-              DateTime(cellDate.year, cellDate.month, cellDate.day);
-          final isPredicted = predictedDates.contains(cellDateNormalized);
-          final isSelected = cellDate.isSameDayMonthYear(selectedDate);
-          final isToday = cellDate.isSameDayMonthYear(DateTime.now());
-          final isFirstOfMonth = cellDate.day == 1;
-
-          return _DateCell(
-            date: cellDate,
-            hasLog: hasLog,
-            isPredicted: isPredicted,
-            isSelected: isSelected,
-            isToday: isToday,
-            showMonthLabel: isFirstOfMonth,
-            onTap: () => onDateTap(cellDate),
+          return _MonthSection(
+            monthStart: monthStart,
+            daysInMonth: daysInMonth,
+            selectedDate: selectedDate,
+            logs: logs,
+            predictedDates: predictedDates,
+            onDateTap: onDateTap,
           );
         },
+      ),
+    );
+  }
+}
+
+class _MonthSection extends StatelessWidget {
+  final DateTime monthStart;
+  final List<DateTime> daysInMonth;
+  final DateTime selectedDate;
+  final List<RoutineLogDto> logs;
+  final Set<DateTime> predictedDates;
+  final void Function(DateTime date) onDateTap;
+
+  const _MonthSection({
+    required this.monthStart,
+    required this.daysInMonth,
+    required this.selectedDate,
+    required this.logs,
+    required this.predictedDates,
+    required this.onDateTap,
+  });
+
+  int _getMonthSessionCount() {
+    return logs.where((log) {
+      final dt = log.startTime;
+      return dt.year == monthStart.year && dt.month == monthStart.month;
+    }).length;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Find the first Monday of the month (or before if month doesn't start on Monday)
+    final firstDayOfMonth = DateTime(monthStart.year, monthStart.month, 1);
+    final firstMonday = _findPreviousMonday(firstDayOfMonth);
+
+    // Calculate leading empty cells
+    final leadingEmptyCells = firstDayOfMonth.difference(firstMonday).inDays;
+
+    // Get last day of month
+    final lastDayOfMonth = DateTime(monthStart.year, monthStart.month + 1, 0);
+    final daysInWeek = (lastDayOfMonth.day + leadingEmptyCells) % 7;
+    final trailingEmptyCells = daysInWeek == 0 ? 0 : 7 - daysInWeek;
+    final totalCells =
+        leadingEmptyCells + daysInMonth.length + trailingEmptyCells;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.2),
+            width: 0.5,
+          ),
+          borderRadius: BorderRadius.circular(36),
+        ),
+        padding: const EdgeInsets.fromLTRB(15, 20, 12, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Month and year label inside container with session count
+            Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 0.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      DateFormat('MMMM yyyy').format(monthStart),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w400,
+                          ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '• ${_getMonthSessionCount()} ${pluralize(word: "Session", count: _getMonthSessionCount())}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontWeight: FontWeight.w400,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 7,
+                childAspectRatio: 0.9,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 4,
+              ),
+              itemCount: totalCells,
+              itemBuilder: (context, index) {
+                if (index < leadingEmptyCells ||
+                    index >= leadingEmptyCells + daysInMonth.length) {
+                  return const SizedBox();
+                }
+
+                final cellDate = daysInMonth[index - leadingEmptyCells];
+                final hasLog = logs
+                    .any((log) => log.startTime.isSameDayMonthYear(cellDate));
+                final cellDateNormalized =
+                    DateTime(cellDate.year, cellDate.month, cellDate.day);
+                final isPredicted = predictedDates.contains(cellDateNormalized);
+                final isSelected = cellDate.isSameDayMonthYear(selectedDate);
+                final isToday = cellDate.isSameDayMonthYear(DateTime.now());
+
+                return _DateCell(
+                  date: cellDate,
+                  hasLog: hasLog,
+                  isPredicted: isPredicted,
+                  isSelected: isSelected,
+                  isToday: isToday,
+                  showMonthLabel: false,
+                  onTap: () => onDateTap(cellDate),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -527,11 +694,11 @@ class _DateCellState extends State<_DateCell>
           child: Stack(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: backgroundColor,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -549,7 +716,7 @@ class _DateCellState extends State<_DateCell>
                             ),
                       ),
                     SizedBox(
-                      width: 32,
+                      width: 28,
                       child: Text(
                         '${widget.date.day}',
                         textAlign: TextAlign.center,
@@ -561,7 +728,7 @@ class _DateCellState extends State<_DateCell>
                               fontWeight: widget.hasLog || widget.isPredicted
                                   ? FontWeight.bold
                                   : FontWeight.w500,
-                              fontSize: 16,
+                              fontSize: 14,
                             ),
                       ),
                     ),
