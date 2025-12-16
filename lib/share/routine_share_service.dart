@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/shareable_routine_summary.dart';
+import 'package:trainware/utils/personal_bests_utils.dart';
 
 import 'shareable_routine_renderer.dart';
 
@@ -24,9 +25,13 @@ class RoutineShareService {
     required BuildContext context,
     required RoutineLogDto log,
     ShareVariant variant = ShareVariant.standard,
+    List<PersonalBest>? personalBests,
   }) async {
     // Only generate the summary image when user actually shares, not pre-generate
-    final summary = ShareableRoutineSummary.fromRoutineLog(log);
+    final summary = ShareableRoutineSummary.fromRoutineLog(
+      log,
+      personalBests: personalBests,
+    );
     final file = await _generateSummaryImage(
         context: context, log: log, summary: summary, variant: variant);
 

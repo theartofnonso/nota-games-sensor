@@ -27,6 +27,7 @@ import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
+import '../../utils/personal_bests_utils.dart';
 import '../../utils/session_duration_selector.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 import '../../utils/string_utils.dart';
@@ -101,7 +102,13 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final numberOfCompletedSets =
         completedExerciseLogs.expand((exerciseLog) => exerciseLog.sets);
 
-    // PBs removed from project
+    // Calculate personal bests
+    final allHistoricalExerciseLogs =
+        exerciseAndRoutineController.allExerciseLogs;
+    final personalBests = calculatePersonalBests(
+      currentLog: updatedLog,
+      allHistoricalExerciseLogs: allHistoricalExerciseLogs,
+    );
 
     final logs = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: updatedLog.templateId)
@@ -195,7 +202,17 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                               description:
                                   "The total time you spent on your workout session, from start to finish."),
                         ),
-                        // PBs card removed
+                        if (personalBests.isNotEmpty)
+                          _StatisticWidget(
+                            title: "${personalBests.length}",
+                            subtitle: "Personal Bests",
+                            icon: FontAwesomeIcons.trophy,
+                            information: _StatisticsInformation(
+                                title: "Personal Bests",
+                                description:
+                                    "The number of personal records you achieved in this workout compared to your previous workouts."),
+                            onTap: () => _showPersonalBestsSheet(personalBests),
+                          ),
                       ],
                     ),
                   ),
@@ -273,6 +290,47 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             ),
           ]),
         ));
+  }
+
+  void _showPersonalBestsSheet(List<PersonalBest> personalBests) {
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      useBlurredTransparentBackground: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 20, 0, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Personal Bests",
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 170,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  spacing: 12,
+                  children: personalBests
+                      .map((pb) => _PersonalBestCard(pb: pb))
+                      .toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showLoadingScreen() {
@@ -502,8 +560,20 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       {required RoutineLogDto log,
       ShareVariant variant = ShareVariant.standard}) async {
     try {
+      final exerciseAndRoutineController =
+          Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false);
+      final allHistoricalExerciseLogs =
+          exerciseAndRoutineController.allExerciseLogs;
+      final completedExerciseLogs =
+          loggedExercises(exerciseLogs: log.exerciseLogs);
+      final updatedLog = log.copyWith(exerciseLogs: completedExerciseLogs);
+      final pbs = calculatePersonalBests(
+        currentLog: updatedLog,
+        allHistoricalExerciseLogs: allHistoricalExerciseLogs,
+      );
       await _shareService.shareRoutineLog(
-          context: context, log: log, variant: variant);
+          context: context, log: log, variant: variant, personalBests: pbs);
     } catch (_) {
       if (mounted) {
         showSnackbar(
@@ -521,7 +591,17 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final log = controller.logWhereId(id: widget.id);
     if (log == null) return;
 
-    final summary = ShareableRoutineSummary.fromRoutineLog(log);
+    final completedExerciseLogs =
+        loggedExercises(exerciseLogs: log.exerciseLogs);
+    final updatedLog = log.copyWith(exerciseLogs: completedExerciseLogs);
+    final allHistoricalExerciseLogs = controller.allExerciseLogs;
+    final pbs = calculatePersonalBests(
+      currentLog: updatedLog,
+      allHistoricalExerciseLogs: allHistoricalExerciseLogs,
+    );
+
+    final summary =
+        ShareableRoutineSummary.fromRoutineLog(log, personalBests: pbs);
     final pageController = PageController();
     int selectedVariant = 0;
 
@@ -620,6 +700,134 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   }
 }
 
+class _PersonalBestCard extends StatelessWidget {
+  final PersonalBest pb;
+
+  const _PersonalBestCard({required this.pb});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final gradientColors = [
+      Colors.black.withValues(alpha: 0.55),
+      Colors.black.withValues(alpha: 0.35),
+    ];
+    final accent = theme.colors.vibrantAccent;
+
+    return SizedBox(
+      width: 230,
+      height: 140,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: gradientColors,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Accent bar
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 6,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          accent.withValues(alpha: 0.9),
+                          accent.withValues(alpha: 0.4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.08,
+                    child: Image.asset(
+                      'images/1k_Dissolve_Noise_Texture.jpg',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 6,
+                        children: [
+                          Text(
+                            pb.exerciseName,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            pb.description,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.72),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            pb.value,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: accent,
+                            ),
+                          ),
+                          Icon(
+                            FontAwesomeIcons.trophy,
+                            size: 16,
+                            color: Colors.white.withValues(alpha: 0.65),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _StatisticsInformation {
   final String title;
   final String description;
@@ -632,12 +840,14 @@ class _StatisticWidget extends StatelessWidget {
   final String title;
   final String subtitle;
   final _StatisticsInformation information;
+  final VoidCallback? onTap;
 
   const _StatisticWidget(
       {this.icon,
       required this.title,
       required this.subtitle,
-      required this.information});
+      required this.information,
+      this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -650,11 +860,14 @@ class _StatisticWidget extends StatelessWidget {
       Colors.black.withValues(alpha: 0.5),
     ];
 
+    final tapHandler = onTap ??
+        () => showBottomSheetWithNoAction(
+            context: context,
+            title: information.title,
+            description: information.description);
+
     return GestureDetector(
-      onTap: () => showBottomSheetWithNoAction(
-          context: context,
-          title: information.title,
-          description: information.description),
+      onTap: tapHandler,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: BackdropFilter(

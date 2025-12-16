@@ -71,6 +71,11 @@ class ShareableRoutineVerticalCardDurationSplit extends StatelessWidget {
             children: [
               _Metric(label: "Exercises", value: "${summary.exerciseCount}"),
               _Metric(label: "Sets", value: "${summary.setCount}"),
+              if (summary.personalBests.isNotEmpty)
+                _Metric(
+                  label: "Personal Bests",
+                  value: "${summary.personalBests.length}",
+                ),
             ],
           ),
           const SizedBox(height: 16),
@@ -129,6 +134,11 @@ class ShareableRoutineVerticalCardDurationSplitCentered
             children: [
               _Metric(label: "Exercises", value: "${summary.exerciseCount}"),
               _Metric(label: "Sets", value: "${summary.setCount}"),
+              if (summary.personalBests.isNotEmpty)
+                _Metric(
+                  label: "Personal Bests",
+                  value: "${summary.personalBests.length}",
+                ),
             ],
           ),
         ],
