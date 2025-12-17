@@ -164,7 +164,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      spacing: 4,
+                      spacing: 10,
                       children: [
                         _StatisticWidget(
                           title: "${completedExerciseLogs.length}",
@@ -205,7 +205,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                         if (personalBests.isNotEmpty)
                           _StatisticWidget(
                             title: "${personalBests.length}",
-                            subtitle: "Personal Bests",
+                            subtitle: "PBs",
                             icon: FontAwesomeIcons.trophy,
                             information: _StatisticsInformation(
                                 title: "Personal Bests",
@@ -303,17 +303,38 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "PBs",
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const SizedBox(height: 12),
             SizedBox(
-              height: 170,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  spacing: 12,
-                  children: personalBests
-                      .map((pb) => _PersonalBestCard(pb: pb))
-                      .toList(),
-                ),
+              height: 190,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(minWidth: constraints.maxWidth),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          spacing: 12,
+                          children: personalBests
+                              .map((pb) => _PersonalBestCard(pb: pb))
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -705,8 +726,8 @@ class _PersonalBestCard extends StatelessWidget {
     final accent = theme.colors.vibrantAccent;
 
     return SizedBox(
-      width: 230,
-      height: 140,
+      width: 300,
+      height: 170,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
         child: BackdropFilter(
@@ -730,25 +751,6 @@ class _PersonalBestCard extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                // Accent bar
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 6,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          accent.withValues(alpha: 0.9),
-                          accent.withValues(alpha: 0.4),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
                 Positioned.fill(
                   child: Opacity(
                     opacity: 0.08,

@@ -73,7 +73,7 @@ class ShareableRoutineVerticalCardDurationSplit extends StatelessWidget {
               _Metric(label: "Sets", value: "${summary.setCount}"),
               if (summary.personalBests.isNotEmpty)
                 _Metric(
-                  label: "Personal Bests",
+                  label: "PBs",
                   value: "${summary.personalBests.length}",
                 ),
             ],
@@ -136,7 +136,7 @@ class ShareableRoutineVerticalCardDurationSplitCentered
               _Metric(label: "Sets", value: "${summary.setCount}"),
               if (summary.personalBests.isNotEmpty)
                 _Metric(
-                  label: "Personal Bests",
+                  label: "PBs",
                   value: "${summary.personalBests.length}",
                 ),
             ],
@@ -204,6 +204,8 @@ class _MetricGroup extends StatelessWidget {
       _Metric(label: "Exercises", value: "${summary.exerciseCount}"),
       _Metric(label: "Sets", value: "${summary.setCount}"),
       _Metric(label: "Duration", value: summary.durationLabel),
+      if (summary.personalBests.isNotEmpty)
+        _Metric(label: "PBs", value: "${summary.personalBests.length}"),
     ];
 
     return Row(

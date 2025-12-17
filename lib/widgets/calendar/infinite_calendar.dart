@@ -392,6 +392,8 @@ class _ContinuousCalendarGrid extends StatelessWidget {
       currentDate = currentDate.add(const Duration(days: 1));
     }
 
+    final monthEntries = months.entries.toList();
+
     return ScrollConfiguration(
       behavior: ScrollConfiguration.of(context).copyWith(
         overscroll: false,
@@ -399,9 +401,23 @@ class _ContinuousCalendarGrid extends StatelessWidget {
       child: ListView.builder(
         controller: scrollController,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: months.length,
+        itemCount: monthEntries.length + 1,
         itemBuilder: (context, index) {
-          final monthEntry = months.entries.elementAt(index);
+          if (index == 0) {
+            return Padding(
+              padding:
+                  const EdgeInsets.only(left: 4, right: 4, top: 8, bottom: 16),
+              child: Text(
+                "We show the past 12 months through the end of this year for performance.",
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.75),
+                    ),
+              ),
+            );
+          }
+
+          final monthEntry = monthEntries.elementAt(index - 1);
           final monthStart = monthEntry.key;
           final daysInMonth = monthEntry.value;
 
