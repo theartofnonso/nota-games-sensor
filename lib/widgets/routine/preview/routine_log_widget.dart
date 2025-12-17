@@ -72,34 +72,34 @@ class RoutineLogWidget extends StatelessWidget {
               ),
               ListTile(
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                 onTap: onTap ??
                     () => navigateToRoutineLogPreview(
                         context: context, log: log, isEditable: isEditable),
-                leading: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Theme.of(context)
-                        .colors
-                        .vibrantAccent
-                        .withValues(alpha: 0.18),
-                    border: Border.all(
-                      color: Theme.of(context)
-                          .colors
-                          .vibrantAccent
-                          .withValues(alpha: 0.35),
-                    ),
-                  ),
-                  child: Center(
-                    child: FaIcon(
-                      FontAwesomeIcons.personWalking,
-                      color: Theme.of(context).colors.vibrantAccent,
-                      size: 18,
-                    ),
-                  ),
-                ),
+                // leading: Container(
+                //   width: 38,
+                //   height: 38,
+                //   decoration: BoxDecoration(
+                //     shape: BoxShape.circle,
+                //     color: Theme.of(context)
+                //         .colors
+                //         .vibrantAccent
+                //         .withValues(alpha: 0.18),
+                //     border: Border.all(
+                //       color: Theme.of(context)
+                //           .colors
+                //           .vibrantAccent
+                //           .withValues(alpha: 0.35),
+                //     ),
+                //   ),
+                //   child: Center(
+                //     child: FaIcon(
+                //       FontAwesomeIcons.personWalking,
+                //       color: Theme.of(context).colors.vibrantAccent,
+                //       size: 18,
+                //     ),
+                //   ),
+                // ),
                 title: Text(
                   log.name,
                   overflow: TextOverflow.ellipsis,
