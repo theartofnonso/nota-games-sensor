@@ -675,7 +675,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                         shape: BoxShape.circle,
                         color: index == selectedVariant
                             ? Theme.of(context).colors.vibrantAccent
-                            : Colors.white.withOpacity(0.3),
+                            : Colors.white.withValues(alpha: 0.3),
                       ),
                     ),
                   ),
@@ -773,7 +773,7 @@ class _PersonalBestCard extends StatelessWidget {
                           Text(
                             pb.exerciseName,
                             style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: Colors.white,
                             ),
                             maxLines: 1,
@@ -796,7 +796,7 @@ class _PersonalBestCard extends StatelessWidget {
                           Text(
                             pb.value,
                             style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w400,
                               color: accent,
                             ),
                           ),
