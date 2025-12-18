@@ -1,13 +1,11 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../dtos/appsync/routine_log_dto.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/string_utils.dart';
-import 'package:trainware/utils/theme/color_extensions.dart';
 
 class RoutineLogWidget extends StatelessWidget {
   final RoutineLogDto log;

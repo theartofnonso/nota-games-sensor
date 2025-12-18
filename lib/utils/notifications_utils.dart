@@ -227,15 +227,10 @@ Future<void> schedulePostWorkoutReviewReminder({
   // Avoid duplicate reminders if the user edits the same log.
   await plugin.cancel(notificationId);
 
-  final anchorTime =
-      log.endTime.isAfter(log.startTime) ? log.endTime : log.startTime;
-  final scheduledDate =
-      nextMorningAtHour(reference: anchorTime, hour: reminderHour);
-
-  // Guard against scheduling in the past (e.g. if the clock changed)
-  if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
-    return;
-  }
+  // When a workout is logged, schedule a follow-up for the next day at 9am
+  // (or the provided reminderHour). Use "now" to avoid any past-time edge cases.
+  final tz.TZDateTime scheduledDate =
+      nextMorningAtHour(reference: DateTime.now(), hour: reminderHour);
 
   final workoutLabel = log.name.isEmpty ? 'your last workout' : log.name;
   final payload = jsonEncode({
