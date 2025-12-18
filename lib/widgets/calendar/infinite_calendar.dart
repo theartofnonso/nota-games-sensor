@@ -408,7 +408,7 @@ class _ContinuousCalendarGrid extends StatelessWidget {
               padding:
                   const EdgeInsets.only(left: 4, right: 4, top: 8, bottom: 16),
               child: Text(
-                "We show the past 12 months through the end of this year for performance.",
+                "We only show the past 12 months through the end of this year.",
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.white.withValues(alpha: 0.75),
