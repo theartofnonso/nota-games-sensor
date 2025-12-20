@@ -151,7 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     child: InformationContainerWithBackgroundImage(
                       image: 'images/background.jpg',
                       subtitle:
-                          "Loving trainware? Learn more about us and our mission.",
+                          "Loving the app? Learn more about us and our mission.",
                       color: Colors.black,
                       onTap: _openWebpage,
                       alignmentGeometry: Alignment.center,
@@ -586,7 +586,8 @@ class _SettingsScreenState extends State<SettingsScreen>
       daysAhead: daysAhead,
     );
     // Check if this is a predicted training day (today or future, no existing log)
-    final selectedDateNormalized = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    final selectedDateNormalized =
+        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final isPredicted = (isToday || isFuture) &&
         predictedDates.contains(selectedDateNormalized) &&
         !hasLogs;

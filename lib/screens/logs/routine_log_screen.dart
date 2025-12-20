@@ -297,48 +297,80 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       context: context,
       isScrollControlled: false,
       useBlurredTransparentBackground: true,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 20, 0, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                "PBs",
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
+      child: StatefulBuilder(
+        builder: (context, setSheetState) {
+          int currentPage = 0;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(0, 20, 0, 6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    "PBs",
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 190,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final pageWidth =
+                          constraints.maxWidth - 32; // account for padding
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: PageView.builder(
+                              itemCount: personalBests.length,
+                              onPageChanged: (index) =>
+                                  setSheetState(() => currentPage = index),
+                              itemBuilder: (context, index) {
+                                final pb = personalBests[index];
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  child: SizedBox(
+                                    width: pageWidth,
+                                    child: _PersonalBestCard(pb: pb),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              personalBests.length,
+                              (index) => Container(
+                                width: 8,
+                                height: 8,
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: currentPage == index
+                                      ? Theme.of(context).colors.vibrantAccent
+                                      : Colors.white.withValues(alpha: 0.3),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 190,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints:
-                          BoxConstraints(minWidth: constraints.maxWidth),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          spacing: 12,
-                          children: personalBests
-                              .map((pb) => _PersonalBestCard(pb: pb))
-                              .toList(),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -726,7 +758,7 @@ class _PersonalBestCard extends StatelessWidget {
     final accent = theme.colors.vibrantAccent;
 
     return SizedBox(
-      width: 300,
+      width: double.infinity,
       height: 170,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
