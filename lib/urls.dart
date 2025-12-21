@@ -1,6 +1,6 @@
 /// trainware
-const trackrWebUrl = 'https://ware.health/trainer';
-const instagramUrl = 'https://www.instagram.com/ware.trainer';
+const trackrWebUrl = 'https://notathletes.com';
+const instagramUrl = 'https://www.instagram.com/notathletes';
 
 /// Pexels
 const pexelsImageUrl =

@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/request_screens/notifications_request.dart';
 import 'package:trainware/shared_prefs.dart';
+import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
@@ -342,7 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _openWebpage() {
-    const url = 'https://ware.health';
+    final url = trackrWebUrl;
     openUrl(url: url, context: context);
   }
 
