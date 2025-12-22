@@ -247,7 +247,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          const Divider(thickness: 1),
+          Divider(thickness: 1, color: Colors.white.withValues(alpha: 0.1)),
           const SizedBox(height: 14),
           if (exercise.notes.isNotEmpty)
             Column(
@@ -281,7 +281,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
               ],
             ),
           ),
-          const Divider(thickness: 1),
+          Divider(thickness: 1, color: Colors.white.withValues(alpha: 0.1)),
           const SizedBox(height: 14),
           if (widget.exerciseLogs.isNotEmpty)
             SingleChildScrollView(
@@ -350,13 +350,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                 )),
           if (widget.exerciseLogs.isNotEmpty) ...[
             const SizedBox(height: 14),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: -10),
-              child: Divider(
-                thickness: 1,
-                color: Colors.white.withOpacity(0.1),
-              ),
-            ),
+            const Divider(thickness: 1),
             const SizedBox(height: 14),
           ],
           const SizedBox(height: 10),

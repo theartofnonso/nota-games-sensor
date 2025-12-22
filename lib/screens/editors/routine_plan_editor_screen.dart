@@ -131,7 +131,7 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
         ),
         child: SafeArea(
           bottom: false,
-          minimum: const EdgeInsets.only(right: 10.0, bottom: 10.0, left: 10.0),
+          minimum: const EdgeInsets.all(20),
           child: GestureDetector(
             onTap: _dismissKeyboard,
             child: Column(

@@ -29,7 +29,11 @@ class ExerciseHomeScreen extends StatefulWidget {
 class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   ExerciseDto? _exercise;
 
+  bool get _isSystemExercise =>
+      (_exercise?.id ?? widget.exercise.id).startsWith('ex-');
+
   void _showMenuBottomSheet() {
+    if (_isSystemExercise) return;
     showAppBottomSheet(
       context: context,
       isScrollControlled: false,
@@ -156,7 +160,7 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
             surfaceTintColor: Colors.transparent,
             scrolledUnderElevation: 0,
             leading: IconButton(
-              icon: const FaIcon(FontAwesomeIcons.arrowLeftLong, size: 28),
+              icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
               onPressed: context.pop,
             ),
             title: Text(exercise.name),
@@ -177,16 +181,18 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
                             ?.copyWith(fontWeight: FontWeight.w600))),
               ],
             ),
-            actions: [
-              IconButton(
-                onPressed: _showMenuBottomSheet,
-                icon: const FaIcon(
-                  FontAwesomeIcons.ellipsisVertical,
-                  size: 24,
-                ),
-                tooltip: 'Show menu',
-              )
-            ],
+            actions: _isSystemExercise
+                ? null
+                : [
+                    IconButton(
+                      onPressed: _showMenuBottomSheet,
+                      icon: const FaIcon(
+                        FontAwesomeIcons.ellipsisVertical,
+                        size: 24,
+                      ),
+                      tooltip: 'Show menu',
+                    )
+                  ],
           ),
           body: Container(
             width: double.infinity,

@@ -77,7 +77,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
           gradient: themeGradient(context: context),
         ),
         child: SafeArea(
-          minimum: const EdgeInsets.all(10),
+          minimum: const EdgeInsets.all(20),
           child: Column(
             children: [
               Expanded(
@@ -132,7 +132,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
               if (exercise == null)
                 SafeArea(
                   top: false,
-                  minimum: const EdgeInsets.all(10),
+                  minimum: const EdgeInsets.all(20),
                   child: SizedBox(
                     width: double.infinity,
                     child: OpacityButtonWidgetTwo(
