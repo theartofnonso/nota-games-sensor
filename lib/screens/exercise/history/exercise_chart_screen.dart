@@ -354,9 +354,14 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
             const SizedBox(height: 14),
           ],
           const SizedBox(height: 10),
+          if (widget.exerciseLogs.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(thickness: 1),
+            const SizedBox(height: 12),
+          ],
           if (withWeightsOnly(type: widget.exercise.type))
             Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: _MetricListTile(
                 title: 'Heaviest Weight',
                 trailing: "${widget.heaviestWeight.$2}$weightUnitLabel",
@@ -368,7 +373,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
             ),
           if (withWeightsOnly(type: widget.exercise.type))
             Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: _MetricListTile(
                   title: 'Heaviest Set Volume',
                   trailing:
@@ -379,7 +384,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
             ),
           if (withDurationOnly(type: widget.exercise.type))
             Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: _MetricListTile(
                   title: 'Best Time',
                   trailing: widget.longestDuration.$2.hmsAnalog(),
@@ -390,7 +395,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
             ),
           if (withReps(type: widget.exercise.type))
             Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: _MetricListTile(
                   title: 'Most Reps (Set)',
                   trailing: "${widget.mostRepsSet.$2} reps",
@@ -400,7 +405,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
             ),
           if (withReps(type: widget.exercise.type))
             Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: _MetricListTile(
                   title: 'Most Reps (Session)',
                   trailing: "${widget.mostRepsSession.$2} reps",

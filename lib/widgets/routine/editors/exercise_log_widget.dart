@@ -20,8 +20,8 @@ import '../../../dtos/set_dtos/reps_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
-import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/general_utils.dart';
+import '../../../utils/navigation_utils.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
@@ -312,8 +312,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
       final weightText =
           stalledSample != null ? "${stalledSample.weight} kg" : "this weight";
-      final repsText =
-          stalledSample != null ? "${stalledSample.reps} reps" : "this rep range";
+      final repsText = stalledSample != null
+          ? "${stalledSample.reps} reps"
+          : "this rep range";
 
       messageText =
           "You've been consistently logging $weightText for $repsText over your recent sessions. "
@@ -328,8 +329,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
           .toList()
           .lastOrNull;
 
-      final repsText =
-          stalledSample != null ? "${stalledSample.reps} reps" : "this rep range";
+      final repsText = stalledSample != null
+          ? "${stalledSample.reps} reps"
+          : "this rep range";
 
       messageText =
           "You've been consistently logging $repsText over your recent sessions. "
@@ -681,9 +683,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => ExerciseHomeScreen(
-                                  exercise: exerciseLog.exercise)));
+                          navigateToExerciseHome(
+                              context: context, exercise: exerciseLog.exercise);
                         },
                         child: Text(
                           exerciseLog.exercise.name,
