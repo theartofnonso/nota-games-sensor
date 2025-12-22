@@ -71,12 +71,13 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
                 controller: notesController,
                 cursorColor: isDark ? Colors.white : Colors.black,
                 decoration: const InputDecoration(
-                  hintText: "Notes (optional)",
+                  hintText: "notes (optional)",
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                 ),
                 keyboardType: TextInputType.multiline,
+                textCapitalization: TextCapitalization.sentences,
                 maxLines: null,
                 style: TextStyle(
                   fontWeight: FontWeight.w400,

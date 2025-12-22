@@ -182,7 +182,7 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
                     controller: _planNotesController,
                     cursorColor: Colors.white,
                     decoration: const InputDecoration(
-                      hintText: "Notes (optional)",
+                      hintText: "notes (optional)",
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
