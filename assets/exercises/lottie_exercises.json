@@ -10,7 +10,7 @@
   {
     "id": "ex-hammer-curl-alt",
     "name": "Hammer Curl (Alternating)",
-    "muscleGroup": "Forearms",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Alternating Dumbbell Hammer Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -34,7 +34,7 @@
   {
     "id": "ex-pullover-db",
     "name": "Pullover (Dumbbell)",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Bench Dumbbell Pullover Exercise for Chest and Lat.json",
     "isSystem": true,
     "type": "WR"
@@ -122,7 +122,7 @@
   {
     "id": "ex-hammer-curl-cross-body",
     "name": "Hammer Curl (Cross-Body)",
-    "muscleGroup": "Forearms",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Dumbbell Cross Body Hammer Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -178,7 +178,7 @@
   {
     "id": "ex-hammer-curl",
     "name": "Hammer Curl",
-    "muscleGroup": "Forearms",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Dumbbell Hammer Curl Exercise for Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -202,7 +202,7 @@
   {
     "id": "ex-hammer-curl-incline",
     "name": "Hammer Curl (Incline)",
-    "muscleGroup": "Forearms",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Dumbbell Incline Hammer Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -226,7 +226,7 @@
   {
     "id": "ex-squat-narrow-db",
     "name": "Squat (Narrow, Dumbbell)",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Dumbbell Narrow Squat Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -306,7 +306,7 @@
   {
     "id": "ex-side-bridge-db",
     "name": "Side Bridge (Dumbbell)",
-    "muscleGroup": "Obliques",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Dumbbell Side Bridge Exercise For Obliques.json",
     "isSystem": true,
     "type": "WR"
@@ -330,7 +330,7 @@
   {
     "id": "ex-hammer-curl-spider",
     "name": "Hammer Curl (Spider)",
-    "muscleGroup": "Forearms",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Dumbbell Spider Hammer Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -348,14 +348,6 @@
     "name": "Squat (Dumbbell)",
     "muscleGroup": "Quadriceps",
     "lottie": "assets/lottie/Man Doing Dumbbell Squat Exercise For Legs.json",
-    "isSystem": true,
-    "type": "WR"
-  },
-  {
-    "id": "ex-squat-db-alt",
-    "name": "Squat (Dumbbell, Alternate)",
-    "muscleGroup": "Quadriceps",
-    "lottie": "assets/lottie/Man Doing Dumbbell Squat Exercise For Legs (1).json",
     "isSystem": true,
     "type": "WR"
   },
@@ -450,7 +442,7 @@
   {
     "id": "ex-situp-decline-ohp-weighted",
     "name": "Sit-Up (Decline, Overhead Press, Weighted)",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Dumbbell Weighted Decline Sit-Up Overhead Press Exercise For ABS.json",
     "isSystem": true,
     "type": "BW"
@@ -474,7 +466,7 @@
   {
     "id": "ex-situp-ohp-weighted",
     "name": "Sit-Up (Overhead Press, Weighted)",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Dumbbell Weighted Sit-Up Overhead Press Exercise For ABS.json",
     "isSystem": true,
     "type": "BW"
@@ -562,7 +554,7 @@
   {
     "id": "ex-hammer-curl-seated",
     "name": "Hammer Curl (Seated)",
-    "muscleGroup": "Forearms",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Seated Dumbbell Hammer Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -586,7 +578,7 @@
   {
     "id": "ex-preacher-hammer-curl-seated",
     "name": "Preacher Hammer Curl (Seated)",
-    "muscleGroup": "Forearms",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Seated Dumbbell Preacher Hammer Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -730,7 +722,7 @@
   {
     "id": "ex-barbell-back-squat",
     "name": "Barbell Back Squat",
-    "muscleGroup": "Back",
+    "muscleGroup": "Quadriceps",
     "lottie": "assets/lottie/Man Doing Barbell Back Squat Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -744,26 +736,10 @@
     "type": "WR"
   },
   {
-    "id": "ex-barbell-bench-press",
-    "name": "Barbell Bench Press",
-    "muscleGroup": "Chest",
-    "lottie": "assets/lottie/Man Doing Barbell Bench Press Exercise For Chest (1).json",
-    "isSystem": true,
-    "type": "WR"
-  },
-  {
     "id": "ex-barbell-bench-wrist-curl",
     "name": "Barbell Bench Wrist Curl",
     "muscleGroup": "Forearms",
     "lottie": "assets/lottie/Man Doing Barbell Bench Wrist Curl Exercise For Forearm.json",
-    "isSystem": true,
-    "type": "WR"
-  },
-  {
-    "id": "ex-barbell-bent-over-row",
-    "name": "Barbell Bent Over Row",
-    "muscleGroup": "Back",
-    "lottie": "assets/lottie/Man Doing Barbell Bent Over Row Exercise For Back (1).json",
     "isSystem": true,
     "type": "WR"
   },
@@ -786,7 +762,7 @@
   {
     "id": "ex-barbell-deadlift",
     "name": "Barbell Deadlift",
-    "muscleGroup": "Back",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Barbell Deadlift Exercise For Legs and Back.json",
     "isSystem": true,
     "type": "WR"
@@ -818,7 +794,7 @@
   {
     "id": "ex-barbell-good-morning",
     "name": "Barbell Good Morning",
-    "muscleGroup": "Back",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Barbell Good Morning Exercise For Back and Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -834,7 +810,7 @@
   {
     "id": "ex-barbell-hip-thrust",
     "name": "Barbell Hip Thrust",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Barbell Hip Thrust Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -842,7 +818,7 @@
   {
     "id": "ex-barbell-incline-front-raise",
     "name": "Barbell Incline Front Raise",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Barbell Incline Front Raise Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -858,7 +834,7 @@
   {
     "id": "ex-barbell-landmine-kneeling-squeeze-press",
     "name": "Barbell Landmine Kneeling Squeeze Press",
-    "muscleGroup": "Chest",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Barbell Landmine Kneeling Squeeze Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -890,7 +866,7 @@
   {
     "id": "ex-barbell-narrow-squat",
     "name": "Barbell Narrow Squat",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Barbell Narrow Squat Exercise Men For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -930,7 +906,7 @@
   {
     "id": "ex-barbell-pullover",
     "name": "Barbell Pullover",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Barbell Pullover Exercise For Back and Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -938,7 +914,7 @@
   {
     "id": "ex-barbell-rear-delt-row",
     "name": "Barbell Rear Delt Row",
-    "muscleGroup": "Back",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Barbell Rear Delt Row Exercise For Back and Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -978,7 +954,7 @@
   {
     "id": "ex-barbell-romanian-deadlift",
     "name": "Barbell Romanian Deadlift",
-    "muscleGroup": "Back",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Barbell Romanian Deadlift Exercise For Legs and Back.json",
     "isSystem": true,
     "type": "WR"
@@ -994,7 +970,7 @@
   {
     "id": "ex-barbell-side-bend",
     "name": "Barbell Side Bend",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Obliques",
     "lottie": "assets/lottie/Man Doing Barbell Side Bend Exercise For ABS.json",
     "isSystem": true,
     "type": "WR"
@@ -1042,7 +1018,7 @@
   {
     "id": "ex-barbell-squat-overhead-press",
     "name": "Barbell Squat Overhead Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Barbell Squat Overhead Press Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1082,7 +1058,7 @@
   {
     "id": "ex-barbell-upright-row",
     "name": "Barbell Upright Row",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Barbell Upright Row Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1146,7 +1122,7 @@
   {
     "id": "ex-narrow-grip-barbell-bench-press",
     "name": "Narrow Grip Barbell Bench Press",
-    "muscleGroup": "Chest",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Narrow Grip Barbell Bench Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -1170,7 +1146,7 @@
   {
     "id": "ex-seated-barbell-good-morning",
     "name": "Seated Barbell Good Morning",
-    "muscleGroup": "Back",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Seated Barbell Good Morning Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1186,7 +1162,7 @@
   {
     "id": "ex-seated-barbell-preacher-curl",
     "name": "Seated Barbell Preacher Curl",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Seated Barbell Preacher Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -1290,7 +1266,7 @@
   {
     "id": "ex-cable-bent-over-crossover",
     "name": "Cable Bent Over Crossover",
-    "muscleGroup": "Chest",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Bent Over Crossover Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -1298,7 +1274,7 @@
   {
     "id": "ex-cable-bent-over-reverse-fly",
     "name": "Cable Bent Over Reverse Fly",
-    "muscleGroup": "Chest",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Cable Bent Over Reverse Fly Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1345,16 +1321,16 @@
   },
   {
     "id": "ex-cable-close-grip-pulldown",
-    "name": "Cable Close Grip Pulldown",
-    "muscleGroup": "Quadriceps",
-    "lottie": "assets/lottie/Man Doing Cable Close Grip Pulldown Exercise For Back (1).json",
+    "name": "Cable Close Grip",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Close Grip Pulldown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
   },
   {
     "id": "ex-cable-close-grip-single-arm-pulldown",
     "name": "Cable Close Grip Single Arm Pulldown",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Cable Close Grip Single Arm Pulldown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1362,7 +1338,7 @@
   {
     "id": "ex-cable-close-parallel-grip-pulldown",
     "name": "Cable Close Parallel Grip Pulldown",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Cable Close Parallel Grip Pulldown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1370,7 +1346,7 @@
   {
     "id": "ex-cable-close-reverse-grip-pulldown",
     "name": "Cable Close Reverse Grip Pulldown",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Cable Close Reverse Grip Pulldown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1410,7 +1386,7 @@
   {
     "id": "ex-cable-half-kneeling-face-pull",
     "name": "Cable Half Kneeling Face Pull",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Cable Half Kneeling Face Pull Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1418,7 +1394,7 @@
   {
     "id": "ex-cable-high-crossover",
     "name": "Cable High Crossover",
-    "muscleGroup": "Chest",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable High Crossover Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -1434,7 +1410,7 @@
   {
     "id": "ex-cable-hip-abduction",
     "name": "Cable Hip Abduction",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Abductors",
     "lottie": "assets/lottie/Man Doing Cable Hip Abduction Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1442,7 +1418,7 @@
   {
     "id": "ex-cable-hip-adduction",
     "name": "Cable Hip Adduction",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Adductors",
     "lottie": "assets/lottie/Man Doing Cable Hip Adduction Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1474,7 +1450,7 @@
   {
     "id": "ex-cable-incline-pushdown",
     "name": "Cable Incline Pushdown",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Incline Pushdown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1482,7 +1458,7 @@
   {
     "id": "ex-cable-kneeling-donkey-kickback",
     "name": "Cable Kneeling Donkey Kickback",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Cable Kneeling Donkey Kickback Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1490,7 +1466,7 @@
   {
     "id": "ex-cable-kneeling-pull-through",
     "name": "Cable Kneeling Pull Through",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Kneeling Pull Through Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1514,7 +1490,7 @@
   {
     "id": "ex-cable-lateral-raise",
     "name": "Cable Lateral Raise",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Cable Lateral Raise Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1522,7 +1498,7 @@
   {
     "id": "ex-cable-leaning-lateral-raise",
     "name": "Cable Leaning Lateral Raise",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Cable Leaning Lateral Raise Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1546,7 +1522,7 @@
   {
     "id": "ex-cable-lying-leg-curl",
     "name": "Cable Lying Leg Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Lying Leg Curl Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1562,7 +1538,7 @@
   {
     "id": "ex-cable-lying-pullover",
     "name": "Cable Lying Pullover",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Lying Pullover Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1570,7 +1546,7 @@
   {
     "id": "ex-cable-lying-reverse-fly",
     "name": "Cable Lying Reverse Fly",
-    "muscleGroup": "Chest",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Cable Lying Reverse Fly Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1594,7 +1570,7 @@
   {
     "id": "ex-cable-one-arm-bent-over-reverse-fly",
     "name": "Cable One Arm Bent Over Reverse Fly",
-    "muscleGroup": "Chest",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Cable One Arm Bent Over Reverse Fly Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1626,7 +1602,7 @@
   {
     "id": "ex-cable-one-arm-lateral-raise",
     "name": "Cable One Arm Lateral Raise",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Cable One Arm Lateral Raise Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1650,7 +1626,7 @@
   {
     "id": "ex-cable-one-arm-preacher-curl",
     "name": "Cable One Arm Preacher Curl",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Cable One Arm Preacher Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -1658,7 +1634,7 @@
   {
     "id": "ex-cable-one-arm-preacher-hammer-curl",
     "name": "Cable One Arm Preacher Hammer Curl",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Cable One Arm Preacher Hammer Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -1698,7 +1674,7 @@
   {
     "id": "ex-cable-preacher-curl",
     "name": "Cable Preacher Curl",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Cable Preacher Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -1706,7 +1682,7 @@
   {
     "id": "ex-cable-preacher-hammer-curl",
     "name": "Cable Preacher Hammer Curl",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Cable Preacher Hammer Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -1714,7 +1690,7 @@
   {
     "id": "ex-cable-pull-through",
     "name": "Cable Pull Through",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Pull Through Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1722,7 +1698,7 @@
   {
     "id": "ex-cable-regular-grip-pulldown",
     "name": "Cable Regular Grip Pulldown",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Cable Regular Grip Pulldown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1730,7 +1706,7 @@
   {
     "id": "ex-cable-regular-reverse-grip-pulldown",
     "name": "Cable Regular Reverse Grip Pulldown",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Cable Regular Reverse Grip Pulldown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1786,7 +1762,7 @@
   {
     "id": "ex-cable-seated-rear-delt-row",
     "name": "Cable Seated Rear Delt Row",
-    "muscleGroup": "Front Shoulders",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Cable Seated Rear Delt Row Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1866,7 +1842,7 @@
   {
     "id": "ex-cable-side-bend",
     "name": "Cable Side Bend",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Obliques",
     "lottie": "assets/lottie/Man Doing Cable Side Bend Exercise For Obliques.json",
     "isSystem": true,
     "type": "WR"
@@ -1882,7 +1858,7 @@
   {
     "id": "ex-cable-single-arm-pulldown",
     "name": "Cable Single Arm Pulldown",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Cable Single Arm Pulldown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1938,7 +1914,7 @@
   {
     "id": "ex-cable-standing-donkey-kickback",
     "name": "Cable Standing Donkey Kickback",
-    "muscleGroup": "Back",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Cable Standing Donkey Kickback Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1946,7 +1922,7 @@
   {
     "id": "ex-cable-standing-face-pull",
     "name": "Cable Standing Face Pull",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Cable Standing Face Pull Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1954,7 +1930,7 @@
   {
     "id": "ex-cable-standing-hip-flexion",
     "name": "Cable Standing Hip Flexion",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Standing Hip Flexion Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1962,7 +1938,7 @@
   {
     "id": "ex-cable-standing-leg-curl",
     "name": "Cable Standing Leg Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Standing Leg Curl Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -1970,7 +1946,7 @@
   {
     "id": "ex-cable-standing-pullover",
     "name": "Cable Standing Pullover",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Standing Pullover Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -1978,7 +1954,7 @@
   {
     "id": "ex-cable-standing-rear-delt-row",
     "name": "Cable Standing Rear Delt Row",
-    "muscleGroup": "Front Shoulders",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Cable Standing Rear Delt Row Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -1994,7 +1970,7 @@
   {
     "id": "ex-cable-standing-single-arm-pullover",
     "name": "Cable Standing Single Arm Pullover",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Cable Standing Single Arm Pullover Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -2034,7 +2010,7 @@
   {
     "id": "ex-cable-upright-row",
     "name": "Cable Upright Row",
-    "muscleGroup": "Back",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Cable Upright Row Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -2042,8 +2018,8 @@
   {
     "id": "ex-cable-wide-grip-pulldown",
     "name": "Cable Wide Grip Pulldown",
-    "muscleGroup": "Quadriceps",
-    "lottie": "assets/lottie/Man Doing Cable Wide Grip Pulldown Exercise For Back (1).json",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Wide Grip Pulldown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
   },
@@ -2114,7 +2090,7 @@
   {
     "id": "ex-single-arm-half-kneeling-cable-row",
     "name": "Single Arm Half Kneeling Cable Row",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Single Arm Half Kneeling Cable Row Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -2170,7 +2146,7 @@
   {
     "id": "ex-smith-bench-press",
     "name": "Smith Bench Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Smith Bench Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -2186,7 +2162,7 @@
   {
     "id": "ex-lever-lying-leg-curl",
     "name": "Lever Lying Leg Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Lever Lying Leg Curl Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2226,7 +2202,7 @@
   {
     "id": "ex-lever-back-extension",
     "name": "Lever Back Extension",
-    "muscleGroup": "Back",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Lever Back Extension Exercise For Lower Back.json",
     "isSystem": true,
     "type": "WR"
@@ -2242,7 +2218,7 @@
   {
     "id": "ex-smith-donkey-kick",
     "name": "Smith Donkey Kick",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Smith Donkey Kick Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2250,7 +2226,7 @@
   {
     "id": "ex-sled-leg-press",
     "name": "Sled Leg Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Sled Leg Press Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2266,7 +2242,7 @@
   {
     "id": "ex-lever-standing-donkey-kickback",
     "name": "Lever Standing Donkey Kickback",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Lever Standing Donkey Kickback Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2282,7 +2258,7 @@
   {
     "id": "ex-man-is-engaged-on-an-stepper-machine",
     "name": "Man is Engaged on an Stepper Machine",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man is Engaged on an Stepper Machine.json",
     "isSystem": true,
     "type": "WR"
@@ -2290,7 +2266,7 @@
   {
     "id": "ex-smith-upright-row",
     "name": "Smith Upright Row",
-    "muscleGroup": "Back",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Smith Upright Row Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -2330,7 +2306,7 @@
   {
     "id": "ex-sled-single-leg-press",
     "name": "Sled Single Leg Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Sled Single Leg Press Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2338,7 +2314,7 @@
   {
     "id": "ex-lever-preacher-curl",
     "name": "Lever Preacher Curl",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Biceps",
     "lottie": "assets/lottie/Man Doing Lever Preacher Curl Exercise For Arm.json",
     "isSystem": true,
     "type": "WR"
@@ -2346,7 +2322,7 @@
   {
     "id": "ex-lever-hip-thrust",
     "name": "Lever Hip Thrust",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Lever Hip Thrust Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2378,7 +2354,7 @@
   {
     "id": "ex-lever-seated-leg-curl",
     "name": "Lever Seated Leg Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Lever Seated Leg Curl Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2386,7 +2362,7 @@
   {
     "id": "ex-smith-decline-bench-press",
     "name": "Smith Decline Bench Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Smith Decline Bench Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -2402,7 +2378,7 @@
   {
     "id": "ex-sled-horizontal-single-leg-press",
     "name": "Sled Horizontal Single Leg Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Sled Horizontal Single Leg Press Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2418,7 +2394,7 @@
   {
     "id": "ex-smith-close-grip-bench-press",
     "name": "Smith Close Grip Bench Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Smith Close Grip Bench Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -2426,7 +2402,7 @@
   {
     "id": "ex-lever-decline-chest-press",
     "name": "Lever Decline Chest Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Lever Decline Chest Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -2434,7 +2410,7 @@
   {
     "id": "ex-man-walking-on-treadmill",
     "name": "Man Walking On Treadmill",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Walking On Treadmill.json",
     "isSystem": true,
     "type": "WR"
@@ -2474,7 +2450,7 @@
   {
     "id": "ex-man-running-on-treadmill",
     "name": "Man Running On Treadmill",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Running On Treadmill.json",
     "isSystem": true,
     "type": "WR"
@@ -2490,7 +2466,7 @@
   {
     "id": "ex-smith-hip-thrust",
     "name": "Smith Hip Thrust",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Smith Hip Thrust Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2506,7 +2482,7 @@
   {
     "id": "ex-man-is-engaged-on-an-stationary-bike",
     "name": "Man is Engaged on an Stationary Bike",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man is Engaged on an Stationary Bike.json",
     "isSystem": true,
     "type": "WR"
@@ -2546,7 +2522,7 @@
   {
     "id": "ex-man-is-engaged-on-an-elliptical-machine",
     "name": "Man is Engaged on an Elliptical Machine",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man is Engaged on an Elliptical Machine.json",
     "isSystem": true,
     "type": "WR"
@@ -2570,7 +2546,7 @@
   {
     "id": "ex-sled-horizontal-leg-press",
     "name": "Sled Horizontal Leg Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Sled Horizontal Leg Press Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2586,7 +2562,7 @@
   {
     "id": "ex-seated-lever-hip-abduction",
     "name": "Seated Lever Hip Abduction",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Abductors",
     "lottie": "assets/lottie/Man Doing Seated Lever Hip Abduction Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2594,7 +2570,7 @@
   {
     "id": "ex-standing-multi-hip-thigh-abduction",
     "name": "Standing Multi Hip Thigh Abduction",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Abductors",
     "lottie": "assets/lottie/Man Doing Standing Multi Hip Thigh Abduction Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2602,7 +2578,7 @@
   {
     "id": "ex-seated-lever-hip-adduction",
     "name": "Seated Lever Hip Adduction",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Adductors",
     "lottie": "assets/lottie/Man Doing Seated Lever Hip Adduction Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2610,7 +2586,7 @@
   {
     "id": "ex-standing-multi-hip-thigh-adduction",
     "name": "Standing Multi Hip Thigh Adduction",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Adductors",
     "lottie": "assets/lottie/Man Doing Standing Multi Hip Thigh Adduction Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2658,7 +2634,7 @@
   {
     "id": "ex-lever-standing-leg-curl",
     "name": "Lever Standing Leg Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Lever Standing Leg Curl Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2682,7 +2658,7 @@
   {
     "id": "ex-lever-chest-press",
     "name": "Lever Chest Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Lever Chest Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -2690,7 +2666,7 @@
   {
     "id": "ex-lever-incline-chest-press",
     "name": "Lever Incline Chest Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Lever Incline Chest Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -2698,7 +2674,7 @@
   {
     "id": "ex-lever-lateral-raise",
     "name": "Lever Lateral Raise",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Lever Lateral Raise Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -2714,7 +2690,7 @@
   {
     "id": "ex-smith-leg-press",
     "name": "Smith Leg Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Smith Leg Press Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2730,7 +2706,7 @@
   {
     "id": "ex-smith-incline-bench-press",
     "name": "Smith Incline Bench Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Smith Incline Bench Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -2738,7 +2714,7 @@
   {
     "id": "ex-smith-reverse-hyperextension",
     "name": "Smith Reverse Hyperextension",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Smith Reverse Hyperextension Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -2754,7 +2730,7 @@
   {
     "id": "ex-resistance-band-assisted-pull-up",
     "name": "Resistance Band Assisted Pull Up",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Resistance Band Assisted Pull Up Exercise For ABS.json",
     "isSystem": true,
     "type": "WR"
@@ -2762,7 +2738,7 @@
   {
     "id": "ex-resistance-band-floor-press",
     "name": "Resistance Band Floor Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Floor Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -2778,7 +2754,7 @@
   {
     "id": "ex-resistance-band-half-kneeling-face-pull",
     "name": "Resistance Band Half Kneeling Face Pull",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Half Kneeling Face Pull Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -2834,7 +2810,7 @@
   {
     "id": "ex-resistance-band-hip-adduction",
     "name": "Resistance Band Hip Adduction",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Adductors",
     "lottie": "assets/lottie/Man Doing Resistance Band Hip Adduction Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -2842,7 +2818,7 @@
   {
     "id": "ex-resistance-band-standing-pullover",
     "name": "Resistance Band Standing Pullover",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Resistance Band Standing Pullover Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -2906,7 +2882,7 @@
   {
     "id": "ex-resistance-band-standing-donkey-kickback",
     "name": "Resistance Band Standing Donkey Kickback",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Resistance Band Standing Donkey Kickback Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -2914,7 +2890,7 @@
   {
     "id": "ex-resistance-band-lying-leg-curl",
     "name": "Resistance Band Lying Leg Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Resistance Band Lying Leg Curl Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -2962,7 +2938,7 @@
   {
     "id": "ex-resistance-band-hip-abduction",
     "name": "Resistance Band Hip Abduction",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Abductors",
     "lottie": "assets/lottie/Man Doing Resistance Band Hip Abduction Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -2970,7 +2946,7 @@
   {
     "id": "ex-resistance-band-one-arm-chest-press",
     "name": "Resistance Band One Arm Chest Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Resistance Band One Arm Chest Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -2978,7 +2954,7 @@
   {
     "id": "ex-resistance-band-side-bend",
     "name": "Resistance Band Side Bend",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Obliques",
     "lottie": "assets/lottie/Man Doing Resistance Band Side Bend Exercise For ABS.json",
     "isSystem": true,
     "type": "WR"
@@ -3002,7 +2978,7 @@
   {
     "id": "ex-resistance-band-kneeling-pull-through",
     "name": "Resistance Band Kneeling Pull Through",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Resistance Band Kneeling Pull Through Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -3026,7 +3002,7 @@
   {
     "id": "ex-resistance-band-standing-leg-curl",
     "name": "Resistance Band Standing Leg Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Resistance Band Standing Leg Curl Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -3050,7 +3026,7 @@
   {
     "id": "ex-resistance-band-incline-chest-press",
     "name": "Resistance Band Incline Chest Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Resistance Band Incline Chest Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -3066,7 +3042,7 @@
   {
     "id": "ex-resistance-band-standing-face-pull",
     "name": "Resistance Band Standing Face Pull",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Standing Face Pull Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -3074,7 +3050,7 @@
   {
     "id": "ex-resistance-band-lying-pullover",
     "name": "Resistance Band Lying Pullover",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Resistance Band Lying Pullover Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -3082,7 +3058,7 @@
   {
     "id": "ex-resistance-band-leg-press",
     "name": "Resistance Band Leg Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Leg Press Exercise Men.json",
     "isSystem": true,
     "type": "WR"
@@ -3098,7 +3074,7 @@
   {
     "id": "ex-resistance-band-chest-press",
     "name": "Resistance Band Chest Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Resistance Band Chest Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -3106,7 +3082,7 @@
   {
     "id": "ex-resistance-band-one-arm-lateral-raise",
     "name": "Resistance Band One Arm Lateral Raise",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band One Arm Lateral Raise Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -3154,7 +3130,7 @@
   {
     "id": "ex-resistance-band-assisted-parallel-grip-pull-up",
     "name": "Resistance Band Assisted Parallel Grip Pull Up",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Resistance Band Assisted Parallel Grip Pull Up Exercise For ABS.json",
     "isSystem": true,
     "type": "WR"
@@ -3170,7 +3146,7 @@
   {
     "id": "ex-resistance-band-good-morning",
     "name": "Resistance Band Good Morning",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Resistance Band Good Morning Exercise For Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -3178,7 +3154,7 @@
   {
     "id": "ex-resistance-band-lying-one-leg-curl",
     "name": "Resistance Band Lying One Leg Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Resistance Band Lying One Leg Curl Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -3194,7 +3170,7 @@
   {
     "id": "ex-resistance-band-bent-over-reverse-fly",
     "name": "Resistance Band Bent Over Reverse Fly",
-    "muscleGroup": "Chest",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Bent Over Reverse Fly Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -3202,7 +3178,7 @@
   {
     "id": "ex-resistance-band-standing-hip-flexion",
     "name": "Resistance Band Standing Hip Flexion",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Resistance Band Standing Hip Flexion Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -3218,7 +3194,7 @@
   {
     "id": "ex-resistance-band-upright-row",
     "name": "Resistance Band Upright Row",
-    "muscleGroup": "Back",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Upright Row Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -3290,7 +3266,7 @@
   {
     "id": "ex-resistance-band-donkey-kick",
     "name": "Resistance Band Donkey Kick",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Resistance Band Donkey Kick Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -3298,7 +3274,7 @@
   {
     "id": "ex-resistance-band-standing-rear-delt-row",
     "name": "Resistance Band Standing Rear Delt Row",
-    "muscleGroup": "Front Shoulders",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Standing Rear Delt Row Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -3362,7 +3338,7 @@
   {
     "id": "ex-resistance-band-bent-over-rear-delt-row",
     "name": "Resistance Band Bent Over Rear Delt Row",
-    "muscleGroup": "Front Shoulders",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Bent Over Rear Delt Row Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -3370,7 +3346,7 @@
   {
     "id": "ex-resistance-band-single-leg-press",
     "name": "Resistance Band Single Leg Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Single Leg Press Exercise Men.json",
     "isSystem": true,
     "type": "WR"
@@ -3378,7 +3354,7 @@
   {
     "id": "ex-resistance-band-decline-chest-press",
     "name": "Resistance Band Decline Chest Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Resistance Band Decline Chest Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -3418,7 +3394,7 @@
   {
     "id": "ex-resistance-band-bench-press",
     "name": "Resistance Band Bench Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Resistance Band Bench Press Exercise For Chest.json",
     "isSystem": true,
     "type": "WR"
@@ -3426,7 +3402,7 @@
   {
     "id": "ex-resistance-band-kneeling-pulldown",
     "name": "Resistance Band Kneeling Pulldown",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Resistance Band Kneeling Pulldown Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -3434,7 +3410,7 @@
   {
     "id": "ex-resistance-band-hip-abduction-var-2",
     "name": "Resistance Band Hip Abduction (var 2)",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Abductors",
     "lottie": "assets/lottie/Man Doing Resistance Band Hip Abduction (var 2) Exercise For Leg.json",
     "isSystem": true,
     "type": "WR"
@@ -3450,7 +3426,7 @@
   {
     "id": "ex-resistance-band-lateral-raise",
     "name": "Resistance Band Lateral Raise",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Resistance Band Lateral Raise Exercise For Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -3466,7 +3442,7 @@
   {
     "id": "ex-resistance-band-standing-single-arm-pullover",
     "name": "Resistance Band Standing SIngle Arm Pullover",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Resistance Band Standing SIngle Arm Pullover Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -3474,7 +3450,7 @@
   {
     "id": "ex-resistance-band-single-arm-half-kneeling-row",
     "name": "Resistance Band Single Arm Half Kneeling Row",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Resistance Band Single Arm Half Kneeling Row Exercise For Back.json",
     "isSystem": true,
     "type": "WR"
@@ -3506,7 +3482,7 @@
   {
     "id": "ex-resistance-band-mountain-climber",
     "name": "Resistance Band Mountain Climber",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Abs",
     "lottie": "assets/lottie/Man Doing Resistance Band Mountain Climber Exercise Men.json",
     "isSystem": true,
     "type": "WR"
@@ -3602,7 +3578,7 @@
   {
     "id": "ex-trx-suspension-pullover",
     "name": "TRX Suspension Pullover",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing TRX Suspension Pullover Exercise For Back.json",
     "isSystem": true,
     "type": "BW"
@@ -3610,7 +3586,7 @@
   {
     "id": "ex-trx-suspension-chest-press",
     "name": "TRX Suspension Chest Press",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing TRX Suspension Chest Press Exercise For Chest.json",
     "isSystem": true,
     "type": "BW"
@@ -3642,7 +3618,7 @@
   {
     "id": "ex-trx-suspension-alternating-hamstring-curl",
     "name": "TRX Suspension Alternating Hamstring Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing TRX Suspension Alternating Hamstring Curl Exercise For Legs.json",
     "isSystem": true,
     "type": "BW"
@@ -3658,7 +3634,7 @@
   {
     "id": "ex-trx-suspension-tuck-knee",
     "name": "TRX Suspension Tuck Knee",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing TRX Suspension Tuck Knee Exercise For ABS.json",
     "isSystem": true,
     "type": "BW"
@@ -3666,7 +3642,7 @@
   {
     "id": "ex-trx-suspension-front-raise",
     "name": "TRX Suspension Front Raise",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing TRX Suspension Front Raise Exercise For Shoulders.json",
     "isSystem": true,
     "type": "BW"
@@ -3698,7 +3674,7 @@
   {
     "id": "ex-trx-suspension-face-pull",
     "name": "TRX Suspension Face Pull",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing TRX Suspension Face Pull Exercise For Shoulders.json",
     "isSystem": true,
     "type": "BW"
@@ -3722,7 +3698,7 @@
   {
     "id": "ex-trx-suspension-side-bridge",
     "name": "TRX Suspension Side Bridge",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing TRX Suspension Side Bridge Exercise For Oblique.json",
     "isSystem": true,
     "type": "BW"
@@ -3794,7 +3770,7 @@
   {
     "id": "ex-trx-suspension-hamstring-curl",
     "name": "TRX Suspension Hamstring Curl",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing TRX Suspension Hamstring Curl Exercise For Legs.json",
     "isSystem": true,
     "type": "BW"
@@ -3802,7 +3778,7 @@
   {
     "id": "ex-trx-suspension-standing-rear-delt-row",
     "name": "TRX Suspension Standing Rear Delt Row",
-    "muscleGroup": "Front Shoulders",
+    "muscleGroup": "Rear Shoulders",
     "lottie": "assets/lottie/Man Doing TRX Suspension Standing Rear Delt Row Exercise For Shoulders.json",
     "isSystem": true,
     "type": "BW"
@@ -3818,7 +3794,7 @@
   {
     "id": "ex-plank-frog-jump-cardio",
     "name": "Plank Frog Jump Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Abs",
     "lottie": "assets/lottie/Man Doing Plank Frog Jump Cardio Exercise.json",
     "isSystem": true,
     "type": "WR"
@@ -3850,7 +3826,7 @@
   {
     "id": "ex-punches-cardio",
     "name": "Punches Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Punches Cardio Exercise.json",
     "isSystem": true,
     "type": "WR"
@@ -3874,7 +3850,7 @@
   {
     "id": "ex-scapula-push-up",
     "name": "Scapula Push Up",
-    "muscleGroup": "Back",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Scapula Push Up Exercise For Chest and Back.json",
     "isSystem": true,
     "type": "BW"
@@ -3882,7 +3858,7 @@
   {
     "id": "ex-reverse-back-extension",
     "name": "Reverse Back Extension",
-    "muscleGroup": "Glutes",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Reverse Back Extension Exercise for Glute.json",
     "isSystem": true,
     "type": "WR"
@@ -3906,7 +3882,7 @@
   {
     "id": "ex-press-jack-cardio",
     "name": "Press Jack Cardio",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Front Shoulders",
     "lottie": "assets/lottie/Man Doing Press Jack Cardio Exercise.json",
     "isSystem": true,
     "type": "WR"
@@ -3914,7 +3890,7 @@
   {
     "id": "ex-flutter-kicks-on-bench",
     "name": "Flutter Kicks on Bench",
-    "muscleGroup": "Glutes",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Flutter Kicks on Bench Exercise for Glute.json",
     "isSystem": true,
     "type": "WR"
@@ -3930,7 +3906,7 @@
   {
     "id": "ex-side-plank-hip-abduction",
     "name": "Side Plank Hip Abduction",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Abductors",
     "lottie": "assets/lottie/Man Doing Side Plank Hip Abduction Exercise for Legs.json",
     "isSystem": true,
     "type": "BW"
@@ -3994,7 +3970,7 @@
   {
     "id": "ex-jump-rope-cardio",
     "name": "Jump Rope Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Jump Rope Cardio Exercise.json",
     "isSystem": true,
     "type": "WR"
@@ -4002,7 +3978,7 @@
   {
     "id": "ex-bench-pistol-squat",
     "name": "Bench Pistol Squat",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Bench Pistol Squat Exercise for Legs.json",
     "isSystem": true,
     "type": "BW"
@@ -4090,7 +4066,7 @@
   {
     "id": "ex-running-in-place-and-punches-cardio",
     "name": "Running in Place and Punches Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Running in Place and Punches Cardio Exercise.json",
     "isSystem": true,
     "type": "WR"
@@ -4146,7 +4122,7 @@
   {
     "id": "ex-reverse-hyperextension-on-bench",
     "name": "Reverse Hyperextension on Bench",
-    "muscleGroup": "Glutes",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Reverse Hyperextension on Bench Exercise for Glute.json",
     "isSystem": true,
     "type": "BW"
@@ -4154,7 +4130,7 @@
   {
     "id": "ex-decline-straight-leg-hip-raise",
     "name": "Decline Straight Leg Hip Raise",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Decline Straight Leg Hip Raise Exercise for ABS.json",
     "isSystem": true,
     "type": "WR"
@@ -4178,7 +4154,7 @@
   {
     "id": "ex-running-plank-cardio",
     "name": "Running Plank Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Abs",
     "lottie": "assets/lottie/Man Doing Running Plank Cardio Exercise.json",
     "isSystem": true,
     "type": "WR"
@@ -4194,7 +4170,7 @@
   {
     "id": "ex-standing-side-bend",
     "name": "Standing Side Bend",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Obliques",
     "lottie": "assets/lottie/Man Doing Standing Side Bend Exercise for ABS.json",
     "isSystem": true,
     "type": "WR"
@@ -4202,7 +4178,7 @@
   {
     "id": "ex-bodyweight-swing-cardio",
     "name": "Bodyweight Swing Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Bodyweight Swing Cardio Exercise.json",
     "isSystem": true,
     "type": "WR"
@@ -4250,7 +4226,7 @@
   {
     "id": "ex-bodyweight-good-morning",
     "name": "Bodyweight Good Morning",
-    "muscleGroup": "Back",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Bodyweight Good Morning Exercise for Legs and Lower Back.json",
     "isSystem": true,
     "type": "BW"
@@ -4274,7 +4250,7 @@
   {
     "id": "ex-burpee-cardio",
     "name": "Burpee Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Burpee Cardio Exercise.json",
     "isSystem": true,
     "type": "WR"
@@ -4290,7 +4266,7 @@
   {
     "id": "ex-burpee-no-jump-cardio",
     "name": "Burpee No Jump Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Burpee No Jump Cardio Exercise.json",
     "isSystem": true,
     "type": "WR"
@@ -4306,7 +4282,7 @@
   {
     "id": "ex-back-extension",
     "name": "Back Extension",
-    "muscleGroup": "Glutes",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Back Extension Exercise for Glute and Lower Back.json",
     "isSystem": true,
     "type": "WR"
@@ -4330,7 +4306,7 @@
   {
     "id": "ex-front-kicks-cardio",
     "name": "Front Kicks Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Front Kicks Cardio Exercise.json",
     "isSystem": true,
     "type": "BW"
@@ -4338,7 +4314,7 @@
   {
     "id": "ex-narrow-squat",
     "name": "Narrow Squat",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Narrow Squat Exercise for Legs.json",
     "isSystem": true,
     "type": "BW"
@@ -4362,7 +4338,7 @@
   {
     "id": "ex-hip-thrust",
     "name": "Hip Thrust",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Hip Thrust Exercise for Legs.json",
     "isSystem": true,
     "type": "BW"
@@ -4450,7 +4426,7 @@
   {
     "id": "ex-locust",
     "name": "Locust",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Locust Exercise for Back and Core.json",
     "isSystem": true,
     "type": "WR"
@@ -4466,7 +4442,7 @@
   {
     "id": "ex-diagonal-plank",
     "name": "Diagonal Plank",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Abs",
     "lottie": "assets/lottie/Man Doing Diagonal Plank Exercise For Core.json",
     "isSystem": true,
     "type": "BW"
@@ -4490,7 +4466,7 @@
   {
     "id": "ex-plank-jack-cardio",
     "name": "Plank Jack Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Abs",
     "lottie": "assets/lottie/Man Doing Plank Jack Cardio Exercise.json",
     "isSystem": true,
     "type": "DR"
@@ -4498,7 +4474,7 @@
   {
     "id": "ex-butt-kicks-cardio",
     "name": "Butt Kicks Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Butt Kicks Cardio Exercise.json",
     "isSystem": true,
     "type": "DR"
@@ -4514,7 +4490,7 @@
   {
     "id": "ex-boat-hold-leg-flutters",
     "name": "Boat Hold Leg Flutters",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Boat Hold Leg Flutters Exercise for ABS and Core.json",
     "isSystem": true,
     "type": "WR"
@@ -4530,7 +4506,7 @@
   {
     "id": "ex-side-crunch-hip-raise",
     "name": "Side Crunch Hip Raise",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Abs",
     "lottie": "assets/lottie/Man Doing Side Crunch Hip Raise Exercise For Oblique.json",
     "isSystem": true,
     "type": "BW"
@@ -4562,7 +4538,7 @@
   {
     "id": "ex-w-back-extension",
     "name": "W Back Extension",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing W Back Extension Exercise for Back.json",
     "isSystem": true,
     "type": "WR"
@@ -4594,7 +4570,7 @@
   {
     "id": "ex-simplified-jumping-jack-cardio",
     "name": "Simplified Jumping Jack Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Simplified Jumping Jack Cardio Exercise.json",
     "isSystem": true,
     "type": "DR"
@@ -4610,7 +4586,7 @@
   {
     "id": "ex-walking-cardio",
     "name": "Walking Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Walking Cardio Exercise.json",
     "isSystem": true,
     "type": "DR"
@@ -4618,7 +4594,7 @@
   {
     "id": "ex-bulgarian-split-jump-cardio",
     "name": "Bulgarian Split Jump Cardio",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Bulgarian Split Jump Cardio Exercise.json",
     "isSystem": true,
     "type": "DR"
@@ -4642,7 +4618,7 @@
   {
     "id": "ex-high-plank-leg-raise",
     "name": "High Plank Leg Raise",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Abs",
     "lottie": "assets/lottie/Man Doing High Plank Leg Raise Exercise for Legs.json",
     "isSystem": true,
     "type": "BW"
@@ -4666,7 +4642,7 @@
   {
     "id": "ex-donkey-kick",
     "name": "Donkey Kick",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Donkey Kick Exercise for Legs.json",
     "isSystem": true,
     "type": "WR"
@@ -4682,7 +4658,7 @@
   {
     "id": "ex-bent-knee-hip-raise",
     "name": "Bent Knee Hip Raise",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Bent Knee Hip Raise Exercise for ABS.json",
     "isSystem": true,
     "type": "BW"
@@ -4690,7 +4666,7 @@
   {
     "id": "ex-side-bridge",
     "name": "Side Bridge",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Side Bridge Exercise For Oblique.json",
     "isSystem": true,
     "type": "BW"
@@ -4730,7 +4706,7 @@
   {
     "id": "ex-single-leg-hip-thrust",
     "name": "Single Leg Hip Thrust",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Glutes",
     "lottie": "assets/lottie/Man Doing Single Leg Hip Thrust Exercise for Leg.json",
     "isSystem": true,
     "type": "BW"
@@ -4738,7 +4714,7 @@
   {
     "id": "ex-flutter-kicks",
     "name": "Flutter Kicks",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Flutter Kicks Exercise for ABS and Core.json",
     "isSystem": true,
     "type": "WR"
@@ -4754,7 +4730,7 @@
   {
     "id": "ex-man-running-in-place-cardio",
     "name": "Man Running In Place Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Running In Place Cardio Exercise.json",
     "isSystem": true,
     "type": "DR"
@@ -4794,7 +4770,7 @@
   {
     "id": "ex-straight-leg-hip-raise",
     "name": "Straight Leg Hip Raise",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Straight Leg Hip Raise Exercise for ABS.json",
     "isSystem": true,
     "type": "BW"
@@ -4810,7 +4786,7 @@
   {
     "id": "ex-lying-back-extension",
     "name": "Lying Back Extension",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Lying Back Extension Exercise for Back.json",
     "isSystem": true,
     "type": "WR"
@@ -4842,7 +4818,7 @@
   {
     "id": "ex-single-leg-v-up",
     "name": "Single Leg V Up",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Single Leg V Up Exercise for ABS.json",
     "isSystem": true,
     "type": "BW"
@@ -4850,7 +4826,7 @@
   {
     "id": "ex-v-up",
     "name": "V Up",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing V Up Exercise for ABS.json",
     "isSystem": true,
     "type": "BW"
@@ -4858,7 +4834,7 @@
   {
     "id": "ex-high-knee-taps-cardio",
     "name": "High Knee Taps Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing High Knee Taps Cardio Exercise.json",
     "isSystem": true,
     "type": "DR"
@@ -4874,7 +4850,7 @@
   {
     "id": "ex-jumping-jack-cardio",
     "name": "Jumping Jack Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Jumping Jack Cardio Exercise.json",
     "isSystem": true,
     "type": "DR"
@@ -4938,7 +4914,7 @@
   {
     "id": "ex-y-back-extension",
     "name": "Y Back Extension",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Hamstrings",
     "lottie": "assets/lottie/Man Doing Y Back Extension Exercise for Back.json",
     "isSystem": true,
     "type": "WR"
@@ -4962,7 +4938,7 @@
   {
     "id": "ex-bench-reverse-crunch",
     "name": "Bench Reverse Crunch",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Chest",
     "lottie": "assets/lottie/Man Doing Bench Reverse Crunch Exercise for ABS.json",
     "isSystem": true,
     "type": "BW"
@@ -4970,7 +4946,7 @@
   {
     "id": "ex-low-plank-leg-raise",
     "name": "Low Plank Leg Raise",
-    "muscleGroup": "Quadriceps",
+    "muscleGroup": "Abs",
     "lottie": "assets/lottie/Man Doing Low Plank Leg Raise Exercise for Legs.json",
     "isSystem": true,
     "type": "BW"
@@ -5026,7 +5002,7 @@
   {
     "id": "ex-body-saw",
     "name": "Body Saw",
-    "muscleGroup": "Abs",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Body Saw Exercise for ABS and Shoulders.json",
     "isSystem": true,
     "type": "WR"
@@ -5050,7 +5026,7 @@
   {
     "id": "ex-superman",
     "name": "Superman",
-    "muscleGroup": "Back",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Superman Exercise for Back.json",
     "isSystem": true,
     "type": "WR"
@@ -5082,7 +5058,7 @@
   {
     "id": "ex-running-cardio",
     "name": "Running Cardio",
-    "muscleGroup": "Cardio",
+    "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Running Cardio Exercise.json",
     "isSystem": true,
     "type": "DR"
@@ -5098,7 +5074,7 @@
   {
     "id": "ex-side-crunch",
     "name": "Side Crunch",
-    "muscleGroup": "Full Body",
+    "muscleGroup": "Abs",
     "lottie": "assets/lottie/Man Doing Side Crunch Exercise For Oblique.json",
     "isSystem": true,
     "type": "BW"
