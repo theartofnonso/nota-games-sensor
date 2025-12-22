@@ -3808,5 +3808,509 @@
     "name": "Side Crunch",
     "lottie": "assets/lottie/Man Doing Side Crunch Exercise For Oblique.json",
     "isSystem": true
+  },
+  {
+    "id": "ex-baby-cobra-pose-stretch",
+    "name": "Baby Cobra Pose Stretch",
+    "lottie": "assets/lottie/Man Doing Baby Cobra Pose Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bench-kneeling-lat-stretch",
+    "name": "Bench Kneeling Lat Stretch",
+    "lottie": "assets/lottie/Man Doing Bench Kneeling Lat Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bench-kneeling-one-arm-lat-stretch",
+    "name": "Bench Kneeling One Arm Lat Stretch",
+    "lottie": "assets/lottie/Man Doing Bench Kneeling One Arm Lat Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bow-pose-stretch",
+    "name": "Bow Pose Stretch",
+    "lottie": "assets/lottie/Man Doing Bow Pose Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cat-cow-stretch",
+    "name": "Cat Cow Stretch",
+    "lottie": "assets/lottie/Man Doing Cat Cow Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cat-stretch",
+    "name": "Cat Stretch",
+    "lottie": "assets/lottie/Man Doing Cat Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-childs-pose-back-stretch",
+    "name": "Childs Pose Back Stretch",
+    "lottie": "assets/lottie/Man Doing Childs Pose Back Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cobra-pose-stretch",
+    "name": "Cobra Pose Stretch",
+    "lottie": "assets/lottie/Man Doing Cobra Pose Stretching Men.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cow-stretch",
+    "name": "Cow Stretch",
+    "lottie": "assets/lottie/Man Doing Cow Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-deep-shoulder-stretch",
+    "name": "Deep Shoulder Stretch",
+    "lottie": "assets/lottie/Man Doing Deep Shoulder Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-doorway-chest-stretch",
+    "name": "Doorway Chest Stretch",
+    "lottie": "assets/lottie/Man Doing Doorway Chest Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-downward-facing-dog-stretch",
+    "name": "Downward Facing Dog Stretch",
+    "lottie": "assets/lottie/Man Doing Downward Facing Dog Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-dynamic-chest-stretch",
+    "name": "Dynamic Chest Stretch",
+    "lottie": "assets/lottie/Man Doing Dynamic Chest Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-extended-puppy-pose-stretch",
+    "name": "Extended Puppy Pose Stretch",
+    "lottie": "assets/lottie/Man Doing Extended Puppy Pose Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-forward-bending-hands-behind-stretch",
+    "name": "Forward Bending Hands Behind Stretch",
+    "lottie": "assets/lottie/Man Doing Forward Bending Hands Behind Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-kneeling-forearm-stretch",
+    "name": "Kneeling Forearm Stretch",
+    "lottie": "assets/lottie/Man Doing Kneeling Forearm Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lateral-neck-stretch",
+    "name": "Lateral Neck Stretch",
+    "lottie": "assets/lottie/Man Doing Lateral Neck Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lower-trunk-rotation-stretch",
+    "name": "Lower Trunk Rotation Stretch",
+    "lottie": "assets/lottie/Man Doing Lower Trunk Rotation Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-neck-extension-stretch",
+    "name": "Neck Extension Stretch",
+    "lottie": "assets/lottie/Man Doing Neck Extension Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-neck-flexion-stretch",
+    "name": "Neck Flexion Stretch",
+    "lottie": "assets/lottie/Man Doing Neck Flexion Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-neck-and-trapezius-stretch",
+    "name": "Neck and Trapezius Stretch",
+    "lottie": "assets/lottie/Man Doing Neck and Trapezius Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-overhead-tricep-stretch",
+    "name": "Overhead Tricep Stretch",
+    "lottie": "assets/lottie/Man Doing Overhead Tricep Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-rear-deltoid-shoulders-stretch",
+    "name": "Rear Deltoid Shoulders Stretch",
+    "lottie": "assets/lottie/Man Doing Rear Deltoid Shoulders Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-side-bend-stretch",
+    "name": "Side Bend Stretch",
+    "lottie": "assets/lottie/Man Doing Side Bend Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-side-tilt-stretch",
+    "name": "Side Tilt Stretch",
+    "lottie": "assets/lottie/Man Doing Side Tilt Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-sphinx-pose-stretch",
+    "name": "Sphinx Pose Stretch",
+    "lottie": "assets/lottie/Man Doing Sphinx Pose Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-spinal-extension-backward-bending-stretch",
+    "name": "Spinal Extension Backward Bending Stretch",
+    "lottie": "assets/lottie/Man Doing Spinal Extension Backward Bending Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-chest-stretch",
+    "name": "Standing Chest Stretch",
+    "lottie": "assets/lottie/Man Doing Standing Chest Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-forearm-extensor-stretch",
+    "name": "Standing Forearm Extensor Stretch",
+    "lottie": "assets/lottie/Man Doing Standing Forearm Extensor Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-forearm-flexor-stretch",
+    "name": "Standing Forearm Flexor Stretch",
+    "lottie": "assets/lottie/Man Doing Standing Forearm Flexor Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-overhead-shoulder-stretch",
+    "name": "Standing Overhead Shoulder Stretch",
+    "lottie": "assets/lottie/Man Doing Standing Overhead Shoulder Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-round-back-stretch",
+    "name": "Standing Round Back Stretch",
+    "lottie": "assets/lottie/Man Doing Standing Round Back Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-supine-spinal-twist-stretch",
+    "name": "Supine Spinal Twist Stretch",
+    "lottie": "assets/lottie/Man Doing Supine Spinal Twist Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-upward-facing-dog-stretch",
+    "name": "Upward Facing Dog Stretch",
+    "lottie": "assets/lottie/Man Doing Upward Facing Dog Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-upward-table-pose-stretch",
+    "name": "Upward Table Pose Stretch",
+    "lottie": "assets/lottie/Man Doing Upward Table Pose Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-advanced-hip-flexor-stretch",
+    "name": "Advanced Hip Flexor Stretch",
+    "lottie": "assets/lottie/Man Doing Advanced Hip Flexor Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bench-hamstring-stretch",
+    "name": "Bench Hamstring Stretch",
+    "lottie": "assets/lottie/Man Doing Bench Hamstring Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bench-seated-hamstring-stretch",
+    "name": "Bench Seated Hamstring Stretch",
+    "lottie": "assets/lottie/Man Doing Bench Seated Hamstring Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hamstring-stretch",
+    "name": "Hamstring Stretch",
+    "lottie": "assets/lottie/Man Doing Hamstring Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hip-flexor-stretching-alternate",
+    "name": "Hip Flexor Stretching Alternate",
+    "lottie": "assets/lottie/Man Doing Hip Flexor Stretching Alternate.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hip-flexor-stretch",
+    "name": "Hip Flexor Stretch",
+    "lottie": "assets/lottie/Man Doing Hip Flexor Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-kneeling-achilles-stretch",
+    "name": "Kneeling Achilles Stretch",
+    "lottie": "assets/lottie/Man Doing Kneeling Achilles Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-kneeling-hamstring-stretch",
+    "name": "Kneeling Hamstring Stretch",
+    "lottie": "assets/lottie/Man Doing Kneeling Hamstring Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-kneeling-quadricep-stretch",
+    "name": "Kneeling Quadricep Stretch",
+    "lottie": "assets/lottie/Man Doing Kneeling Quadricep Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-knees-to-chest-glute-stretch",
+    "name": "Knees to Chest Glute Stretch",
+    "lottie": "assets/lottie/Man Doing Knees to Chest Glute Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-leg-swings-dynamic-stretch",
+    "name": "Leg Swings Dynamic Stretch",
+    "lottie": "assets/lottie/Man Doing Leg Swings Dynamic Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lunging-straight-leg-calf-stretch",
+    "name": "Lunging Straight Leg Calf Stretch",
+    "lottie": "assets/lottie/Man Doing Lunging Straight Leg Calf Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lying-glute-stretch",
+    "name": "Lying Glute Stretch",
+    "lottie": "assets/lottie/Man Doing Lying Glute Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lying-hamstring-stretch",
+    "name": "Lying Hamstring Stretch",
+    "lottie": "assets/lottie/Man Doing Lying Hamstring Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lying-quadricep-stretch",
+    "name": "Lying Quadricep Stretch",
+    "lottie": "assets/lottie/Man Doing Lying Quadricep Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-forward-bend-stretch",
+    "name": "Seated Forward Bend Stretch",
+    "lottie": "assets/lottie/Man Doing Seated Forward Bend Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-side-leg-swings-dynamic-stretch",
+    "name": "Side Leg Swings Dynamic Stretch",
+    "lottie": "assets/lottie/Man Doing Side Leg Swings Dynamic Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-side-lunge-hamstring-stretch",
+    "name": "Side Lunge Hamstring Stretch",
+    "lottie": "assets/lottie/Man Doing Side Lunge Hamstring Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-side-lunge-hip-adductor-stretch",
+    "name": "Side Lunge Hip Adductor Stretch",
+    "lottie": "assets/lottie/Man Doing Side Lunge Hip Adductor Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-single-knee-to-chest-glute-stretch",
+    "name": "Single Knee to Chest Glute Stretch",
+    "lottie": "assets/lottie/Man Doing Single Knee to Chest Glute Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-sitting-kneeling-quadriceps-stretch",
+    "name": "Sitting Kneeling Quadriceps Stretch",
+    "lottie": "assets/lottie/Man Doing Sitting Kneeling Quadriceps Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-spinal-flexion-forward-bending-stretch",
+    "name": "Spinal Flexion Forward Bending Stretch",
+    "lottie": "assets/lottie/Man Doing Spinal Flexion Forward Bending Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-knee-to-chest-glute-stretch",
+    "name": "Standing Knee to Chest Glute Stretch",
+    "lottie": "assets/lottie/Man Doing Standing Knee to Chest Glute Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-quadricep-stretch",
+    "name": "Standing Quadricep Stretch",
+    "lottie": "assets/lottie/Man Doing Standing Quadricep Stretching.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bicep",
+    "name": "Bicep",
+    "lottie": "assets/lottie/Man Rolling Bicep Exercise For Arm Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-brachialis",
+    "name": "Brachialis",
+    "lottie": "assets/lottie/Man Rolling Brachialis Exercise For Arm Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-calf",
+    "name": "Calf",
+    "lottie": "assets/lottie/Man Rolling Calf Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-calves",
+    "name": "Calves",
+    "lottie": "assets/lottie/Man Rolling Calves Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-chest",
+    "name": "Chest",
+    "lottie": "assets/lottie/Man Rolling Chest Exercise For Chest Relaxed (1).json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-chest-1",
+    "name": "Chest",
+    "lottie": "assets/lottie/Man Rolling Chest Exercise For Chest Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-forearm",
+    "name": "Forearm",
+    "lottie": "assets/lottie/Man Rolling Forearm Exercise For Arm Relaxed (1).json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-forearm-1",
+    "name": "Forearm",
+    "lottie": "assets/lottie/Man Rolling Forearm Exercise For Arm Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-front-deltoid",
+    "name": "Front Deltoid",
+    "lottie": "assets/lottie/Man Rolling Front Deltoid Exercise For Shoulder Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-glutes",
+    "name": "Glutes",
+    "lottie": "assets/lottie/Man Rolling Glutes Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hamstring",
+    "name": "Hamstring",
+    "lottie": "assets/lottie/Man Rolling Hamstring Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hamstrings",
+    "name": "Hamstrings",
+    "lottie": "assets/lottie/Man Rolling Hamstrings Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hip-abductor",
+    "name": "Hip Abductor",
+    "lottie": "assets/lottie/Man Rolling Hip Abductor Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hip-adductor",
+    "name": "Hip Adductor",
+    "lottie": "assets/lottie/Man Rolling Hip Adductor Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-inner-forearm",
+    "name": "Inner Forearm",
+    "lottie": "assets/lottie/Man Rolling Inner Forearm Exercise For Arm Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lat-rear-deltoid",
+    "name": "Lat & Rear Deltoid",
+    "lottie": "assets/lottie/Man Rolling Lat and Rear Deltoid Exercise For Back Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-latissimus",
+    "name": "Latissimus",
+    "lottie": "assets/lottie/Man Rolling Latissimus Exercise For Back Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lower-back",
+    "name": "Lower Back",
+    "lottie": "assets/lottie/Man Rolling Lower Back Exercise For Back Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-middle-deltoid",
+    "name": "Middle Deltoid",
+    "lottie": "assets/lottie/Man Rolling Middle Deltoid Exercise For Shoulder Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-outer-calf",
+    "name": "Outer Calf",
+    "lottie": "assets/lottie/Man Rolling Outer Calf Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-quadriceps",
+    "name": "Quadriceps",
+    "lottie": "assets/lottie/Man Rolling Quadriceps Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tibialis-anterior",
+    "name": "Tibialis Anterior",
+    "lottie": "assets/lottie/Man Rolling Tibialis Anterior Exercise For Leg Relaxed (1).json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tibialis-anterior-1",
+    "name": "Tibialis Anterior",
+    "lottie": "assets/lottie/Man Rolling Tibialis Anterior Exercise For Leg Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tricep",
+    "name": "Tricep",
+    "lottie": "assets/lottie/Man Rolling Tricep Exercise For Arm Relaxed.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-upper-back",
+    "name": "Upper Back",
+    "lottie": "assets/lottie/Man Rolling Upper Back Exercise For Back Relaxed.json",
+    "isSystem": true
   }
 ]

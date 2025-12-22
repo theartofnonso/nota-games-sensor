@@ -1003,28 +1003,27 @@ class _SuggestionCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Opacity(
-                          opacity: 0.85,
-                          child: FutureBuilder<String?>(
-                            future: LottieExerciseRegistry.lottieFor(
-                                data.exercise.name),
-                            builder: (context, snapshot) {
-                              final asset = snapshot.data;
-                              if (asset != null) {
-                                return Lottie.asset(
-                                  asset,
-                                  height: 48,
-                                  fit: BoxFit.contain,
-                                  repeat: true,
-                                );
-                              }
-                              return const FaIcon(
-                                FontAwesomeIcons.ban,
-                                size: 32,
-                                color: Colors.white70,
+                        FutureBuilder<String?>(
+                          future:
+                              LottieExerciseRegistry.lottieFor(data.exercise.name),
+                          builder: (context, snapshot) {
+                            final asset = snapshot.data;
+                            if (asset != null) {
+                              return Lottie.asset(
+                                asset,
+                                height: 48,
+                                fit: BoxFit.contain,
+                                repeat: true,
                               );
-                            },
-                          ),
+                            }
+                            return FaIcon(
+                              FontAwesomeIcons.ban,
+                              size: 32,
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.32)
+                                  : Colors.black.withValues(alpha: 0.28),
+                            );
+                          },
                         ),
                       ],
                     ),

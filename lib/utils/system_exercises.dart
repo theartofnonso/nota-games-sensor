@@ -5,14 +5,12 @@ import 'package:flutter/services.dart' show rootBundle;
 /// Represents a seed exercise definition. Keep this minimal and equipment-free.
 class SystemExerciseSeed {
   final String name;
-  final String muscleGroup;
 
-  const SystemExerciseSeed({required this.name, required this.muscleGroup});
+  const SystemExerciseSeed({required this.name});
 
   factory SystemExerciseSeed.fromJson(Map<String, dynamic> json) {
     return SystemExerciseSeed(
       name: json['name'] as String,
-      muscleGroup: json['muscleGroup'] as String,
     );
   }
 }
@@ -21,14 +19,12 @@ class SystemExerciseSeed {
 class LottieExerciseSeed {
   final String id;
   final String name;
-  final String muscleGroup;
   final String lottie;
   final bool isSystem;
 
   const LottieExerciseSeed({
     required this.id,
     required this.name,
-    required this.muscleGroup,
     required this.lottie,
     this.isSystem = true,
   });
@@ -37,7 +33,6 @@ class LottieExerciseSeed {
     return LottieExerciseSeed(
       id: json['id'] as String,
       name: json['name'] as String,
-      muscleGroup: json['muscleGroup'] as String,
       lottie: json['lottie'] as String,
       isSystem: json['isSystem'] == null ? true : json['isSystem'] as bool,
     );
@@ -64,4 +59,3 @@ Future<List<LottieExerciseSeed>> loadLottieExercises() async {
       .map((e) => LottieExerciseSeed.fromJson(e as Map<String, dynamic>))
       .toList();
 }
-
