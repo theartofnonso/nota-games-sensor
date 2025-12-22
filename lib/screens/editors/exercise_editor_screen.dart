@@ -18,7 +18,6 @@ import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/list_tile.dart';
-import '../../widgets/picker.dart';
 import '../../widgets/muscle_group/muscle_group_grid_picker.dart';
 
 class ExerciseEditorScreen extends StatefulWidget {
@@ -34,7 +33,6 @@ class ExerciseEditorScreen extends StatefulWidget {
 
 class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
   late MuscleGroup _primaryMuscleGroup;
-  late ExerciseType _exerciseType;
 
   final logger = getLogger(className: "_ExerciseEditorScreenState");
 
@@ -168,52 +166,6 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                           ),
                         ],
                       ),
-                      if (exercise == null)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 8,
-                          children: [
-                            LabelDivider(
-                              label: "Choose how to log this exercise"
-                                  .toUpperCase(),
-                              labelColor:
-                                  Theme.of(context).colorScheme.onSurface,
-                              dividerColor:
-                                  Theme.of(context).colors.dividerColor,
-                              fontSize: 14,
-                            ),
-                            Text(
-                                "You can log this exercise using reps only, reps and weights or duration.",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                        fontWeight: FontWeight.w400,
-                                        color: isDarkMode
-                                            ? Colors.white70
-                                            : Colors.black)),
-                            ThemeListTile(
-                              child: ListTile(
-                                onTap: _selectExerciseType,
-                                leading: Text(_exerciseType.description,
-                                    textAlign: TextAlign.start,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                            color: isDarkMode
-                                                ? Colors.white
-                                                : Colors.black)),
-                                trailing: const FaIcon(
-                                  FontAwesomeIcons.arrowRightLong,
-                                  size: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -259,36 +211,6 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     );
   }
 
-  void _selectExerciseType() {
-    if (widget.exercise != null) {
-      showSnackbar(
-          context: context,
-          message: "Exercise type cannot be changed after creation.");
-      return;
-    }
-
-    FocusScope.of(context).unfocus();
-    showAppBottomSheet(
-        context: context,
-        isScrollControlled: false,
-        child: Padding(
-          padding: const EdgeInsets.all(26),
-          child: SizedBox(
-            height: 240,
-            child: GenericPicker(
-              items: ExerciseType.values,
-              labelBuilder: (type) => type.description,
-              onItemSelected: (value) {
-                Navigator.of(context).pop();
-                setState(() {
-                  _exerciseType = value;
-                });
-              },
-            ),
-          ),
-        ));
-  }
-
   void _createExercise() async {
     final exerciseName = _exerciseNameController.text.trim();
 
@@ -323,7 +245,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     final exercise = ExerciseDto(
         name: exerciseName,
         primaryMuscleGroup: _primaryMuscleGroup,
-        type: _exerciseType);
+        type: widget.exercise?.type ?? ExerciseType.weights);
 
     await controller.saveExercise(exerciseDto: exercise);
 
@@ -391,8 +313,5 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     _primaryMuscleGroup = previousExercise != null
         ? previousExercise.primaryMuscleGroup
         : MuscleGroup.sortedValues.first;
-
-    _exerciseType =
-        previousExercise != null ? previousExercise.type : ExerciseType.weights;
   }
 }

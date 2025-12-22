@@ -110,7 +110,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     // Get the list of all exercises (excluding any you want to filter out by default)
     final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
 
-    final controller = Provider.of<SupabaseExerciseAndRoutineController>(context,
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
         listen: false);
 
     // Combine system (from JSON) + user (from DB)
@@ -186,6 +187,80 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     Navigator.of(context).pop([selectedExercise]);
   }
 
+  Future<void> _promptLogTypeAndReturn(ExerciseDto exercise) async {
+    final chosen = await showModalBottomSheet<ExerciseType>(
+      context: context,
+      backgroundColor: Colors.black87,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "How do you want to log this?",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Choose how you want to log what you've done for this exercise.",
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Image.asset(
+                    'icons/dumbbells.png',
+                    height: 24,
+                    width: 24,
+                    color: Colors.white70,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.fitness_center,
+                          color: Colors.white70);
+                    },
+                  ),
+                  title: const Text("Weights + Reps"),
+                  subtitle: const Text("Track weights and repetitions"),
+                  onTap: () => Navigator.pop(context, ExerciseType.weights),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const FaIcon(FontAwesomeIcons.hashtag,
+                      color: Colors.white70),
+                  title: const Text("Reps only"),
+                  subtitle: const Text("Bodyweight-style logging"),
+                  onTap: () => Navigator.pop(context, ExerciseType.bodyWeight),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.timer, color: Colors.white70),
+                  title: const Text("Duration"),
+                  subtitle: const Text("Track time instead of reps"),
+                  onTap: () => Navigator.pop(context, ExerciseType.duration),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (chosen != null) {
+      _navigateBackWithSelectedExercise(exercise.copyWith(type: chosen));
+    }
+  }
+
   void _dismissKeyboard(BuildContext context) {
     FocusScope.of(context).unfocus();
   }
@@ -242,7 +317,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
               allExercises.isNotEmpty
                   ? Expanded(
                       child: GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 250),
+                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 260),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
@@ -316,9 +391,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                 leading: const FaIcon(FontAwesomeIcons.circlePlus, size: 22),
                 horizontalTitleGap: 6,
                 title: const Text("Add to workout"),
-                onTap: () {
+                onTap: () async {
                   Navigator.of(context).pop();
-                  _navigateBackWithSelectedExercise(exercise);
+                  await _promptLogTypeAndReturn(exercise);
                 },
               ),
             ],
@@ -355,8 +430,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
       _filteredExercises = combined
           .where((exercise) => !excludeExerciseIds.contains(exercise.id))
-          .where(
-              (exercise) => exerciseType != null ? exercise.type == widget.type : true)
+          .where((exercise) =>
+              exerciseType != null ? exercise.type == widget.type : true)
           .toList();
 
       _runSearch();
