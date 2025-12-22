@@ -50,8 +50,10 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     double score = 0.0;
 
     for (final queryPart in queryParts) {
+      final queryPartLower = queryPart.toLowerCase();
+
       // Exact substring match => add 1 point
-      if (exerciseName.contains(queryPart)) {
+      if (exerciseName.contains(queryPartLower)) {
         score += 0.5;
       }
 
