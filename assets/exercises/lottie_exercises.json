@@ -4194,21 +4194,9 @@
     "isSystem": true
   },
   {
-    "id": "ex-chest-1",
-    "name": "Chest",
-    "lottie": "assets/lottie/Man Rolling Chest Exercise For Chest Relaxed.json",
-    "isSystem": true
-  },
-  {
     "id": "ex-forearm",
     "name": "Forearm",
     "lottie": "assets/lottie/Man Rolling Forearm Exercise For Arm Relaxed (1).json",
-    "isSystem": true
-  },
-  {
-    "id": "ex-forearm-1",
-    "name": "Forearm",
-    "lottie": "assets/lottie/Man Rolling Forearm Exercise For Arm Relaxed.json",
     "isSystem": true
   },
   {
@@ -4293,12 +4281,6 @@
     "id": "ex-tibialis-anterior",
     "name": "Tibialis Anterior",
     "lottie": "assets/lottie/Man Rolling Tibialis Anterior Exercise For Leg Relaxed (1).json",
-    "isSystem": true
-  },
-  {
-    "id": "ex-tibialis-anterior-1",
-    "name": "Tibialis Anterior",
-    "lottie": "assets/lottie/Man Rolling Tibialis Anterior Exercise For Leg Relaxed.json",
     "isSystem": true
   },
   {
