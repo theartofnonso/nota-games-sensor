@@ -221,8 +221,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
 
     return SingleChildScrollView(
         child: Padding(
-      padding:
-          const EdgeInsets.only(top: 20, right: 10.0, bottom: 10, left: 10),
+      padding: const EdgeInsets.only(top: 20, right: 10.0, bottom: 10, left: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -247,6 +246,12 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
               },
             ),
           ),
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: -10),
+            child: Divider(thickness: 1, color: Colors.white.withOpacity(0.1)),
+          ),
+          const SizedBox(height: 14),
           if (exercise.notes.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,7 +265,15 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                       height: 1.8,
                       fontWeight: FontWeight.w400),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: -10),
+                  child: Divider(
+                    thickness: 1,
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+                const SizedBox(height: 18),
               ],
             ),
           Padding(
@@ -277,6 +290,11 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: -10),
+            child: Divider(thickness: 1, color: Colors.white.withOpacity(0.1)),
+          ),
+          const SizedBox(height: 14),
           if (widget.exerciseLogs.isNotEmpty)
             SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -342,6 +360,17 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                       ),
                   ],
                 )),
+          if (widget.exerciseLogs.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: -10),
+              child: Divider(
+                thickness: 1,
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           const SizedBox(height: 10),
           if (withWeightsOnly(type: widget.exercise.type))
             Padding(

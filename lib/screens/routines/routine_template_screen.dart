@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:provider/provider.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
@@ -113,12 +112,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         .map((log) => routineWithLoggedExercises(log: log))
         .toList();
 
-    final muscleGroups = template.exerciseTemplates
-        .map((exerciseTemplate) => exerciseTemplate.exercise.primaryMuscleGroup)
-        .toSet()
-        .map((muscleGroup) => muscleGroup)
-        .toList();
-
     final exerciseTemplates = _originalNewValues == _OriginalNewValues.newValues
         ? () {
             // Find the most recent log for this template
@@ -163,8 +156,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             heroTag: UniqueKey,
             backgroundColor: themeGradient(context: context).colors.first,
             elevation: 8.0,
-            onPressed: () =>
-                _launchRoutineLogEditor(muscleGroups: muscleGroups),
+            onPressed: () => _launchRoutineLogEditor(),
             child: const FaIcon(FontAwesomeIcons.play, size: 24)),
         body: Container(
           height: double.infinity,
@@ -575,7 +567,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     }
   }
 
-  void _launchRoutineLogEditor({required List<MuscleGroup> muscleGroups}) {
+  void _launchRoutineLogEditor() {
     // Prevent starting a new live session when there's an unsaved one
     if (SharedPrefs().routineLog.isNotEmpty) {
       showUnsavedWorkoutBottomSheet(context);
@@ -822,23 +814,5 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         ),
       );
     }
-  }
-}
-
-class RecoveryResult {
-  final double recoveryPercentage;
-  final MuscleGroup muscleGroup;
-  final DateTime lastTrainingTime;
-  final String description;
-
-  RecoveryResult(
-      {required this.recoveryPercentage,
-      required this.muscleGroup,
-      required this.lastTrainingTime,
-      required this.description});
-
-  @override
-  String toString() {
-    return 'RecoveryResult{recoveryPercentage: $recoveryPercentage, muscleGroup: $muscleGroup, lastTrainingTime: $lastTrainingTime, desciption: $description}';
   }
 }

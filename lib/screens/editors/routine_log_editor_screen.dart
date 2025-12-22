@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/routine_editors_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -958,9 +957,6 @@ class _SuggestionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    final MuscleGroup muscleGroup = data.exercise.primaryMuscleGroup;
-    final muscleGroupLabel = muscleGroup.displayName;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1004,21 +1000,14 @@ class _SuggestionCard extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                muscleGroupLabel,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white70,
-                                ),
-                              ),
                             ],
                           ),
                         ),
                         Opacity(
                           opacity: 0.85,
                           child: FutureBuilder<String?>(
-                            future:
-                                LottieExerciseRegistry.lottieFor(data.exercise.name),
+                            future: LottieExerciseRegistry.lottieFor(
+                                data.exercise.name),
                             builder: (context, snapshot) {
                               final asset = snapshot.data;
                               if (asset != null) {

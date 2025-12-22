@@ -6,7 +6,6 @@ import 'package:trainware/dtos/set_dtos/reps_dto.dart';
 import 'package:trainware/dtos/set_dtos/set_dto.dart';
 import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/enums/template_changes_type_message_enums.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 
@@ -33,20 +32,14 @@ void main() {
       id: 'ex_weight',
       name: 'Bench Press',
       type: ExerciseType.weights,
-      primaryMuscleGroup: MuscleGroup.chest,
       notes: '');
   final bodyWeightExercise = ExerciseDto(
       id: 'ex_body',
       name: 'Push-ups',
       type: ExerciseType.bodyWeight,
-      primaryMuscleGroup: MuscleGroup.chest,
       notes: '');
   final durationExercise = ExerciseDto(
-      id: 'ex_duration',
-      name: 'Plank',
-      type: ExerciseType.duration,
-      primaryMuscleGroup: MuscleGroup.abs,
-      notes: '');
+      id: 'ex_duration', name: 'Plank', type: ExerciseType.duration, notes: '');
 
   // Mock Exercise Logs
   ExerciseLogDto makeLog(ExerciseDto exercise, List<SetDto> sets,

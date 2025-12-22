@@ -7,13 +7,14 @@ import 'package:trainware/widgets/search_bar.dart';
 
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/exercise_dto.dart';
-import '../../../enums/muscle_group_enums.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/system_exercises.dart';
+import '../../../utils/theme/color_extensions.dart';
 import '../../../widgets/empty_states/no_list_empty_state.dart';
 import '../../../widgets/exercise/exercise_grid_item.dart';
-import '../../editors/exercise_editor_screen.dart';
+import '../../../widgets/list_tile.dart';
+import '../../../widgets/buttons/opacity_button_widget_two.dart';
 
 class ExerciseLibraryScreen extends StatefulWidget {
   final bool readOnly;
@@ -219,20 +220,80 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     FocusScope.of(context).unfocus();
   }
 
-  void _navigateToExerciseEditor() async {
-    await navigateWithSlideTransition(
-        context: context, child: ExerciseEditorScreen());
-    setState(() {
-      _loadOrSyncExercises();
-    });
-  }
-
   void _navigateToExerciseHistory(ExerciseDto exercise) async {
     _dismissKeyboard(context);
     await navigateToExerciseHome(context: context, exercise: exercise);
     setState(() {
       _loadOrSyncExercises();
     });
+  }
+
+  void _showCreateExerciseSheet() {
+    final nameController = TextEditingController();
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: StatefulBuilder(builder: (context, setModalState) {
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Create exercise",
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: nameController,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: "Exercise name",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  label: "Create",
+                  onPressed: () async {
+                    final name = nameController.text.trim();
+                    if (name.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content:
+                              Text("Please provide a name for this exercise")));
+                      return;
+                    }
+                    final controller =
+                        Provider.of<SupabaseExerciseAndRoutineController>(
+                            context,
+                            listen: false);
+                    final newExercise = ExerciseDto(
+                      name: name,
+                      type: ExerciseType.weights,
+                    );
+                    await controller.saveExercise(exerciseDto: newExercise);
+                    Navigator.of(context).pop();
+                    _loadOrSyncExercises();
+                  },
+                  buttonColor: Theme.of(context).colors.vibrantAccent,
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
   }
 
   @override
@@ -245,7 +306,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         heroTag: UniqueKey(),
         backgroundColor: themeGradient(context: context).colors.first,
         elevation: 8.0,
-        onPressed: _navigateToExerciseEditor,
+        onPressed: _showCreateExerciseSheet,
         child: const FaIcon(FontAwesomeIcons.plus, size: 24),
       ),
       body: Container(
@@ -399,13 +460,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     _loadOrSyncExercises();
   }
 
-  MuscleGroup _parseMuscleGroup(String name) {
-    return MuscleGroup.values.firstWhere(
-      (g) => g.displayName.toLowerCase() == name.toLowerCase(),
-      orElse: () => MuscleGroup.fullBody,
-    );
-  }
-
   Future<void> _loadSystemExercises() async {
     final seeds = await loadLottieExercises();
     _systemExercises = seeds
@@ -414,7 +468,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
             id: s.id,
             name: s.name,
             type: ExerciseType.weights,
-            primaryMuscleGroup: _parseMuscleGroup(s.muscleGroup),
             notes: '',
           ),
         )

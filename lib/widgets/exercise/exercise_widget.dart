@@ -58,13 +58,7 @@ class ExerciseWidget extends StatelessWidget {
             )),
         title:
             Text(exercise.name, style: Theme.of(context).textTheme.titleMedium),
-        subtitle: Text(
-          exercise.primaryMuscleGroup.name.toUpperCase(),
-          style: TextStyle(
-              color: Colors.deepOrangeAccent,
-              fontWeight: FontWeight.w600,
-              fontSize: 12),
-        ),
+        subtitle: const SizedBox.shrink(),
         trailing: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () => navigateToExercise != null

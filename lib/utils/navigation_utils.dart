@@ -200,7 +200,14 @@ Future<void> navigateToRoutineLogPreview(
 
 Future<void> navigateToExerciseHome(
     {required BuildContext context, required ExerciseDto exercise}) async {
-  await context.push(ExerciseHomeScreen.routeName, extra: exercise);
+  await showAppBottomSheet(
+    context: context,
+    isDraggable: true,
+    initialChildSize: 0.9,
+    minChildSize: 0.6,
+    maxChildSize: 0.98,
+    child: ExerciseHomeScreen(exercise: exercise),
+  );
 }
 
 void navigateToRoutineHome({required BuildContext context}) {

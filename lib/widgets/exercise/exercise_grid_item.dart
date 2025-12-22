@@ -17,8 +17,6 @@ class ExerciseGridItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final muscleGroup = exercise.primaryMuscleGroup;
-
     // Try Lottie mapping; otherwise fall back to an icon placeholder
     return GestureDetector(
       onTap: onTap,
@@ -51,8 +49,8 @@ class ExerciseGridItem extends StatelessWidget {
                         FontAwesomeIcons.ban,
                         size: 38,
                         color: isDarkMode
-                            ? Colors.white.withOpacity(0.32)
-                            : Colors.black.withOpacity(0.28),
+                            ? Colors.white.withValues(alpha: 0.32)
+                            : Colors.black.withValues(alpha: 0.28),
                       );
                     },
                   ),
@@ -69,15 +67,6 @@ class ExerciseGridItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 6),
-            Text(
-              muscleGroup.displayName.toUpperCase(),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 11,
-                    color: isDarkMode ? Colors.white60 : Colors.grey.shade600,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
           ],
         ),
       ),

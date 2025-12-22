@@ -4,7 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -14,11 +13,7 @@ import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/exercise_type_enums.dart';
 import '../../logger.dart';
 import '../../utils/general_utils.dart';
-import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
-import '../../widgets/dividers/label_divider.dart';
-import '../../widgets/list_tile.dart';
-import '../../widgets/muscle_group/muscle_group_grid_picker.dart';
 
 class ExerciseEditorScreen extends StatefulWidget {
   static const routeName = '/exercise-editor';
@@ -32,8 +27,6 @@ class ExerciseEditorScreen extends StatefulWidget {
 }
 
 class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
-  late MuscleGroup _primaryMuscleGroup;
-
   final logger = getLogger(className: "_ExerciseEditorScreenState");
 
   late TextEditingController _exerciseNameController;
@@ -128,42 +121,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: 8,
                         children: [
-                          LabelDivider(
-                            label: "Select muscle group to train".toUpperCase(),
-                            labelColor: Theme.of(context).colorScheme.onSurface,
-                            dividerColor: Theme.of(context).colors.dividerColor,
-                            fontSize: 14,
-                          ),
-                          Text(
-                              "Choose from a list of muscle groups to train for this custom exercise.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                      color: isDarkMode
-                                          ? Colors.white70
-                                          : Colors.black)),
-                          ThemeListTile(
-                            child: ListTile(
-                              onTap: _selectPrimaryMuscleGroup,
-                              leading: Text(_primaryMuscleGroup.name,
-                                  textAlign: TextAlign.start,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: isDarkMode
-                                              ? Colors.white
-                                              : Colors.black)),
-                              trailing: const FaIcon(
-                                FontAwesomeIcons.arrowRightLong,
-                                size: 14,
-                              ),
-                            ),
-                          ),
+                          const SizedBox.shrink(),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -192,23 +150,6 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
   void _showSnackbar(String message) {
     showSnackbar(context: context, message: message);
-  }
-
-  void _selectPrimaryMuscleGroup() {
-    FocusScope.of(context).unfocus();
-    showAppBottomSheet(
-      context: context,
-      isDraggable: true,
-      child: MuscleGroupGridPicker(
-        selectedMuscleGroup: _primaryMuscleGroup,
-        onSelect: (muscleGroup) {
-          Navigator.of(context).pop();
-          setState(() {
-            _primaryMuscleGroup = muscleGroup;
-          });
-        },
-      ),
-    );
   }
 
   void _createExercise() async {
@@ -244,7 +185,6 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
     final exercise = ExerciseDto(
         name: exerciseName,
-        primaryMuscleGroup: _primaryMuscleGroup,
         type: widget.exercise?.type ?? ExerciseType.weights);
 
     await controller.saveExercise(exerciseDto: exercise);
@@ -291,7 +231,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     }
 
     final exerciseToBeUpdated = exercise.copyWith(
-        name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
+      name: exerciseName.trim(),
+    );
     await controller.updateExercise(exercise: exerciseToBeUpdated);
 
     if (mounted) {
@@ -307,11 +248,5 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
     _exerciseNameController =
         TextEditingController(text: previousExercise?.name);
-
-    // Default to the first item in the muscle group list used by the picker
-    // when creating a new exercise, otherwise preserve the existing value.
-    _primaryMuscleGroup = previousExercise != null
-        ? previousExercise.primaryMuscleGroup
-        : MuscleGroup.sortedValues.first;
   }
 }

@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS public.exercises (
     owner UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     type TEXT NOT NULL,
-    "primaryMuscleGroup" TEXT NOT NULL,
     notes TEXT DEFAULT '',
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -20,7 +19,6 @@ CREATE TABLE IF NOT EXISTS public.exercises (
 COMMENT ON TABLE public.exercises IS 'User-created custom exercises';
 COMMENT ON COLUMN public.exercises.name IS 'Exercise name';
 COMMENT ON COLUMN public.exercises.type IS 'Exercise type: WR (Weights), BW (Bodyweight), DR (Duration)';
-COMMENT ON COLUMN public.exercises."primaryMuscleGroup" IS 'Primary muscle group targeted';
 COMMENT ON COLUMN public.exercises.notes IS 'User notes about the exercise';
 
 -- Create indexes

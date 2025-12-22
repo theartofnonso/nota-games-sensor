@@ -4,19 +4,16 @@ import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/dtos/set_dtos/set_dto.dart';
 import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 
 ExerciseDto makeExercise({
   required String id,
   required ExerciseType type,
-  required MuscleGroup primary,
   String name = 'Test Exercise',
 }) {
   return ExerciseDto(
     id: id,
     name: name,
     type: type,
-    primaryMuscleGroup: primary,
     notes: '',
   );
 }
