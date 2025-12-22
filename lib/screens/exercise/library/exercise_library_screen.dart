@@ -52,13 +52,13 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     for (final queryPart in queryParts) {
       // Exact substring match => add 1 point
       if (exerciseName.contains(queryPart)) {
-        score += 1.0;
+        score += 0.5;
       }
 
-      //If you want to reward startsWith more strongly, you could do:
+      // Reward startsWith more strongly
       for (final part in exerciseNameParts) {
         if (part.startsWith(queryPart)) {
-          score += 0.5; // for instance, half a point for startsWith
+          score += 1.0;
         }
       }
     }
