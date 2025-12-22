@@ -415,7 +415,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
               contentPadding: EdgeInsets.zero,
               leading: const FaIcon(FontAwesomeIcons.clockRotateLeft, size: 20),
               horizontalTitleGap: 6,
-              title: const Text("View history"),
+              title: const Text("View exercise information"),
               onTap: () {
                 Navigator.of(context).pop();
                 _navigateToExerciseHistory(exercise);

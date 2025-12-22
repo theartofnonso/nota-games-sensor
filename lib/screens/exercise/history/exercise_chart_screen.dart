@@ -218,9 +218,10 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
     final weightUnitLabel = weightUnit();
 
     final exercise = widget.exercise;
+    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
 
     return SafeArea(
-      top: true,
+      top: false,
       bottom: false,
       minimum: const EdgeInsets.only(top: 20),
       child: SingleChildScrollView(
@@ -230,29 +231,38 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               AspectRatio(
-                aspectRatio: 1.8,
-                child: FutureBuilder<String?>(
-                  future: LottieExerciseRegistry.lottieFor(exercise.name),
-                  builder: (context, snapshot) {
-                    final asset = snapshot.data;
-                    if (asset != null) {
-                      return Lottie.asset(
-                        asset,
-                        fit: BoxFit.contain,
-                        repeat: true,
-                      );
-                    }
-                    return const FaIcon(
-                      FontAwesomeIcons.ban,
-                      size: 68,
-                      color: Colors.white54,
-                    );
-                  },
+                aspectRatio: 2,
+                child: Center(
+                  child: exercise.isSystem
+                      ? FutureBuilder<String?>(
+                          future:
+                              LottieExerciseRegistry.lottieFor(exercise.name),
+                          builder: (context, snapshot) {
+                            final asset = snapshot.data;
+                            if (asset != null) {
+                              return Lottie.asset(
+                                asset,
+                                fit: BoxFit.contain,
+                                repeat: true,
+                              );
+                            }
+                            return FaIcon(
+                              FontAwesomeIcons.ban,
+                              size: 68,
+                              color: banColor,
+                            );
+                          },
+                        )
+                      : FaIcon(
+                          FontAwesomeIcons.ban,
+                          size: 68,
+                          color: banColor,
+                        ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 20),
               Divider(thickness: 1, color: Colors.white.withValues(alpha: 0.1)),
-              const SizedBox(height: 14),
+              const SizedBox(height: 20),
               if (exercise.notes.isNotEmpty)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

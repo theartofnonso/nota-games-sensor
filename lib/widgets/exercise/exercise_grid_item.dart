@@ -17,6 +17,7 @@ class ExerciseGridItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
     // Try Lottie mapping; otherwise fall back to an icon placeholder
     return GestureDetector(
       onTap: onTap,
@@ -33,27 +34,32 @@ class ExerciseGridItem extends StatelessWidget {
               child: Center(
                 child: Opacity(
                   opacity: 0.9,
-                  child: FutureBuilder<String?>(
-                    future: LottieExerciseRegistry.lottieFor(exercise.name),
-                    builder: (context, snapshot) {
-                      final asset = snapshot.data;
-                      if (asset != null) {
-                        return Lottie.asset(
-                          asset,
-                          height: 80,
-                          fit: BoxFit.contain,
-                          repeat: true,
-                        );
-                      }
-                      return FaIcon(
-                        FontAwesomeIcons.ban,
-                        size: 38,
-                        color: isDarkMode
-                            ? Colors.white.withValues(alpha: 0.32)
-                            : Colors.black.withValues(alpha: 0.28),
-                      );
-                    },
-                  ),
+                  child: exercise.isSystem
+                      ? FutureBuilder<String?>(
+                          future:
+                              LottieExerciseRegistry.lottieFor(exercise.name),
+                          builder: (context, snapshot) {
+                            final asset = snapshot.data;
+                            if (asset != null) {
+                              return Lottie.asset(
+                                asset,
+                                height: 80,
+                                fit: BoxFit.contain,
+                                repeat: true,
+                              );
+                            }
+                            return FaIcon(
+                              FontAwesomeIcons.ban,
+                              size: 38,
+                              color: banColor,
+                            );
+                          },
+                        )
+                      : FaIcon(
+                          FontAwesomeIcons.ban,
+                          size: 38,
+                          color: banColor,
+                        ),
                 ),
               ),
             ),

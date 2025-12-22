@@ -1003,28 +1003,32 @@ class _SuggestionCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        FutureBuilder<String?>(
-                          future:
-                              LottieExerciseRegistry.lottieFor(data.exercise.name),
-                          builder: (context, snapshot) {
-                            final asset = snapshot.data;
-                            if (asset != null) {
-                              return Lottie.asset(
-                                asset,
-                                height: 48,
-                                fit: BoxFit.contain,
-                                repeat: true,
-                              );
-                            }
-                            return FaIcon(
-                              FontAwesomeIcons.ban,
-                              size: 32,
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.32)
-                                  : Colors.black.withValues(alpha: 0.28),
-                            );
-                          },
-                        ),
+                        data.exercise.isSystem
+                            ? FutureBuilder<String?>(
+                                future: LottieExerciseRegistry.lottieFor(
+                                    data.exercise.name),
+                                builder: (context, snapshot) {
+                                  final asset = snapshot.data;
+                                  if (asset != null) {
+                                    return Lottie.asset(
+                                      asset,
+                                      height: 48,
+                                      fit: BoxFit.contain,
+                                      repeat: true,
+                                    );
+                                  }
+                                  return FaIcon(
+                                    FontAwesomeIcons.ban,
+                                    size: 32,
+                                    color: const Color.fromRGBO(255, 255, 255, 0.4),
+                                  );
+                                },
+                              )
+                            : FaIcon(
+                                FontAwesomeIcons.ban,
+                                size: 32,
+                                color: const Color.fromRGBO(255, 255, 255, 0.4),
+                              ),
                       ],
                     ),
                   ],

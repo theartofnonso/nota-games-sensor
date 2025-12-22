@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:lottie/lottie.dart';
-
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../utils/routine_editors_utils.dart';
-import '../../../utils/lottie_exercise_registry.dart';
 import '../../../utils/string_utils.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
+import '../../../utils/lottie_exercise_registry.dart';
 
 class ExerciseLogGridItemWidget extends StatelessWidget {
   final RoutineEditorMode editorType;
@@ -36,6 +35,7 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final superSetExerciseDto = superSet;
+    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
 
     // Calculate progress
     final totalSets = exerciseLogDto.sets.length;
@@ -65,26 +65,32 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
                   child: Center(
                     child: Opacity(
                       opacity: 0.8,
-                      child: FutureBuilder<String?>(
-                        future: LottieExerciseRegistry.lottieFor(
-                            exerciseLogDto.exercise.name),
-                        builder: (context, snapshot) {
-                          final asset = snapshot.data;
-                          if (asset != null) {
-                            return Lottie.asset(
-                              asset,
-                              height: 60,
-                              fit: BoxFit.contain,
-                              repeat: true,
-                            );
-                          }
-                          return const FaIcon(
-                            FontAwesomeIcons.ban,
-                            size: 36,
-                            color: Colors.white70,
-                          );
-                        },
-                      ),
+                      child: exerciseLogDto.exercise.isSystem
+                          ? FutureBuilder<String?>(
+                              future: LottieExerciseRegistry.lottieFor(
+                                  exerciseLogDto.exercise.name),
+                              builder: (context, snapshot) {
+                                final asset = snapshot.data;
+                                if (asset != null) {
+                                  return Lottie.asset(
+                                    asset,
+                                    height: 60,
+                                    fit: BoxFit.contain,
+                                    repeat: true,
+                                  );
+                                }
+                                return FaIcon(
+                                  FontAwesomeIcons.ban,
+                                  size: 36,
+                                  color: banColor,
+                                );
+                              },
+                            )
+                          : FaIcon(
+                              FontAwesomeIcons.ban,
+                              size: 36,
+                              color: banColor,
+                            ),
                     ),
                   ),
                 ),

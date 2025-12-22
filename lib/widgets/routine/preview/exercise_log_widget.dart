@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:lottie/lottie.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
 import 'package:trainware/widgets/routine/preview/set_headers/single_set_header.dart';
 
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../utils/general_utils.dart';
+import '../../../utils/lottie_exercise_registry.dart';
 import '../../../utils/navigation_utils.dart';
 import 'set_headers/double_set_header.dart';
 import 'sets_listview.dart';
@@ -21,6 +24,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   @override
   Widget build(BuildContext context) {
     final exercise = widget.exerciseLog.exercise;
+    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
 
     final exerciseType = exercise.type;
 
@@ -31,6 +35,33 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         spacing: 12,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          SizedBox(
+            height: 68,
+            child: exercise.isSystem
+                ? FutureBuilder<String?>(
+                    future: LottieExerciseRegistry.lottieFor(exercise.name),
+                    builder: (context, snapshot) {
+                      final asset = snapshot.data;
+                      if (asset != null) {
+                        return Lottie.asset(
+                          asset,
+                          fit: BoxFit.contain,
+                          repeat: true,
+                        );
+                      }
+                      return FaIcon(
+                        FontAwesomeIcons.ban,
+                        size: 38,
+                        color: banColor,
+                      );
+                    },
+                  )
+                : FaIcon(
+                    FontAwesomeIcons.ban,
+                    size: 38,
+                    color: banColor,
+                  ),
+          ),
           Text(widget.exerciseLog.exercise.name,
               style: Theme.of(context)
                   .textTheme

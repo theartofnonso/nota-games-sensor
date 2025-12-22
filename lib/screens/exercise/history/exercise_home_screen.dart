@@ -162,6 +162,7 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
             backgroundColor: appBarBackgroundColor(context: context),
             surfaceTintColor: Colors.transparent,
             scrolledUnderElevation: 0,
+            toolbarHeight: 80,
             leading: IconButton(
               icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
               onPressed: context.pop,

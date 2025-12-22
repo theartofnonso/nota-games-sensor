@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:lottie/lottie.dart';
-
-import 'package:trainware/utils/lottie_exercise_registry.dart';
-
 import '../../dtos/appsync/exercise_dto.dart';
+import '../../utils/lottie_exercise_registry.dart';
 
 class ExerciseWidget extends StatelessWidget {
   final ExerciseDto exerciseDto;
@@ -26,6 +24,7 @@ class ExerciseWidget extends StatelessWidget {
     final navigateToExercise = onNavigateToExercise;
 
     final exercise = exerciseDto;
+    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
 
     return ListTile(
         onTap: () =>
@@ -35,27 +34,30 @@ class ExerciseWidget extends StatelessWidget {
         leading: SizedBox(
             width: 48,
             height: 48,
-            child: FutureBuilder<String?>(
-              future: LottieExerciseRegistry.lottieFor(exercise.name),
-              builder: (context, snapshot) {
-                final asset = snapshot.data;
-                if (asset != null) {
-                  return Lottie.asset(
-                    asset,
-                    fit: BoxFit.contain,
-                    repeat: true,
-                  );
-                }
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                return FaIcon(
-                  FontAwesomeIcons.ban,
-                  size: 28,
-                  color: isDark
-                      ? Colors.white.withOpacity(0.32)
-                      : Colors.black.withOpacity(0.28),
-                );
-              },
-            )),
+            child: exercise.isSystem
+                ? FutureBuilder<String?>(
+                    future: LottieExerciseRegistry.lottieFor(exercise.name),
+                    builder: (context, snapshot) {
+                      final asset = snapshot.data;
+                      if (asset != null) {
+                        return Lottie.asset(
+                          asset,
+                          fit: BoxFit.contain,
+                          repeat: true,
+                        );
+                      }
+                      return FaIcon(
+                        FontAwesomeIcons.ban,
+                        size: 28,
+                        color: banColor,
+                      );
+                    },
+                  )
+                : FaIcon(
+                    FontAwesomeIcons.ban,
+                    size: 28,
+                    color: banColor,
+                  )),
         title:
             Text(exercise.name, style: Theme.of(context).textTheme.titleMedium),
         subtitle: const SizedBox.shrink(),

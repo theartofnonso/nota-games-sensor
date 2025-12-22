@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:lottie/lottie.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
+import 'package:trainware/utils/lottie_exercise_registry.dart';
 import 'package:trainware/utils/string_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/list_tile.dart';
@@ -35,28 +37,9 @@ class ExerciseLogListItem extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
         onTap: onTap,
-        leading: Opacity(
-          opacity: showStatusIcon ? 1.0 : 0.5,
-          child: Container(
-            width: 33,
-            height: 33,
-            decoration: BoxDecoration(
-              shape: BoxShape.rectangle,
-              borderRadius: BorderRadius.circular(8),
-              color: showStatusIcon && isCompleted
-                  ? Theme.of(context).colors.vibrantAccent
-                  : Colors.white.withValues(alpha: 0.10),
-            ),
-            child: Center(
-              child: FaIcon(
-                FontAwesomeIcons.check,
-                size: 14,
-                color: showStatusIcon && isCompleted
-                    ? Colors.black
-                    : Colors.white54,
-              ),
-            ),
-          ),
+        leading: _buildIcon(
+          context: context,
+          isCompleted: isCompleted,
         ),
         title: Text(
           exerciseLogDto.exercise.name,
@@ -109,6 +92,64 @@ class ExerciseLogListItem extends StatelessWidget {
               fontWeight: FontWeight.w600,
               fontSize: 11,
             ),
+      ),
+    );
+  }
+
+  Widget _buildIcon({
+    required BuildContext context,
+    required bool isCompleted,
+  }) {
+    final exercise = exerciseLogDto.exercise;
+    final isSystem = exercise.isSystem;
+    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
+
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Center(
+            child: isSystem
+                ? FutureBuilder<String?>(
+                    future: LottieExerciseRegistry.lottieFor(exercise.name),
+                    builder: (context, snapshot) {
+                      final asset = snapshot.data;
+                      if (asset != null) {
+                        return Lottie.asset(
+                          asset,
+                          height: 44,
+                          fit: BoxFit.contain,
+                          repeat: true,
+                        );
+                      }
+                      return FaIcon(
+                        FontAwesomeIcons.ban,
+                        size: 26,
+                        color: banColor,
+                      );
+                    },
+                  )
+                : FaIcon(
+                    FontAwesomeIcons.ban,
+                    size: 26,
+                    color: banColor,
+                  ),
+          ),
+          if (showStatusIcon)
+            Positioned(
+              bottom: -2,
+              right: -2,
+              child: FaIcon(
+                FontAwesomeIcons.solidCircleCheck,
+                size: 10,
+                color: isCompleted
+                    ? Theme.of(context).colors.vibrantAccent
+                    : Colors.white70,
+              ),
+            ),
+        ],
       ),
     );
   }
