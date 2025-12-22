@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:lottie/lottie.dart';
 import 'package:trainware/dtos/appsync/exercise_dto.dart';
+import 'package:trainware/utils/lottie_exercise_registry.dart';
 
 class ExerciseGridItem extends StatelessWidget {
   final ExerciseDto exercise;
@@ -16,9 +19,7 @@ class ExerciseGridItem extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final muscleGroup = exercise.primaryMuscleGroup;
 
-    // Get muscle illustration path
-    final illustrationPath = 'muscles_illustration/${muscleGroup.name}.png';
-
+    // Try Lottie mapping; otherwise fall back to an icon placeholder
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -35,18 +36,25 @@ class ExerciseGridItem extends StatelessWidget {
             Expanded(
               child: Center(
                 child: Opacity(
-                  opacity: 0.85,
-                  child: Image.asset(
-                    illustrationPath,
-                    height: 64,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback if image not found
-                      return Icon(
-                        Icons.block,
-                        size: 32,
-                        color:
-                            isDarkMode ? Colors.white24 : Colors.grey.shade300,
+                  opacity: 0.9,
+                  child: FutureBuilder<String?>(
+                    future: LottieExerciseRegistry.lottieFor(exercise.name),
+                    builder: (context, snapshot) {
+                      final asset = snapshot.data;
+                      if (asset != null) {
+                        return Lottie.asset(
+                          asset,
+                          height: 72,
+                          fit: BoxFit.contain,
+                          repeat: true,
+                        );
+                      }
+                      return FaIcon(
+                        FontAwesomeIcons.ban,
+                        size: 36,
+                        color: isDarkMode
+                            ? Colors.white.withOpacity(0.32)
+                            : Colors.black.withOpacity(0.28),
                       );
                     },
                   ),

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
@@ -24,6 +25,7 @@ import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../extensions/duration_extension.dart';
+import '../../utils/lottie_exercise_registry.dart';
 
 const Duration _suggestionHistoryWindow = Duration(days: 30);
 
@@ -959,9 +961,6 @@ class _SuggestionCard extends StatelessWidget {
     final MuscleGroup muscleGroup = data.exercise.primaryMuscleGroup;
     final muscleGroupLabel = muscleGroup.displayName;
 
-    // Get muscle illustration path
-    final illustrationPath = 'muscles_illustration/${muscleGroup.name}.png';
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1017,14 +1016,24 @@ class _SuggestionCard extends StatelessWidget {
                         ),
                         Opacity(
                           opacity: 0.85,
-                          child: Image.asset(
-                            illustrationPath,
-                            height: 32,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              // Fallback if image not found
-                              return Icon(Icons.block,
-                                  size: 32, color: Colors.white24);
+                          child: FutureBuilder<String?>(
+                            future:
+                                LottieExerciseRegistry.lottieFor(data.exercise.name),
+                            builder: (context, snapshot) {
+                              final asset = snapshot.data;
+                              if (asset != null) {
+                                return Lottie.asset(
+                                  asset,
+                                  height: 48,
+                                  fit: BoxFit.contain,
+                                  repeat: true,
+                                );
+                              }
+                              return const FaIcon(
+                                FontAwesomeIcons.ban,
+                                size: 32,
+                                color: Colors.white70,
+                              );
                             },
                           ),
                         ),

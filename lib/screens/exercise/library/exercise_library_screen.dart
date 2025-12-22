@@ -7,8 +7,10 @@ import 'package:trainware/widgets/search_bar.dart';
 
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/exercise_dto.dart';
+import '../../../enums/muscle_group_enums.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
+import '../../../utils/system_exercises.dart';
 import '../../../widgets/empty_states/no_list_empty_state.dart';
 import '../../../widgets/exercise/exercise_grid_item.dart';
 import '../../editors/exercise_editor_screen.dart';
@@ -33,6 +35,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   /// Holds a list of [ExerciseDto] when filtering through a search
   List<ExerciseDto> _filteredExercises = [];
+  List<ExerciseDto> _systemExercises = [];
 
   /// Search through the list of exercises
   ///
@@ -106,10 +109,17 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
     // Get the list of all exercises (excluding any you want to filter out by default)
     final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
-    final allExercises = Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .exercises
+
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(context,
+        listen: false);
+
+    // Combine system (from JSON) + user (from DB)
+    final combined = [
+      ..._systemExercises,
+      ...controller.exercises,
+    ];
+
+    final allExercises = combined
         .where((exercise) => !excludeExerciseIds.contains(exercise.id))
         .toList();
 
@@ -329,19 +339,28 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   }
 
   void _loadOrSyncExercises() {
-    final exerciseType = widget.type;
-    final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
+    _loadSystemExercises().then((_) {
+      final exerciseType = widget.type;
+      final excludeExerciseIds =
+          widget.excludeExercises.map((e) => e.id).toSet();
 
-    _filteredExercises = Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .exercises
-        .where((exercise) => !excludeExerciseIds.contains(exercise.id))
-        .where((exercise) =>
-            exerciseType != null ? exercise.type == widget.type : true)
-        .toList();
+      final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+          context,
+          listen: false);
 
-    _runSearch();
+      final combined = [
+        ..._systemExercises,
+        ...controller.exercises,
+      ];
+
+      _filteredExercises = combined
+          .where((exercise) => !excludeExerciseIds.contains(exercise.id))
+          .where(
+              (exercise) => exerciseType != null ? exercise.type == widget.type : true)
+          .toList();
+
+      _runSearch();
+    });
   }
 
   @override
@@ -349,6 +368,28 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     super.initState();
     _searchController = TextEditingController();
     _loadOrSyncExercises();
+  }
+
+  MuscleGroup _parseMuscleGroup(String name) {
+    return MuscleGroup.values.firstWhere(
+      (g) => g.displayName.toLowerCase() == name.toLowerCase(),
+      orElse: () => MuscleGroup.fullBody,
+    );
+  }
+
+  Future<void> _loadSystemExercises() async {
+    final seeds = await loadLottieExercises();
+    _systemExercises = seeds
+        .map(
+          (s) => ExerciseDto(
+            id: s.id,
+            name: s.name,
+            type: ExerciseType.weights,
+            primaryMuscleGroup: _parseMuscleGroup(s.muscleGroup),
+            notes: '',
+          ),
+        )
+        .toList();
   }
 
   @override

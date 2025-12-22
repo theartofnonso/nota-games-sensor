@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:trainware/enums/muscle_group_enums.dart';
-import 'package:trainware/extensions/muscle_group_extension.dart';
 
 class MuscleGroupGridPicker extends StatelessWidget {
   final MuscleGroup selectedMuscleGroup;
@@ -71,10 +71,6 @@ class _MuscleGroupGridItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    // Get muscle illustration path
-    final illustrationPath =
-        'muscles_illustration/${muscleGroup.illustration()}.png';
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -94,24 +90,16 @@ class _MuscleGroupGridItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Muscle group illustration - centered
             Expanded(
               child: Center(
                 child: Opacity(
                   opacity: 0.8,
-                  child: Image.asset(
-                    illustrationPath,
-                    height: 60,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback if image not found
-                      return Icon(
-                        Icons.block,
-                        size: 40,
-                        color:
-                            isDarkMode ? Colors.white38 : Colors.grey.shade400,
-                      );
-                    },
+                  child: FaIcon(
+                    FontAwesomeIcons.ban,
+                    size: 38,
+                    color: isDarkMode
+                        ? Colors.white38
+                        : Colors.grey.shade500.withOpacity(0.8),
                   ),
                 ),
               ),

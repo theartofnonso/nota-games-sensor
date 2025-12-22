@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../../dtos/exercise_log_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../utils/routine_editors_utils.dart';
+import '../../../utils/lottie_exercise_registry.dart';
 import '../../../utils/string_utils.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
 
@@ -59,20 +61,27 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
               spacing: 12,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Muscle group illustration - centered at top
                 Expanded(
                   child: Center(
                     child: Opacity(
                       opacity: 0.8,
-                      child: Image.asset(
-                        'muscles_illustration/${exerciseLogDto.exercise.primaryMuscleGroup.name}.png',
-                        height: 60,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.block,
-                            size: 40,
-                            color: Colors.white24,
+                      child: FutureBuilder<String?>(
+                        future: LottieExerciseRegistry.lottieFor(
+                            exerciseLogDto.exercise.name),
+                        builder: (context, snapshot) {
+                          final asset = snapshot.data;
+                          if (asset != null) {
+                            return Lottie.asset(
+                              asset,
+                              height: 60,
+                              fit: BoxFit.contain,
+                              repeat: true,
+                            );
+                          }
+                          return const FaIcon(
+                            FontAwesomeIcons.ban,
+                            size: 36,
+                            color: Colors.white70,
                           );
                         },
                       ),

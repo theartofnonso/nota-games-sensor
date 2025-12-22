@@ -1,15 +1,15 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/dtos/appsync/exercise_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/extensions/duration_extension.dart';
-import 'package:trainware/extensions/muscle_group_extension.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget.dart';
 import 'package:trainware/widgets/list_tile.dart';
 
@@ -20,6 +20,7 @@ import '../../../enums/chart_unit_enum.dart';
 import '../../../enums/exercise_type_enums.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
+import '../../../utils/lottie_exercise_registry.dart';
 import '../../../widgets/chart/line_chart_widget.dart';
 import '../../logs/routine_log_screen.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -216,25 +217,6 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
 
     final weightUnitLabel = weightUnit();
 
-    final muscleGroup = widget.exercise.primaryMuscleGroup;
-
-    final muscleGroupsIllustrations = muscleGroup != MuscleGroup.fullBody
-        ? [
-            Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              Image.asset(
-                'muscles_illustration/${muscleGroup.illustration()}.png',
-                fit: BoxFit.contain,
-                height: 120, // Adjust the height as needed
-              ),
-              const SizedBox(
-                height: 6,
-              ),
-              Text(muscleGroup.name.toUpperCase(),
-                  style: Theme.of(context).textTheme.bodyMedium)
-            ])
-          ]
-        : <Widget>[];
-
     final exercise = widget.exercise;
 
     return SingleChildScrollView(
@@ -244,11 +226,27 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (muscleGroupsIllustrations.isNotEmpty)
-            AspectRatio(
-              aspectRatio: 1.8,
-              child: muscleGroupsIllustrations.first,
+          AspectRatio(
+            aspectRatio: 1.8,
+            child: FutureBuilder<String?>(
+              future: LottieExerciseRegistry.lottieFor(exercise.name),
+              builder: (context, snapshot) {
+                final asset = snapshot.data;
+                if (asset != null) {
+                  return Lottie.asset(
+                    asset,
+                    fit: BoxFit.contain,
+                    repeat: true,
+                  );
+                }
+                return const FaIcon(
+                  FontAwesomeIcons.ban,
+                  size: 68,
+                  color: Colors.white54,
+                );
+              },
             ),
+          ),
           if (exercise.notes.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
