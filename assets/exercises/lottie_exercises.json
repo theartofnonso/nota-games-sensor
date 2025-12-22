@@ -1,93 +1,1122 @@
 [
-  { "id": "ex-bicep-curl-alt", "name": "Bicep Curl (Alternating)", "muscleGroup": "Biceps", "lottie": "assets/lottie/Man Doing Alternating Dumbbell Bicep Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-hammer-curl-alt", "name": "Hammer Curl (Alternating)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Alternating Dumbbell Hammer Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-renegade-row", "name": "Renegade Row", "muscleGroup": "Back", "lottie": "assets/lottie/Man Doing Alternating Renegade Row Exercise for Back.json", "isSystem": true },
-  { "id": "ex-chest-fly-db", "name": "Chest Fly (Dumbbell)", "muscleGroup": "Chest", "lottie": "assets/lottie/Man Doing Bench Dumbbell Fly Exercise for Chest.json", "isSystem": true },
-  { "id": "ex-pullover-db", "name": "Pullover (Dumbbell)", "muscleGroup": "Back", "lottie": "assets/lottie/Man Doing Bench Dumbbell Pullover Exercise for Chest and Lat.json", "isSystem": true },
-  { "id": "ex-row-single-arm", "name": "Row (Single-Arm)", "muscleGroup": "Back", "lottie": "assets/lottie/Man Doing Bench One Arm Dumbbell Row Exercise for Back.json", "isSystem": true },
-  { "id": "ex-tricep-kickback-single", "name": "Tricep Kickback (Single-Arm)", "muscleGroup": "Triceps", "lottie": "assets/lottie/Man Doing Bench One Arm Tricep Kickback Exercise for Arm.json", "isSystem": true },
-  { "id": "ex-bench-press-decline-db", "name": "Bench Press (Decline, Dumbbell)", "muscleGroup": "Chest", "lottie": "assets/lottie/Man Doing Decline Dumbbell Decline Bench Press Exercise For Chest.json", "isSystem": true },
-  { "id": "ex-wrist-curl-behind-back", "name": "Wrist Curl (Behind Back)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Dumbbell Behind Back Wrist Curl Exercise For Forearm.json", "isSystem": true },
-  { "id": "ex-bench-press-db", "name": "Bench Press (Dumbbell)", "muscleGroup": "Chest", "lottie": "assets/lottie/Man Doing Dumbbell Bench Press Exercise for Chest.json", "isSystem": true },
-  { "id": "ex-wrist-curl-bench", "name": "Wrist Curl (Bench)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Dumbbell Bench Wrist Curl Exercise For Forearm.json", "isSystem": true },
-  { "id": "ex-wrist-hammer-curl-bench", "name": "Wrist Hammer Curl (Bench)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Dumbbell Bench Wrist Hammer Curl Exercise For Forearm.json", "isSystem": true },
-  { "id": "ex-row-bent-over-db", "name": "Row (Bent-Over, Dumbbell)", "muscleGroup": "Back", "lottie": "assets/lottie/Man Doing Dumbbell Bent Over Row Exercise for Back.json", "isSystem": true },
-  { "id": "ex-bicep-curl", "name": "Bicep Curl", "muscleGroup": "Biceps", "lottie": "assets/lottie/Man Doing Dumbbell Bicep Curl Exercise for Arm.json", "isSystem": true },
-  { "id": "ex-split-squat-bulgarian-db", "name": "Split Squat (Bulgarian, Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Bulgarian Split Squat Exercise for Legs.json", "isSystem": true },
-  { "id": "ex-hammer-curl-cross-body", "name": "Hammer Curl (Cross-Body)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Dumbbell Cross Body Hammer Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-deadlift-db", "name": "Deadlift (Dumbbell)", "muscleGroup": "Hamstrings", "lottie": "assets/lottie/Man Doing Dumbbell Deadlift Exercise for Legs.json", "isSystem": true },
-  { "id": "ex-donkey-kick-db", "name": "Donkey Kick (Dumbbell)", "muscleGroup": "Glutes", "lottie": "assets/lottie/Man Doing Dumbbell Donkey Kicks Exercise.json", "isSystem": true },
-  { "id": "ex-lunge-walking-db", "name": "Lunge (Walking, Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Forward Lunges Alternating Exercise.json", "isSystem": true },
-  { "id": "ex-squat-front-db", "name": "Squat (Front, Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Front Squat Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-glute-bridge-db", "name": "Glute Bridge (Dumbbell)", "muscleGroup": "Glutes", "lottie": "assets/lottie/Man Doing Dumbbell Glute Bridge Exercise For Glute.json", "isSystem": true },
-  { "id": "ex-good-morning-db", "name": "Good Morning (Dumbbell)", "muscleGroup": "Hamstrings", "lottie": "assets/lottie/Man Doing Dumbbell Good Morning Exercise For Lower Back.json", "isSystem": true },
-  { "id": "ex-hammer-curl", "name": "Hammer Curl", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Dumbbell Hammer Curl Exercise for Arm.json", "isSystem": true },
-  { "id": "ex-hip-thrust-db", "name": "Hip Thrust (Dumbbell)", "muscleGroup": "Glutes", "lottie": "assets/lottie/Man Doing Dumbbell Hip Thrust Exercise For Glute.json", "isSystem": true },
-  { "id": "ex-bicep-curl-incline", "name": "Bicep Curl (Incline)", "muscleGroup": "Biceps", "lottie": "assets/lottie/Man Doing Dumbbell Incline Bicep Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-hammer-curl-incline", "name": "Hammer Curl (Incline)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Dumbbell Incline Hammer Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-lunge-forward-left", "name": "Lunge (Forward, Left Leg)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Left Leg Forward Lunge Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-lunge-reverse-left", "name": "Lunge (Reverse, Left Leg)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Left Leg Reverse Lunge Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-squat-narrow-db", "name": "Squat (Narrow, Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Narrow Squat Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-preacher-curl-single", "name": "Preacher Curl (Single-Arm)", "muscleGroup": "Biceps", "lottie": "assets/lottie/Man Doing Dumbbell One Arm Preacher Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-squat-overhead-db", "name": "Squat (Overhead, Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Overhead Squat Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-situp-weighted-overhead", "name": "Sit-Up (Weighted, Overhead)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Overhead Weighted Sit-Up Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-wrist-radial-deviation", "name": "Wrist Radial Deviation", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Dumbbell Radial Deviation Exercise For Forearm.json", "isSystem": true },
-  { "id": "ex-rear-delt-row-db", "name": "Rear Delt Row (Dumbbell)", "muscleGroup": "Rear Shoulders", "lottie": "assets/lottie/Man Doing Dumbbell Rear Delt Row Exercise For Shoulders.json", "isSystem": true },
-  { "id": "ex-lunge-walking-reverse-db", "name": "Lunge (Walking, Reverse, Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Reverse Lunges Alternating Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-lunge-forward-right", "name": "Lunge (Forward, Right Leg)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Right Leg Forward Lunge Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-lunge-reverse-right", "name": "Lunge (Reverse, Right Leg)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Right Leg Reverse Lunge Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-side-bend-db", "name": "Side Bend (Dumbbell)", "muscleGroup": "Obliques", "lottie": "assets/lottie/Man Doing Dumbbell Side Bend Exercise For Obliques.json", "isSystem": true },
-  { "id": "ex-side-bridge-db", "name": "Side Bridge (Dumbbell)", "muscleGroup": "Obliques", "lottie": "assets/lottie/Man Doing Dumbbell Side Bridge Exercise For Obliques.json", "isSystem": true },
-  { "id": "ex-side-lunge-db", "name": "Side Lunge (Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Side Lunges Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-spider-curl", "name": "Spider Curl (Biceps)", "muscleGroup": "Biceps", "lottie": "assets/lottie/Man Doing Dumbbell Spider Bicep Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-hammer-curl-spider", "name": "Hammer Curl (Spider)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Dumbbell Spider Hammer Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-split-squat-db", "name": "Split Squat (Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Split Squat Exercise for Legs.json", "isSystem": true },
-  { "id": "ex-squat-db", "name": "Squat (Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Squat Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-squat-db-alt", "name": "Squat (Dumbbell, Alternate)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Squat Exercise For Legs (1).json", "isSystem": true },
-  { "id": "ex-squat-to-press-db", "name": "Squat to Press (Dumbbell)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Dumbbell Squat Overhead Press Exercise For Legs and Shoulders.json", "isSystem": true },
-  { "id": "ex-calf-raise-stand-db", "name": "Calf Raise (Standing, Dumbbell)", "muscleGroup": "Calves", "lottie": "assets/lottie/Man Doing Dumbbell Standing Calf Raises Exercise For Legs.json", "isSystem": true },
-  { "id": "ex-stepup-db", "name": "Step-Up (Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Dumbbell Step Up Exercise for Legs.json", "isSystem": true },
-  { "id": "ex-swing-db", "name": "Swing (Dumbbell)", "muscleGroup": "Full Body", "lottie": "assets/lottie/Man Doing Dumbbell Swing Exercise For Legs and Shoulders.json", "isSystem": true },
-  { "id": "ex-tricep-kickback", "name": "Tricep Kickback", "muscleGroup": "Triceps", "lottie": "assets/lottie/Man Doing Dumbbell Tricep Kickback Exercise for Arm.json", "isSystem": true },
-  { "id": "ex-wrist-ulnar-deviation", "name": "Wrist Ulnar Deviation", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Dumbbell Ulnar Deviation Exercise For Forearm.json", "isSystem": true },
-  { "id": "ex-upright-row-db", "name": "Upright Row (Dumbbell)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Dumbbell Upright Row Exercise For Shoulders.json", "isSystem": true },
-  { "id": "ex-cocoons-weighted", "name": "Cocoons (Weighted)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Weighted Cocoons Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-crunch-weighted", "name": "Crunch (Weighted)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Weighted Crunch Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-crunch-decline-weighted", "name": "Crunch (Decline, Weighted)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Weighted Decline Crunch Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-situp-decline-weighted", "name": "Sit-Up (Decline, Weighted)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Weighted Decline Sit-Up Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-situp-decline-ohp-weighted", "name": "Sit-Up (Decline, Overhead Press, Weighted)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Weighted Decline Sit-Up Overhead Press Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-crunch-leg-vertical-weighted", "name": "Crunch (Leg Vertical, Weighted)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Weighted Leg Vertical Crunch Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-situp-weighted", "name": "Sit-Up (Weighted)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Weighted Sit-Up Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-situp-ohp-weighted", "name": "Sit-Up (Overhead Press, Weighted)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Weighted Sit-Up Overhead Press Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-vup-weighted", "name": "V-Up (Weighted)", "muscleGroup": "Abs", "lottie": "assets/lottie/Man Doing Dumbbell Weighted V-Up Exercise For ABS.json", "isSystem": true },
-  { "id": "ex-bench-press-hammer-db", "name": "Bench Press (Hammer Grip, Dumbbell)", "muscleGroup": "Chest", "lottie": "assets/lottie/Man Doing Hammer Grip Dumbbell Bench Press Exercise For Chest.json", "isSystem": true },
-  { "id": "ex-bench-press-incline-db", "name": "Bench Press (Incline, Dumbbell)", "muscleGroup": "Chest", "lottie": "assets/lottie/Man Doing Incline Dumbbell Bench Press Exercise For Chest.json", "isSystem": true },
-  { "id": "ex-lateral-raise-leaning", "name": "Lateral Raise (Leaning, Dumbbell)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Leaning Dumbbell Lateral Raise Exercise For Shoulders.json", "isSystem": true },
-  { "id": "ex-tricep-extension-lying", "name": "Tricep Extension (Lying, Dumbbell)", "muscleGroup": "Triceps", "lottie": "assets/lottie/Man Doing Lying Dumbbell Tricep Extension Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-tricep-extension-oh-db", "name": "Tricep Extension (Overhead, Dumbbell)", "muscleGroup": "Triceps", "lottie": "assets/lottie/Man Doing Overhead Tricep Extension Exercise for Arm.json", "isSystem": true },
-  { "id": "ex-reverse-fly-db", "name": "Reverse Fly (Dumbbell)", "muscleGroup": "Rear Shoulders", "lottie": "assets/lottie/Man Doing Reverse Dumbbell Fly Exercise For Back and Shoulders.json", "isSystem": true },
-  { "id": "ex-deadlift-romanian-db", "name": "Deadlift (Romanian, Dumbbell)", "muscleGroup": "Hamstrings", "lottie": "assets/lottie/Man Doing Romanian Dumbbell Deadlift Exercise for Legs.json", "isSystem": true },
-  { "id": "ex-bicep-curl-seated", "name": "Bicep Curl (Seated)", "muscleGroup": "Biceps", "lottie": "assets/lottie/Man Doing Seated Dumbbell Bicep Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-calf-raise-seated-db", "name": "Calf Raise (Seated, Dumbbell)", "muscleGroup": "Calves", "lottie": "assets/lottie/Man Doing Seated Dumbbell Calf Raise Exercise For Calves.json", "isSystem": true },
-  { "id": "ex-hammer-curl-seated", "name": "Hammer Curl (Seated)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Seated Dumbbell Hammer Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-tricep-extension-oh-seated", "name": "Tricep Extension (Overhead, Seated)", "muscleGroup": "Triceps", "lottie": "assets/lottie/Man Doing Seated Dumbbell Overhead Tricep Extension Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-preacher-curl-seated", "name": "Preacher Curl (Seated)", "muscleGroup": "Biceps", "lottie": "assets/lottie/Man Doing Seated Dumbbell Preacher Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-preacher-hammer-curl-seated", "name": "Preacher Hammer Curl (Seated)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Seated Dumbbell Preacher Hammer Curl Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-rear-delt-row-seated", "name": "Rear Delt Row (Seated)", "muscleGroup": "Rear Shoulders", "lottie": "assets/lottie/Man Doing Seated Dumbbell Rear Delt Row Exercise For Shoulders and Back.json", "isSystem": true },
-  { "id": "ex-front-raise-seated", "name": "Front Raise (Seated)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Seated Dumbbell Shoulders Front Raise Exercise For Shoulders.json", "isSystem": true },
-  { "id": "ex-shoulder-press-hammer-seated", "name": "Shoulder Press (Hammer, Seated)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Seated Dumbbell Shoulders Hammer Press Exercise For Shoulders.json", "isSystem": true },
-  { "id": "ex-lateral-raise-seated", "name": "Lateral Raise (Seated)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Seated Dumbbell Shoulders Lateral Raise Exercise For Shoulders.json", "isSystem": true },
-  { "id": "ex-shoulder-press-seated", "name": "Shoulder Press (Seated)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Seated Dumbbell Shoulders Press Exercise For Shoulders.json", "isSystem": true },
-  { "id": "ex-wrist-curl-seated", "name": "Wrist Curl (Seated)", "muscleGroup": "Forearms", "lottie": "assets/lottie/Man Doing Seated Dumbbell Wrist Curl Exercise For Forearm.json", "isSystem": true },
-  { "id": "ex-tricep-extension-single-seated", "name": "Tricep Extension (Single-Arm, Seated)", "muscleGroup": "Triceps", "lottie": "assets/lottie/Man Doing Seated One Arm Tricep Extension Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-reverse-fly-seated", "name": "Reverse Fly (Seated)", "muscleGroup": "Rear Shoulders", "lottie": "assets/lottie/Man Doing Seated Reverse Dumbbell Fly Exercise For Shoulders and Back.json", "isSystem": true },
-  { "id": "ex-shoulder-press-hammer", "name": "Shoulder Press (Hammer)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Shoulder Hammer Press Exercise For Shoulders.json", "isSystem": true },
-  { "id": "ex-deadlift-single-leg-db", "name": "Deadlift (Single-Leg, Dumbbell)", "muscleGroup": "Hamstrings", "lottie": "assets/lottie/Man Doing Single Leg Dumbbell Deadlift Exercise for Legs.json", "isSystem": true },
-  { "id": "ex-lateral-raise-standing", "name": "Lateral Raise (Standing, Dumbbell)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Standing Dumbbell Lateral Raise Exercise For Shoulders.json", "isSystem": true },
-  { "id": "ex-tricep-extension-oh-standing", "name": "Tricep Extension (Overhead, Standing)", "muscleGroup": "Triceps", "lottie": "assets/lottie/Man Doing Standing Dumbbell Overhead Tricep Extension Exercise For Arm.json", "isSystem": true },
-  { "id": "ex-front-raise-standing", "name": "Front Raise (Standing)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Standing Dumbbell Shoulders Front Raise Exercise.json", "isSystem": true },
-  { "id": "ex-shoulder-press-standing", "name": "Shoulder Press (Standing)", "muscleGroup": "Front Shoulders", "lottie": "assets/lottie/Man Doing Standing Dumbbell Shoulders Press Exercise.json", "isSystem": true },
-  { "id": "ex-shrug-standing-db", "name": "Shrug (Standing, Dumbbell)", "muscleGroup": "Traps", "lottie": "assets/lottie/Man Doing Standing Dumbbell Shrug Exercise For Back.json", "isSystem": true },
-  { "id": "ex-squat-sumo-db", "name": "Squat (Sumo, Dumbbell)", "muscleGroup": "Quadriceps", "lottie": "assets/lottie/Man Doing Sumo Dumbbell Squat Exercise for Legs.json", "isSystem": true }
+  {
+    "id": "ex-bicep-curl-alt",
+    "name": "Bicep Curl (Alternating)",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Alternating Dumbbell Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hammer-curl-alt",
+    "name": "Hammer Curl (Alternating)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Alternating Dumbbell Hammer Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-renegade-row",
+    "name": "Renegade Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Alternating Renegade Row Exercise for Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-chest-fly-db",
+    "name": "Chest Fly (Dumbbell)",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Bench Dumbbell Fly Exercise for Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-pullover-db",
+    "name": "Pullover (Dumbbell)",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Bench Dumbbell Pullover Exercise for Chest and Lat.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-row-single-arm",
+    "name": "Row (Single-Arm)",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Bench One Arm Dumbbell Row Exercise for Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tricep-kickback-single",
+    "name": "Tricep Kickback (Single-Arm)",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Bench One Arm Tricep Kickback Exercise for Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bench-press-decline-db",
+    "name": "Bench Press (Decline, Dumbbell)",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Decline Dumbbell Decline Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-wrist-curl-behind-back",
+    "name": "Wrist Curl (Behind Back)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Dumbbell Behind Back Wrist Curl Exercise For Forearm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bench-press-db",
+    "name": "Bench Press (Dumbbell)",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Dumbbell Bench Press Exercise for Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-wrist-curl-bench",
+    "name": "Wrist Curl (Bench)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Dumbbell Bench Wrist Curl Exercise For Forearm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-wrist-hammer-curl-bench",
+    "name": "Wrist Hammer Curl (Bench)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Dumbbell Bench Wrist Hammer Curl Exercise For Forearm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-row-bent-over-db",
+    "name": "Row (Bent-Over, Dumbbell)",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Dumbbell Bent Over Row Exercise for Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bicep-curl",
+    "name": "Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Bicep Curl Exercise for Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-split-squat-bulgarian-db",
+    "name": "Split Squat (Bulgarian, Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Bulgarian Split Squat Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hammer-curl-cross-body",
+    "name": "Hammer Curl (Cross-Body)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Dumbbell Cross Body Hammer Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-deadlift-db",
+    "name": "Deadlift (Dumbbell)",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Dumbbell Deadlift Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-donkey-kick-db",
+    "name": "Donkey Kick (Dumbbell)",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing Dumbbell Donkey Kicks Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lunge-walking-db",
+    "name": "Lunge (Walking, Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Forward Lunges Alternating Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-squat-front-db",
+    "name": "Squat (Front, Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Front Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-glute-bridge-db",
+    "name": "Glute Bridge (Dumbbell)",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing Dumbbell Glute Bridge Exercise For Glute.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-good-morning-db",
+    "name": "Good Morning (Dumbbell)",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Dumbbell Good Morning Exercise For Lower Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hammer-curl",
+    "name": "Hammer Curl",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Dumbbell Hammer Curl Exercise for Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hip-thrust-db",
+    "name": "Hip Thrust (Dumbbell)",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing Dumbbell Hip Thrust Exercise For Glute.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bicep-curl-incline",
+    "name": "Bicep Curl (Incline)",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Incline Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hammer-curl-incline",
+    "name": "Hammer Curl (Incline)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Dumbbell Incline Hammer Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lunge-forward-left",
+    "name": "Lunge (Forward, Left Leg)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Left Leg Forward Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lunge-reverse-left",
+    "name": "Lunge (Reverse, Left Leg)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Left Leg Reverse Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-squat-narrow-db",
+    "name": "Squat (Narrow, Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Narrow Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-preacher-curl-single",
+    "name": "Preacher Curl (Single-Arm)",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell One Arm Preacher Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-squat-overhead-db",
+    "name": "Squat (Overhead, Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Overhead Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-situp-weighted-overhead",
+    "name": "Sit-Up (Weighted, Overhead)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Overhead Weighted Sit-Up Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-wrist-radial-deviation",
+    "name": "Wrist Radial Deviation",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Dumbbell Radial Deviation Exercise For Forearm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-rear-delt-row-db",
+    "name": "Rear Delt Row (Dumbbell)",
+    "muscleGroup": "Rear Shoulders",
+    "lottie": "assets/lottie/Man Doing Dumbbell Rear Delt Row Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lunge-walking-reverse-db",
+    "name": "Lunge (Walking, Reverse, Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Reverse Lunges Alternating Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lunge-forward-right",
+    "name": "Lunge (Forward, Right Leg)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Right Leg Forward Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lunge-reverse-right",
+    "name": "Lunge (Reverse, Right Leg)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Right Leg Reverse Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-side-bend-db",
+    "name": "Side Bend (Dumbbell)",
+    "muscleGroup": "Obliques",
+    "lottie": "assets/lottie/Man Doing Dumbbell Side Bend Exercise For Obliques.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-side-bridge-db",
+    "name": "Side Bridge (Dumbbell)",
+    "muscleGroup": "Obliques",
+    "lottie": "assets/lottie/Man Doing Dumbbell Side Bridge Exercise For Obliques.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-side-lunge-db",
+    "name": "Side Lunge (Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Side Lunges Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-spider-curl",
+    "name": "Spider Curl (Biceps)",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Spider Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hammer-curl-spider",
+    "name": "Hammer Curl (Spider)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Dumbbell Spider Hammer Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-split-squat-db",
+    "name": "Split Squat (Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Split Squat Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-squat-db",
+    "name": "Squat (Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-squat-db-alt",
+    "name": "Squat (Dumbbell, Alternate)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Squat Exercise For Legs (1).json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-squat-to-press-db",
+    "name": "Squat to Press (Dumbbell)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Dumbbell Squat Overhead Press Exercise For Legs and Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-calf-raise-stand-db",
+    "name": "Calf Raise (Standing, Dumbbell)",
+    "muscleGroup": "Calves",
+    "lottie": "assets/lottie/Man Doing Dumbbell Standing Calf Raises Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-stepup-db",
+    "name": "Step-Up (Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Step Up Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-swing-db",
+    "name": "Swing (Dumbbell)",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Dumbbell Swing Exercise For Legs and Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tricep-kickback",
+    "name": "Tricep Kickback",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Dumbbell Tricep Kickback Exercise for Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-wrist-ulnar-deviation",
+    "name": "Wrist Ulnar Deviation",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Dumbbell Ulnar Deviation Exercise For Forearm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-upright-row-db",
+    "name": "Upright Row (Dumbbell)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Dumbbell Upright Row Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cocoons-weighted",
+    "name": "Cocoons (Weighted)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Weighted Cocoons Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-crunch-weighted",
+    "name": "Crunch (Weighted)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Weighted Crunch Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-crunch-decline-weighted",
+    "name": "Crunch (Decline, Weighted)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Weighted Decline Crunch Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-situp-decline-weighted",
+    "name": "Sit-Up (Decline, Weighted)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Weighted Decline Sit-Up Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-situp-decline-ohp-weighted",
+    "name": "Sit-Up (Decline, Overhead Press, Weighted)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Weighted Decline Sit-Up Overhead Press Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-crunch-leg-vertical-weighted",
+    "name": "Crunch (Leg Vertical, Weighted)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Weighted Leg Vertical Crunch Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-situp-weighted",
+    "name": "Sit-Up (Weighted)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Weighted Sit-Up Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-situp-ohp-weighted",
+    "name": "Sit-Up (Overhead Press, Weighted)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Weighted Sit-Up Overhead Press Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-vup-weighted",
+    "name": "V-Up (Weighted)",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Dumbbell Weighted V-Up Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bench-press-hammer-db",
+    "name": "Bench Press (Hammer Grip, Dumbbell)",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Hammer Grip Dumbbell Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bench-press-incline-db",
+    "name": "Bench Press (Incline, Dumbbell)",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Incline Dumbbell Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lateral-raise-leaning",
+    "name": "Lateral Raise (Leaning, Dumbbell)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Leaning Dumbbell Lateral Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tricep-extension-lying",
+    "name": "Tricep Extension (Lying, Dumbbell)",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Lying Dumbbell Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tricep-extension-oh-db",
+    "name": "Tricep Extension (Overhead, Dumbbell)",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Overhead Tricep Extension Exercise for Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-reverse-fly-db",
+    "name": "Reverse Fly (Dumbbell)",
+    "muscleGroup": "Rear Shoulders",
+    "lottie": "assets/lottie/Man Doing Reverse Dumbbell Fly Exercise For Back and Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-deadlift-romanian-db",
+    "name": "Deadlift (Romanian, Dumbbell)",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Romanian Dumbbell Deadlift Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bicep-curl-seated",
+    "name": "Bicep Curl (Seated)",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-calf-raise-seated-db",
+    "name": "Calf Raise (Seated, Dumbbell)",
+    "muscleGroup": "Calves",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Calf Raise Exercise For Calves.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hammer-curl-seated",
+    "name": "Hammer Curl (Seated)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Hammer Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tricep-extension-oh-seated",
+    "name": "Tricep Extension (Overhead, Seated)",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Overhead Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-preacher-curl-seated",
+    "name": "Preacher Curl (Seated)",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Preacher Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-preacher-hammer-curl-seated",
+    "name": "Preacher Hammer Curl (Seated)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Preacher Hammer Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-rear-delt-row-seated",
+    "name": "Rear Delt Row (Seated)",
+    "muscleGroup": "Rear Shoulders",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Rear Delt Row Exercise For Shoulders and Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-front-raise-seated",
+    "name": "Front Raise (Seated)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Shoulders Front Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-shoulder-press-hammer-seated",
+    "name": "Shoulder Press (Hammer, Seated)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Shoulders Hammer Press Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lateral-raise-seated",
+    "name": "Lateral Raise (Seated)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Shoulders Lateral Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-shoulder-press-seated",
+    "name": "Shoulder Press (Seated)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Shoulders Press Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-wrist-curl-seated",
+    "name": "Wrist Curl (Seated)",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Seated Dumbbell Wrist Curl Exercise For Forearm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tricep-extension-single-seated",
+    "name": "Tricep Extension (Single-Arm, Seated)",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Seated One Arm Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-reverse-fly-seated",
+    "name": "Reverse Fly (Seated)",
+    "muscleGroup": "Rear Shoulders",
+    "lottie": "assets/lottie/Man Doing Seated Reverse Dumbbell Fly Exercise For Shoulders and Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-shoulder-press-hammer",
+    "name": "Shoulder Press (Hammer)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Shoulder Hammer Press Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-deadlift-single-leg-db",
+    "name": "Deadlift (Single-Leg, Dumbbell)",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Single Leg Dumbbell Deadlift Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lateral-raise-standing",
+    "name": "Lateral Raise (Standing, Dumbbell)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Standing Dumbbell Lateral Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-tricep-extension-oh-standing",
+    "name": "Tricep Extension (Overhead, Standing)",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Standing Dumbbell Overhead Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-front-raise-standing",
+    "name": "Front Raise (Standing)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Standing Dumbbell Shoulders Front Raise Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-shoulder-press-standing",
+    "name": "Shoulder Press (Standing)",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Standing Dumbbell Shoulders Press Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-shrug-standing-db",
+    "name": "Shrug (Standing, Dumbbell)",
+    "muscleGroup": "Traps",
+    "lottie": "assets/lottie/Man Doing Standing Dumbbell Shrug Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-squat-sumo-db",
+    "name": "Squat (Sumo, Dumbbell)",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Sumo Dumbbell Squat Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-ab-rollout",
+    "name": "Barbell AB Rollout",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Barbell AB Rollout Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-back-squat",
+    "name": "Barbell Back Squat",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Back Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-behind-back-wrist-curl",
+    "name": "Barbell Behind Back Wrist Curl",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Barbell Behind Back Wrist Curl Exercise For Forearm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-bench-press",
+    "name": "Barbell Bench Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Barbell Bench Press Exercise For Chest (1).json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-bench-press",
+    "name": "Barbell Bench Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Barbell Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-bench-wrist-curl",
+    "name": "Barbell Bench Wrist Curl",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Barbell Bench Wrist Curl Exercise For Forearm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-bent-over-row",
+    "name": "Barbell Bent Over Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Bent Over Row Exercise For Back (1).json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-bent-over-row",
+    "name": "Barbell Bent Over Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Bent Over Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-bicep-curl",
+    "name": "Barbell Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Barbell Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-bulgarian-split-squat",
+    "name": "Barbell Bulgarian Split Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Bulgarian Split Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-deadlift",
+    "name": "Barbell Deadlift",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Deadlift Exercise For Legs and Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-forward-lunges-alternating",
+    "name": "Barbell Forward Lunges Alternating",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Forward Lunges Alternating Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-front-squat",
+    "name": "Barbell Front Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Front Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-glute-bridge",
+    "name": "Barbell Glute Bridge",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing Barbell Glute Bridge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-good-morning",
+    "name": "Barbell Good Morning",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Good Morning Exercise For Back and Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-half-kneeling-shoulder-press",
+    "name": "Barbell Half-Kneeling Shoulder Press",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Barbell Half-Kneeling Shoulder Press Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-hip-thrust",
+    "name": "Barbell Hip Thrust",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Barbell Hip Thrust Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-incline-front-raise",
+    "name": "Barbell Incline Front Raise",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Barbell Incline Front Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-kneeling-squat",
+    "name": "Barbell Kneeling Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Kneeling Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-landmine-kneeling-squeeze-press",
+    "name": "Barbell Landmine Kneeling Squeeze Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Barbell Landmine Kneeling Squeeze Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-landmine-row",
+    "name": "Barbell Landmine Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Landmine Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-left-leg-forward-lunge",
+    "name": "Barbell Left Leg Forward Lunge",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Left Leg Forward Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-left-leg-reverse-lunge",
+    "name": "Barbell Left Leg Reverse Lunge",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Left Leg Reverse Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-narrow-squat",
+    "name": "Barbell Narrow Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Narrow Squat Exercise Men For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-one-arm-bent-over-row",
+    "name": "Barbell One Arm Bent Over Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell One Arm Bent Over Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-overhead-sit-up",
+    "name": "Barbell Overhead Sit Up",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Barbell Overhead Sit Up Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-overhead-squat",
+    "name": "Barbell Overhead Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Overhead Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-pendlay-row",
+    "name": "Barbell Pendlay Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Pendlay Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-pullover",
+    "name": "Barbell Pullover",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Pullover Exercise For Back and Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-rear-delt-row",
+    "name": "Barbell Rear Delt Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Rear Delt Row Exercise For Back and Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-reverse-grip-bent-over-row",
+    "name": "Barbell Reverse Grip Bent Over Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Reverse Grip Bent Over Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-reverse-lunges-alternating",
+    "name": "Barbell Reverse Lunges Alternating",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Reverse Lunges Alternating Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-right-leg-forward-lunge",
+    "name": "Barbell Right Leg Forward Lunge",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Right Leg Forward Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-right-leg-reverse-lunge",
+    "name": "Barbell Right Leg Reverse Lunge",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Right Leg Reverse Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-romanian-deadlift",
+    "name": "Barbell Romanian Deadlift",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Romanian Deadlift Exercise For Legs and Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-seal-row",
+    "name": "Barbell Seal Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Barbell Seal Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-side-bend",
+    "name": "Barbell Side Bend",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Barbell Side Bend Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-side-lunges",
+    "name": "Barbell Side Lunges",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Side Lunges Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-single-leg-deadlift",
+    "name": "Barbell Single Leg Deadlift",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Barbell Single Leg Deadlift Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-spider-bicep-curl",
+    "name": "Barbell Spider Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Barbell Spider Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-split-squat",
+    "name": "Barbell Split Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Split Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-squat",
+    "name": "Barbell Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-squat-overhead-press",
+    "name": "Barbell Squat Overhead Press",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Squat Overhead Press Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-standing-calf-raises",
+    "name": "Barbell Standing Calf Raises",
+    "muscleGroup": "Calves",
+    "lottie": "assets/lottie/Man Doing Barbell Standing Calf Raises Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-step-up",
+    "name": "Barbell Step Up",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Step Up Exercise For Leg.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-sumo-deadlift",
+    "name": "Barbell Sumo Deadlift",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Barbell Sumo Deadlift Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-sumo-squat",
+    "name": "Barbell Sumo Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Barbell Sumo Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-upright-row",
+    "name": "Barbell Upright Row",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Barbell Upright Row Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-close-grip-barbell-bench-press",
+    "name": "Close Grip Barbell Bench Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Close Grip Barbell Bench Press Exercise For Chest and Tricep.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-decline-barbell-bench-press",
+    "name": "Decline Barbell Bench Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Decline Barbell Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-incline-barbell-bench-press",
+    "name": "Incline Barbell Bench Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Incline Barbell Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-landmine-front-squat",
+    "name": "Landmine Front Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Landmine Front Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-landmine-romanian-deadlift",
+    "name": "Landmine Romanian Deadlift",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Landmine Romanian Deadlift Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-landmine-single-leg-deadlift",
+    "name": "Landmine Single Leg Deadlift",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Landmine Single Leg Deadlift Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-lying-barbell-tricep-extension",
+    "name": "Lying Barbell Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Lying Barbell Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-narrow-grip-barbell-bench-press",
+    "name": "Narrow Grip Barbell Bench Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Narrow Grip Barbell Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-barbell-bicep-curl",
+    "name": "Seated Barbell Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Seated Barbell Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-barbell-calf-raise",
+    "name": "Seated Barbell Calf Raise",
+    "muscleGroup": "Calves",
+    "lottie": "assets/lottie/Man Doing Seated Barbell Calf Raise Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-barbell-good-morning",
+    "name": "Seated Barbell Good Morning",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Seated Barbell Good Morning Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-barbell-overhead-tricep-extension",
+    "name": "Seated Barbell Overhead Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Seated Barbell Overhead Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-barbell-preacher-curl",
+    "name": "Seated Barbell Preacher Curl",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Seated Barbell Preacher Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-barbell-shoulders-press",
+    "name": "Seated Barbell Shoulders Press",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Seated Barbell Shoulders Press Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-barbell-wrist-curl",
+    "name": "Seated Barbell Wrist Curl",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Seated Barbell Wrist Curl Exercise For Forearm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-barbell-overhead-tricep-extension",
+    "name": "Standing Barbell Overhead Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Standing Barbell Overhead Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-barbell-shoulders-front-raise",
+    "name": "Standing Barbell Shoulders Front Raise",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Standing Barbell Shoulders Front Raise Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-barbell-shoulders-press",
+    "name": "Standing Barbell Shoulders Press",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Standing Barbell Shoulders Press Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-barbell-shrug",
+    "name": "Standing Barbell Shrug",
+    "muscleGroup": "Traps",
+    "lottie": "assets/lottie/Man Doing Standing Barbell Shrug Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-plate-shoulders-front-raise",
+    "name": "Standing Plate Shoulders Front Raise",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Standing Plate Shoulders Front Raise Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-weighted-dips",
+    "name": "Weighted Dips",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Weighted Dips Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-weighted-regular-pull-up",
+    "name": "Weighted Regular Pull Up",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Weighted Regular Pull Up Exercise For Back.json",
+    "isSystem": true
+  }
 ]
-
