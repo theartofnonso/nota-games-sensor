@@ -13,7 +13,6 @@ import '../../../utils/system_exercises.dart';
 import '../../../utils/theme/color_extensions.dart';
 import '../../../widgets/empty_states/no_list_empty_state.dart';
 import '../../../widgets/exercise/exercise_grid_item.dart';
-import '../../../widgets/list_tile.dart';
 import '../../../widgets/buttons/opacity_button_widget_two.dart';
 
 class ExerciseLibraryScreen extends StatefulWidget {
@@ -469,6 +468,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
             name: s.name,
             type: ExerciseType.weights,
             notes: '',
+            isSystem: s.isSystem,
           ),
         )
         .toList();

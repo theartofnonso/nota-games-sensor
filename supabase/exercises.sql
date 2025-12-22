@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.exercises (
     name TEXT NOT NULL,
     type TEXT NOT NULL,
     notes TEXT DEFAULT '',
+    "isSystem" BOOLEAN NOT NULL DEFAULT FALSE,
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -20,6 +21,7 @@ COMMENT ON TABLE public.exercises IS 'User-created custom exercises';
 COMMENT ON COLUMN public.exercises.name IS 'Exercise name';
 COMMENT ON COLUMN public.exercises.type IS 'Exercise type: WR (Weights), BW (Bodyweight), DR (Duration)';
 COMMENT ON COLUMN public.exercises.notes IS 'User notes about the exercise';
+COMMENT ON COLUMN public.exercises."isSystem" IS 'True for bundled/system exercises; false for user-created';
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_exercises_owner 

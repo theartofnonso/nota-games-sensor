@@ -5,12 +5,14 @@ class ExerciseDto {
   final String name;
   final ExerciseType type;
   final String notes;
+  final bool isSystem;
 
   const ExerciseDto({
     this.id = "",
     required this.name,
     required this.type,
     this.notes = "",
+    this.isSystem = false,
   });
 
   ExerciseDto copyWith({
@@ -18,12 +20,14 @@ class ExerciseDto {
     String? name,
     ExerciseType? type,
     String? notes,
+    bool? isSystem,
   }) {
     return ExerciseDto(
       id: id ?? this.id,
       name: name ?? this.name,
       type: type ?? this.type,
       notes: notes ?? this.notes,
+      isSystem: isSystem ?? this.isSystem,
     );
   }
 
@@ -33,6 +37,7 @@ class ExerciseDto {
       "name": name,
       "type": type.id,
       "notes": notes,
+      "isSystem": isSystem,
     };
   }
 
@@ -44,17 +49,20 @@ class ExerciseDto {
         : ExerciseType.weights;
 
     final notes = json["notes"] ?? "";
+    final isSystem =
+        json["isSystem"] as bool? ?? id.toString().startsWith('ex-');
 
     return ExerciseDto(
       id: id,
       name: name,
       type: type,
       notes: notes,
+      isSystem: isSystem,
     );
   }
 
   @override
   String toString() {
-    return 'ExerciseDto{id: $id, name: $name, type: $type, notes: $notes}';
+    return 'ExerciseDto{id: $id, name: $name, type: $type, notes: $notes, isSystem: $isSystem}';
   }
 }

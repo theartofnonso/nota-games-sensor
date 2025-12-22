@@ -29,8 +29,10 @@ class ExerciseHomeScreen extends StatefulWidget {
 class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   ExerciseDto? _exercise;
 
-  bool get _isSystemExercise =>
-      (_exercise?.id ?? widget.exercise.id).startsWith('ex-');
+  bool get _isSystemExercise {
+    final exercise = _exercise ?? widget.exercise;
+    return exercise.isSystem;
+  }
 
   void _showMenuBottomSheet() {
     if (_isSystemExercise) return;
@@ -93,6 +95,7 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   }
 
   void _deleteExercise(BuildContext context) async {
+    if (_isSystemExercise) return;
     context.pop();
     try {
       await Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -221,6 +224,7 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   }
 
   Future<void> _navigateToExerciseEditor() async {
+    if (_isSystemExercise) return;
     final exercise = _exercise;
     if (exercise != null) {
       final updatedExercise = await navigateWithSlideTransition(

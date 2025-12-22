@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS public.exercises (
     name TEXT NOT NULL,
     type TEXT NOT NULL,
     notes TEXT DEFAULT '',
+    "isSystem" BOOLEAN NOT NULL DEFAULT FALSE,
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
