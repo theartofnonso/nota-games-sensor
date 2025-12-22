@@ -231,7 +231,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                     },
                   ),
                   title: const Text("Weights + Reps"),
-                  subtitle: const Text("Track weights and repetitions"),
+                  subtitle: const Text("Log weights and repetitions"),
                   onTap: () => Navigator.pop(context, ExerciseType.weights),
                 ),
                 ListTile(
@@ -239,14 +239,14 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                   leading: const FaIcon(FontAwesomeIcons.hashtag,
                       color: Colors.white70),
                   title: const Text("Reps only"),
-                  subtitle: const Text("Bodyweight-style logging"),
+                  subtitle: const Text("Log only reps"),
                   onTap: () => Navigator.pop(context, ExerciseType.bodyWeight),
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.timer, color: Colors.white70),
                   title: const Text("Duration"),
-                  subtitle: const Text("Track time instead of reps"),
+                  subtitle: const Text("Log duration"),
                   onTap: () => Navigator.pop(context, ExerciseType.duration),
                 ),
               ],
@@ -317,7 +317,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
               allExercises.isNotEmpty
                   ? Expanded(
                       child: GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 260),
+                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 250),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,

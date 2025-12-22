@@ -23,16 +23,14 @@ class ExerciseGridItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Muscle group illustration - smaller and centered so it supports
-            // the content without overpowering it.
             Expanded(
               child: Center(
                 child: Opacity(
@@ -44,14 +42,14 @@ class ExerciseGridItem extends StatelessWidget {
                       if (asset != null) {
                         return Lottie.asset(
                           asset,
-                          height: 72,
+                          height: 80,
                           fit: BoxFit.contain,
                           repeat: true,
                         );
                       }
                       return FaIcon(
                         FontAwesomeIcons.ban,
-                        size: 36,
+                        size: 38,
                         color: isDarkMode
                             ? Colors.white.withOpacity(0.32)
                             : Colors.black.withOpacity(0.28),
@@ -61,8 +59,7 @@ class ExerciseGridItem extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            // Exercise name
+            const SizedBox(height: 10),
             Text(
               exercise.name,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -71,12 +68,11 @@ class ExerciseGridItem extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
-            // Primary muscle group label
+            const SizedBox(height: 6),
             Text(
               muscleGroup.displayName.toUpperCase(),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 10,
+                    fontSize: 11,
                     color: isDarkMode ? Colors.white60 : Colors.grey.shade600,
                   ),
               maxLines: 1,
