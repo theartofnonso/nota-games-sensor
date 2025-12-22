@@ -67,38 +67,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     return score;
   }
 
-  DateTime? _getMostRecentLogDateWithin30Days(ExerciseDto exercise) {
-    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context,
-        listen: false);
-
-    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-
-    // Get all routine logs within the last 30 days
-    final recentLogs = controller.logs
-        .where((log) => log.startTime.isAfter(thirtyDaysAgo))
-        .toList();
-
-    if (recentLogs.isEmpty) return null;
-
-    // Find the most recent log date for this exercise
-    DateTime? mostRecentDate;
-    for (final routineLog in recentLogs) {
-      // Check if this routine log contains the exercise
-      final hasExercise = routineLog.exerciseLogs
-          .any((exerciseLog) => exerciseLog.exercise.id == exercise.id);
-
-      if (hasExercise) {
-        final logDate = routineLog.startTime;
-        if (mostRecentDate == null || logDate.isAfter(mostRecentDate)) {
-          mostRecentDate = logDate;
-        }
-      }
-    }
-
-    return mostRecentDate;
-  }
-
   void _runSearch() {
     final query = _searchController.text.trim().toLowerCase();
     final exerciseType = widget.type;
@@ -133,24 +101,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       filteredExercises = allExercises;
     }
 
-    // If the user typed nothing, sort by most recently logged within last 30 days
+    // If the user typed nothing, sort alphabetically
     if (queryParts.isEmpty) {
-      filteredExercises.sort((a, b) {
-        final aDate = _getMostRecentLogDateWithin30Days(a);
-        final bDate = _getMostRecentLogDateWithin30Days(b);
-
-        // Exercises with recent logs come first
-        if (aDate != null && bDate != null) {
-          return bDate.compareTo(aDate); // Most recent first
-        } else if (aDate != null) {
-          return -1; // a has recent log, b doesn't
-        } else if (bDate != null) {
-          return 1; // b has recent log, a doesn't
-        } else {
-          // Neither has recent logs, sort alphabetically
-          return a.name.compareTo(b.name);
-        }
-      });
+      filteredExercises.sort((a, b) => a.name.compareTo(b.name));
       setState(() {
         _filteredExercises = filteredExercises;
       });
@@ -169,8 +122,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
     rankedList.sort((a, b) => b.score.compareTo(a.score));
 
-    // Extract the exercises from the sorted list
-    final sortedExercises = rankedList.map((tuple) => tuple.exercise).toList();
+    // Extract the exercises from the sorted list, then sort alphabetically
+    final sortedExercises = rankedList.map((tuple) => tuple.exercise).toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
 
     setState(() {
       _filteredExercises = sortedExercises;
