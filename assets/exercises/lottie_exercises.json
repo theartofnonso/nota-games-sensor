@@ -3134,5 +3134,726 @@
     "muscleGroup": "Full Body",
     "lottie": "assets/lottie/Man Doing Resistance Band Mountain Climber Exercise Men.json",
     "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-ab-rollout",
+    "name": "TRX Suspension AB Rollout",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing TRX Suspension AB Rollout Exercise For Back and ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-mountain-climber",
+    "name": "TRX Suspension Mountain Climber",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Mountain Climber Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-chest-fly",
+    "name": "TRX Suspension Chest Fly",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Chest Fly Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-romanian-deadlift",
+    "name": "TRX Suspension Romanian Deadlift",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Romanian Deadlift Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-bicep-hammer-curl",
+    "name": "TRX Suspension Bicep Hammer Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Bicep Hammer Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-reverse-lunge-to-knee-drive",
+    "name": "TRX Suspension Reverse Lunge to Knee Drive",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Reverse Lunge to Knee Drive Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-skater-squat",
+    "name": "TRX Suspension Skater Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Skater Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-pistol-squat",
+    "name": "TRX Suspension Pistol Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Pistol Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-single-leg-glute-bridge",
+    "name": "TRX Suspension Single Leg Glute Bridge",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Single Leg Glute Bridge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-push-up-var-2",
+    "name": "TRX Suspension Push Up (var 2)",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Push Up (var 2) Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-squat",
+    "name": "TRX Suspension Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-pullover",
+    "name": "TRX Suspension Pullover",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Pullover Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-chest-press",
+    "name": "TRX Suspension Chest Press",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Chest Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-standing-wide-grip-row",
+    "name": "TRX Suspension Standing Wide Grip Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Standing Wide Grip Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-pike",
+    "name": "TRX Suspension Pike",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Pike Exercise For Core and Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-split-squat",
+    "name": "TRX Suspension Split Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Split Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-alternating-hamstring-curl",
+    "name": "TRX Suspension Alternating Hamstring Curl",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Alternating Hamstring Curl Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-tricep-extension",
+    "name": "TRX Suspension Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-tuck-knee",
+    "name": "TRX Suspension Tuck Knee",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Tuck Knee Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-front-raise",
+    "name": "TRX Suspension Front Raise",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Front Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-bicep-curl",
+    "name": "TRX Suspension Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-one-arm-overhead-bicep-curl",
+    "name": "TRX Suspension One Arm Overhead Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension One Arm Overhead Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-push-up",
+    "name": "TRX Suspension Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-face-pull",
+    "name": "TRX Suspension Face Pull",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Face Pull Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-standing-row",
+    "name": "TRX Suspension Standing Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Standing Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-glute-bridge",
+    "name": "TRX Suspension Glute Bridge",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Glute Bridge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-side-bridge",
+    "name": "TRX Suspension Side Bridge",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Side Bridge Exercise For Oblique.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-body-saw",
+    "name": "TRX Suspension Body Saw",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Body Saw Exercise For Core and Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-atomic-push-up",
+    "name": "TRX Suspension Atomic Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Atomic Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-single-leg-deadlift",
+    "name": "TRX Suspension Single Leg Deadlift",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Single Leg Deadlift Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-calf-raise",
+    "name": "TRX Suspension Calf Raise",
+    "muscleGroup": "Calves",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Calf Raise Exercise For Calves.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-lunge",
+    "name": "TRX Suspension Lunge",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-bent-knee-row",
+    "name": "TRX Suspension Bent Knee Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Bent Knee Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-row",
+    "name": "TRX Suspension Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-wide-grip-row",
+    "name": "TRX Suspension Wide Grip Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Wide Grip Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-hamstring-curl",
+    "name": "TRX Suspension Hamstring Curl",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Hamstring Curl Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-standing-rear-delt-row",
+    "name": "TRX Suspension Standing Rear Delt Row",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Standing Rear Delt Row Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-trx-suspension-hamstring-runner",
+    "name": "TRX Suspension Hamstring Runner",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing TRX Suspension Hamstring Runner Exercise For Core.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-plank-frog-jump-cardio",
+    "name": "Plank Frog Jump Cardio",
+    "muscleGroup": "Cardio",
+    "lottie": "assets/lottie/Man Doing Plank Frog Jump Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-wide-push-up",
+    "name": "Wide Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Wide Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-decline-push-up",
+    "name": "Decline Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Decline Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-ab-rollout",
+    "name": "AB Rollout",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing AB Rollout Exercise for ABS and Core.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-punches-cardio",
+    "name": "Punches Cardio",
+    "muscleGroup": "Cardio",
+    "lottie": "assets/lottie/Man Doing Punches Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-burpee-with-push-up-cardio",
+    "name": "Burpee with Push Up Cardio",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Burpee with Push Up Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-captains-chair-leg-raise",
+    "name": "Captains Chair Leg Raise",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Captains Chair Leg Raise Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-scapula-push-up",
+    "name": "Scapula Push Up",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Scapula Push Up Exercise For Chest and Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-reverse-back-extension",
+    "name": "Reverse Back Extension",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing Reverse Back Extension Exercise for Glute.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-regular-reverse-grip-pull-up",
+    "name": "Regular Reverse Grip Pull Up",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Regular Reverse Grip Pull Up Exercise for Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-decline-close-push-up",
+    "name": "Decline Close Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Decline Close Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-press-jack-cardio",
+    "name": "Press Jack Cardio",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Press Jack Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-flutter-kicks-on-bench",
+    "name": "Flutter Kicks on Bench",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing Flutter Kicks on Bench Exercise for Glute.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-assisted-pistol-squat",
+    "name": "Assisted Pistol Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Assisted Pistol Squat Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-side-plank-hip-abduction",
+    "name": "Side Plank Hip Abduction",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Side Plank Hip Abduction Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-squat-front-kicks",
+    "name": "Squat Front Kicks",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Squat Front Kicks Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-decline-wide-push-up",
+    "name": "Decline Wide Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Decline Wide Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-kneeling-squat",
+    "name": "Kneeling Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Kneeling Squat Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hanging-knee-raise",
+    "name": "Hanging Knee Raise",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Hanging Knee Raise Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-close-push-up",
+    "name": "Close Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Close Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-plyo-clap-push-up",
+    "name": "Plyo Clap Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Plyo Clap Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-knee-push-up",
+    "name": "Knee Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Knee Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-jump-rope-cardio",
+    "name": "Jump Rope Cardio",
+    "muscleGroup": "Cardio",
+    "lottie": "assets/lottie/Man Doing Jump Rope Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bench-pistol-squat",
+    "name": "Bench Pistol Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Bench Pistol Squat Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hanging-toes-to-bar",
+    "name": "Hanging Toes To Bar",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Hanging Toes To Bar Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-hanging-leg-raise",
+    "name": "Hanging Leg Raise",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Hanging Leg Raise Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-squat",
+    "name": "Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Squat Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-decline-regular-push-up",
+    "name": "Decline Regular Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Decline Regular Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-dead-stop-push-up",
+    "name": "Dead Stop Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Dead Stop Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-shoulder-tap-push-up",
+    "name": "Shoulder Tap Push Up",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Shoulder Tap Push Up Exercise For Chest and Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-diamond-knee-push-up",
+    "name": "Diamond Knee Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Diamond Knee Push Up Exercise For Chest and Tricep.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-one-leg-donkey-calf-raise",
+    "name": "One Leg Donkey Calf Raise",
+    "muscleGroup": "Calves",
+    "lottie": "assets/lottie/Man Doing One Leg Donkey Calf Raise Exercise for Calf.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-close-reverse-grip-pull-up",
+    "name": "Close Reverse Grip Pull Up",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Close Reverse Grip Pull Up Exercise for Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-plyo-push-up",
+    "name": "Plyo Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Plyo Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-running-in-place-and-punches-cardio",
+    "name": "Running in Place and Punches Cardio",
+    "muscleGroup": "Cardio",
+    "lottie": "assets/lottie/Man Doing Running in Place and Punches Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-decline-crunch",
+    "name": "Decline Crunch",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Decline Crunch Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-donkey-calf-raise",
+    "name": "Donkey Calf Raise",
+    "muscleGroup": "Calves",
+    "lottie": "assets/lottie/Man Doing Donkey Calf Raise Exercise for Calves.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-vertical-leg-crunch",
+    "name": "Vertical Leg Crunch",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Vertical Leg Crunch Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-captains-chair-knee-raise",
+    "name": "Captains Chair Knee Raise",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Captains Chair Knee Raise Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-incline-close-push-up",
+    "name": "Incline Close Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Incline Close Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-decline-reverse-crunch",
+    "name": "Decline Reverse Crunch",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Decline Reverse Crunch Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-reverse-hyperextension-on-bench",
+    "name": "Reverse Hyperextension on Bench",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing Reverse Hyperextension on Bench Exercise for Glute.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-decline-straight-leg-hip-raise",
+    "name": "Decline Straight Leg Hip Raise",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Decline Straight Leg Hip Raise Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-parallel-grip-pull-up",
+    "name": "Parallel Grip Pull Up",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Parallel Grip Pull Up Exercise for Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-close-knee-push-up",
+    "name": "Close Knee Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Close Knee Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-running-plank-cardio",
+    "name": "Running Plank Cardio",
+    "muscleGroup": "Cardio",
+    "lottie": "assets/lottie/Man Doing Running Plank Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-l-sit-leg-raise-alternating",
+    "name": "L Sit Leg Raise Alternating",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing L Sit Leg Raise Alternating Exercise for ABS and Hip Flexor.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-side-bend",
+    "name": "Standing Side Bend",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Standing Side Bend Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bodyweight-swing-cardio",
+    "name": "Bodyweight Swing Cardio",
+    "muscleGroup": "Cardio",
+    "lottie": "assets/lottie/Man Doing Bodyweight Swing Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-incline-push-up",
+    "name": "Incline Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Incline Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-deficit-push-up",
+    "name": "Deficit Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Deficit Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-decline-sit-up",
+    "name": "Decline Sit Up",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Decline Sit Up Exercise for ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-diamond-push-up",
+    "name": "Diamond Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Diamond Push Up Exercise For Chest and Tricep.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-plank-shoulder-tap",
+    "name": "Plank Shoulder Tap",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Plank Shoulder Tap Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-bodyweight-good-morning",
+    "name": "Bodyweight Good Morning",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Bodyweight Good Morning Exercise for Legs and Lower Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-pseudo-planche-push-up",
+    "name": "Pseudo Planche Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Pseudo Planche Push Up Exercise For Chest and Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-regular-push-up",
+    "name": "Regular Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Regular Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-burpee-cardio",
+    "name": "Burpee Cardio",
+    "muscleGroup": "Cardio",
+    "lottie": "assets/lottie/Man Doing Burpee Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-pistol-squat",
+    "name": "Pistol Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Pistol Squat Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-burpee-no-jump-cardio",
+    "name": "Burpee No Jump Cardio",
+    "muscleGroup": "Cardio",
+    "lottie": "assets/lottie/Man Doing Burpee No Jump Cardio Exercise.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-skater-squat",
+    "name": "Skater Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Skater Squat Exercise for Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-back-extension",
+    "name": "Back Extension",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing Back Extension Exercise for Glute and Lower Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-push-up",
+    "name": "Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-incline-regular-push-up",
+    "name": "Incline Regular Push Up",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Incline Regular Push Up Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-front-kicks-cardio",
+    "name": "Front Kicks Cardio",
+    "muscleGroup": "Cardio",
+    "lottie": "assets/lottie/Man Doing Front Kicks Cardio Exercise.json",
+    "isSystem": true
   }
 ]
