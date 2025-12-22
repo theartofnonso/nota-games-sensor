@@ -1118,5 +1118,789 @@
     "muscleGroup": "Back",
     "lottie": "assets/lottie/Man Doing Weighted Regular Pull Up Exercise For Back.json",
     "isSystem": true
+  },
+  {
+    "id": "ex-cable-bayesian-bicep-curl",
+    "name": "Cable Bayesian Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable Bayesian Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-behind-back-wrist-curl",
+    "name": "Cable Behind Back Wrist Curl",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Cable Behind Back Wrist Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-bench-press",
+    "name": "Cable Bench Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-bent-over-crossover",
+    "name": "Cable Bent Over Crossover",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Bent Over Crossover Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-bent-over-reverse-fly",
+    "name": "Cable Bent Over Reverse Fly",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Bent Over Reverse Fly Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-bent-over-row",
+    "name": "Cable Bent Over Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Bent Over Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-bicep-curl",
+    "name": "Cable Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-bicep-hammer-rope-curl",
+    "name": "Cable Bicep Hammer Rope Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable Bicep Hammer Rope Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-chest-fly",
+    "name": "Cable Chest Fly",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Chest Fly Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-chest-press",
+    "name": "Cable Chest Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Chest Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-close-grip-pulldown",
+    "name": "Cable Close Grip Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Close Grip Pulldown Exercise For Back (1).json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-close-grip-pulldown",
+    "name": "Cable Close Grip Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Close Grip Pulldown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-close-grip-single-arm-pulldown",
+    "name": "Cable Close Grip Single Arm Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Close Grip Single Arm Pulldown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-close-parallel-grip-pulldown",
+    "name": "Cable Close Parallel Grip Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Close Parallel Grip Pulldown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-close-reverse-grip-pulldown",
+    "name": "Cable Close Reverse Grip Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Close Reverse Grip Pulldown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-decline-bench-press",
+    "name": "Cable Decline Bench Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Decline Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-decline-chest-press",
+    "name": "Cable Decline Chest Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Decline Chest Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-glute-kickback-hip-extension",
+    "name": "Cable Glute Kickback (Hip Extension)",
+    "muscleGroup": "Glutes",
+    "lottie": "assets/lottie/Man Doing Cable Glute Kickback (Hip Extension) Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-goblet-squat",
+    "name": "Cable Goblet Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Goblet Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-half-kneeling-face-pull",
+    "name": "Cable Half Kneeling Face Pull",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Half Kneeling Face Pull Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-high-crossover",
+    "name": "Cable High Crossover",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable High Crossover Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-high-pulley-tricep-extension",
+    "name": "Cable High Pulley Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable High Pulley Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-hip-abduction",
+    "name": "Cable Hip Abduction",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Hip Abduction Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-hip-adduction",
+    "name": "Cable Hip Adduction",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Hip Adduction Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-incline-bench-press",
+    "name": "Cable Incline Bench Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Incline Bench Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-incline-bicep-curl",
+    "name": "Cable Incline Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable Incline Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-incline-chest-press",
+    "name": "Cable Incline Chest Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Incline Chest Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-incline-pushdown",
+    "name": "Cable Incline Pushdown",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Incline Pushdown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-kneeling-donkey-kickback",
+    "name": "Cable Kneeling Donkey Kickback",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Kneeling Donkey Kickback Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-kneeling-pull-through",
+    "name": "Cable Kneeling Pull Through",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Kneeling Pull Through Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-kneeling-shoulders-hammer-press",
+    "name": "Cable Kneeling Shoulders Hammer Press",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Kneeling Shoulders Hammer Press Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-kneeling-tricep-extension",
+    "name": "Cable Kneeling Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable Kneeling Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-lateral-raise",
+    "name": "Cable Lateral Raise",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Cable Lateral Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-leaning-lateral-raise",
+    "name": "Cable Leaning Lateral Raise",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Cable Leaning Lateral Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-lunge",
+    "name": "Cable Lunge",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Lunge Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-lying-bicep-curl",
+    "name": "Cable Lying Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable Lying Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-lying-leg-curl",
+    "name": "Cable Lying Leg Curl",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Lying Leg Curl Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-lying-leg-raise",
+    "name": "Cable Lying Leg Raise",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Cable Lying Leg Raise Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-lying-pullover",
+    "name": "Cable Lying Pullover",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Lying Pullover Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-lying-reverse-fly",
+    "name": "Cable Lying Reverse Fly",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable Lying Reverse Fly Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-lying-rope-tricep-extension",
+    "name": "Cable Lying Rope Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable Lying Rope Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-lying-tricep-extension",
+    "name": "Cable Lying Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable Lying Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-bent-over-reverse-fly",
+    "name": "Cable One Arm Bent Over Reverse Fly",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Bent Over Reverse Fly Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-bicep-curl",
+    "name": "Cable One Arm Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-bicep-hammer-rope-curl",
+    "name": "Cable One Arm Bicep Hammer Rope Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Bicep Hammer Rope Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-chest-press",
+    "name": "Cable One Arm Chest Press",
+    "muscleGroup": "Chest",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Chest Press Exercise For Chest.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-lateral-raise",
+    "name": "Cable One Arm Lateral Raise",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Lateral Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-overhead-bicep-curl",
+    "name": "Cable One Arm Overhead Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Overhead Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-overhead-tricep-extension",
+    "name": "Cable One Arm Overhead Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Overhead Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-preacher-curl",
+    "name": "Cable One Arm Preacher Curl",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Preacher Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-preacher-hammer-curl",
+    "name": "Cable One Arm Preacher Hammer Curl",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Preacher Hammer Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-rope-tricep-pushdown",
+    "name": "Cable One Arm Rope Tricep Pushdown",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Rope Tricep Pushdown Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-one-arm-tricep-pushdown",
+    "name": "Cable One Arm Tricep Pushdown",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable One Arm Tricep Pushdown Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-overhead-bicep-curl",
+    "name": "Cable Overhead Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable Overhead Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-overhead-tricep-extension",
+    "name": "Cable Overhead Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable Overhead Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-preacher-curl",
+    "name": "Cable Preacher Curl",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Cable Preacher Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-preacher-hammer-curl",
+    "name": "Cable Preacher Hammer Curl",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Cable Preacher Hammer Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-pull-through",
+    "name": "Cable Pull Through",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Pull Through Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-regular-grip-pulldown",
+    "name": "Cable Regular Grip Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Regular Grip Pulldown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-regular-reverse-grip-pulldown",
+    "name": "Cable Regular Reverse Grip Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Regular Reverse Grip Pulldown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-reverse-crunch",
+    "name": "Cable Reverse Crunch",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Cable Reverse Crunch Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-reverse-grip-bicep-curl",
+    "name": "Cable Reverse Grip Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable Reverse Grip Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-reverse-grip-tricep-pushdown",
+    "name": "Cable Reverse Grip Tricep Pushdown",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable Reverse Grip Tricep Pushdown Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-romanian-deadlift-rdl",
+    "name": "Cable Romanian Deadlift (RDL)",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Cable Romanian Deadlift (RDL) Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-rope-tricep-pushdown",
+    "name": "Cable Rope Tricep Pushdown",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable Rope Tricep Pushdown Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-seated-leg-extension",
+    "name": "Cable Seated Leg Extension",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Seated Leg Extension Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-seated-rear-delt-row",
+    "name": "Cable Seated Rear Delt Row",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Seated Rear Delt Row Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-seated-shoulders-press",
+    "name": "Cable Seated Shoulders Press",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Seated Shoulders Press Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-seated-wrist-curl",
+    "name": "Cable Seated Wrist Curl",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Cable Seated Wrist Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-shoulder-90-degrees-external-rotation",
+    "name": "Cable Shoulder 90 Degrees External Rotation",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Shoulder 90 Degrees External Rotation Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-shoulder-90-degrees-internal-rotation",
+    "name": "Cable Shoulder 90 Degrees Internal Rotation",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Shoulder 90 Degrees Internal Rotation Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-shoulder-external-rotation",
+    "name": "Cable Shoulder External Rotation",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Shoulder External Rotation Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-shoulder-internal-rotation",
+    "name": "Cable Shoulder Internal Rotation",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Shoulder Internal Rotation Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-shoulder-single-arm-front-raise",
+    "name": "Cable Shoulder Single Arm Front Raise",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Shoulder Single Arm Front Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-shoulders-front-raise",
+    "name": "Cable Shoulders Front Raise",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Shoulders Front Raise Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-shrug",
+    "name": "Cable Shrug",
+    "muscleGroup": "Traps",
+    "lottie": "assets/lottie/Man Doing Cable Shrug Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-side-bend",
+    "name": "Cable Side Bend",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Cable Side Bend Exercise For Obliques.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-single-arm-bent-over-row",
+    "name": "Cable Single Arm Bent Over Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Single Arm Bent Over Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-single-arm-pulldown",
+    "name": "Cable Single Arm Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Single Arm Pulldown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-single-leg-deadlift",
+    "name": "Cable Single Leg Deadlift",
+    "muscleGroup": "Hamstrings",
+    "lottie": "assets/lottie/Man Doing Cable Single Leg Deadlift Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-spider-bicep-curl",
+    "name": "Cable Spider Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable Spider Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-split-squat",
+    "name": "Cable Split Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Split Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-squat",
+    "name": "Cable Squat",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Squat Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-squatting-bicep-curl",
+    "name": "Cable Squatting Bicep Curl",
+    "muscleGroup": "Biceps",
+    "lottie": "assets/lottie/Man Doing Cable Squatting Bicep Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-standing-calf-raise",
+    "name": "Cable Standing Calf Raise",
+    "muscleGroup": "Calves",
+    "lottie": "assets/lottie/Man Doing Cable Standing Calf Raise Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-standing-donkey-kickback",
+    "name": "Cable Standing Donkey Kickback",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Standing Donkey Kickback Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-standing-face-pull",
+    "name": "Cable Standing Face Pull",
+    "muscleGroup": "Full Body",
+    "lottie": "assets/lottie/Man Doing Cable Standing Face Pull Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-standing-hip-flexion",
+    "name": "Cable Standing Hip Flexion",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Standing Hip Flexion Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-standing-leg-curl",
+    "name": "Cable Standing Leg Curl",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Standing Leg Curl Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-standing-pullover",
+    "name": "Cable Standing Pullover",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Standing Pullover Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-standing-rear-delt-row",
+    "name": "Cable Standing Rear Delt Row",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Standing Rear Delt Row Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-standing-shoulders-press",
+    "name": "Cable Standing Shoulders Press",
+    "muscleGroup": "Front Shoulders",
+    "lottie": "assets/lottie/Man Doing Cable Standing Shoulders Press Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-standing-single-arm-pullover",
+    "name": "Cable Standing Single Arm Pullover",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Standing Single Arm Pullover Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-step-up",
+    "name": "Cable Step Up",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Step Up Exercise For Legs.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-straight-arm-lat-pushdown",
+    "name": "Cable Straight Arm Lat Pushdown",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Straight Arm Lat Pushdown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-tricep-kickback",
+    "name": "Cable Tricep Kickback",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable Tricep Kickback Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-tricep-pushdown",
+    "name": "Cable Tricep Pushdown",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Cable Tricep Pushdown Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-upright-row",
+    "name": "Cable Upright Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Cable Upright Row Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-wide-grip-pulldown",
+    "name": "Cable Wide Grip Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Wide Grip Pulldown Exercise For Back (1).json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-wide-grip-pulldown",
+    "name": "Cable Wide Grip Pulldown",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Cable Wide Grip Pulldown Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-wrist-curl",
+    "name": "Cable Wrist Curl",
+    "muscleGroup": "Forearms",
+    "lottie": "assets/lottie/Man Doing Cable Wrist Curl Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-incline-bench-cable-row",
+    "name": "Incline Bench Cable Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Incline Bench Cable Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-incline-bench-wide-grip-cable-row",
+    "name": "Incline Bench Wide Grip Cable Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Incline Bench Wide Grip Cable Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-kneeling-cable-crunch",
+    "name": "Kneeling Cable Crunch",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Kneeling Cable Crunch Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-cable-rope-overhead-tricep-extension",
+    "name": "Seated Cable Rope Overhead Tricep Extension",
+    "muscleGroup": "Triceps",
+    "lottie": "assets/lottie/Man Doing Seated Cable Rope Overhead Tricep Extension Exercise For Arm.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-cable-row",
+    "name": "Seated Cable Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Seated Cable Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-single-arm-cable-row",
+    "name": "Seated Single Arm Cable Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Seated Single Arm Cable Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-seated-wide-grip-cable-row",
+    "name": "Seated Wide Grip Cable Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Seated Wide Grip Cable Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-single-arm-half-kneeling-cable-row",
+    "name": "Single Arm Half Kneeling Cable Row",
+    "muscleGroup": "Quadriceps",
+    "lottie": "assets/lottie/Man Doing Single Arm Half Kneeling Cable Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-cable-crunch",
+    "name": "Standing Cable Crunch",
+    "muscleGroup": "Abs",
+    "lottie": "assets/lottie/Man Doing Standing Cable Crunch Exercise For ABS.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-cable-row",
+    "name": "Standing Cable Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Standing Cable Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-standing-single-arm-cable-row",
+    "name": "Standing Single Arm Cable Row",
+    "muscleGroup": "Back",
+    "lottie": "assets/lottie/Man Doing Standing Single Arm Cable Row Exercise For Back.json",
+    "isSystem": true
   }
 ]
