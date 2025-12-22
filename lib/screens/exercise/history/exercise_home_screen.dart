@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:trainware/screens/editors/exercise_editor_screen.dart';
 import 'package:trainware/screens/exercise/history/exercise_chart_screen.dart';
 import 'package:trainware/screens/exercise/history/history_screen.dart';
 
@@ -12,7 +11,7 @@ import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../utils/dialog_utils.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
-import '../../../utils/navigation_utils.dart';
+import '../../../utils/name_notes_bottom_sheet.dart';
 import '../../../widgets/bottom_sheets/app_bottom_sheet.dart';
 
 class ExerciseHomeScreen extends StatefulWidget {
@@ -55,10 +54,7 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
               title: Text("Edit", style: Theme.of(context).textTheme.bodyLarge),
               onTap: () async {
                 Navigator.of(context).pop();
-                await _navigateToExerciseEditor();
-                if (mounted) {
-                  _showMenuBottomSheet();
-                }
+                await _showRenameExerciseSheet();
               },
             ),
             ListTile(
@@ -224,18 +220,31 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
         ));
   }
 
-  Future<void> _navigateToExerciseEditor() async {
-    if (_isSystemExercise) return;
+  Future<void> _showRenameExerciseSheet() async {
     final exercise = _exercise;
-    if (exercise != null) {
-      final updatedExercise = await navigateWithSlideTransition(
-          context: context,
-          child: ExerciseEditorScreen(exercise: exercise)) as ExerciseDto?;
-      if (updatedExercise != null) {
-        setState(() {
-          _exercise = updatedExercise;
-        });
-      }
+    if (exercise == null) return;
+
+    final details = await showNameNotesBottomSheet(
+      context: context,
+      title: 'Rename exercise',
+      primaryButtonLabel: 'Save',
+      initialName: exercise.name,
+      initialNotes: exercise.notes,
+      emptyNameMessage: 'Please provide a name for this exercise',
+    );
+    if (details == null) return;
+
+    final controller =
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
+    final updated = exercise.copyWith(
+      name: details.name,
+      notes: details.notes,
+    );
+    await controller.updateExercise(exercise: updated);
+    if (mounted) {
+      setState(() {
+        _exercise = updated;
+      });
     }
   }
 

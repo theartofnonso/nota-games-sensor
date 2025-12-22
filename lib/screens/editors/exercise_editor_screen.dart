@@ -92,9 +92,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(50),
                           border: Border.all(
-                            color: Theme.of(context)
-                                .extension<TRKRColors>()!
-                                .borderLight,
+                            color: Colors.white.withOpacity(0.25),
                             width: 1,
                           ),
                         ),

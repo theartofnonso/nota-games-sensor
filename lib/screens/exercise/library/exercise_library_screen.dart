@@ -10,10 +10,9 @@ import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/system_exercises.dart';
-import '../../../utils/theme/color_extensions.dart';
+import '../../../utils/name_notes_bottom_sheet.dart';
 import '../../../widgets/empty_states/no_list_empty_state.dart';
 import '../../../widgets/exercise/exercise_grid_item.dart';
-import '../../../widgets/buttons/opacity_button_widget_two.dart';
 
 class ExerciseLibraryScreen extends StatefulWidget {
   final bool readOnly;
@@ -227,72 +226,25 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     });
   }
 
-  void _showCreateExerciseSheet() {
-    final nameController = TextEditingController();
-    showAppBottomSheet(
+  Future<void> _showCreateExerciseSheet() async {
+    final details = await showNameNotesBottomSheet(
       context: context,
-      isScrollControlled: true,
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-        ),
-        child: StatefulBuilder(builder: (context, setModalState) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Create exercise",
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: nameController,
-                textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
-                  labelText: "Exercise name",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OpacityButtonWidgetTwo(
-                  label: "Create",
-                  onPressed: () async {
-                    final name = nameController.text.trim();
-                    if (name.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content:
-                              Text("Please provide a name for this exercise")));
-                      return;
-                    }
-                    final controller =
-                        Provider.of<SupabaseExerciseAndRoutineController>(
-                            context,
-                            listen: false);
-                    final newExercise = ExerciseDto(
-                      name: name,
-                      type: ExerciseType.weights,
-                    );
-                    await controller.saveExercise(exerciseDto: newExercise);
-                    Navigator.of(context).pop();
-                    _loadOrSyncExercises();
-                  },
-                  buttonColor: Theme.of(context).colors.vibrantAccent,
-                ),
-              ),
-            ],
-          );
-        }),
-      ),
+      title: 'Create exercise',
+      primaryButtonLabel: 'Create',
+      emptyNameMessage: 'Please provide a name for this exercise',
     );
+    if (details == null) return;
+
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final newExercise = ExerciseDto(
+      name: details.name,
+      notes: details.notes,
+      type: ExerciseType.weights,
+    );
+    await controller.saveExercise(exerciseDto: newExercise);
+    _loadOrSyncExercises();
   }
 
   @override
