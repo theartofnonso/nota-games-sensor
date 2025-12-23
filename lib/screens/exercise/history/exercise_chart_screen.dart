@@ -318,7 +318,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               if (exercise.notes.isNotEmpty)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
