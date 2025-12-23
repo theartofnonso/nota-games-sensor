@@ -4288,5 +4288,47 @@
     "name": "Foam Roller -  Upper Back",
     "lottie": "assets/lottie/Man Rolling Upper Back Exercise For Back Relaxed.json",
     "isSystem": true
+  },
+  {
+    "id": "ex-back-extension-lumbar-focused",
+    "name": "Back Extension (Lumbar Focused)",
+    "lottie": "assets/lottie/Back Extension Lumbar Focused Exercise Men.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-stiff-leg-deadlift",
+    "name": "Barbell Stiff-Leg Deadlift",
+    "lottie": "assets/lottie/Barbell Stiff-Leg Deadlift Exercise Men.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-high-pulley-tricep-extension-var-2",
+    "name": "Cable High Pulley Tricep Extension (Var 2)",
+    "lottie": "assets/lottie/Cable High Pulley Tricep Extension (var 2) Exercise Men.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-cable-low-crossover",
+    "name": "Cable Low Crossover",
+    "lottie": "assets/lottie/Cable Low Crossover Exercise Men.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-dumbbell-chest-fly",
+    "name": "Dumbbell Chest Fly",
+    "lottie": "assets/lottie/Dumbbell Chest Fly Exercise Men.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-dumbbell-incline-fly",
+    "name": "Dumbbell Incline Fly",
+    "lottie": "assets/lottie/Dumbbell Incline Fly Exercise Men.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-pec-deck",
+    "name": "Pec Deck",
+    "lottie": "assets/lottie/Lever Pec Deck Exercise Men.json",
+    "isSystem": true
   }
 ]
