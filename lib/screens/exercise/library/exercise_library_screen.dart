@@ -36,35 +36,28 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   List<ExerciseDto> _filteredExercises = [];
   List<ExerciseDto> _systemExercises = [];
 
-  /// Search through the list of exercises
-  ///
-  /// Calculates a 'relevance' score for an ExerciseDto based on the query parts.
+  /// Simple relevance scoring:
+  /// +2 if name contains the query part
+  /// +1 if any token starts with the query part
   double _calculateRelevanceScore(
       ExerciseDto exercise, List<String> queryParts) {
-    // Convert exercise name to lowercase for case-insensitive matching
-    final exerciseName = exercise.name.toLowerCase();
+    if (queryParts.isEmpty) return 0;
 
-    // You can split the exercise name on spaces/hyphens if you want more granularity
-    final exerciseNameParts = exerciseName.split(RegExp(r'[\s-]+'));
+    final name = exercise.name.toLowerCase();
+    final tokens =
+        name.split(RegExp(r'[\s-]+')).where((t) => t.isNotEmpty).toList();
 
-    double score = 0.0;
-
-    for (final queryPart in queryParts) {
-      final queryPartLower = queryPart.toLowerCase();
-
-      // Exact substring match => add 1 point
-      if (exerciseName.contains(queryPartLower)) {
-        score += 0.5;
+    double score = 0;
+    for (final part in queryParts) {
+      final q = part.toLowerCase();
+      if (name.contains(q)) {
+        score += 2;
+        continue;
       }
-
-      // Reward startsWith more strongly
-      for (final part in exerciseNameParts) {
-        if (part.startsWith(queryPart)) {
-          score += 1.0;
-        }
+      if (tokens.any((t) => t.startsWith(q))) {
+        score += 1;
       }
     }
-
     return score;
   }
 
@@ -111,24 +104,19 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       return;
     }
 
-    // Compute a relevance score for each exercise, then sort descending by score
-    final rankedList = filteredExercises
-        .map((ex) {
-          final score = _calculateRelevanceScore(ex, queryParts);
-          return (exercise: ex, score: score);
-        })
-        .where((tuple) =>
-            tuple.score > 0) // optional: only keep those with some match
+    final ranked = filteredExercises
+        .map((ex) => (exercise: ex, score: _calculateRelevanceScore(ex, queryParts)))
+        .where((e) => e.score > 0)
         .toList();
 
-    rankedList.sort((a, b) => b.score.compareTo(a.score));
-
-    // Extract the exercises from the sorted list, then sort alphabetically
-    final sortedExercises = rankedList.map((tuple) => tuple.exercise).toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    ranked.sort((a, b) {
+      final cmp = b.score.compareTo(a.score);
+      if (cmp != 0) return cmp;
+      return a.exercise.name.compareTo(b.exercise.name);
+    });
 
     setState(() {
-      _filteredExercises = sortedExercises;
+      _filteredExercises = ranked.map((e) => e.exercise).toList();
     });
   }
 
