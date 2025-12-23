@@ -1591,7 +1591,7 @@
   },
   {
     "id": "ex-lever-belt-squat",
-    "name": "Lever Belt Squat",
+    "name": "Belt Squat",
     "lottie": "assets/lottie/Man Doing Lever Belt Squat Exercise For Legs.json",
     "isSystem": true
   },
@@ -1621,19 +1621,19 @@
   },
   {
     "id": "ex-lever-lying-leg-curl",
-    "name": "Lever Lying Leg Curl",
+    "name": "Lying Leg Curl",
     "lottie": "assets/lottie/Man Doing Lever Lying Leg Curl Exercise For Legs.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-dip",
-    "name": "Lever Dip",
+    "name": "Dip",
     "lottie": "assets/lottie/Man Doing Lever Dip Exercise For Chest.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-lying-t-bar-row",
-    "name": "Lever Lying T Bar Row",
+    "name": "Lying T Bar Row",
     "lottie": "assets/lottie/Man Doing Lever Lying T Bar Row Exercise For Back.json",
     "isSystem": true
   },
@@ -1651,7 +1651,7 @@
   },
   {
     "id": "ex-lever-back-extension",
-    "name": "Lever Back Extension",
+    "name": "Back Extension",
     "lottie": "assets/lottie/Man Doing Lever Back Extension Exercise For Lower Back.json",
     "isSystem": true
   },
@@ -1681,7 +1681,7 @@
   },
   {
     "id": "ex-lever-standing-donkey-kickback",
-    "name": "Lever Standing Donkey Kickback",
+    "name": "Standing Donkey Kickback",
     "lottie": "assets/lottie/Man Doing Lever Standing Donkey Kickback Exercise For Legs.json",
     "isSystem": true
   },
@@ -1885,7 +1885,7 @@
   },
   {
     "id": "ex-lever-standing-calf-raise",
-    "name": "Lever Standing Calf Raise",
+    "name": "Standing Calf Raise",
     "lottie": "assets/lottie/Man Doing Lever Standing Calf Raise Exercise For Legs.json",
     "isSystem": true
   },
@@ -1897,7 +1897,7 @@
   },
   {
     "id": "ex-lever-pendulum-squat",
-    "name": "Lever Pendulum Squat",
+    "name": "Pendulum Squat",
     "lottie": "assets/lottie/Man Doing Lever Pendulum Squat Exercise For Legs.json",
     "isSystem": true
   },
@@ -1921,7 +1921,7 @@
   },
   {
     "id": "ex-seated-lever-hip-abduction",
-    "name": "Seated Lever Hip Abduction",
+    "name": "Seated Hip Abduction",
     "lottie": "assets/lottie/Man Doing Seated Lever Hip Abduction Exercise For Legs.json",
     "isSystem": true
   },
@@ -1933,7 +1933,7 @@
   },
   {
     "id": "ex-seated-lever-hip-adduction",
-    "name": "Seated Lever Hip Adduction",
+    "name": "Seated Hip Adduction",
     "lottie": "assets/lottie/Man Doing Seated Lever Hip Adduction Exercise For Legs.json",
     "isSystem": true
   },
@@ -1945,13 +1945,13 @@
   },
   {
     "id": "ex-lever-low-row",
-    "name": "Lever Low Row",
+    "name": "Low Row",
     "lottie": "assets/lottie/Man Doing Lever Low Row Exercise For Back.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-leg-extension",
-    "name": "Lever Leg Extension",
+    "name": "Leg Extension",
     "lottie": "assets/lottie/Man Doing Lever Leg Extension Exercise For Legs.json",
     "isSystem": true
   },
@@ -1975,13 +1975,13 @@
   },
   {
     "id": "ex-lever-standing-leg-curl",
-    "name": "Lever Standing Leg Curl",
+    "name": "Standing Leg Curl",
     "lottie": "assets/lottie/Man Doing Lever Standing Leg Curl Exercise For Legs.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-seated-wide-grip-row",
-    "name": "Lever Seated Wide Grip Row",
+    "name": "Seated Wide Grip Row",
     "lottie": "assets/lottie/Man Doing Lever Seated Wide Grip Row Exercise For Back.json",
     "isSystem": true
   },
@@ -1993,19 +1993,19 @@
   },
   {
     "id": "ex-lever-chest-press",
-    "name": "Lever Chest Press",
+    "name": "Chest Press",
     "lottie": "assets/lottie/Man Doing Lever Chest Press Exercise For Chest.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-incline-chest-press",
-    "name": "Lever Incline Chest Press",
+    "name": "Incline Chest Press",
     "lottie": "assets/lottie/Man Doing Lever Incline Chest Press Exercise For Chest.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-lateral-raise",
-    "name": "Lever Lateral Raise",
+    "name": "Lateral Raise",
     "lottie": "assets/lottie/Man Doing Lever Lateral Raise Exercise For Shoulders.json",
     "isSystem": true
   },
@@ -2023,7 +2023,7 @@
   },
   {
     "id": "ex-lever-lying-wide-grip-t-bar-row",
-    "name": "Lever Lying Wide Grip T Bar Row",
+    "name": "Lying Wide Grip T Bar Row",
     "lottie": "assets/lottie/Man Doing Lever Lying Wide Grip T Bar Row Exercise For Back.json",
     "isSystem": true
   },
@@ -2041,7 +2041,7 @@
   },
   {
     "id": "ex-lever-pulldown",
-    "name": "Lever Pulldown",
+    "name": "Pulldown",
     "lottie": "assets/lottie/Man Doing Lever Pulldown Exercise For Back.json",
     "isSystem": true
   },
