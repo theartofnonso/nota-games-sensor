@@ -28,6 +28,7 @@ import '../screens/routines/routine_plans_screen.dart';
 import '../screens/routines/routine_template_screen.dart';
 import '../utils/name_notes_bottom_sheet.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
+import 'editor_bottom_sheet.dart';
 
 Future<ExerciseDto?> navigateToExerciseEditor(
     {required BuildContext context, ExerciseEditorArguments? arguments}) async {
@@ -116,18 +117,13 @@ void navigateToPastRoutineLogEditor(
 Future<void> navigateToRoutineLogEditor(
     {required BuildContext context,
     required RoutineLogArguments arguments}) async {
-  final log = await showAppBottomSheet<RoutineLogDto>(
-    context: context,
-    isDraggable: true,
-    initialChildSize: 0.9,
-    minChildSize: 0.6,
-    maxChildSize: 0.98,
-    child: RoutineLogEditorScreen(
-      log: arguments.log,
-      mode: arguments.editorMode,
-      cached: arguments.cached,
-    ),
-  );
+  final log = await showEditorBottomSheet<RoutineLogDto>(
+      context: context,
+      child: RoutineLogEditorScreen(
+        log: arguments.log,
+        mode: arguments.editorMode,
+        cached: arguments.cached,
+      ));
   if (log != null) {
     if (context.mounted) {
       navigateWithSlideTransition(
@@ -163,12 +159,9 @@ Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
 Future<void> navigateToRoutineTemplatePreview(
     {required BuildContext context,
     required RoutineTemplateDto template}) async {
-  await showAppBottomSheet<void>(
+  await showEditorBottomSheet<void>(
     context: context,
-    isDraggable: true,
-    initialChildSize: 0.9,
-    minChildSize: 0.6,
-    maxChildSize: 0.98,
+    isDismissible: false, // prevent swipe-to-dismiss; match editor behavior
     builder: (context, scrollController) {
       return RoutineTemplateScreen(
         id: template.id,
@@ -200,14 +193,8 @@ Future<void> navigateToRoutineLogPreview(
 
 Future<void> navigateToExerciseHome(
     {required BuildContext context, required ExerciseDto exercise}) async {
-  await showAppBottomSheet(
-    context: context,
-    isDraggable: true,
-    initialChildSize: 0.9,
-    minChildSize: 0.6,
-    maxChildSize: 0.98,
-    child: ExerciseHomeScreen(exercise: exercise),
-  );
+  await showEditorBottomSheet(
+      context: context, child: ExerciseHomeScreen(exercise: exercise));
 }
 
 void navigateToRoutineHome({required BuildContext context}) {

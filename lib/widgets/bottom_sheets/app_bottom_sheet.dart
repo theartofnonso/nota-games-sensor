@@ -111,7 +111,9 @@ Future<T?> showAppBottomSheet<T>({
     backgroundColor: Colors.transparent,
     isScrollControlled: isScrollControlled,
     isDismissible: isDismissible,
-    enableDrag: true,
+    // When using our own DraggableScrollableSheet, disable the modal's drag
+    // dismissal so slight pulls don't instantly close the sheet.
+    enableDrag: !isDraggable,
     showDragHandle: false,
     useSafeArea: true,
     // Dim the backdrop so transparent sheets still pop against the content behind.

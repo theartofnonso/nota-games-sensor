@@ -19,6 +19,7 @@ import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
+import '../../utils/editor_bottom_sheet.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../dtos/viewmodels/past_routine_log_arguments.dart';
@@ -166,95 +167,91 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           child: SafeArea(
             bottom: false,
             minimum: const EdgeInsets.only(top: 10.0),
-            child: SingleChildScrollView(
-              controller: widget.scrollController,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 20,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(
-                        top: 12.0, left: 10.0, right: 10.0),
-                    child: Column(
-                      spacing: 20,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: 4,
-                                children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.only(top: 12.0, left: 10.0, right: 10.0),
+                  child: Column(
+                    spacing: 20,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              spacing: 4,
+                              children: [
+                                Text(
+                                  template.name,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                if (template.notes.isNotEmpty)
                                   Text(
-                                    template.name,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      height: 1.5,
-                                      fontWeight: FontWeight.w900,
+                                    template.notes,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDarkMode
+                                          ? Colors.white70
+                                          : Colors.black,
+                                      height: 1.6,
+                                      fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                  if (template.notes.isNotEmpty)
-                                    Text(
-                                      template.notes,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: isDarkMode
-                                            ? Colors.white70
-                                            : Colors.black,
-                                        height: 1.6,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                ],
-                              ),
+                              ],
                             ),
-                            IconButton(
-                              onPressed: () =>
-                                  _showMenuBottomSheet(planDto: plan),
-                              icon: const FaIcon(
-                                  FontAwesomeIcons.ellipsisVertical),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          spacing: 8,
-                          children: [
-                            ChipOne(
-                                label:
-                                    "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
-                                child: CustomIcon(
-                                    FontAwesomeIcons.personWalking,
-                                    color: Theme.of(context)
-                                        .colors
-                                        .vibrantAccent)),
-                            ChipOne(
-                                label:
-                                    "$totalSets ${pluralize(word: "Set", count: totalSets)}",
-                                child: CustomIcon(FontAwesomeIcons.hashtag,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .secondary)),
-                          ],
-                        ),
-                        Calendar(
-                          onSelectDate: (date) => _showLogsForDate(
-                              context, date, allLogsForTemplate),
-                          logs: allLogsForTemplate,
-                        ),
-                      ],
-                    ),
+                          ),
+                          IconButton(
+                            onPressed: () =>
+                                _showMenuBottomSheet(planDto: plan),
+                            icon:
+                                const FaIcon(FontAwesomeIcons.ellipsisVertical),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        spacing: 8,
+                        children: [
+                          ChipOne(
+                              label:
+                                  "${template.exerciseTemplates.length} ${pluralize(word: "Exercise", count: template.exerciseTemplates.length)}",
+                              child: CustomIcon(FontAwesomeIcons.personWalking,
+                                  color:
+                                      Theme.of(context).colors.vibrantAccent)),
+                          ChipOne(
+                              label:
+                                  "$totalSets ${pluralize(word: "Set", count: totalSets)}",
+                              child: CustomIcon(FontAwesomeIcons.hashtag,
+                                  color:
+                                      Theme.of(context).colorScheme.secondary)),
+                        ],
+                      ),
+                      Calendar(
+                        onSelectDate: (date) =>
+                            _showLogsForDate(context, date, allLogsForTemplate),
+                        logs: allLogsForTemplate,
+                      ),
+                    ],
                   ),
-                  if (template.exerciseTemplates.isNotEmpty)
-                    Padding(
+                ),
+                const SizedBox(height: 12),
+                if (template.exerciseTemplates.isNotEmpty)
+                  Expanded(
+                    child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
-                        spacing: 30,
+                        spacing: 20,
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -307,14 +304,20 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                               : Colors.black)),
                             ],
                           ),
-                          ExerciseLogListView(
-                            exerciseLogs: exerciseTemplates,
+                          Expanded(
+                            child: ExerciseLogListView(
+                              exerciseLogs: exerciseTemplates,
+                              scrollable: true,
+                              controller: widget.scrollController,
+                            ),
                           ),
                         ],
                       ),
-                    )
-                  else
-                    Padding(
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10.0, vertical: 40.0),
                       child: const NoListEmptyState(
@@ -322,8 +325,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             "It might feel quiet now, but tap the + button to add exercises to this workout.",
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ));
@@ -383,9 +386,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       dateLabel = DateFormat('EEEE').format(date);
     }
 
-    showAppBottomSheet(
+    showEditorBottomSheet(
       context: context,
-      isDraggable: true,
       builder: (sheetContext, scrollController) {
         final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
 

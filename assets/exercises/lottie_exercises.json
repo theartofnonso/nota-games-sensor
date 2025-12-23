@@ -1711,13 +1711,13 @@
   },
   {
     "id": "ex-seated-calf-raise",
-    "name": "Lever Seated Calf Raise",
+    "name": "Seated Calf Raise",
     "lottie": "assets/lottie/Man Doing Lever Seated Calf Raise Exercise For Legs.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-crunch",
-    "name": "Lever Crunch",
+    "name": "Crunch",
     "lottie": "assets/lottie/Man Doing Lever Crunch Exercise For ABS.json",
     "isSystem": true
   },
@@ -1735,25 +1735,25 @@
   },
   {
     "id": "ex-lever-preacher-curl",
-    "name": "Lever Preacher Curl",
+    "name": "Preacher Curl",
     "lottie": "assets/lottie/Man Doing Lever Preacher Curl Exercise For Arm.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-hip-thrust",
-    "name": "Lever Hip Thrust",
+    "name": "Hip Thrust",
     "lottie": "assets/lottie/Man Doing Lever Hip Thrust Exercise For Legs.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-high-row",
-    "name": "Lever High Row",
+    "name": "High Row",
     "lottie": "assets/lottie/Man Doing Lever High Row Exercise For Back.json",
     "isSystem": true
   },
   {
     "id": "ex-lever-seated-shoulders-press",
-    "name": "Lever Seated Shoulders Press",
+    "name": "Seated Shoulders Press",
     "lottie": "assets/lottie/Man Doing Lever Seated Shoulders Press Exercise For Shoulders.json",
     "isSystem": true
   },
@@ -1765,7 +1765,7 @@
   },
   {
     "id": "ex-lever-seated-leg-curl",
-    "name": "Lever Seated Leg Curl",
+    "name": "Seated Leg Curl",
     "lottie": "assets/lottie/Man Doing Lever Seated Leg Curl Exercise For Legs.json",
     "isSystem": true
   },
@@ -1801,7 +1801,7 @@
   },
   {
     "id": "ex-lever-decline-chest-press",
-    "name": "Lever Decline Chest Press",
+    "name": "Decline Chest Press",
     "lottie": "assets/lottie/Man Doing Lever Decline Chest Press Exercise For Chest.json",
     "isSystem": true
   },
@@ -1825,7 +1825,7 @@
   },
   {
     "id": "ex-lever-seated-row",
-    "name": "Lever Seated Row",
+    "name": "Seated Row",
     "lottie": "assets/lottie/Man Doing Lever Seated Row Exercise For Back.json",
     "isSystem": true
   },
@@ -1867,7 +1867,7 @@
   },
   {
     "id": "ex-lever-single-leg-extension",
-    "name": "Lever Single Leg Extension",
+    "name": "Single Leg Extension",
     "lottie": "assets/lottie/Man Doing Lever Single Leg Extension Exercise For Legs.json",
     "isSystem": true
   },

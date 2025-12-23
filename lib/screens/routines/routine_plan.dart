@@ -20,7 +20,7 @@ import '../../utils/notifications_utils.dart';
 import '../../dtos/viewmodels/past_routine_log_arguments.dart';
 import '../../extensions/duration_extension.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
-import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
+import '../../utils/editor_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
@@ -240,9 +240,10 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       dateLabel = DateFormat('EEEE').format(date);
     }
 
-    showAppBottomSheet(
+    showEditorBottomSheet(
       context: context,
-      isDraggable: true,
+      isDismissible:
+          false, // match editor behavior: no swipe-to-dismiss on slight pull
       builder: (sheetContext, scrollController) {
         final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
 
@@ -417,9 +418,11 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             listen: false);
     final plans = exerciseAndRoutineController.plans;
 
-    showAppBottomSheet(
+    showEditorBottomSheet(
       context: context,
-      isScrollControlled: false,
+      minChildSize: 0.4,
+      initialChildSize: 0.6,
+      maxChildSize: 0.8,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(
@@ -470,10 +473,12 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     // Filter out the current plan
     final otherPlans = plans.where((p) => p.id != widget.id).toList();
 
-    showAppBottomSheet(
-      context: context,
-      isScrollControlled: false,
-      child: Padding(
+      showEditorBottomSheet(
+        context: context,
+        minChildSize: 0.4,
+        initialChildSize: 0.6,
+        maxChildSize: 0.8,
+        child: Padding(
         padding: const EdgeInsets.all(26),
         child: PlanPicker(
           title: "Move ${template.name} to...",
@@ -554,10 +559,12 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             listen: false);
     final plan = exerciseAndRoutineController.planWhere(id: widget.id);
 
-    showAppBottomSheet(
-        context: context,
-        isScrollControlled: false,
-        child: Padding(
+    showEditorBottomSheet(
+      context: context,
+      minChildSize: 0.4,
+      initialChildSize: 0.6,
+      maxChildSize: 0.8,
+      child: Padding(
           padding: const EdgeInsets.all(26),
           child: Column(
               mainAxisSize: MainAxisSize.min,
