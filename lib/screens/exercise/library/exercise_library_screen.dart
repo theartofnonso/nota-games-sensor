@@ -367,7 +367,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
             ],
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.clockRotateLeft, size: 20),
+              leading: const FaIcon(FontAwesomeIcons.circleInfo, size: 20),
               horizontalTitleGap: 6,
               title: const Text("View exercise information"),
               onTap: () {

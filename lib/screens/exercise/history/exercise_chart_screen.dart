@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
@@ -69,6 +70,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   late ChartUnit _chartUnit;
 
   late SummaryType _summaryType;
+  late ExerciseType _selectedType;
 
   void _heaviestWeightPerLog() {
     final sets = widget.exerciseLogs
@@ -151,7 +153,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   }
 
   void _computeChart() {
-    _summaryType = switch (widget.exercise.type) {
+    _summaryType = switch (_selectedType) {
       ExerciseType.weights => SummaryType.weight,
       ExerciseType.bodyWeight => SummaryType.mostReps,
       ExerciseType.duration => SummaryType.bestTime
@@ -186,6 +188,15 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedType = widget.exercise.type;
+    _computeChart();
+  }
+
+  void _setSelectedType(ExerciseType type) {
+    if (_selectedType == type) return;
+    setState(() {
+      _selectedType = type;
+    });
     _computeChart();
   }
 
@@ -218,6 +229,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
     final weightUnitLabel = weightUnit();
 
     final exercise = widget.exercise;
+    final currentType = _selectedType;
     const banColor = Color.fromRGBO(255, 255, 255, 0.4);
 
     return SafeArea(
@@ -262,6 +274,50 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
               ),
               const SizedBox(height: 20),
               Divider(thickness: 1, color: Colors.white.withValues(alpha: 0.1)),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: CupertinoSlidingSegmentedControl<ExerciseType>(
+                  groupValue: currentType,
+                  backgroundColor: isDarkMode
+                      ? Theme.of(context).colors.sapphireDark
+                      : Colors.grey.shade400,
+                  thumbColor: isDarkMode
+                      ? Theme.of(context).colors.sapphireDark80
+                      : Colors.white,
+                  children: {
+                    ExerciseType.weights: SizedBox(
+                      width: 110,
+                      child: Text(
+                        "Weights (kg/lb)",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    ExerciseType.bodyWeight: SizedBox(
+                      width: 110,
+                      child: Text(
+                        "Bodyweight (reps)",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    ExerciseType.duration: SizedBox(
+                      width: 110,
+                      child: Text(
+                        "Duration (time)",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  },
+                  onValueChanged: (value) {
+                    if (value != null) {
+                      _setSelectedType(value);
+                    }
+                  },
+                ),
+              ),
               const SizedBox(height: 20),
               if (exercise.notes.isNotEmpty)
                 Column(
@@ -297,7 +353,6 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                   ],
                 ),
               ),
-              Divider(thickness: 1, color: Colors.white.withValues(alpha: 0.1)),
               const SizedBox(height: 14),
               if (widget.exerciseLogs.isNotEmpty)
                 SingleChildScrollView(
@@ -307,7 +362,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       spacing: 8,
                       children: [
-                        if (withWeightsOnly(type: widget.exercise.type))
+                        if (withWeightsOnly(type: currentType))
                           OpacityButtonWidget(
                             onPressed: _heaviestWeightPerLog,
                             label: SummaryType.weight.label,
@@ -316,7 +371,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                             borderRadius: BorderRadius.circular(999),
                             buttonColor: _buttonColor(type: SummaryType.weight),
                           ),
-                        if (withWeightsOnly(type: widget.exercise.type))
+                        if (withWeightsOnly(type: currentType))
                           OpacityButtonWidget(
                             onPressed: _heaviestSetVolumePerLog,
                             label: SummaryType.setVolume.label,
@@ -326,7 +381,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                             buttonColor:
                                 _buttonColor(type: SummaryType.setVolume),
                           ),
-                        if (withReps(type: widget.exercise.type))
+                        if (withReps(type: currentType))
                           OpacityButtonWidget(
                             onPressed: _highestRepsForLog,
                             label: SummaryType.mostReps.label,
@@ -336,7 +391,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                             buttonColor:
                                 _buttonColor(type: SummaryType.mostReps),
                           ),
-                        if (withReps(type: widget.exercise.type))
+                        if (withReps(type: currentType))
                           OpacityButtonWidget(
                             onPressed: _totalRepsForLog,
                             label: SummaryType.sessionReps.label,
@@ -346,7 +401,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                             buttonColor:
                                 _buttonColor(type: SummaryType.sessionReps),
                           ),
-                        if (withDurationOnly(type: widget.exercise.type))
+                        if (withDurationOnly(type: currentType))
                           OpacityButtonWidget(
                             onPressed: _longestDurationPerLog,
                             label: SummaryType.bestTime.label,
@@ -356,7 +411,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                             buttonColor:
                                 _buttonColor(type: SummaryType.bestTime),
                           ),
-                        if (withDurationOnly(type: widget.exercise.type))
+                        if (withDurationOnly(type: currentType))
                           OpacityButtonWidget(
                             onPressed: _totalTimePerLog,
                             label: SummaryType.sessionTimes.label,
@@ -368,7 +423,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           ),
                       ],
                     )),
-              if (withWeightsOnly(type: widget.exercise.type))
+              if (withWeightsOnly(type: currentType))
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -381,7 +436,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                     enabled: widget.exerciseLogs.isNotEmpty,
                   ),
                 ),
-              if (withWeightsOnly(type: widget.exercise.type))
+              if (withWeightsOnly(type: currentType))
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -394,7 +449,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           _navigateTo(routineLogId: widget.heaviestSet.$1),
                       enabled: widget.exerciseLogs.isNotEmpty),
                 ),
-              if (withDurationOnly(type: widget.exercise.type))
+              if (withDurationOnly(type: currentType))
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -406,7 +461,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           _navigateTo(routineLogId: widget.longestDuration.$1),
                       enabled: widget.exerciseLogs.isNotEmpty),
                 ),
-              if (withReps(type: widget.exercise.type))
+              if (withReps(type: currentType))
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -418,7 +473,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           _navigateTo(routineLogId: widget.mostRepsSet.$1),
                       enabled: widget.exerciseLogs.isNotEmpty),
                 ),
-              if (withReps(type: widget.exercise.type))
+              if (withReps(type: currentType))
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
