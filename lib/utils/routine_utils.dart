@@ -1,5 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/exercise_log_dto.dart';
@@ -46,11 +45,4 @@ Map<String, List<ExerciseLogDto>> groupExerciseLogsByExerciseId(
     {required List<RoutineLogDto> routineLogs}) {
   final exerciseLogs = routineLogs.expand((log) => log.exerciseLogs);
   return groupBy(exerciseLogs, (exerciseLog) => exerciseLog.exercise.id);
-}
-
-Map<MuscleGroup, List<ExerciseLogDto>> groupExerciseLogsByMuscleGroup(
-    {required List<RoutineLogDto> routineLogs}) {
-  final exerciseLogs = routineLogs.expand((log) => log.exerciseLogs);
-  return groupBy(
-      exerciseLogs, (exerciseLog) => exerciseLog.exercise.primaryMuscleGroup);
 }

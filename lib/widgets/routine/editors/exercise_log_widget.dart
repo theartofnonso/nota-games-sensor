@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/colors.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
@@ -10,6 +11,7 @@ import 'package:trainware/dtos/set_dtos/duration_set_dto.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
+import 'package:trainware/utils/lottie_exercise_registry.dart';
 import 'package:trainware/utils/sets_utils.dart';
 import 'package:trainware/utils/string_utils.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/duration_set_row.dart';
@@ -20,8 +22,8 @@ import '../../../dtos/set_dtos/reps_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
-import '../../../screens/exercise/history/exercise_home_screen.dart';
 import '../../../utils/general_utils.dart';
+import '../../../utils/navigation_utils.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
@@ -312,8 +314,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
       final weightText =
           stalledSample != null ? "${stalledSample.weight} kg" : "this weight";
-      final repsText =
-          stalledSample != null ? "${stalledSample.reps} reps" : "this rep range";
+      final repsText = stalledSample != null
+          ? "${stalledSample.reps} reps"
+          : "this rep range";
 
       messageText =
           "You've been consistently logging $weightText for $repsText over your recent sessions. "
@@ -328,8 +331,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
           .toList()
           .lastOrNull;
 
-      final repsText =
-          stalledSample != null ? "${stalledSample.reps} reps" : "this rep range";
+      final repsText = stalledSample != null
+          ? "${stalledSample.reps} reps"
+          : "this rep range";
 
       messageText =
           "You've been consistently logging $repsText over your recent sessions. "
@@ -678,12 +682,41 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                 ),
                 child: Row(
                   children: [
+                    SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: exerciseLog.exercise.isSystem
+                          ? FutureBuilder<String?>(
+                              future: LottieExerciseRegistry.lottieFor(
+                                  exerciseLog.exercise.name),
+                              builder: (context, snapshot) {
+                                final asset = snapshot.data;
+                                if (asset != null) {
+                                  return Lottie.asset(
+                                    asset,
+                                    fit: BoxFit.contain,
+                                    repeat: true,
+                                  );
+                                }
+                                return const FaIcon(
+                                  FontAwesomeIcons.ban,
+                                  size: 28,
+                                  color: Color.fromRGBO(255, 255, 255, 0.4),
+                                );
+                              },
+                            )
+                          : const FaIcon(
+                              FontAwesomeIcons.ban,
+                              size: 28,
+                              color: Color.fromRGBO(255, 255, 255, 0.4),
+                            ),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => ExerciseHomeScreen(
-                                  exercise: exerciseLog.exercise)));
+                          navigateToExerciseHome(
+                              context: context, exercise: exerciseLog.exercise);
                         },
                         child: Text(
                           exerciseLog.exercise.name,

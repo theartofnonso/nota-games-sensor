@@ -5,7 +5,6 @@ import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
 import 'package:trainware/dtos/shareable_routine_summary.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 
 void main() {
   RoutineLogDto buildLog() {
@@ -16,7 +15,6 @@ void main() {
       id: "ex1",
       name: "Bench Press",
       type: ExerciseType.weights,
-      primaryMuscleGroup: MuscleGroup.chest,
     );
 
     final sets = [

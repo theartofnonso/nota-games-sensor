@@ -1,35 +1,33 @@
-import 'package:trainware/enums/muscle_group_enums.dart';
-
 import '../../enums/exercise_type_enums.dart';
 
 class ExerciseDto {
   final String id;
   final String name;
   final ExerciseType type;
-  final MuscleGroup primaryMuscleGroup;
   final String notes;
+  final bool isSystem;
 
   const ExerciseDto({
     this.id = "",
     required this.name,
     required this.type,
-    required this.primaryMuscleGroup,
     this.notes = "",
+    this.isSystem = false,
   });
 
   ExerciseDto copyWith({
     String? id,
     String? name,
     ExerciseType? type,
-    MuscleGroup? primaryMuscleGroup,
     String? notes,
+    bool? isSystem,
   }) {
     return ExerciseDto(
       id: id ?? this.id,
       name: name ?? this.name,
       type: type ?? this.type,
-      primaryMuscleGroup: primaryMuscleGroup ?? this.primaryMuscleGroup,
       notes: notes ?? this.notes,
+      isSystem: isSystem ?? this.isSystem,
     );
   }
 
@@ -38,8 +36,8 @@ class ExerciseDto {
       "id": id,
       "name": name,
       "type": type.id,
-      "primaryMuscleGroup": primaryMuscleGroup.name,
       "notes": notes,
+      "isSystem": isSystem,
     };
   }
 
@@ -50,25 +48,21 @@ class ExerciseDto {
         ? ExerciseType.fromString(json["type"])
         : ExerciseType.weights;
 
-    // Handle muscle group with fallback for legacy/invalid values
-    final primaryMuscleGroup = MuscleGroup.values.firstWhere(
-      (e) => e.name == json["primaryMuscleGroup"],
-      orElse: () => MuscleGroup.fullBody, // Default to fullBody if not found
-    );
-
     final notes = json["notes"] ?? "";
+    final isSystem =
+        json["isSystem"] as bool? ?? id.toString().startsWith('ex-');
 
     return ExerciseDto(
       id: id,
       name: name,
       type: type,
-      primaryMuscleGroup: primaryMuscleGroup,
       notes: notes,
+      isSystem: isSystem,
     );
   }
 
   @override
   String toString() {
-    return 'ExerciseDto{id: $id, name: $name, type: $type, primaryMuscleGroup: $primaryMuscleGroup, notes: $notes}';
+    return 'ExerciseDto{id: $id, name: $name, type: $type, notes: $notes, isSystem: $isSystem}';
   }
 }

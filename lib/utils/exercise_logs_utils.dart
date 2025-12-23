@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 // import removed
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 
@@ -10,7 +8,6 @@ import '../dtos/set_dtos/reps_dto.dart';
 import '../dtos/set_dtos/set_dto.dart';
 import '../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../enums/exercise_type_enums.dart';
-import '../enums/muscle_group_enums.dart';
 import '../enums/template_changes_type_message_enums.dart';
 
 /// Highest value per [ExerciseLogDto]
@@ -326,38 +323,6 @@ TemplateChange? hasSetValueChanged({
       : null;
 }
 
-Map<MuscleGroup, double> muscleGroupFrequency(
-    {required List<ExerciseLogDto> exerciseLogs}) {
-  if (exerciseLogs.isEmpty) return <MuscleGroup, double>{};
-
-  final frequencyMap = <MuscleGroup, int>{};
-
-  // Counting the occurrences of each MuscleGroup, excluding MuscleGroup.fullBody
-  for (final log in exerciseLogs) {
-    final primary = log.exercise.primaryMuscleGroup;
-    if (primary != MuscleGroup.fullBody) {
-      frequencyMap.update(primary, (value) => value + 1, ifAbsent: () => 1);
-    }
-  }
-
-  if (frequencyMap.isEmpty) return <MuscleGroup, double>{};
-
-  final totalCount = frequencyMap.values.reduce((a, b) => a + b);
-  final scaledFrequencyMap = <MuscleGroup, double>{};
-
-  // Scaling the frequencies from 0 to 1
-  frequencyMap.forEach((key, value) {
-    scaledFrequencyMap[key] = value / totalCount;
-  });
-
-  final sortedEntries = scaledFrequencyMap.entries.toList()
-    ..sort((a, b) => b.value.compareTo(a.value));
-
-  final sortedFrequencyMap =
-      LinkedHashMap<MuscleGroup, double>.fromEntries(sortedEntries);
-  return sortedFrequencyMap;
-}
-
 /// Heuristic to detect if a user is consistently hitting the same weight
 /// and reps for a weights-based exercise across recent sessions.
 ///
@@ -406,10 +371,9 @@ int getStalledSessionsCountAtSameWeightAndReps({
   if (samples.length < minSessions) return 0;
 
   final (firstWeight, firstReps) = samples.first;
-  final isStalled = samples.every((sample) =>
-      sample.$1 == firstWeight &&
-      sample.$2 == firstReps);
-  
+  final isStalled = samples
+      .every((sample) => sample.$1 == firstWeight && sample.$2 == firstReps);
+
   return isStalled ? samples.length : 0;
 }
 
@@ -418,9 +382,10 @@ bool isStalledAtSameWeightAndReps({
   int minSessions = 5,
 }) {
   return getStalledSessionsCountAtSameWeightAndReps(
-    recentLogs: recentLogs,
-    minSessions: minSessions,
-  ) > 0;
+        recentLogs: recentLogs,
+        minSessions: minSessions,
+      ) >
+      0;
 }
 
 /// Returns the count of stalled sessions if stalled, or 0 if not stalled.
@@ -464,7 +429,7 @@ int getStalledSessionsCountAtSameReps({
 
   final firstReps = samples.first;
   final isStalled = samples.every((reps) => reps == firstReps);
-  
+
   return isStalled ? samples.length : 0;
 }
 
@@ -473,9 +438,10 @@ bool isStalledAtSameReps({
   int minSessions = 5,
 }) {
   return getStalledSessionsCountAtSameReps(
-    recentLogs: recentLogs,
-    minSessions: minSessions,
-  ) > 0;
+        recentLogs: recentLogs,
+        minSessions: minSessions,
+      ) >
+      0;
 }
 
 bool withWeightsOnly({required ExerciseType type}) {

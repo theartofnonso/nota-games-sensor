@@ -9,9 +9,10 @@ import 'package:trainware/controllers/supabase_exercise_and_routine_controller.d
 import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
+import '../../../utils/system_exercises.dart';
+import '../../../utils/name_notes_bottom_sheet.dart';
 import '../../../widgets/empty_states/no_list_empty_state.dart';
 import '../../../widgets/exercise/exercise_grid_item.dart';
-import '../../editors/exercise_editor_screen.dart';
 
 class ExerciseLibraryScreen extends StatefulWidget {
   final bool readOnly;
@@ -33,67 +34,31 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   /// Holds a list of [ExerciseDto] when filtering through a search
   List<ExerciseDto> _filteredExercises = [];
+  List<ExerciseDto> _systemExercises = [];
 
-  /// Search through the list of exercises
-  ///
-  /// Calculates a 'relevance' score for an ExerciseDto based on the query parts.
+  /// Simple relevance scoring:
+  /// +2 if name contains the query part
+  /// +1 if any token starts with the query part
   double _calculateRelevanceScore(
       ExerciseDto exercise, List<String> queryParts) {
-    // Convert exercise name to lowercase for case-insensitive matching
-    final exerciseName = exercise.name.toLowerCase();
+    if (queryParts.isEmpty) return 0;
 
-    // You can split the exercise name on spaces/hyphens if you want more granularity
-    final exerciseNameParts = exerciseName.split(RegExp(r'[\s-]+'));
+    final name = exercise.name.toLowerCase();
+    final tokens =
+        name.split(RegExp(r'[\s-]+')).where((t) => t.isNotEmpty).toList();
 
-    double score = 0.0;
-
-    for (final queryPart in queryParts) {
-      // Exact substring match => add 1 point
-      if (exerciseName.contains(queryPart)) {
-        score += 1.0;
+    double score = 0;
+    for (final part in queryParts) {
+      final q = part.toLowerCase();
+      if (name.contains(q)) {
+        score += 2;
+        continue;
       }
-
-      //If you want to reward startsWith more strongly, you could do:
-      for (final part in exerciseNameParts) {
-        if (part.startsWith(queryPart)) {
-          score += 0.5; // for instance, half a point for startsWith
-        }
+      if (tokens.any((t) => t.startsWith(q))) {
+        score += 1;
       }
     }
-
     return score;
-  }
-
-  DateTime? _getMostRecentLogDateWithin30Days(ExerciseDto exercise) {
-    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context,
-        listen: false);
-
-    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-
-    // Get all routine logs within the last 30 days
-    final recentLogs = controller.logs
-        .where((log) => log.startTime.isAfter(thirtyDaysAgo))
-        .toList();
-
-    if (recentLogs.isEmpty) return null;
-
-    // Find the most recent log date for this exercise
-    DateTime? mostRecentDate;
-    for (final routineLog in recentLogs) {
-      // Check if this routine log contains the exercise
-      final hasExercise = routineLog.exerciseLogs
-          .any((exerciseLog) => exerciseLog.exercise.id == exercise.id);
-
-      if (hasExercise) {
-        final logDate = routineLog.startTime;
-        if (mostRecentDate == null || logDate.isAfter(mostRecentDate)) {
-          mostRecentDate = logDate;
-        }
-      }
-    }
-
-    return mostRecentDate;
   }
 
   void _runSearch() {
@@ -106,10 +71,18 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
     // Get the list of all exercises (excluding any you want to filter out by default)
     final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
-    final allExercises = Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .exercises
+
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+
+    // Combine system (from JSON) + user (from DB)
+    final combined = [
+      ..._systemExercises,
+      ...controller.exercises,
+    ];
+
+    final allExercises = combined
         .where((exercise) => !excludeExerciseIds.contains(exercise.id))
         .toList();
 
@@ -122,47 +95,28 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       filteredExercises = allExercises;
     }
 
-    // If the user typed nothing, sort by most recently logged within last 30 days
+    // If the user typed nothing, sort alphabetically
     if (queryParts.isEmpty) {
-      filteredExercises.sort((a, b) {
-        final aDate = _getMostRecentLogDateWithin30Days(a);
-        final bDate = _getMostRecentLogDateWithin30Days(b);
-
-        // Exercises with recent logs come first
-        if (aDate != null && bDate != null) {
-          return bDate.compareTo(aDate); // Most recent first
-        } else if (aDate != null) {
-          return -1; // a has recent log, b doesn't
-        } else if (bDate != null) {
-          return 1; // b has recent log, a doesn't
-        } else {
-          // Neither has recent logs, sort alphabetically
-          return a.name.compareTo(b.name);
-        }
-      });
+      filteredExercises.sort((a, b) => a.name.compareTo(b.name));
       setState(() {
         _filteredExercises = filteredExercises;
       });
       return;
     }
 
-    // Compute a relevance score for each exercise, then sort descending by score
-    final rankedList = filteredExercises
-        .map((ex) {
-          final score = _calculateRelevanceScore(ex, queryParts);
-          return (exercise: ex, score: score);
-        })
-        .where((tuple) =>
-            tuple.score > 0) // optional: only keep those with some match
+    final ranked = filteredExercises
+        .map((ex) => (exercise: ex, score: _calculateRelevanceScore(ex, queryParts)))
+        .where((e) => e.score > 0)
         .toList();
 
-    rankedList.sort((a, b) => b.score.compareTo(a.score));
-
-    // Extract the exercises from the sorted list
-    final sortedExercises = rankedList.map((tuple) => tuple.exercise).toList();
+    ranked.sort((a, b) {
+      final cmp = b.score.compareTo(a.score);
+      if (cmp != 0) return cmp;
+      return a.exercise.name.compareTo(b.exercise.name);
+    });
 
     setState(() {
-      _filteredExercises = sortedExercises;
+      _filteredExercises = ranked.map((e) => e.exercise).toList();
     });
   }
 
@@ -176,16 +130,82 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     Navigator.of(context).pop([selectedExercise]);
   }
 
-  void _dismissKeyboard(BuildContext context) {
-    FocusScope.of(context).unfocus();
+  Future<void> _promptLogTypeAndReturn(ExerciseDto exercise) async {
+    final chosen = await showModalBottomSheet<ExerciseType>(
+      context: context,
+      backgroundColor: Colors.black87,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "How do you want to log this?",
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Choose how you want to log what you've done for this exercise.",
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Image.asset(
+                    'icons/dumbbells.png',
+                    height: 24,
+                    width: 24,
+                    color: Colors.white70,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.fitness_center,
+                          color: Colors.white70);
+                    },
+                  ),
+                  title: const Text("Weights + Reps"),
+                  subtitle: const Text("Log weights and repetitions"),
+                  onTap: () => Navigator.pop(context, ExerciseType.weights),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const FaIcon(FontAwesomeIcons.hashtag,
+                      color: Colors.white70),
+                  title: const Text("Reps only"),
+                  subtitle: const Text("Log only reps"),
+                  onTap: () => Navigator.pop(context, ExerciseType.bodyWeight),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.timer, color: Colors.white70),
+                  title: const Text("Duration"),
+                  subtitle: const Text("Log duration"),
+                  onTap: () => Navigator.pop(context, ExerciseType.duration),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (chosen != null) {
+      _navigateBackWithSelectedExercise(exercise.copyWith(type: chosen));
+    }
   }
 
-  void _navigateToExerciseEditor() async {
-    await navigateWithSlideTransition(
-        context: context, child: ExerciseEditorScreen());
-    setState(() {
-      _loadOrSyncExercises();
-    });
+  void _dismissKeyboard(BuildContext context) {
+    FocusScope.of(context).unfocus();
   }
 
   void _navigateToExerciseHistory(ExerciseDto exercise) async {
@@ -194,6 +214,27 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     setState(() {
       _loadOrSyncExercises();
     });
+  }
+
+  Future<void> _showCreateExerciseSheet() async {
+    final details = await showNameNotesBottomSheet(
+      context: context,
+      title: 'Create exercise',
+      primaryButtonLabel: 'Create',
+      emptyNameMessage: 'Please provide a name for this exercise',
+    );
+    if (details == null) return;
+
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final newExercise = ExerciseDto(
+      name: details.name,
+      notes: details.notes,
+      type: ExerciseType.weights,
+    );
+    await controller.saveExercise(exerciseDto: newExercise);
+    _loadOrSyncExercises();
   }
 
   @override
@@ -206,7 +247,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         heroTag: UniqueKey(),
         backgroundColor: themeGradient(context: context).colors.first,
         elevation: 8.0,
-        onPressed: _navigateToExerciseEditor,
+        onPressed: _showCreateExerciseSheet,
         child: const FaIcon(FontAwesomeIcons.plus, size: 24),
       ),
       body: Container(
@@ -306,17 +347,17 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                 leading: const FaIcon(FontAwesomeIcons.circlePlus, size: 22),
                 horizontalTitleGap: 6,
                 title: const Text("Add to workout"),
-                onTap: () {
+                onTap: () async {
                   Navigator.of(context).pop();
-                  _navigateBackWithSelectedExercise(exercise);
+                  await _promptLogTypeAndReturn(exercise);
                 },
               ),
             ],
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.clockRotateLeft, size: 20),
+              leading: const FaIcon(FontAwesomeIcons.circleInfo, size: 20),
               horizontalTitleGap: 6,
-              title: const Text("View history"),
+              title: const Text("View exercise information"),
               onTap: () {
                 Navigator.of(context).pop();
                 _navigateToExerciseHistory(exercise);
@@ -329,19 +370,28 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   }
 
   void _loadOrSyncExercises() {
-    final exerciseType = widget.type;
-    final excludeExerciseIds = widget.excludeExercises.map((e) => e.id).toSet();
+    _loadSystemExercises().then((_) {
+      final exerciseType = widget.type;
+      final excludeExerciseIds =
+          widget.excludeExercises.map((e) => e.id).toSet();
 
-    _filteredExercises = Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .exercises
-        .where((exercise) => !excludeExerciseIds.contains(exercise.id))
-        .where((exercise) =>
-            exerciseType != null ? exercise.type == widget.type : true)
-        .toList();
+      final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+          context,
+          listen: false);
 
-    _runSearch();
+      final combined = [
+        ..._systemExercises,
+        ...controller.exercises,
+      ];
+
+      _filteredExercises = combined
+          .where((exercise) => !excludeExerciseIds.contains(exercise.id))
+          .where((exercise) =>
+              exerciseType != null ? exercise.type == widget.type : true)
+          .toList();
+
+      _runSearch();
+    });
   }
 
   @override
@@ -349,6 +399,21 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     super.initState();
     _searchController = TextEditingController();
     _loadOrSyncExercises();
+  }
+
+  Future<void> _loadSystemExercises() async {
+    final seeds = await loadLottieExercises();
+    _systemExercises = seeds
+        .map(
+          (s) => ExerciseDto(
+            id: s.id,
+            name: s.name,
+            type: ExerciseType.weights,
+            notes: '',
+            isSystem: s.isSystem,
+          ),
+        )
+        .toList();
   }
 
   @override

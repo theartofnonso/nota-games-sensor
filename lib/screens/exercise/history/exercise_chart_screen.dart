@@ -1,15 +1,16 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lottie/lottie.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/dtos/appsync/exercise_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/extensions/duration_extension.dart';
-import 'package:trainware/extensions/muscle_group_extension.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget.dart';
 import 'package:trainware/widgets/list_tile.dart';
 
@@ -20,6 +21,7 @@ import '../../../enums/chart_unit_enum.dart';
 import '../../../enums/exercise_type_enums.dart';
 import '../../../utils/exercise_logs_utils.dart';
 import '../../../utils/general_utils.dart';
+import '../../../utils/lottie_exercise_registry.dart';
 import '../../../widgets/chart/line_chart_widget.dart';
 import '../../logs/routine_log_screen.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -68,6 +70,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   late ChartUnit _chartUnit;
 
   late SummaryType _summaryType;
+  late ExerciseType _selectedType;
 
   void _heaviestWeightPerLog() {
     final sets = widget.exerciseLogs
@@ -150,7 +153,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   }
 
   void _computeChart() {
-    _summaryType = switch (widget.exercise.type) {
+    _summaryType = switch (_selectedType) {
       ExerciseType.weights => SummaryType.weight,
       ExerciseType.bodyWeight => SummaryType.mostReps,
       ExerciseType.duration => SummaryType.bestTime
@@ -185,6 +188,15 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedType = widget.exercise.type;
+    _computeChart();
+  }
+
+  void _setSelectedType(ExerciseType type) {
+    if (_selectedType == type) return;
+    setState(() {
+      _selectedType = type;
+    });
     _computeChart();
   }
 
@@ -216,193 +228,268 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
 
     final weightUnitLabel = weightUnit();
 
-    final muscleGroup = widget.exercise.primaryMuscleGroup;
-
-    final muscleGroupsIllustrations = muscleGroup != MuscleGroup.fullBody
-        ? [
-            Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              Image.asset(
-                'muscles_illustration/${muscleGroup.illustration()}.png',
-                fit: BoxFit.contain,
-                height: 120, // Adjust the height as needed
-              ),
-              const SizedBox(
-                height: 6,
-              ),
-              Text(muscleGroup.name.toUpperCase(),
-                  style: Theme.of(context).textTheme.bodyMedium)
-            ])
-          ]
-        : <Widget>[];
-
     final exercise = widget.exercise;
+    final currentType = _selectedType;
+    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
 
-    return SingleChildScrollView(
+    return SafeArea(
+      top: false,
+      bottom: false,
+      minimum: const EdgeInsets.only(top: 20),
+      child: SingleChildScrollView(
         child: Padding(
-      padding:
-          const EdgeInsets.only(top: 20, right: 10.0, bottom: 10, left: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (muscleGroupsIllustrations.isNotEmpty)
-            AspectRatio(
-              aspectRatio: 1.8,
-              child: muscleGroupsIllustrations.first,
-            ),
-          if (exercise.notes.isNotEmpty)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exercise.notes.isNotEmpty ? "${exercise.notes}." : "No notes",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: isDarkMode ? Colors.white70 : Colors.black,
-                      height: 1.8,
-                      fontWeight: FontWeight.w400),
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              AspectRatio(
+                aspectRatio: 2,
+                child: Center(
+                  child: exercise.isSystem
+                      ? FutureBuilder<String?>(
+                          future:
+                              LottieExerciseRegistry.lottieFor(exercise.name),
+                          builder: (context, snapshot) {
+                            final asset = snapshot.data;
+                            if (asset != null) {
+                              return Lottie.asset(
+                                asset,
+                                fit: BoxFit.contain,
+                                repeat: true,
+                              );
+                            }
+                            return FaIcon(
+                              FontAwesomeIcons.ban,
+                              size: 68,
+                              color: banColor,
+                            );
+                          },
+                        )
+                      : FaIcon(
+                          FontAwesomeIcons.ban,
+                          size: 68,
+                          color: banColor,
+                        ),
                 ),
-                const SizedBox(height: 24),
-              ],
-            ),
-          Padding(
-            padding: const EdgeInsets.only(right: 20, bottom: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                LineChartWidget(
-                  chartPoints: _chartPoints,
-                  periods: _dateTimes,
-                  unit: _chartUnit,
-                  aspectRation: 1.8,
-                ),
-              ],
-            ),
-          ),
-          if (widget.exerciseLogs.isNotEmpty)
-            SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  spacing: 8,
-                  children: [
-                    if (withWeightsOnly(type: widget.exercise.type))
-                      OpacityButtonWidget(
-                        onPressed: _heaviestWeightPerLog,
-                        label: SummaryType.weight.label,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        borderRadius: BorderRadius.circular(999),
-                        buttonColor: _buttonColor(type: SummaryType.weight),
-                      ),
-                    if (withWeightsOnly(type: widget.exercise.type))
-                      OpacityButtonWidget(
-                        onPressed: _heaviestSetVolumePerLog,
-                        label: SummaryType.setVolume.label,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        borderRadius: BorderRadius.circular(999),
-                        buttonColor: _buttonColor(type: SummaryType.setVolume),
-                      ),
-                    if (withReps(type: widget.exercise.type))
-                      OpacityButtonWidget(
-                        onPressed: _highestRepsForLog,
-                        label: SummaryType.mostReps.label,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        borderRadius: BorderRadius.circular(999),
-                        buttonColor: _buttonColor(type: SummaryType.mostReps),
-                      ),
-                    if (withReps(type: widget.exercise.type))
-                      OpacityButtonWidget(
-                        onPressed: _totalRepsForLog,
-                        label: SummaryType.sessionReps.label,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        borderRadius: BorderRadius.circular(999),
-                        buttonColor:
-                            _buttonColor(type: SummaryType.sessionReps),
-                      ),
-                    if (withDurationOnly(type: widget.exercise.type))
-                      OpacityButtonWidget(
-                        onPressed: _longestDurationPerLog,
-                        label: SummaryType.bestTime.label,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        borderRadius: BorderRadius.circular(999),
-                        buttonColor: _buttonColor(type: SummaryType.bestTime),
-                      ),
-                    if (withDurationOnly(type: widget.exercise.type))
-                      OpacityButtonWidget(
-                        onPressed: _totalTimePerLog,
-                        label: SummaryType.sessionTimes.label,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        borderRadius: BorderRadius.circular(999),
-                        buttonColor:
-                            _buttonColor(type: SummaryType.sessionTimes),
-                      ),
-                  ],
-                )),
-          const SizedBox(height: 10),
-          if (withWeightsOnly(type: widget.exercise.type))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: _MetricListTile(
-                title: 'Heaviest Weight',
-                trailing: "${widget.heaviestWeight.$2}$weightUnitLabel",
-                subtitle: 'Heaviest weight in a set',
-                onTap: () =>
-                    _navigateTo(routineLogId: widget.heaviestWeight.$1),
-                enabled: widget.exerciseLogs.isNotEmpty,
               ),
-            ),
-          if (withWeightsOnly(type: widget.exercise.type))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: _MetricListTile(
-                  title: 'Heaviest Set Volume',
-                  trailing:
-                      "${(widget.heaviestSet.$2 as WeightAndRepsSetDto).weight}$weightUnitLabel x ${(widget.heaviestSet.$2 as WeightAndRepsSetDto).reps}",
-                  subtitle: 'Heaviest volume in a set',
-                  onTap: () => _navigateTo(routineLogId: widget.heaviestSet.$1),
-                  enabled: widget.exerciseLogs.isNotEmpty),
-            ),
-          if (withDurationOnly(type: widget.exercise.type))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: _MetricListTile(
-                  title: 'Best Time',
-                  trailing: widget.longestDuration.$2.hmsAnalog(),
-                  subtitle: 'Longest time for this exercise',
-                  onTap: () =>
-                      _navigateTo(routineLogId: widget.longestDuration.$1),
-                  enabled: widget.exerciseLogs.isNotEmpty),
-            ),
-          if (withReps(type: widget.exercise.type))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: _MetricListTile(
-                  title: 'Most Reps (Set)',
-                  trailing: "${widget.mostRepsSet.$2} reps",
-                  subtitle: 'Most reps in a set',
-                  onTap: () => _navigateTo(routineLogId: widget.mostRepsSet.$1),
-                  enabled: widget.exerciseLogs.isNotEmpty),
-            ),
-          if (withReps(type: widget.exercise.type))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: _MetricListTile(
-                  title: 'Most Reps (Session)',
-                  trailing: "${widget.mostRepsSession.$2} reps",
-                  subtitle: 'Most reps in a session',
-                  onTap: () =>
-                      _navigateTo(routineLogId: widget.mostRepsSession.$1),
-                  enabled: widget.exerciseLogs.isNotEmpty),
-            ),
-        ],
+              const SizedBox(height: 20),
+              Divider(thickness: 1, color: Colors.white.withValues(alpha: 0.1)),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: CupertinoSlidingSegmentedControl<ExerciseType>(
+                  groupValue: currentType,
+                  backgroundColor: isDarkMode
+                      ? Theme.of(context).colors.sapphireDark
+                      : Colors.grey.shade400,
+                  thumbColor: isDarkMode
+                      ? Theme.of(context).colors.sapphireDark80
+                      : Colors.white,
+                  children: {
+                    ExerciseType.weights: SizedBox(
+                      width: 110,
+                      child: Text(
+                        "Weights (kg/lb)",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    ExerciseType.bodyWeight: SizedBox(
+                      width: 110,
+                      child: Text(
+                        "Bodyweight (reps)",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    ExerciseType.duration: SizedBox(
+                      width: 110,
+                      child: Text(
+                        "Duration (time)",
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  },
+                  onValueChanged: (value) {
+                    if (value != null) {
+                      _setSelectedType(value);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 30),
+              if (exercise.notes.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      exercise.notes.isNotEmpty
+                          ? "${exercise.notes}."
+                          : "No notes",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: isDarkMode ? Colors.white70 : Colors.black,
+                          height: 1.8,
+                          fontWeight: FontWeight.w400),
+                    ),
+                    const SizedBox(height: 18),
+                    const Divider(thickness: 1),
+                    const SizedBox(height: 18),
+                  ],
+                ),
+              Padding(
+                padding: const EdgeInsets.only(right: 20, bottom: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    LineChartWidget(
+                      chartPoints: _chartPoints,
+                      periods: _dateTimes,
+                      unit: _chartUnit,
+                      aspectRation: 1.8,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (widget.exerciseLogs.isNotEmpty)
+                SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 12.0),
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      spacing: 8,
+                      children: [
+                        if (withWeightsOnly(type: currentType))
+                          OpacityButtonWidget(
+                            onPressed: _heaviestWeightPerLog,
+                            label: SummaryType.weight.label,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            borderRadius: BorderRadius.circular(999),
+                            buttonColor: _buttonColor(type: SummaryType.weight),
+                          ),
+                        if (withWeightsOnly(type: currentType))
+                          OpacityButtonWidget(
+                            onPressed: _heaviestSetVolumePerLog,
+                            label: SummaryType.setVolume.label,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            borderRadius: BorderRadius.circular(999),
+                            buttonColor:
+                                _buttonColor(type: SummaryType.setVolume),
+                          ),
+                        if (withReps(type: currentType))
+                          OpacityButtonWidget(
+                            onPressed: _highestRepsForLog,
+                            label: SummaryType.mostReps.label,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            borderRadius: BorderRadius.circular(999),
+                            buttonColor:
+                                _buttonColor(type: SummaryType.mostReps),
+                          ),
+                        if (withReps(type: currentType))
+                          OpacityButtonWidget(
+                            onPressed: _totalRepsForLog,
+                            label: SummaryType.sessionReps.label,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            borderRadius: BorderRadius.circular(999),
+                            buttonColor:
+                                _buttonColor(type: SummaryType.sessionReps),
+                          ),
+                        if (withDurationOnly(type: currentType))
+                          OpacityButtonWidget(
+                            onPressed: _longestDurationPerLog,
+                            label: SummaryType.bestTime.label,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            borderRadius: BorderRadius.circular(999),
+                            buttonColor:
+                                _buttonColor(type: SummaryType.bestTime),
+                          ),
+                        if (withDurationOnly(type: currentType))
+                          OpacityButtonWidget(
+                            onPressed: _totalTimePerLog,
+                            label: SummaryType.sessionTimes.label,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            borderRadius: BorderRadius.circular(999),
+                            buttonColor:
+                                _buttonColor(type: SummaryType.sessionTimes),
+                          ),
+                      ],
+                    )),
+              if (withWeightsOnly(type: currentType))
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: _MetricListTile(
+                    title: 'Heaviest Weight',
+                    trailing: "${widget.heaviestWeight.$2}$weightUnitLabel",
+                    subtitle: 'Heaviest weight in a set',
+                    onTap: () =>
+                        _navigateTo(routineLogId: widget.heaviestWeight.$1),
+                    enabled: widget.exerciseLogs.isNotEmpty,
+                  ),
+                ),
+              if (withWeightsOnly(type: currentType))
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: _MetricListTile(
+                      title: 'Heaviest Set Volume',
+                      trailing:
+                          "${(widget.heaviestSet.$2 as WeightAndRepsSetDto).weight}$weightUnitLabel x ${(widget.heaviestSet.$2 as WeightAndRepsSetDto).reps}",
+                      subtitle: 'Heaviest volume in a set',
+                      onTap: () =>
+                          _navigateTo(routineLogId: widget.heaviestSet.$1),
+                      enabled: widget.exerciseLogs.isNotEmpty),
+                ),
+              if (withDurationOnly(type: currentType))
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: _MetricListTile(
+                      title: 'Best Time',
+                      trailing: widget.longestDuration.$2.hmsAnalog(),
+                      subtitle: 'Longest time for this exercise',
+                      onTap: () =>
+                          _navigateTo(routineLogId: widget.longestDuration.$1),
+                      enabled: widget.exerciseLogs.isNotEmpty),
+                ),
+              if (withReps(type: currentType))
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: _MetricListTile(
+                      title: 'Most Reps (Set)',
+                      trailing: "${widget.mostRepsSet.$2} reps",
+                      subtitle: 'Most reps in a set',
+                      onTap: () =>
+                          _navigateTo(routineLogId: widget.mostRepsSet.$1),
+                      enabled: widget.exerciseLogs.isNotEmpty),
+                ),
+              if (withReps(type: currentType))
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: _MetricListTile(
+                      title: 'Most Reps (Session)',
+                      trailing: "${widget.mostRepsSession.$2} reps",
+                      subtitle: 'Most reps in a session',
+                      onTap: () =>
+                          _navigateTo(routineLogId: widget.mostRepsSession.$1),
+                      enabled: widget.exerciseLogs.isNotEmpty),
+                ),
+            ],
+          ),
+        ),
       ),
-    ));
+    );
   }
 }
 

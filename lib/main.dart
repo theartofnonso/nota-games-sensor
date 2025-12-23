@@ -27,7 +27,6 @@ import 'package:trainware/screens/editors/past_routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_plan_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_template_editor_screen.dart';
-import 'package:trainware/screens/exercise/history/exercise_home_screen.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/logs/routine_log_screen.dart';
 import 'package:trainware/onboarding_flow_screen.dart';
@@ -42,7 +41,6 @@ import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 
-import 'dtos/appsync/exercise_dto.dart';
 import 'dtos/appsync/routine_plan_dto.dart';
 import 'dtos/viewmodels/routine_log_arguments.dart';
 import 'dtos/viewmodels/routine_plan_arguments.dart';
@@ -247,13 +245,6 @@ final _router = GoRouter(
       builder: (context, state) {
         final args = state.extra as ExerciseEditorArguments?;
         return ExerciseEditorScreen(exercise: args?.exercise);
-      },
-    ),
-    GoRoute(
-      path: ExerciseHomeScreen.routeName,
-      builder: (context, state) {
-        final args = state.extra as ExerciseDto;
-        return ExerciseHomeScreen(exercise: args);
       },
     ),
     GoRoute(

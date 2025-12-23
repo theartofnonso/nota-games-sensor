@@ -25,8 +25,8 @@ CREATE TABLE IF NOT EXISTS public.exercises (
     owner UUID NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     type TEXT NOT NULL,
-    "primaryMuscleGroup" TEXT NOT NULL,
     notes TEXT DEFAULT '',
+    "isSystem" BOOLEAN NOT NULL DEFAULT FALSE,
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

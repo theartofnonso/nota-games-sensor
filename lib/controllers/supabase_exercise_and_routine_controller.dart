@@ -1,7 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/offline_first/exercise_offline_repository.dart';
 import 'package:trainware/offline_first/routine_log_sync_service.dart';
@@ -77,10 +76,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   UnmodifiableMapView<String, List<ExerciseLogDto>>
       get exerciseLogsByExerciseId =>
           UnmodifiableMapView(groupExerciseLogsByExerciseId(routineLogs: logs));
-
-  UnmodifiableMapView<MuscleGroup, List<ExerciseLogDto>>
-      get exerciseLogsByMuscleGroup => UnmodifiableMapView(
-          groupExerciseLogsByMuscleGroup(routineLogs: logs));
 
   /// Initialization
   Future<void> initialize() async {
@@ -613,14 +608,15 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Returns the most recent [limit] exercise logs for a given exercise,
   /// ordered from most recent to oldest.
-  /// 
+  ///
   /// Only returns one exercise log per distinct session (routineLogId),
   /// even if the same exercise appears multiple times in a session.
   List<ExerciseLogDto> whereRecentExerciseLogsForExercise({
     required ExerciseDto exercise,
     int limit = 4,
   }) {
-    final matches = <({ExerciseLogDto log, DateTime timestamp, String? routineLogId})>[];
+    final matches =
+        <({ExerciseLogDto log, DateTime timestamp, String? routineLogId})>[];
 
     for (final routineLog in logs) {
       for (final exerciseLog in routineLog.exerciseLogs) {
@@ -641,7 +637,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     // Group by routineLogId to ensure we only return one exercise log per session
     final seenRoutineLogIds = <String?>{};
     final distinctMatches = <ExerciseLogDto>[];
-    
+
     for (final match in matches) {
       if (!seenRoutineLogIds.contains(match.routineLogId)) {
         seenRoutineLogIds.add(match.routineLogId);

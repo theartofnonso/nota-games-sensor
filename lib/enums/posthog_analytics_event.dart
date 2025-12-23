@@ -13,7 +13,6 @@ enum PostHogAnalyticsEvent {
   /// Reports
   generateRoutineLogReport(displayName: "report:routine_log_session_generate"),
   generateMonthlyInsights(displayName: "report:monthly_insights_generate"),
-  generateMuscleGroupTrainingReport(displayName: "report:muscle_group_training_generate"),
 
   /// Sharing
   shareRoutineLogSummary(displayName: "routine_log_summary:routine_log_stats_share"),

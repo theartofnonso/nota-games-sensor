@@ -5,7 +5,6 @@ import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/dtos/set_dtos/duration_set_dto.dart';
 import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/repositories/exercise_log_repository.dart';
 
 void main() {
@@ -13,7 +12,6 @@ void main() {
   final lyingLegCurlExercise = ExerciseDto(
     id: "id_lyingLegCurlExercise",
     name: "Lying Leg Curl",
-    primaryMuscleGroup: MuscleGroup.hamstrings,
     type: ExerciseType.weights,
     notes: '',
   );
@@ -21,7 +19,6 @@ void main() {
   final plankExercise = ExerciseDto(
     id: "id_plankExercise",
     name: "Plank",
-    primaryMuscleGroup: MuscleGroup.abs,
     type: ExerciseType.duration,
     notes: '',
   );
@@ -29,7 +26,6 @@ void main() {
   final benchPressExercise = ExerciseDto(
     id: "id_benchPressExercise",
     name: "Bench Press",
-    primaryMuscleGroup: MuscleGroup.chest,
     type: ExerciseType.weights,
     notes: '',
   );

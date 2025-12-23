@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/routine_editors_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -24,6 +24,7 @@ import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../extensions/duration_extension.dart';
+import '../../utils/lottie_exercise_registry.dart';
 
 const Duration _suggestionHistoryWindow = Duration(days: 30);
 
@@ -956,12 +957,6 @@ class _SuggestionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    final MuscleGroup muscleGroup = data.exercise.primaryMuscleGroup;
-    final muscleGroupLabel = muscleGroup.displayName;
-
-    // Get muscle illustration path
-    final illustrationPath = 'muscles_illustration/${muscleGroup.name}.png';
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1005,29 +1000,35 @@ class _SuggestionCard extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                muscleGroupLabel,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white70,
-                                ),
-                              ),
                             ],
                           ),
                         ),
-                        Opacity(
-                          opacity: 0.85,
-                          child: Image.asset(
-                            illustrationPath,
-                            height: 32,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              // Fallback if image not found
-                              return Icon(Icons.block,
-                                  size: 32, color: Colors.white24);
-                            },
-                          ),
-                        ),
+                        data.exercise.isSystem
+                            ? FutureBuilder<String?>(
+                                future: LottieExerciseRegistry.lottieFor(
+                                    data.exercise.name),
+                                builder: (context, snapshot) {
+                                  final asset = snapshot.data;
+                                  if (asset != null) {
+                                    return Lottie.asset(
+                                      asset,
+                                      height: 48,
+                                      fit: BoxFit.contain,
+                                      repeat: true,
+                                    );
+                                  }
+                                  return FaIcon(
+                                    FontAwesomeIcons.ban,
+                                    size: 32,
+                                    color: const Color.fromRGBO(255, 255, 255, 0.4),
+                                  );
+                                },
+                              )
+                            : FaIcon(
+                                FontAwesomeIcons.ban,
+                                size: 32,
+                                color: const Color.fromRGBO(255, 255, 255, 0.4),
+                              ),
                       ],
                     ),
                   ],

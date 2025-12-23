@@ -299,7 +299,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       useBlurredTransparentBackground: true,
       child: StatefulBuilder(
         builder: (context, setSheetState) {
-          int currentPage = 0;
+          final pageController = PageController(viewportFraction: 0.9);
+          final currentPage = ValueNotifier<int>(0);
           return Padding(
             padding: const EdgeInsets.fromLTRB(0, 20, 0, 6),
             child: Column(
@@ -321,22 +322,21 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                   height: 190,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      final pageWidth =
-                          constraints.maxWidth - 32; // account for padding
                       return Column(
                         children: [
                           Expanded(
                             child: PageView.builder(
+                              controller: pageController,
                               itemCount: personalBests.length,
-                              onPageChanged: (index) =>
-                                  setSheetState(() => currentPage = index),
+                              onPageChanged: (index) {
+                                currentPage.value = index;
+                              },
                               itemBuilder: (context, index) {
                                 final pb = personalBests[index];
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 16),
                                   child: SizedBox(
-                                    width: pageWidth,
                                     child: _PersonalBestCard(pb: pb),
                                   ),
                                 );
@@ -344,23 +344,31 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              personalBests.length,
-                              (index) => Container(
-                                width: 8,
-                                height: 8,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: currentPage == index
-                                      ? Theme.of(context).colors.vibrantAccent
-                                      : Colors.white.withValues(alpha: 0.3),
+                          ValueListenableBuilder<int>(
+                            valueListenable: currentPage,
+                            builder: (context, page, _) {
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  personalBests.length,
+                                  (index) => Container(
+                                    width: 8,
+                                    height: 8,
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 4),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: page == index
+                                          ? Theme.of(context)
+                                              .colors
+                                              .vibrantAccent
+                                          : Colors.white
+                                              .withValues(alpha: 0.3),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           ),
                         ],
                       );

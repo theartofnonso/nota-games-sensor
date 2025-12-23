@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
-import 'package:trainware/extensions/muscle_group_extension.dart';
-
+import 'package:lottie/lottie.dart';
 import '../../dtos/appsync/exercise_dto.dart';
+import '../../utils/lottie_exercise_registry.dart';
 
 class ExerciseWidget extends StatelessWidget {
   final ExerciseDto exerciseDto;
@@ -25,6 +24,7 @@ class ExerciseWidget extends StatelessWidget {
     final navigateToExercise = onNavigateToExercise;
 
     final exercise = exerciseDto;
+    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
 
     return ListTile(
         onTap: () =>
@@ -32,23 +32,35 @@ class ExerciseWidget extends StatelessWidget {
         horizontalTitleGap: 30,
         titleAlignment: ListTileTitleAlignment.titleHeight,
         leading: SizedBox(
-          width: 35,
-          height: 35, // Adjust the height as needed
-          child: Image.asset(
-            'muscles_illustration/${exercise.primaryMuscleGroup.illustration()}.png',
-            fit: BoxFit.cover,
-            filterQuality: FilterQuality.low,
-          ),
-        ),
+            width: 48,
+            height: 48,
+            child: exercise.isSystem
+                ? FutureBuilder<String?>(
+                    future: LottieExerciseRegistry.lottieFor(exercise.name),
+                    builder: (context, snapshot) {
+                      final asset = snapshot.data;
+                      if (asset != null) {
+                        return Lottie.asset(
+                          asset,
+                          fit: BoxFit.contain,
+                          repeat: true,
+                        );
+                      }
+                      return FaIcon(
+                        FontAwesomeIcons.ban,
+                        size: 28,
+                        color: banColor,
+                      );
+                    },
+                  )
+                : FaIcon(
+                    FontAwesomeIcons.ban,
+                    size: 28,
+                    color: banColor,
+                  )),
         title:
             Text(exercise.name, style: Theme.of(context).textTheme.titleMedium),
-        subtitle: Text(
-          exercise.primaryMuscleGroup.name.toUpperCase(),
-          style: TextStyle(
-              color: Colors.deepOrangeAccent,
-              fontWeight: FontWeight.w600,
-              fontSize: 12),
-        ),
+        subtitle: const SizedBox.shrink(),
         trailing: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () => navigateToExercise != null

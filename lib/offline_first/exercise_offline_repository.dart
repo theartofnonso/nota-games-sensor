@@ -30,11 +30,9 @@ class OfflineExerciseRepository {
   List<ExerciseLocalEntry> _entries = const [];
 
   /// Offline-first view of exercises for the rest of the app.
-  List<ExerciseDto> get offlineExercises => _entries
-      .where((e) => !e.isDeleted)
-      .map((e) => e.exercise)
-      .toList()
-    ..sort((a, b) => a.name.compareTo(b.name));
+  List<ExerciseDto> get offlineExercises =>
+      _entries.where((e) => !e.isDeleted).map((e) => e.exercise).toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
 
   /// Load from disk only (no network).
   Future<void> loadFromCache() async {
@@ -53,7 +51,8 @@ class OfflineExerciseRepository {
 
     await _localStore.saveAll(_entries);
 
-    _logger.i('Exercise sync completed. Local exercises: ${offlineExercises.length}');
+    _logger.i(
+        'Exercise sync completed. Local exercises: ${offlineExercises.length}');
   }
 
   /// Local-first create/update: mark entry as needing sync.
@@ -127,7 +126,9 @@ class OfflineExerciseRepository {
               .where((e) => e.exercise.id != entry.exercise.id)
               .toList();
         } else {
-          await _client.from('exercises').upsert(entry.exercise.toJson());
+          // Persist system flag to Supabase now that the column is supported.
+          final payload = Map<String, dynamic>.from(entry.exercise.toJson());
+          await _client.from('exercises').upsert(payload);
 
           final index =
               _entries.indexWhere((e) => e.exercise.id == entry.exercise.id);
@@ -222,5 +223,3 @@ class OfflineExerciseRepository {
     }
   }
 }
-
-

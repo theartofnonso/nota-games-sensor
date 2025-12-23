@@ -4,7 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:trainware/enums/muscle_group_enums.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -14,12 +13,7 @@ import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/exercise_type_enums.dart';
 import '../../logger.dart';
 import '../../utils/general_utils.dart';
-import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
-import '../../widgets/dividers/label_divider.dart';
-import '../../widgets/list_tile.dart';
-import '../../widgets/picker.dart';
-import '../../widgets/muscle_group/muscle_group_grid_picker.dart';
 
 class ExerciseEditorScreen extends StatefulWidget {
   static const routeName = '/exercise-editor';
@@ -33,9 +27,6 @@ class ExerciseEditorScreen extends StatefulWidget {
 }
 
 class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
-  late MuscleGroup _primaryMuscleGroup;
-  late ExerciseType _exerciseType;
-
   final logger = getLogger(className: "_ExerciseEditorScreenState");
 
   late TextEditingController _exerciseNameController;
@@ -86,7 +77,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
           gradient: themeGradient(context: context),
         ),
         child: SafeArea(
-          minimum: const EdgeInsets.all(10),
+          minimum: const EdgeInsets.all(20),
           child: Column(
             children: [
               Expanded(
@@ -101,9 +92,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(50),
                           border: Border.all(
-                            color: Theme.of(context)
-                                .extension<TRKRColors>()!
-                                .borderLight,
+                            color: Colors.white.withOpacity(0.25),
                             width: 1,
                           ),
                         ),
@@ -130,90 +119,9 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: 8,
                         children: [
-                          LabelDivider(
-                            label: "Select muscle group to train".toUpperCase(),
-                            labelColor: Theme.of(context).colorScheme.onSurface,
-                            dividerColor: Theme.of(context).colors.dividerColor,
-                            fontSize: 14,
-                          ),
-                          Text(
-                              "Choose from a list of muscle groups to train for this custom exercise.",
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                      color: isDarkMode
-                                          ? Colors.white70
-                                          : Colors.black)),
-                          ThemeListTile(
-                            child: ListTile(
-                              onTap: _selectPrimaryMuscleGroup,
-                              leading: Text(_primaryMuscleGroup.name,
-                                  textAlign: TextAlign.start,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: isDarkMode
-                                              ? Colors.white
-                                              : Colors.black)),
-                              trailing: const FaIcon(
-                                FontAwesomeIcons.arrowRightLong,
-                                size: 14,
-                              ),
-                            ),
-                          ),
+                          const SizedBox.shrink(),
                         ],
                       ),
-                      if (exercise == null)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 8,
-                          children: [
-                            LabelDivider(
-                              label: "Choose how to log this exercise"
-                                  .toUpperCase(),
-                              labelColor:
-                                  Theme.of(context).colorScheme.onSurface,
-                              dividerColor:
-                                  Theme.of(context).colors.dividerColor,
-                              fontSize: 14,
-                            ),
-                            Text(
-                                "You can log this exercise using reps only, reps and weights or duration.",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                        fontWeight: FontWeight.w400,
-                                        color: isDarkMode
-                                            ? Colors.white70
-                                            : Colors.black)),
-                            ThemeListTile(
-                              child: ListTile(
-                                onTap: _selectExerciseType,
-                                leading: Text(_exerciseType.description,
-                                    textAlign: TextAlign.start,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                            color: isDarkMode
-                                                ? Colors.white
-                                                : Colors.black)),
-                                trailing: const FaIcon(
-                                  FontAwesomeIcons.arrowRightLong,
-                                  size: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -222,7 +130,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
               if (exercise == null)
                 SafeArea(
                   top: false,
-                  minimum: const EdgeInsets.all(10),
+                  minimum: const EdgeInsets.all(20),
                   child: SizedBox(
                     width: double.infinity,
                     child: OpacityButtonWidgetTwo(
@@ -240,53 +148,6 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
   void _showSnackbar(String message) {
     showSnackbar(context: context, message: message);
-  }
-
-  void _selectPrimaryMuscleGroup() {
-    FocusScope.of(context).unfocus();
-    showAppBottomSheet(
-      context: context,
-      isDraggable: true,
-      child: MuscleGroupGridPicker(
-        selectedMuscleGroup: _primaryMuscleGroup,
-        onSelect: (muscleGroup) {
-          Navigator.of(context).pop();
-          setState(() {
-            _primaryMuscleGroup = muscleGroup;
-          });
-        },
-      ),
-    );
-  }
-
-  void _selectExerciseType() {
-    if (widget.exercise != null) {
-      showSnackbar(
-          context: context,
-          message: "Exercise type cannot be changed after creation.");
-      return;
-    }
-
-    FocusScope.of(context).unfocus();
-    showAppBottomSheet(
-        context: context,
-        isScrollControlled: false,
-        child: Padding(
-          padding: const EdgeInsets.all(26),
-          child: SizedBox(
-            height: 240,
-            child: GenericPicker(
-              items: ExerciseType.values,
-              labelBuilder: (type) => type.description,
-              onItemSelected: (value) {
-                Navigator.of(context).pop();
-                setState(() {
-                  _exerciseType = value;
-                });
-              },
-            ),
-          ),
-        ));
   }
 
   void _createExercise() async {
@@ -322,8 +183,7 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
     final exercise = ExerciseDto(
         name: exerciseName,
-        primaryMuscleGroup: _primaryMuscleGroup,
-        type: _exerciseType);
+        type: widget.exercise?.type ?? ExerciseType.weights);
 
     await controller.saveExercise(exerciseDto: exercise);
 
@@ -369,7 +229,8 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
     }
 
     final exerciseToBeUpdated = exercise.copyWith(
-        name: exerciseName.trim(), primaryMuscleGroup: _primaryMuscleGroup);
+      name: exerciseName.trim(),
+    );
     await controller.updateExercise(exercise: exerciseToBeUpdated);
 
     if (mounted) {
@@ -385,14 +246,5 @@ class _ExerciseEditorScreenState extends State<ExerciseEditorScreen> {
 
     _exerciseNameController =
         TextEditingController(text: previousExercise?.name);
-
-    // Default to the first item in the muscle group list used by the picker
-    // when creating a new exercise, otherwise preserve the existing value.
-    _primaryMuscleGroup = previousExercise != null
-        ? previousExercise.primaryMuscleGroup
-        : MuscleGroup.sortedValues.first;
-
-    _exerciseType =
-        previousExercise != null ? previousExercise.type : ExerciseType.weights;
   }
 }
