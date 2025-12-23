@@ -3210,12 +3210,6 @@
     "isSystem": true
   },
   {
-    "id": "ex-back-extension",
-    "name": "Back Extension",
-    "lottie": "assets/lottie/Man Doing Back Extension Exercise for Glute and Lower Back.json",
-    "isSystem": true
-  },
-  {
     "id": "ex-push-up",
     "name": "Push Up",
     "lottie": "assets/lottie/Man Doing Push Up Exercise For Chest.json",
