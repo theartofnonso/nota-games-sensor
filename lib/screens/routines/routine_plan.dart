@@ -437,9 +437,10 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
     showEditorBottomSheet(
         context: context,
-        minChildSize: 0.4,
-        initialChildSize: 0.6,
-        maxChildSize: 0.8,
+        // Tighter height to better fit the short menu contents
+        minChildSize: 0.25,
+        initialChildSize: 0.35,
+        maxChildSize: 0.5,
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: Column(
