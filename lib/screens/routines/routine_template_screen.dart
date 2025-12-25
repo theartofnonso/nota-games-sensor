@@ -510,22 +510,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       await Provider.of<SupabaseExerciseAndRoutineController>(context,
               listen: false)
           .removeTemplate(template: template);
-      if (mounted) {
-        context.pop();
-      }
     } catch (e) {
       if (mounted) {
         showSnackbar(context: context, message: "Unable to remove workout");
       }
-    } finally {
-      _toggleLoadingState();
     }
-  }
-
-  void _toggleLoadingState() {
-    setState(() {
-      _loading = !_loading;
-    });
   }
 
   void _showRenameTemplateBottomSheet() {
@@ -736,8 +725,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                               : "Are you sure you want to delete this workout?",
                           leftAction: Navigator.of(context).pop,
                           rightAction: () {
-                            context.pop();
-                            _toggleLoadingState();
                             _deleteRoutine(template: template);
                           },
                           leftActionLabel: 'Cancel',

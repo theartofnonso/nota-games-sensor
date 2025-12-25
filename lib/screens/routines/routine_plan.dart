@@ -28,7 +28,6 @@ import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
-import '../../widgets/routine/preview/plan_picker.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 
 class RoutinePlanScreen extends StatefulWidget {
@@ -405,125 +404,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     setState(() {
       _loading = !_loading;
     });
-  }
-
-  void _showTemplateMenu(
-      {required RoutineTemplateDto template, required RoutinePlanDto plan}) {
-    final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
-    final plans = exerciseAndRoutineController.plans;
-
-    showEditorBottomSheet(
-      context: context,
-      minChildSize: 0.4,
-      initialChildSize: 0.6,
-      maxChildSize: 0.8,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(
-                FontAwesomeIcons.arrowRightArrowLeft,
-                size: 18,
-              ),
-              horizontalTitleGap: 10,
-              title: Text("Move to another plan",
-                  style: Theme.of(context).textTheme.bodyLarge),
-              onTap: () {
-                Navigator.of(context).pop();
-                _showMoveToPlanPicker(template: template, plans: plans);
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(
-                FontAwesomeIcons.trash,
-                size: 18,
-                color: Colors.red,
-              ),
-              horizontalTitleGap: 10,
-              title: Text("Remove from plan",
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(color: Colors.red)),
-              onTap: () {
-                Navigator.of(context).pop();
-                _removeTemplateFromPlan(template: template);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showMoveToPlanPicker(
-      {required RoutineTemplateDto template,
-      required List<RoutinePlanDto> plans}) {
-    // Filter out the current plan
-    final otherPlans = plans.where((p) => p.id != widget.id).toList();
-
-    showEditorBottomSheet(
-      context: context,
-      minChildSize: 0.4,
-      initialChildSize: 0.6,
-      maxChildSize: 0.8,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: PlanPicker(
-          title: "Move ${template.name} to...",
-          plans: otherPlans,
-          onSelect: (selectedPlan) async {
-            Navigator.of(context).pop();
-            await _moveTemplateToPlan(
-                template: template, targetPlan: selectedPlan);
-          },
-          onCreatePlan: () async {
-            Navigator.of(context).pop();
-            final arguments = RoutinePlanArguments(
-                plan: RoutinePlanDto(id: "", name: "", notes: ""));
-            final newPlan = await navigateToRoutinePlanEditor(
-              context: context,
-              arguments: arguments,
-            );
-            if (newPlan != null && mounted) {
-              await _moveTemplateToPlan(
-                  template: template, targetPlan: newPlan);
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _removeTemplateFromPlan(
-      {required RoutineTemplateDto template}) async {
-    final templateWithoutPlanId = template.copyWith(planId: "");
-    await Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false)
-        .updateTemplate(template: templateWithoutPlanId);
-  }
-
-  Future<void> _moveTemplateToPlan(
-      {required RoutineTemplateDto template,
-      required RoutinePlanDto targetPlan}) async {
-    final templateWithNewPlanId = template.copyWith(planId: targetPlan.id);
-    await Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false)
-        .updateTemplate(template: templateWithNewPlanId);
-
-    if (mounted) {
-      showSnackbar(
-        context: context,
-        message: 'Moved to ${targetPlan.name}',
-      );
-    }
   }
 
   void _showCreateWorkoutBottomSheet({required RoutinePlanDto plan}) {
