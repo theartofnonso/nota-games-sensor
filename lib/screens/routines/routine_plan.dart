@@ -92,10 +92,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     final children = routineTemplates
         .mapIndexed(
           (index, template) => GestureDetector(
-            onTap: () => navigateToRoutineTemplatePreview(
-                context: context, template: template),
-            onLongPress: () =>
-                _showTemplateMenu(template: template, plan: plan),
             child: RoutineTemplateGridItemWidget(
               template: template,
               onTap: () => navigateToRoutineTemplatePreview(
@@ -473,12 +469,12 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     // Filter out the current plan
     final otherPlans = plans.where((p) => p.id != widget.id).toList();
 
-      showEditorBottomSheet(
-        context: context,
-        minChildSize: 0.4,
-        initialChildSize: 0.6,
-        maxChildSize: 0.8,
-        child: Padding(
+    showEditorBottomSheet(
+      context: context,
+      minChildSize: 0.4,
+      initialChildSize: 0.6,
+      maxChildSize: 0.8,
+      child: Padding(
         padding: const EdgeInsets.all(26),
         child: PlanPicker(
           title: "Move ${template.name} to...",
@@ -560,11 +556,11 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     final plan = exerciseAndRoutineController.planWhere(id: widget.id);
 
     showEditorBottomSheet(
-      context: context,
-      minChildSize: 0.4,
-      initialChildSize: 0.6,
-      maxChildSize: 0.8,
-      child: Padding(
+        context: context,
+        minChildSize: 0.4,
+        initialChildSize: 0.6,
+        maxChildSize: 0.8,
+        child: Padding(
           padding: const EdgeInsets.all(26),
           child: Column(
               mainAxisSize: MainAxisSize.min,

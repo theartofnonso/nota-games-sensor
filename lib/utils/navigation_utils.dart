@@ -24,7 +24,6 @@ import '../screens/editors/past_routine_log_editor_screen.dart';
 import '../screens/editors/routine_template_editor_screen.dart';
 import '../screens/logs/routine_log_screen.dart';
 import '../screens/routines/routine_plan.dart';
-import '../screens/routines/routine_plans_screen.dart';
 import '../screens/routines/routine_template_screen.dart';
 import '../utils/name_notes_bottom_sheet.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -96,10 +95,6 @@ void navigateToPastRoutineLogEditor(
     required PastRoutineLogArguments arguments}) async {
   final log = await showAppBottomSheet<RoutineLogDto>(
     context: context,
-    isDraggable: true,
-    initialChildSize: 0.9,
-    minChildSize: 0.6,
-    maxChildSize: 0.98,
     child: PastRoutineLogEditorScreen(log: arguments.log),
   );
   if (log != null && context.mounted) {
@@ -143,10 +138,6 @@ Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
     required RoutineLogArguments arguments}) async {
   final log = await showAppBottomSheet<RoutineLogDto>(
     context: context,
-    isDraggable: true,
-    initialChildSize: 0.9,
-    minChildSize: 0.6,
-    maxChildSize: 0.98,
     child: RoutineLogEditorScreen(
       log: arguments.log,
       mode: arguments.editorMode,
@@ -161,13 +152,9 @@ Future<void> navigateToRoutineTemplatePreview(
     required RoutineTemplateDto template}) async {
   await showEditorBottomSheet<void>(
     context: context,
-    isDismissible: false, // prevent swipe-to-dismiss; match editor behavior
-    builder: (context, scrollController) {
-      return RoutineTemplateScreen(
-        id: template.id,
-        scrollController: scrollController,
-      );
-    },
+    child: RoutineTemplateScreen(
+      id: template.id,
+    ),
   );
 }
 
@@ -195,10 +182,6 @@ Future<void> navigateToExerciseHome(
     {required BuildContext context, required ExerciseDto exercise}) async {
   await showEditorBottomSheet(
       context: context, child: ExerciseHomeScreen(exercise: exercise));
-}
-
-void navigateToRoutineHome({required BuildContext context}) {
-  context.push(RoutinePlansScreen.routeName);
 }
 
 Future<void> navigateToSettings({required BuildContext context}) async {

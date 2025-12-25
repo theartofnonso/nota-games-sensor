@@ -32,7 +32,6 @@ import 'package:trainware/screens/logs/routine_log_screen.dart';
 import 'package:trainware/onboarding_flow_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
-import 'package:trainware/screens/routines/routine_plans_screen.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
@@ -245,12 +244,6 @@ final _router = GoRouter(
       builder: (context, state) {
         final args = state.extra as ExerciseEditorArguments?;
         return ExerciseEditorScreen(exercise: args?.exercise);
-      },
-    ),
-    GoRoute(
-      path: RoutinePlansScreen.routeName,
-      builder: (context, state) {
-        return RoutinePlansScreen();
       },
     ),
     GoRoute(
