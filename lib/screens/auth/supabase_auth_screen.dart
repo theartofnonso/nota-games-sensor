@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:video_player/video_player.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
@@ -18,12 +19,29 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   bool _otpSent = false;
   final _emailController = TextEditingController();
   final _otpController = TextEditingController();
+  late final VideoPlayerController _videoController;
 
   @override
   void dispose() {
+    _videoController.dispose();
     _emailController.dispose();
     _otpController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _videoController = VideoPlayerController.asset(
+      'images/DTS_IRL_ESCAPISM_Joey_Bania_Clips_ID129.mp4',
+    )
+      ..setLooping(true)
+      ..setVolume(0);
+    _videoController.initialize().then((_) {
+      if (!mounted) return;
+      _videoController.play();
+      setState(() {});
+    });
   }
 
   Future<void> _sendOTP() async {
@@ -33,7 +51,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       showSnackbar(
         context: context,
         message: 'Please enter your email',
-          backgroundColor: Colors.orange,
+        backgroundColor: Colors.orange,
       );
       return;
     }
@@ -42,7 +60,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       showSnackbar(
         context: context,
         message: 'Please enter a valid email',
-          backgroundColor: Colors.orange,
+        backgroundColor: Colors.orange,
       );
       return;
     }
@@ -69,7 +87,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
             context: context,
             message:
                 'Test account login failed. Please ensure the account exists in Supabase.',
-              backgroundColor: Colors.red,
+            backgroundColor: Colors.red,
           );
         }
       } finally {
@@ -98,7 +116,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: 'Check your email for the verification code',
-            backgroundColor: Theme.of(context).colors.vibrantAccent,
+          backgroundColor: Theme.of(context).colors.vibrantAccent,
         );
       }
     } on AuthException catch (error) {
@@ -106,7 +124,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: error.message,
-            backgroundColor: Colors.red,
+          backgroundColor: Colors.red,
         );
       }
     } catch (error) {
@@ -114,7 +132,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: 'Unexpected error: $error',
-            backgroundColor: Colors.red,
+          backgroundColor: Colors.red,
         );
       }
     } finally {
@@ -132,7 +150,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       showSnackbar(
         context: context,
         message: 'Please enter a valid 6-digit code',
-          backgroundColor: Colors.orange,
+        backgroundColor: Colors.orange,
       );
       return;
     }
@@ -154,7 +172,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: error.message,
-            backgroundColor: Colors.red,
+          backgroundColor: Colors.red,
         );
       }
     } catch (error) {
@@ -162,7 +180,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         showSnackbar(
           context: context,
           message: 'Unexpected error: $error',
-            backgroundColor: Colors.red,
+          backgroundColor: Colors.red,
         );
       }
     } finally {
@@ -185,14 +203,40 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // ----------------- GRADIENT BACKGROUND -----------------
+          // ----------------- VIDEO/GRADIENT BACKGROUND -----------------
+          Positioned.fill(
+            child: _videoController.value.isInitialized
+                ? IgnorePointer(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoController.value.size.width,
+                        height: _videoController.value.size.height,
+                        child: VideoPlayer(_videoController),
+                      ),
+                    ),
+                  )
+                : Container(
+                    decoration: BoxDecoration(
+                      gradient: themeGradient(context: context),
+                    ),
+                  ),
+          ),
+          // Gradient overlay for readability
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                gradient: themeGradient(context: context),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.55),
+                    Colors.black.withValues(alpha: 0.75),
+                  ],
+                ),
               ),
             ),
           ),
