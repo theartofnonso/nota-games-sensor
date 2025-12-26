@@ -11,7 +11,7 @@ class RoutineTemplateDto {
 
   RoutineTemplateDto({
     this.id = "",
-    this.planId = "",
+    required this.planId,
     required this.name,
     this.notes = "",
     required this.exerciseTemplates,

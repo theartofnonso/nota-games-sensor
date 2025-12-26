@@ -362,17 +362,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
           Provider.of<SupabaseExerciseAndRoutineController>(context,
               listen: false);
 
-      final routineTemplates = exerciseAndRoutineController.templates
-          .where((template) => template.planId == plan.id)
-          .toList();
-
       await exerciseAndRoutineController.removePlan(plan: plan);
-
-      for (final template in routineTemplates) {
-        final templateWithoutPlanId = template.copyWith(planId: "");
-        await exerciseAndRoutineController.updateTemplate(
-            template: templateWithoutPlanId);
-      }
 
       if (mounted) {
         context.pop();
