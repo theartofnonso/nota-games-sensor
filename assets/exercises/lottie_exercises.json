@@ -648,6 +648,12 @@
     "isSystem": true
   },
   {
+    "id": "ex-barbell-bent-over-row",
+    "name": "Barbell Bent Over Row",
+    "lottie": "assets/lottie/Man Doing Barbell Bent Over Row Exercise For Back.json",
+    "isSystem": true
+  },
+  {
     "id": "ex-barbell-narrow-squat",
     "name": "Barbell Narrow Squat",
     "lottie": "assets/lottie/Man Doing Barbell Narrow Squat Exercise Men For Legs.json",
@@ -795,6 +801,12 @@
     "id": "ex-barbell-upright-row",
     "name": "Barbell Upright Row",
     "lottie": "assets/lottie/Man Doing Barbell Upright Row Exercise For Shoulders.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-barbell-bench-press",
+    "name": "Barbell Bench Press",
+    "lottie": "assets/lottie/Man Doing Barbell Bench Press Exercise For Chest.json",
     "isSystem": true
   },
   {
@@ -4184,13 +4196,13 @@
   {
     "id": "ex-foam-roller-chest",
     "name": "Foam Roller -  Chest",
-    "lottie": "assets/lottie/Man Rolling Chest Exercise For Chest Relaxed (1).json",
+    "lottie": "assets/lottie/Man Rolling Chest Exercise For Chest Relaxed.json",
     "isSystem": true
   },
   {
     "id": "ex-foam-roller-forearm",
     "name": "Foam Roller -  Forearm",
-    "lottie": "assets/lottie/Man Rolling Forearm Exercise For Arm Relaxed (1).json",
+    "lottie": "assets/lottie/Man Rolling Forearm Exercise For Arm Relaxed.json",
     "isSystem": true
   },
   {
@@ -4274,7 +4286,7 @@
   {
     "id": "ex-foam-roller-tibialis-anterior",
     "name": "Foam Roller -  Tibialis Anterior",
-    "lottie": "assets/lottie/Man Rolling Tibialis Anterior Exercise For Leg Relaxed (1).json",
+    "lottie": "assets/lottie/Man Rolling Tibialis Anterior Exercise For Leg Relaxed.json",
     "isSystem": true
   },
   {
