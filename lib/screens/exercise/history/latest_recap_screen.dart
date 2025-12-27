@@ -108,7 +108,7 @@ class LatestRecapScreen extends StatelessWidget {
           );
 
     if (asSheet) {
-      return SafeArea(child: content);
+      return SafeArea(bottom: false, child: content);
     }
 
     return Scaffold(

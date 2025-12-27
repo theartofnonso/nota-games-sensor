@@ -34,14 +34,27 @@ class RoutineTemplateDto {
     final name = json["name"] ?? "";
     final notes = json["notes"] ?? "";
 
-    final rawExerciseTemplates = json["exercises"] as List<dynamic>;
-    final exerciseTemplates = rawExerciseTemplates.map((exerciseJson) {
-      return ExerciseLogDto.fromJson(
-        routineLogId: id,
-        json: exerciseJson,
-        createdAt: DateTime.now(),
+    final rawExerciseTemplates = json["exercises"];
+    if (rawExerciseTemplates is! List) {
+      throw const FormatException(
+          'Invalid routine template payload: exercises must be a list');
+    }
+
+    final exerciseTemplates = <ExerciseLogDto>[];
+    for (var i = 0; i < rawExerciseTemplates.length; i++) {
+      final exerciseJson = rawExerciseTemplates[i];
+      if (exerciseJson is! Map<String, dynamic>) {
+        throw FormatException(
+            'Invalid routine template payload at index $i: exercise entry must be an object');
+      }
+      exerciseTemplates.add(
+        ExerciseLogDto.fromJson(
+          routineLogId: id,
+          json: exerciseJson,
+          createdAt: DateTime.now(),
+        ),
       );
-    }).toList();
+    }
 
     return RoutineTemplateDto(
       id: id,

@@ -46,7 +46,7 @@ class ExerciseDto {
     final name = json["name"] ?? "";
     final type = json["type"] != null
         ? ExerciseType.fromString(json["type"])
-        : ExerciseType.weights;
+        : ExerciseType.none;
 
     final notes = json["notes"] ?? "";
     final isSystem =

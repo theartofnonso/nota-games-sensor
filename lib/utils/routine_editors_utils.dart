@@ -74,9 +74,59 @@ void showExercisesInLibrary(
 
   if (context.mounted) {
     if (selectedExercises != null && selectedExercises.isNotEmpty) {
-      onSelected.call(selectedExercises);
+      final normalized = <ExerciseDto>[];
+      for (final ex in selectedExercises) {
+        if (ex.type != ExerciseType.none) {
+          normalized.add(ex);
+          continue;
+        }
+        final picked =
+            await _pickExerciseType(context: context, exerciseName: ex.name);
+        if (picked == null) continue;
+        normalized.add(ex.copyWith(type: picked));
+      }
+      if (normalized.isNotEmpty) {
+        onSelected.call(normalized);
+      }
     }
   }
+}
+
+Future<ExerciseType?> _pickExerciseType(
+    {required BuildContext context, required String exerciseName}) {
+  return showAppBottomSheet<ExerciseType>(
+    context: context,
+    isDraggable: true,
+    builder: (context, scrollController) {
+      final options = ExerciseType.values
+          .where((t) => t != ExerciseType.none)
+          .toList(growable: false);
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 16,
+          children: [
+            Text(
+              'Select type for $exerciseName',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            ...options.map(
+              (t) => ListTile(
+                title: Text(t.name),
+                subtitle: Text(t.description),
+                onTap: () => Navigator.of(context).pop(t),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 /// Shared helper to confirm removing an exercise from any editor.

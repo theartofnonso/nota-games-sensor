@@ -77,6 +77,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                 firstLabel: weightUnit().toUpperCase(), secondLabel: 'REPS'),
             ExerciseType.bodyWeight => SingleSetHeader(label: 'REPS'),
             ExerciseType.duration => SingleSetHeader(label: 'TIME'),
+            ExerciseType.none => const SizedBox.shrink(),
           },
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),

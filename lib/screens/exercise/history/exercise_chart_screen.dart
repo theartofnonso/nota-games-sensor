@@ -156,7 +156,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
     _summaryType = switch (_selectedType) {
       ExerciseType.weights => SummaryType.weight,
       ExerciseType.bodyWeight => SummaryType.mostReps,
-      ExerciseType.duration => SummaryType.bestTime
+      ExerciseType.duration => SummaryType.bestTime,
+      ExerciseType.none => SummaryType.weight,
     };
 
     _dateTimes = widget.exerciseLogs

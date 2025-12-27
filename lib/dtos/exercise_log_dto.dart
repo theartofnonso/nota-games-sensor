@@ -68,9 +68,23 @@ class ExerciseLogDto {
       required Map<String, dynamic> json}) {
     final superSetId = json["superSetId"] ?? "";
     final exerciseJson = json["exercise"];
+    if (exerciseJson is! Map<String, dynamic>) {
+      // Log offending payload to aid diagnosis.
+      // ignore: avoid_print
+      print('Invalid exercise entry payload: $json');
+      throw const FormatException(
+          'Invalid exercise entry: exercise must be an object');
+    }
     final exercise = ExerciseDto.fromJson(exerciseJson);
     final notes = json["notes"] ?? "";
-    final setsInJsons = json["sets"] as List<dynamic>;
+    final setsRaw = json["sets"];
+    if (setsRaw is! List) {
+      // ignore: avoid_print
+      print('Invalid sets payload: $json');
+      throw const FormatException(
+          'Invalid exercise entry: sets must be provided as a list');
+    }
+    final setsInJsons = setsRaw;
     List<SetDto> sets = [];
     if (setsInJsons.isNotEmpty && setsInJsons.first is String) {
       sets = setsInJsons

@@ -1,4 +1,5 @@
 enum ExerciseType {
+  none("NO", "Select type", "Choose a type"),
   weights("WR", "Weights", "Log weights and reps"),
   bodyWeight("BW", "Bodyweight", "Log only reps"),
   duration("DR", "Duration", "Log duration");
@@ -10,7 +11,9 @@ enum ExerciseType {
   final String description;
 
   static ExerciseType fromString(String string) {
-    return ExerciseType.values
-        .firstWhere((value) => value.id.toLowerCase() == string.toLowerCase());
+    return ExerciseType.values.firstWhere(
+      (value) => value.id.toLowerCase() == string.toLowerCase(),
+      orElse: () => ExerciseType.none,
+    );
   }
 }

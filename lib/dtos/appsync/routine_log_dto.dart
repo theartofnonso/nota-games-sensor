@@ -93,6 +93,7 @@ class RoutineLogDto {
           ExerciseType.weights => (set as WeightAndRepsSetDto).volume(),
           ExerciseType.bodyWeight => 0.0,
           ExerciseType.duration => 0.0,
+          ExerciseType.none => 0.0,
         };
       }).sum;
 }

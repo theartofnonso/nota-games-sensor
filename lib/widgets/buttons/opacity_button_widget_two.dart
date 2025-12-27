@@ -10,6 +10,7 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
   final VisualDensity? visualDensity;
   final bool showArrowRight;
   final bool solidBackground;
+  final EdgeInsetsGeometry? padding;
 
   const OpacityButtonWidgetTwo({
     super.key,
@@ -21,6 +22,7 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
     this.visualDensity = VisualDensity.compact,
     this.showArrowRight = true,
     this.solidBackground = false,
+    this.padding,
   });
 
   Color _themeForegroundColor({required bool isDarkMode}) {
@@ -65,7 +67,8 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
         onPressed: onPressed,
         onLongPress: onLongPress,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: padding ??
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             mainAxisAlignment: showArrowRight
                 ? MainAxisAlignment.spaceBetween

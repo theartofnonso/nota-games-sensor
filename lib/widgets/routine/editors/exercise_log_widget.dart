@@ -13,7 +13,6 @@ import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/lottie_exercise_registry.dart';
 import 'package:trainware/utils/sets_utils.dart';
-import 'package:trainware/utils/string_utils.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/duration_set_row.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/reps_set_row.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/weights_and_reps_set_row.dart';
@@ -138,6 +137,13 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _addSet() {
     if (_exerciseLog == null) return;
+    final type = _currentExerciseLog.exercise.type;
+    if (type == ExerciseType.none) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Pick an exercise type before adding sets.'),
+      ));
+      return;
+    }
     final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false)
         .whereRecentSetsForExercise(exercise: _currentExerciseLog.exercise);
@@ -157,24 +163,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   void _updateWeight(
       {required int index, required double weight, required SetDto setDto}) {
     if (_exerciseLog == null) return;
-    final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .wherePrevSetsForExercise(exercise: _currentExerciseLog.exercise);
-
-    final previousWeights =
-        previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
-
-    final isOutSideOfRange = isOutsideReasonableRange(previousWeights, weight);
-    if (isOutSideOfRange) {
-      final message = _getWeightErrorMessage(weight: weight);
-      _setError(idx: index, msg: message);
-    } else {
-      _errors.remove(index);
-    }
-
-    _checkWeightRange(weight: weight, index: index);
-
     final updatedSet = (setDto as WeightAndRepsSetDto).copyWith(weight: weight);
     Provider.of<ExerciseLogController>(context, listen: false).updateWeight(
         exerciseLogId: _currentExerciseLog.id,
@@ -185,33 +173,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   void _updateReps(
       {required int index, required int reps, required SetDto setDto}) {
     if (_exerciseLog == null) return;
-    final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .wherePrevSetsForExercise(exercise: _currentExerciseLog.exercise);
-
-    final previousReps = previousSets
-        .map((set) => switch (_currentExerciseLog.exercise.type) {
-              ExerciseType.weights => (set as WeightAndRepsSetDto).reps,
-              ExerciseType.bodyWeight => (set as RepsSetDto).reps,
-              ExerciseType.duration => throw UnimplementedError(),
-            })
-        .toList();
-
-    final isOutSideOfRange = isOutsideReasonableRange(previousReps, reps);
-
-    if (isOutSideOfRange) {
-      final message = _repsErrorMessage(reps: reps);
-      _setError(idx: index, msg: message);
-    } else {
-      _errors.remove(index);
-    }
-
-    _checkRepsRange(reps: reps, index: index);
-
     final updatedSet = setDto is WeightAndRepsSetDto
         ? setDto.copyWith(reps: reps)
-        : (setDto as RepsSetDto).copyWith(reps: reps);
+        : setDto is RepsSetDto
+            ? setDto.copyWith(reps: reps)
+            : setDto;
     Provider.of<ExerciseLogController>(context, listen: false).updateReps(
         exerciseLogId: _currentExerciseLog.id,
         index: index,
@@ -423,54 +389,13 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     }
   }
 
-  void _checkWeightRange({required double weight, required int index}) {
-    if (isDefaultWeightUnit()) {
-      if (weight < 0.5 || weight > 500) {
-        final message = 'Weight must be between 0.5 and 500 kg.';
-        _setError(idx: index, msg: message);
-      }
-    } else {
-      if (weight < 1 || weight > 1100) {
-        final message = 'Weight must be between 1 and 1100 lbs.';
-        _setError(idx: index, msg: message);
-      }
-    }
-  }
-
-  void _checkRepsRange({required int reps, required int index}) {
-    if (reps <= 0) {
-      final message = 'You need to complete at least 1 repetition.';
-      _setError(idx: index, msg: message);
-    }
-  }
-
   void _loadWeightAndRepsControllers({required List<SetDto> sets}) {
     if (_exerciseLog == null) return;
-    final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .wherePrevSetsForExercise(exercise: _currentExerciseLog.exercise);
-
-    final previousWeights =
-        previousSets.map((set) => (set as WeightAndRepsSetDto).weight).toList();
-
+    final weightSets = sets.whereType<WeightAndRepsSetDto>().toList();
     List<(TextEditingController, TextEditingController)> controllers = [];
-    for (final (index, set) in sets.indexed) {
-      final weight = (set as WeightAndRepsSetDto).weight;
+    for (final set in weightSets) {
+      final weight = set.weight;
       final reps = set.reps;
-
-      final isOutSideOfRange =
-          isOutsideReasonableRange(previousWeights, weight);
-      if (isOutSideOfRange) {
-        final message = _getWeightErrorMessage(weight: weight);
-        _setError(idx: index, msg: message);
-      } else {
-        _errors.remove(index);
-      }
-
-      _checkWeightRange(weight: weight, index: index);
-
-      _checkRepsRange(reps: reps, index: index);
 
       final weightController = TextEditingController(text: weight.toString());
       final repsController = TextEditingController(text: reps.toString());
@@ -483,27 +408,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _loadRepsControllers({required List<SetDto> sets}) {
     if (_exerciseLog == null) return;
-    final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
-            context,
-            listen: false)
-        .wherePrevSetsForExercise(exercise: _currentExerciseLog.exercise);
-
-    final previousReps =
-        previousSets.map((set) => _repsFromAnySet(set)).toList();
-
+    // Only reps-based sets for bodyweight exercises.
+    final repsSets = sets.whereType<RepsSetDto>().toList();
     List<TextEditingController> controllers = [];
-    for (final (index, set) in sets.indexed) {
-      final reps = _repsFromAnySet(set);
-      final isOutSideOfRange = isOutsideReasonableRange(previousReps, reps);
-      if (isOutSideOfRange) {
-        final message = _repsErrorMessage(reps: reps);
-        _setError(idx: index, msg: message);
-      } else {
-        _errors.remove(index);
-      }
-
-      _checkRepsRange(reps: reps, index: index);
-
+    for (final set in repsSets) {
+      final reps = set.reps;
       final repsController = TextEditingController(text: reps.toString());
       controllers.add(repsController);
     }
@@ -512,30 +421,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     });
   }
 
-  String _repsErrorMessage({required int reps}) =>
-      "Hmm, $reps ${pluralize(word: "rep", count: reps)} looks a bit off your usual range. Mind checking the value just to be sure?.";
-
-  String _getWeightErrorMessage({required double weight}) =>
-      "Hmm, $weight${weightUnit()} looks a bit off your usual range. Mind checking the value just to be sure?.";
-
-  int _repsFromAnySet(SetDto set) {
-    if (set is WeightAndRepsSetDto) return set.reps;
-    if (set is RepsSetDto) return set.reps;
-    return 0;
-  }
-
-  void _setError({required int idx, required String? msg}) {
-    if (msg == null) {
-      _errors.remove(idx);
-    } else {
-      _errors[idx] = msg;
-    }
-  }
-
   void _loadDurationControllers({required List<SetDto> sets}) {
+    final durationSets = sets.whereType<DurationSetDto>().toList();
     List<DateTime> controllers = [];
-    for (final set in sets) {
-      final duration = (set as DurationSetDto).duration;
+    for (final set in durationSets) {
+      final duration = set.duration;
       final startTime = DateTime.now().subtract(duration);
       controllers.add(startTime);
     }
@@ -789,58 +679,81 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                   ],
                                 )
                               else ...[
-                                if (currentSets.isEmpty &&
-                                    withReps(type: exerciseType))
-                                  Column(
-                                    children: [
-                                      const SizedBox(height: 10),
-                                      NoListEmptyState(
+                                // Compute typed sets per exercise type
+                                if (exerciseType == ExerciseType.weights) ...[
+                                  _WeightAndRepsSetListView(
+                                    sets: currentSets
+                                        .whereType<WeightAndRepsSetDto>()
+                                        .toList(),
+                                    updateSetCheck: _updateSetCheck,
+                                    removeSet: _removeSet,
+                                    updateReps: _updateReps,
+                                    updateWeight: _updateWeight,
+                                    controllers: _weightAndRepsControllers,
+                                    onTapWeightEditor: _onTapWeightEditor,
+                                    onTapRepsEditor: _onTapRepsEditor,
+                                    editorType: widget.editorType,
+                                    showSetCheck: widget.showSetCheck,
+                                  ),
+                                  if (currentSets
+                                      .whereType<WeightAndRepsSetDto>()
+                                      .isEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: NoListEmptyState(
                                         message:
                                             "Tap the + button to start adding sets to your exercise",
                                       ),
-                                    ],
+                                    ),
+                                ] else if (exerciseType ==
+                                    ExerciseType.bodyWeight) ...[
+                                  _RepsSetListView(
+                                    sets: currentSets
+                                        .whereType<RepsSetDto>()
+                                        .toList(),
+                                    updateSetCheck: _updateSetCheck,
+                                    removeSet: _removeSet,
+                                    updateReps: _updateReps,
+                                    controllers: _repsControllers,
+                                    onTapRepsEditor: _onTapRepsEditor,
+                                    editorType: widget.editorType,
+                                    showSetCheck: widget.showSetCheck,
                                   ),
-                                switch (exerciseType) {
-                                  ExerciseType.weights =>
-                                    _WeightAndRepsSetListView(
-                                      sets: currentSets
-                                          .map((set) =>
-                                              set as WeightAndRepsSetDto)
-                                          .toList(),
-                                      updateSetCheck: _updateSetCheck,
-                                      removeSet: _removeSet,
-                                      updateReps: _updateReps,
-                                      updateWeight: _updateWeight,
-                                      controllers: _weightAndRepsControllers,
-                                      onTapWeightEditor: _onTapWeightEditor,
-                                      onTapRepsEditor: _onTapRepsEditor,
-                                      editorType: widget.editorType,
-                                      showSetCheck: widget.showSetCheck,
+                                  if (currentSets
+                                      .whereType<RepsSetDto>()
+                                      .isEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: NoListEmptyState(
+                                        message:
+                                            "Tap the + button to start adding sets to your exercise",
+                                      ),
                                     ),
-                                  ExerciseType.bodyWeight => _RepsSetListView(
-                                      sets: currentSets
-                                          .map((set) => set as RepsSetDto)
-                                          .toList(),
-                                      updateSetCheck: _updateSetCheck,
-                                      removeSet: _removeSet,
-                                      updateReps: _updateReps,
-                                      controllers: _repsControllers,
-                                      onTapRepsEditor: _onTapRepsEditor,
-                                      editorType: widget.editorType,
-                                      showSetCheck: widget.showSetCheck,
+                                ] else if (exerciseType ==
+                                    ExerciseType.duration) ...[
+                                  _DurationSetListView(
+                                    sets: currentSets
+                                        .whereType<DurationSetDto>()
+                                        .toList(),
+                                    updateSetCheck: _updateSetCheck,
+                                    removeSet: _removeSet,
+                                    updateDuration: _updateDuration,
+                                    controllers: _durationControllers,
+                                    editorType: widget.editorType,
+                                    showSetCheck: widget.showSetCheck,
+                                  ),
+                                  if (currentSets
+                                      .whereType<DurationSetDto>()
+                                      .isEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: NoListEmptyState(
+                                        message:
+                                            "Tap the + button to start adding sets to your exercise",
+                                      ),
                                     ),
-                                  ExerciseType.duration => _DurationSetListView(
-                                      sets: currentSets
-                                          .map((set) => set as DurationSetDto)
-                                          .toList(),
-                                      updateSetCheck: _updateSetCheck,
-                                      removeSet: _removeSet,
-                                      updateDuration: _updateDuration,
-                                      controllers: _durationControllers,
-                                      editorType: widget.editorType,
-                                      showSetCheck: widget.showSetCheck,
-                                    ),
-                                },
+                                ] else
+                                  const SizedBox.shrink(),
                               ],
                             ],
                           ),

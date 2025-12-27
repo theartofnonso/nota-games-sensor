@@ -304,6 +304,7 @@ TemplateChange? hasSetValueChanged({
       ExerciseType.bodyWeight => previousValue + (set as RepsSetDto).reps,
       ExerciseType.duration =>
         previousValue + (set as DurationSetDto).duration.inMilliseconds,
+      ExerciseType.none => previousValue,
     };
   });
 
@@ -315,6 +316,7 @@ TemplateChange? hasSetValueChanged({
       ExerciseType.bodyWeight => previousValue + (set as RepsSetDto).reps,
       ExerciseType.duration =>
         previousValue + (set as DurationSetDto).duration.inMilliseconds,
+      ExerciseType.none => previousValue,
     };
   });
 

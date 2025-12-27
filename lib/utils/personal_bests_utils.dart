@@ -92,6 +92,9 @@ List<PersonalBest> calculatePersonalBests({
           pbs: pbs,
         );
         break;
+      case ExerciseType.none:
+        // Skip PB evaluation until a type is selected
+        break;
     }
   }
 

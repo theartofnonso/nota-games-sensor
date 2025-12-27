@@ -81,7 +81,8 @@ class _ExerciseLogWidget extends StatelessWidget {
           ExerciseType.weights => DoubleSetHeader(
               firstLabel: weightUnit().toUpperCase(), secondLabel: 'REPS'),
           ExerciseType.bodyWeight => const SingleSetHeader(label: 'REPS'),
-          ExerciseType.duration => const SingleSetHeader(label: 'TIME')
+          ExerciseType.duration => const SingleSetHeader(label: 'TIME'),
+          ExerciseType.none => const SizedBox.shrink(),
         },
         const SizedBox(height: 8),
         SetsListview(type: exerciseType, sets: exerciseLog.sets)

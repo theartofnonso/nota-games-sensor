@@ -64,6 +64,8 @@ abstract class SetDto {
           duration: Duration(milliseconds: value2.toInt()),
           checked: checked,
           dateTime: datetime),
+      ExerciseType.none =>
+        throw const FormatException('Exercise type must be selected for sets'),
     };
   }
 
@@ -72,6 +74,8 @@ abstract class SetDto {
       ExerciseType.weights => WeightAndRepsSetDto.defaultSet(),
       ExerciseType.bodyWeight => RepsSetDto.defaultSet(),
       ExerciseType.duration => DurationSetDto.defaultSet(),
+      ExerciseType.none =>
+        throw const FormatException('Exercise type must be selected for sets'),
     };
   }
 }

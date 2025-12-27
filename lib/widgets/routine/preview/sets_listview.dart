@@ -42,6 +42,8 @@ class SetsListview extends StatelessWidget {
         case ExerciseType.duration:
           final label = (set as DurationSetDto).duration.hmsDigital();
           return SingleSetRow(label: label);
+        case ExerciseType.none:
+          return const SizedBox.shrink();
       }
     }).toList();
 

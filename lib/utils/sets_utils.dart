@@ -97,6 +97,7 @@ bool hasEmptyValues(
     ExerciseType.weights => _allWeightsSetsEmpty(sets),
     ExerciseType.bodyWeight => _allRepsSetsEmpty(sets),
     ExerciseType.duration => _allDurationSetsEmpty(sets),
+    ExerciseType.none => true,
   };
 }
 

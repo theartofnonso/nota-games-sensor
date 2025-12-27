@@ -18,6 +18,10 @@ class ExerciseLogRepository {
 
   void addExerciseLog(
       {required ExerciseDto exercise, required List<SetDto> pastSets}) {
+    if (exercise.type == ExerciseType.none) {
+      throw const FormatException(
+          'Exercise type must be selected before adding to the log');
+    }
     SetDto newSet = SetDto.newType(type: exercise.type);
 
     SetDto? pastSet = _wherePastSetOrNull(index: 0, pastSets: pastSets);
@@ -68,6 +72,10 @@ class ExerciseLogRepository {
       {required String oldExerciseId,
       required ExerciseDto newExercise,
       required List<SetDto> pastSets}) {
+    if (newExercise.type == ExerciseType.none) {
+      throw const FormatException(
+          'Exercise type must be selected before adding to the log');
+    }
     final oldExerciseLogIndex =
         _indexWhereExerciseLog(exerciseLogId: oldExerciseId);
     final oldExerciseLog = _whereExerciseLog(exerciseLogId: oldExerciseId);

@@ -256,18 +256,6 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.updateWeight(
         exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
-    final exerciseLog = _exerciseLogRepository.exerciseLogs
-        .firstWhereOrNull((e) => e.id == exerciseLogId);
-    if (exerciseLog != null) {
-      _recordTimelineEvent(
-          action: 'update_set_weight',
-          summary:
-              'Updated weight for set ${index + 1} on ${exerciseLog.exercise.name}',
-          exerciseId: exerciseLog.exercise.id,
-          exerciseName: exerciseLog.exercise.name,
-          setIndex: index,
-          metadata: _setMetrics(setDto));
-    }
     notifyListeners();
   }
 
@@ -278,18 +266,6 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.updateReps(
         exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
-    final exerciseLog = _exerciseLogRepository.exerciseLogs
-        .firstWhereOrNull((e) => e.id == exerciseLogId);
-    if (exerciseLog != null) {
-      _recordTimelineEvent(
-          action: 'update_set_reps',
-          summary:
-              'Updated reps for set ${index + 1} on ${exerciseLog.exercise.name}',
-          exerciseId: exerciseLog.exercise.id,
-          exerciseName: exerciseLog.exercise.name,
-          setIndex: index,
-          metadata: _setMetrics(setDto));
-    }
     notifyListeners();
   }
 
@@ -301,18 +277,6 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.updateDuration(
         exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
-    final exerciseLog = _exerciseLogRepository.exerciseLogs
-        .firstWhereOrNull((e) => e.id == exerciseLogId);
-    if (exerciseLog != null) {
-      _recordTimelineEvent(
-          action: 'update_set_duration',
-          summary:
-              'Updated duration for set ${index + 1} on ${exerciseLog.exercise.name}',
-          exerciseId: exerciseLog.exercise.id,
-          exerciseName: exerciseLog.exercise.name,
-          setIndex: index,
-          metadata: _setMetrics(setDto));
-    }
     if (notify) {
       notifyListeners();
     }

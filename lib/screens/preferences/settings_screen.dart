@@ -381,7 +381,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   spacing: 14,
                   children: [
                     Text(
-                      'Behold your session recap!',
+                      'behold your session recap!',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -390,9 +390,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     Text(
                       hasData
-                          ? 'The epic story of your last session.'
-                          : 'No recap captured yet.',
-                      style: theme.textTheme.titleMedium?.copyWith(
+                          ? 'the epic story of your last session.'
+                          : 'no recap captured yet.',
+                      style: theme.textTheme.bodyLarge?.copyWith(
                         color: Colors.white70,
                         height: 1.3,
                       ),
@@ -400,20 +400,22 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Align(
                       alignment: Alignment.centerLeft,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 120),
+                        constraints: const BoxConstraints(maxWidth: 100),
                         child: OpacityButtonWidgetTwo(
                           solidBackground: true,
                           showArrowRight: false,
-                          label: hasData ? "Let's go" : 'Nothing to show',
+                          label: hasData ? "review" : 'nothing to show',
                           buttonColor: Colors.white.withValues(alpha: 0.16),
                           visualDensity: const VisualDensity(
                             horizontal: -2,
                             vertical: -3,
                           ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 10),
                           textStyle: theme.textTheme.bodyMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
-                            fontSize: 14,
+                            fontSize: 12,
                           ),
                           onPressed: hasData
                               ? () {
