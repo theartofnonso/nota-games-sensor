@@ -28,6 +28,8 @@ import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/navigation_utils.dart';
+import 'package:lottie/lottie.dart';
+import '../../utils/lottie_exercise_registry.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
@@ -359,77 +361,116 @@ class _SettingsScreenState extends State<SettingsScreen>
     openUrl(url: url, context: context);
   }
 
-  _RecapStats _recapStats(List<RoutineTimelineEventDto> events) {
-    final exerciseNames = <String>{};
-    int setsCompleted = 0;
-    for (final e in events) {
-      if (e.exerciseName != null) exerciseNames.add(e.exerciseName!);
-      if (e.action == 'check_set' && (e.checked ?? false)) {
-        setsCompleted++;
-      }
-    }
-    return _RecapStats(
-      uniqueExercises: exerciseNames.length,
-      setsCompleted: setsCompleted,
-    );
-  }
-
   Widget _buildRecapCard(ThemeData theme) {
     return FutureBuilder<(String?, List<RoutineTimelineEventDto>)>(
       future: _timelineRepository.loadLatest(),
       builder: (context, snapshot) {
         final events = snapshot.data?.$2 ?? const [];
         final logId = snapshot.data?.$1;
-        final stats = _recapStats(events);
         final hasData = events.isNotEmpty;
         return _FrostedCard(
           gradientColors: [
             const Color(0xFF22c55e).withValues(alpha: 0.25),
             Colors.black.withValues(alpha: 0.4),
           ],
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 12,
+          child: Row(
             children: [
-              Text(
-                'latest recap',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                hasData
-                    ? '${stats.setsCompleted} sets • ${stats.uniqueExercises} exercises'
-                    : 'No recap captured yet',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-              OpacityButtonWidgetTwo(
-                solidBackground: true,
-                showArrowRight: false,
-                label: hasData ? 'Open recap' : 'Nothing to show',
-                buttonColor: Colors.green.shade700,
-                onPressed: hasData
-                    ? () {
-                        showAppBottomSheet(
-                          context: context,
-                          isDraggable: true,
-                          isScrollControlled: true,
-                          minChildSize: 0.4,
-                          initialChildSize: 0.8,
-                          maxChildSize: 0.95,
-                          useBlurredTransparentBackground: false,
-                          builder: (ctx, scrollController) => LatestRecapScreen(
-                            events: events,
-                            logId: logId,
-                            asSheet: true,
-                            scrollController: scrollController,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 14,
+                  children: [
+                    Text(
+                      'Behold your session recap!',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        height: 1.15,
+                      ),
+                    ),
+                    Text(
+                      hasData
+                          ? 'The epic story of your last session.'
+                          : 'No recap captured yet.',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white70,
+                        height: 1.3,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 120),
+                        child: OpacityButtonWidgetTwo(
+                          solidBackground: true,
+                          showArrowRight: false,
+                          label: hasData ? "Let's go" : 'Nothing to show',
+                          buttonColor: Colors.white.withValues(alpha: 0.16),
+                          visualDensity: const VisualDensity(
+                            horizontal: -2,
+                            vertical: -3,
                           ),
-                        );
-                      }
-                    : null,
+                          textStyle: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                          onPressed: hasData
+                              ? () {
+                                  showAppBottomSheet(
+                                    context: context,
+                                    isDraggable: true,
+                                    isScrollControlled: true,
+                                    minChildSize: 0.4,
+                                    initialChildSize: 0.8,
+                                    maxChildSize: 0.95,
+                                    useBlurredTransparentBackground: false,
+                                    builder: (ctx, scrollController) =>
+                                        LatestRecapScreen(
+                                      events: events,
+                                      logId: logId,
+                                      asSheet: true,
+                                      scrollController: scrollController,
+                                    ),
+                                  );
+                                }
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 140,
+                height: 140,
+                child: FutureBuilder<String?>(
+                  future: LottieExerciseRegistry.randomLottie(),
+                  builder: (context, snap) {
+                    final asset = snap.data;
+                    if (asset != null) {
+                      return Lottie.asset(
+                        asset,
+                        fit: BoxFit.contain,
+                        repeat: true,
+                      );
+                    }
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.auto_awesome,
+                          color: Colors.white70,
+                          size: 32,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -1164,16 +1205,6 @@ class _PredictionCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _RecapStats {
-  final int uniqueExercises;
-  final int setsCompleted;
-
-  const _RecapStats({
-    required this.uniqueExercises,
-    required this.setsCompleted,
-  });
 }
 
 class _FrostedCard extends StatelessWidget {

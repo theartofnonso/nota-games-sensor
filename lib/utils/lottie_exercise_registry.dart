@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart' show rootBundle;
 /// mapping in assets/exercises/lottie_exercises.json.
 class LottieExerciseRegistry {
   static Future<Map<String, String>>? _cache;
+  static final _rand = Random();
 
   static Future<Map<String, String>> _load() async {
     final raw =
@@ -30,6 +32,15 @@ class LottieExerciseRegistry {
     _cache ??= _load();
     final map = await _cache!;
     return map[name.toLowerCase()];
+  }
+
+  /// Returns a random lottie asset path from the registry (or null if empty).
+  static Future<String?> randomLottie() async {
+    _cache ??= _load();
+    final map = await _cache!;
+    if (map.isEmpty) return null;
+    final values = map.values.toList(growable: false);
+    return values[_rand.nextInt(values.length)];
   }
 }
 
