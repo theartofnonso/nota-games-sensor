@@ -14,8 +14,10 @@ const String _postWorkoutChannelDescription =
 const int _defaultPostWorkoutReminderHour = 9;
 const Duration _trainingHistoryWindow = Duration(days: 30);
 const Duration _trainingHistoryFallbackWindow = Duration(days: 365);
-const Duration _calendarHistoryWindow = Duration(days: 30); // 4 weeks for prediction
-const int _calendarWeekdayThreshold = 3; // At least 3 sessions per weekday in the window
+const Duration _calendarHistoryWindow =
+    Duration(days: 30); // 4 weeks for prediction
+const int _calendarWeekdayThreshold =
+    3; // At least 3 sessions per weekday in the window
 const String _trainingReminderChannelId = 'preferred_training_reminders';
 const String _trainingReminderChannelName = 'Preferred training reminders';
 const String _trainingReminderChannelDescription =
@@ -116,7 +118,8 @@ Set<int> _getCalendarLikelyTrainingWeekdays(
     if (normalized.isBefore(cutoff)) continue;
     if (!seenDates.add(normalized)) continue; // Count each date only once
 
-    weekdayCounts[normalized.weekday] = (weekdayCounts[normalized.weekday] ?? 0) + 1;
+    weekdayCounts[normalized.weekday] =
+        (weekdayCounts[normalized.weekday] ?? 0) + 1;
   }
 
   // Return weekdays with 3+ sessions
@@ -158,9 +161,8 @@ Future<void> schedulePreferredTrainingReminders(
 
   // Cancel existing training reminders (IDs 1-7 for weekdays) before rescheduling
   // This prevents duplicate notifications when reminders are rescheduled
-  await Future.wait([
-    for (int weekday = 1; weekday <= 7; weekday++) plugin.cancel(weekday)
-  ]);
+  await Future.wait(
+      [for (int weekday = 1; weekday <= 7; weekday++) plugin.cancel(weekday)]);
 
   final trainingTimes = _getExerciseReminders(historicDateTimes);
   if (trainingTimes.isEmpty) return;
@@ -217,6 +219,7 @@ int _logReminderNotificationId(String logId) => logId.hashCode & 0x7fffffff;
 Future<void> schedulePostWorkoutReviewReminder({
   required RoutineLogDto log,
   int reminderHour = _defaultPostWorkoutReminderHour,
+  Duration? debugDelay,
 }) async {
   if (!Platform.isIOS && !Platform.isAndroid) return;
   if (log.id.isEmpty) return;
@@ -228,9 +231,11 @@ Future<void> schedulePostWorkoutReviewReminder({
   await plugin.cancel(notificationId);
 
   // When a workout is logged, schedule a follow-up for the next day at 9am
-  // (or the provided reminderHour). Use "now" to avoid any past-time edge cases.
-  final tz.TZDateTime scheduledDate =
-      nextMorningAtHour(reference: DateTime.now(), hour: reminderHour);
+  // (or the provided reminderHour). For local testing, an optional debugDelay
+  // can be supplied to trigger the notification in a few minutes.
+  final tz.TZDateTime scheduledDate = debugDelay != null
+      ? tz.TZDateTime.from(DateTime.now().add(debugDelay), tz.local)
+      : nextMorningAtHour(reference: DateTime.now(), hour: reminderHour);
 
   final workoutLabel = log.name.isEmpty ? 'your last workout' : log.name;
   final payload = jsonEncode({

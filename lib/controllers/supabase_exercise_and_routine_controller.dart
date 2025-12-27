@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
@@ -120,6 +121,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Manually trigger a routine log sync (e.g. on pull-to-refresh or
   /// connectivity change).
   Future<void> syncRoutineLogs() async {
+    final connectivity = await Connectivity().checkConnectivity();
+    if (connectivity.last == ConnectivityResult.none) {
+      logger.w("Sync skipped: offline/no connectivity");
+      return;
+    }
+
     await Future.wait([
       _offlineExerciseRepository.syncNow(),
       _offlineTemplateRepository.syncNow(),
@@ -338,7 +345,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         await schedulePreferredTrainingReminders(
             historicDateTimes: historicLogTimes);
       }
-      await schedulePostWorkoutReviewReminder(log: updatedLog);
+      await schedulePostWorkoutReviewReminder(
+          log: updatedLog, debugDelay: const Duration(minutes: 5));
       return updatedLog;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";

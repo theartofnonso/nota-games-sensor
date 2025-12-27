@@ -64,4 +64,14 @@ class SharedPrefs {
   void _bumpRoutineLogRevision() {
     _routineLogRevision.value++;
   }
+
+  /// Timeline events (single entry; replaced per session)
+  final String timelineEventsKey = "timeline_events_key";
+
+  String get timelineEvents =>
+      _sharedPrefs?.getString(timelineEventsKey) ?? "";
+
+  set timelineEvents(String value) {
+    _sharedPrefs?.setString(timelineEventsKey, value);
+  }
 }

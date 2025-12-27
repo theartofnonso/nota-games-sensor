@@ -488,21 +488,12 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             listen: false)
         .wherePrevSetsForExercise(exercise: _currentExerciseLog.exercise);
 
-    final previousReps = previousSets
-        .map((set) => switch (_currentExerciseLog.exercise.type) {
-              ExerciseType.weights => (set as WeightAndRepsSetDto).reps,
-              ExerciseType.bodyWeight => (set as RepsSetDto).reps,
-              ExerciseType.duration => throw UnimplementedError(),
-            })
-        .toList();
+    final previousReps =
+        previousSets.map((set) => _repsFromAnySet(set)).toList();
 
     List<TextEditingController> controllers = [];
     for (final (index, set) in sets.indexed) {
-      final reps = switch (_currentExerciseLog.exercise.type) {
-        ExerciseType.weights => (set as WeightAndRepsSetDto).reps,
-        ExerciseType.bodyWeight => (set as RepsSetDto).reps,
-        ExerciseType.duration => throw UnimplementedError(),
-      };
+      final reps = _repsFromAnySet(set);
       final isOutSideOfRange = isOutsideReasonableRange(previousReps, reps);
       if (isOutSideOfRange) {
         final message = _repsErrorMessage(reps: reps);
@@ -526,6 +517,12 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   String _getWeightErrorMessage({required double weight}) =>
       "Hmm, $weight${weightUnit()} looks a bit off your usual range. Mind checking the value just to be sure?.";
+
+  int _repsFromAnySet(SetDto set) {
+    if (set is WeightAndRepsSetDto) return set.reps;
+    if (set is RepsSetDto) return set.reps;
+    return 0;
+  }
 
   void _setError({required int idx, required String? msg}) {
     if (msg == null) {

@@ -22,6 +22,7 @@ import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../dtos/viewmodels/past_routine_log_arguments.dart';
+import '../../dtos/routine_timeline_event_dto.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
@@ -30,6 +31,7 @@ import '../../utils/navigation_utils.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/dividers/label_divider.dart';
@@ -38,6 +40,8 @@ import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../screens/routines/routine_plan.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
+import '../../repositories/routine_timeline_repository.dart';
+import '../exercise/history/latest_recap_screen.dart';
 
 enum WeightUnit {
   kg("kg"),
@@ -86,11 +90,14 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   bool _notificationEnabled = false;
   bool _hasCachedSession = false;
+  final RoutineTimelineRepository _timelineRepository =
+      RoutineTimelineRepository();
 
   @override
   Widget build(BuildContext context) {
     Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
+    final theme = Theme.of(context);
 
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
@@ -136,6 +143,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     ),
                   ],
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: _buildRecapCard(theme),
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: _TrainingInsightsSection(
@@ -345,6 +357,85 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _openWebpage() {
     final url = trackrWebUrl;
     openUrl(url: url, context: context);
+  }
+
+  _RecapStats _recapStats(List<RoutineTimelineEventDto> events) {
+    final exerciseNames = <String>{};
+    int setsCompleted = 0;
+    for (final e in events) {
+      if (e.exerciseName != null) exerciseNames.add(e.exerciseName!);
+      if (e.action == 'check_set' && (e.checked ?? false)) {
+        setsCompleted++;
+      }
+    }
+    return _RecapStats(
+      uniqueExercises: exerciseNames.length,
+      setsCompleted: setsCompleted,
+    );
+  }
+
+  Widget _buildRecapCard(ThemeData theme) {
+    return FutureBuilder<(String?, List<RoutineTimelineEventDto>)>(
+      future: _timelineRepository.loadLatest(),
+      builder: (context, snapshot) {
+        final events = snapshot.data?.$2 ?? const [];
+        final logId = snapshot.data?.$1;
+        final stats = _recapStats(events);
+        final hasData = events.isNotEmpty;
+        return _FrostedCard(
+          gradientColors: [
+            const Color(0xFF22c55e).withValues(alpha: 0.25),
+            Colors.black.withValues(alpha: 0.4),
+          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
+            children: [
+              Text(
+                'latest recap',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                hasData
+                    ? '${stats.setsCompleted} sets • ${stats.uniqueExercises} exercises'
+                    : 'No recap captured yet',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+              OpacityButtonWidgetTwo(
+                solidBackground: true,
+                showArrowRight: false,
+                label: hasData ? 'Open recap' : 'Nothing to show',
+                buttonColor: Colors.green.shade700,
+                onPressed: hasData
+                    ? () {
+                        showAppBottomSheet(
+                          context: context,
+                          isDraggable: true,
+                          isScrollControlled: true,
+                          minChildSize: 0.4,
+                          initialChildSize: 0.8,
+                          maxChildSize: 0.95,
+                          useBlurredTransparentBackground: false,
+                          builder: (ctx, scrollController) => LatestRecapScreen(
+                            events: events,
+                            logId: logId,
+                            asSheet: true,
+                            scrollController: scrollController,
+                          ),
+                        );
+                      }
+                    : null,
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _clearAppData() async {
@@ -1075,6 +1166,16 @@ class _PredictionCard extends StatelessWidget {
   }
 }
 
+class _RecapStats {
+  final int uniqueExercises;
+  final int setsCompleted;
+
+  const _RecapStats({
+    required this.uniqueExercises,
+    required this.setsCompleted,
+  });
+}
+
 class _FrostedCard extends StatelessWidget {
   final Widget child;
   final List<Color> gradientColors;
@@ -1624,20 +1725,20 @@ class _RoutinePlansSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              height: 188, // Matches grid aspect ratio: 160 / 0.85
+              height: 188, // 188 * 0.85 ≈ 160px width for consistent cards
               child: GridView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.zero, // Edge-to-edge scroll
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 1,
-                  childAspectRatio: 1,
+                  childAspectRatio: 1.0,
                 ),
                 itemCount: plans.length + 1, // +1 for create new plan card
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    // Create new plan card with left padding
+                    // Create new plan card with consistent padding
                     return Padding(
-                      padding: const EdgeInsets.only(left: 10, right: 12),
+                      padding: const EdgeInsets.only(left: 10),
                       child: _CreatePlanCard(
                         onTap: () {
                           final plan = RoutinePlanDto(
@@ -1662,15 +1763,11 @@ class _RoutinePlansSection extends StatelessWidget {
                     );
                   }
                   final plan = plans[index - 1];
-                  // Add padding to individual cards
+                  // Consistent padding across cards; add right padding on last
                   return Padding(
                     padding: EdgeInsets.only(
-                      left: index == 1
-                          ? 0
-                          : 12, // No left padding after first card
-                      right: index == plans.length
-                          ? 10
-                          : 0, // Right padding on last card
+                      left: 10,
+                      right: index == plans.length ? 10 : 0,
                     ),
                     child: RoutinePlanGridItemWidget(
                       plan: plan,

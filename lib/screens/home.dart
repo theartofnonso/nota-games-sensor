@@ -1,8 +1,5 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
@@ -73,10 +70,6 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       await _userSetup();
     });
 
-    if (Platform.isIOS) {
-      FlutterLocalNotificationsPlugin()
-          .cancelAll(); // Cancel all notifications including pending workout sessions and regular training reminders
-    }
   }
 
   @override

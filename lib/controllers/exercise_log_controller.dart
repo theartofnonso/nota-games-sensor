@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:collection/collection.dart';
@@ -6,18 +7,32 @@ import 'package:flutter/material.dart';
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/exercise_log_dto.dart';
+import '../dtos/routine_timeline_event_dto.dart';
 import '../dtos/set_dtos/set_dto.dart';
+import '../dtos/set_dtos/weight_and_reps_dto.dart';
+import '../dtos/set_dtos/reps_dto.dart';
+import '../dtos/set_dtos/duration_set_dto.dart';
 import '../logger.dart';
 import '../repositories/exercise_log_repository.dart';
+import '../repositories/routine_timeline_repository.dart';
 import '../shared_prefs.dart';
+import 'package:uuid/uuid.dart';
 
 class ExerciseLogController extends ChangeNotifier {
   late ExerciseLogRepository _exerciseLogRepository;
+  late RoutineTimelineRepository _timelineRepository;
 
   final logger = getLogger(className: "ExerciseLogController");
 
-  ExerciseLogController(ExerciseLogRepository exerciseLogRepository) {
+  String? _sessionLogId;
+  bool _sessionStartRecorded = false;
+
+  ExerciseLogController(
+    ExerciseLogRepository exerciseLogRepository, {
+    RoutineTimelineRepository? timelineRepository,
+  }) {
     _exerciseLogRepository = exerciseLogRepository;
+    _timelineRepository = timelineRepository ?? RoutineTimelineRepository();
   }
 
   UnmodifiableListView<ExerciseLogDto> get exerciseLogs =>
@@ -26,9 +41,51 @@ class ExerciseLogController extends ChangeNotifier {
   RoutineLogDto? _initialRoutineLog;
   bool _shouldCacheToSharedPrefs = false;
 
+  String get _activeLogId {
+    if (_sessionLogId != null) return _sessionLogId!;
+    final id = _initialRoutineLog?.id;
+    _sessionLogId = (id != null && id.isNotEmpty) ? id : const Uuid().v4();
+    return _sessionLogId!;
+  }
+
+  void _recordTimelineEvent({
+    required String action,
+    required String summary,
+    String? exerciseId,
+    String? exerciseName,
+    int? setIndex,
+    bool? checked,
+    Map<String, dynamic>? metadata,
+  }) {
+    final event = RoutineTimelineEventDto(
+      logId: _activeLogId,
+      action: action,
+      timestamp: DateTime.now(),
+      summary: summary,
+      exerciseId: exerciseId,
+      exerciseName: exerciseName,
+      setIndex: setIndex,
+      checked: checked,
+      metadata: metadata,
+    );
+
+    // Fire-and-forget persistence; do not block UI.
+    unawaited(_timelineRepository.append(_activeLogId, event));
+  }
+
   void loadRoutineLog(
       {required RoutineLogDto routineLog, bool shouldCache = false}) {
     _initialRoutineLog = routineLog;
+    if (_sessionLogId == null && routineLog.id.isNotEmpty) {
+      _sessionLogId = routineLog.id;
+    }
+    if (!_sessionStartRecorded) {
+      _recordTimelineEvent(
+        action: 'session_start',
+        summary: 'Started session',
+      );
+      _sessionStartRecorded = true;
+    }
 
     // Only enable caching if explicitly requested (for live workout sessions)
     // and if this matches the cached workout (to prevent mixing data)
@@ -78,6 +135,11 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.addExerciseLog(
         exercise: exercise, pastSets: pastSets);
     _cache();
+    _recordTimelineEvent(
+        action: 'add_exercise',
+        summary: 'Added ${exercise.name}',
+        exerciseId: exercise.id,
+        exerciseName: exercise.name);
     logger.i("load exercise log: $exercise");
     notifyListeners();
   }
@@ -89,8 +151,17 @@ class ExerciseLogController extends ChangeNotifier {
   }
 
   void removeExerciseLog({required String logId}) {
+    final removed = _exerciseLogRepository.exerciseLogs
+        .firstWhereOrNull((e) => e.id == logId || e.exercise.id == logId);
     _exerciseLogRepository.removeExerciseLog(logId: logId);
     _cache();
+    if (removed != null) {
+      _recordTimelineEvent(
+          action: 'remove_exercise',
+          summary: 'Removed ${removed.exercise.name}',
+          exerciseId: removed.exercise.id,
+          exerciseName: removed.exercise.name);
+    }
     notifyListeners();
   }
 
@@ -136,6 +207,18 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.addSet(
         exerciseLogId: exerciseLogId, pastSets: pastSets);
     _cache();
+    final exerciseLog = _exerciseLogRepository.exerciseLogs
+        .firstWhereOrNull((e) => e.id == exerciseLogId);
+    if (exerciseLog != null) {
+      _recordTimelineEvent(
+        action: 'add_set',
+        summary:
+            'Added set ${exerciseLog.sets.length} to ${exerciseLog.exercise.name}',
+        exerciseId: exerciseLog.exercise.id,
+        exerciseName: exerciseLog.exercise.name,
+        setIndex: exerciseLog.sets.length - 1,
+      );
+    }
     notifyListeners();
   }
 
@@ -144,6 +227,17 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.overwriteSets(
         exerciseLogId: exerciseLogId, sets: newSets);
     _cache();
+    final exerciseLog = _exerciseLogRepository.exerciseLogs
+        .firstWhereOrNull((e) => e.id == exerciseLogId);
+    if (exerciseLog != null) {
+      _recordTimelineEvent(
+        action: 'overwrite_sets',
+        summary:
+            'Replaced sets for ${exerciseLog.exercise.name} (total ${newSets.length})',
+        exerciseId: exerciseLog.exercise.id,
+        exerciseName: exerciseLog.exercise.name,
+      );
+    }
     notifyListeners();
   }
 
@@ -162,6 +256,18 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.updateWeight(
         exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
+    final exerciseLog = _exerciseLogRepository.exerciseLogs
+        .firstWhereOrNull((e) => e.id == exerciseLogId);
+    if (exerciseLog != null) {
+      _recordTimelineEvent(
+          action: 'update_set_weight',
+          summary:
+              'Updated weight for set ${index + 1} on ${exerciseLog.exercise.name}',
+          exerciseId: exerciseLog.exercise.id,
+          exerciseName: exerciseLog.exercise.name,
+          setIndex: index,
+          metadata: _setMetrics(setDto));
+    }
     notifyListeners();
   }
 
@@ -172,6 +278,18 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.updateReps(
         exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
+    final exerciseLog = _exerciseLogRepository.exerciseLogs
+        .firstWhereOrNull((e) => e.id == exerciseLogId);
+    if (exerciseLog != null) {
+      _recordTimelineEvent(
+          action: 'update_set_reps',
+          summary:
+              'Updated reps for set ${index + 1} on ${exerciseLog.exercise.name}',
+          exerciseId: exerciseLog.exercise.id,
+          exerciseName: exerciseLog.exercise.name,
+          setIndex: index,
+          metadata: _setMetrics(setDto));
+    }
     notifyListeners();
   }
 
@@ -183,6 +301,18 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.updateDuration(
         exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
+    final exerciseLog = _exerciseLogRepository.exerciseLogs
+        .firstWhereOrNull((e) => e.id == exerciseLogId);
+    if (exerciseLog != null) {
+      _recordTimelineEvent(
+          action: 'update_set_duration',
+          summary:
+              'Updated duration for set ${index + 1} on ${exerciseLog.exercise.name}',
+          exerciseId: exerciseLog.exercise.id,
+          exerciseName: exerciseLog.exercise.name,
+          setIndex: index,
+          metadata: _setMetrics(setDto));
+    }
     if (notify) {
       notifyListeners();
     }
@@ -192,9 +322,25 @@ class ExerciseLogController extends ChangeNotifier {
       {required String exerciseLogId,
       required int index,
       required SetDto setDto}) {
+    final exerciseLog = _exerciseLogRepository.exerciseLogs
+        .firstWhereOrNull((e) => e.id == exerciseLogId);
     _exerciseLogRepository.updateSetCheck(
         exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
+    if (exerciseLog != null) {
+      final action = setDto.checked ? 'check_set' : 'uncheck_set';
+      final setNumber = index + 1;
+      _recordTimelineEvent(
+        action: action,
+        summary:
+            '${setDto.checked ? 'Checked' : 'Unchecked'} set $setNumber for ${exerciseLog.exercise.name}',
+        exerciseId: exerciseLog.exercise.id,
+        exerciseName: exerciseLog.exercise.name,
+        setIndex: index,
+        checked: setDto.checked,
+        metadata: _setMetrics(setDto),
+      );
+    }
     notifyListeners();
   }
 
@@ -206,16 +352,27 @@ class ExerciseLogController extends ChangeNotifier {
     return _exerciseLogRepository.completedExerciseLogs();
   }
 
+  Future<List<RoutineTimelineEventDto>> timelineForLog(String logId) {
+    if (logId.isEmpty) return Future.value(const []);
+    return _timelineRepository.load(logId);
+  }
+
   /// Clear only in-memory state. Does NOT touch the cached routineLog in SharedPrefs.
   void clearLocal() {
     _exerciseLogRepository.clear();
     _initialRoutineLog = null;
     _shouldCacheToSharedPrefs = false;
+    _sessionLogId = null;
+    _sessionStartRecorded = false;
   }
 
   /// Clear both in-memory state and the cached pending routine log.
   /// Use this only when a session has been successfully saved/updated or explicitly discarded.
   void onClear() {
+    _recordTimelineEvent(
+      action: 'session_end',
+      summary: 'Ended session',
+    );
     clearLocal();
     SharedPrefs().remove(key: SharedPrefs().routineLogKey);
   }
@@ -232,5 +389,25 @@ class ExerciseLogController extends ChangeNotifier {
               ? value.toJson()
               : throw UnsupportedError('Cannot convert to JSON: $value'));
     }
+  }
+
+  Map<String, dynamic> _setMetrics(SetDto setDto) {
+    if (setDto is WeightAndRepsSetDto) {
+      return {
+        'weight': setDto.weight,
+        'reps': setDto.reps,
+      };
+    }
+    if (setDto is RepsSetDto) {
+      return {
+        'reps': setDto.reps,
+      };
+    }
+    if (setDto is DurationSetDto) {
+      return {
+        'durationMs': setDto.duration.inMilliseconds,
+      };
+    }
+    return {};
   }
 }

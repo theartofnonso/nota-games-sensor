@@ -56,8 +56,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       }
       if (tokens.any((t) => t.startsWith(q))) {
         score += 1;
+        }
       }
-    }
     return score;
   }
 
@@ -226,15 +226,15 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     if (details == null) return;
 
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context,
-        listen: false);
-    final newExercise = ExerciseDto(
+                            context,
+                            listen: false);
+                    final newExercise = ExerciseDto(
       name: details.name,
       notes: details.notes,
-      type: ExerciseType.weights,
-    );
-    await controller.saveExercise(exerciseDto: newExercise);
-    _loadOrSyncExercises();
+                      type: ExerciseType.weights,
+                    );
+                    await controller.saveExercise(exerciseDto: newExercise);
+                    _loadOrSyncExercises();
   }
 
   @override
