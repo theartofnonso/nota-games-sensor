@@ -15,6 +15,24 @@ class RoutineTimelineRepository {
     return _store.append(logId, event);
   }
 
+  Future<void> saveDraft(
+      String logId, List<RoutineTimelineEventDto> events) async {
+    return _store.saveDraft(logId, events);
+  }
+
+  Future<(String?, List<RoutineTimelineEventDto>)> loadDraft() {
+    return _store.loadDraft();
+  }
+
+  Future<void> clearDraft() {
+    return _store.clearDraft();
+  }
+
+  Future<void> saveAll(
+      String logId, List<RoutineTimelineEventDto> events) async {
+    return _store.saveAll(logId, events);
+  }
+
   Future<void> replaceLogId(String oldLogId, String newLogId) {
     return _store.replaceLogId(oldLogId, newLogId);
   }

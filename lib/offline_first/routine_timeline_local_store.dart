@@ -14,6 +14,13 @@ class RoutineTimelineLocalStore {
     try {
       final raw = _prefs.timelineEvents;
       if (raw.isEmpty) return null;
+      final savedAtRaw = _prefs.timelineEventsSavedAt;
+      final savedAt =
+          savedAtRaw.isEmpty ? null : DateTime.tryParse(savedAtRaw);
+      if (_isExpired(savedAt)) {
+        clearAll();
+        return null;
+      }
       return jsonDecode(raw) as Map<String, dynamic>;
     } catch (e, stackTrace) {
       _logger.w('Failed to load timeline events from prefs: $e\n$stackTrace');
@@ -24,8 +31,36 @@ class RoutineTimelineLocalStore {
   void _saveRaw(Map<String, dynamic> data) {
     try {
       _prefs.timelineEvents = jsonEncode(data);
+      _prefs.timelineEventsSavedAt = DateTime.now().toIso8601String();
     } catch (e, stackTrace) {
       _logger.w('Failed to save timeline events to prefs: $e\n$stackTrace');
+    }
+  }
+
+  Map<String, dynamic>? _loadDraftRaw() {
+    try {
+      final raw = _prefs.timelineEventsDraft;
+      if (raw.isEmpty) return null;
+      final savedAtRaw = _prefs.timelineEventsDraftSavedAt;
+      final savedAt =
+          savedAtRaw.isEmpty ? null : DateTime.tryParse(savedAtRaw);
+      if (_isExpired(savedAt)) {
+        clearDraft();
+        return null;
+      }
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (e, stackTrace) {
+      _logger.w('Failed to load draft timeline events from prefs: $e\n$stackTrace');
+      return null;
+    }
+  }
+
+  void _saveDraftRaw(Map<String, dynamic> data) {
+    try {
+      _prefs.timelineEventsDraft = jsonEncode(data);
+      _prefs.timelineEventsDraftSavedAt = DateTime.now().toIso8601String();
+    } catch (e, stackTrace) {
+      _logger.w('Failed to save draft timeline events to prefs: $e\n$stackTrace');
     }
   }
 
@@ -50,6 +85,50 @@ class RoutineTimelineLocalStore {
             Map<String, dynamic>.from(e as Map)))
         .toList();
     return (storedLogId.isEmpty ? null : storedLogId, events);
+  }
+
+  Future<(String?, List<RoutineTimelineEventDto>)> loadDraft() async {
+    final raw = _loadDraftRaw();
+    if (raw == null) return (null, <RoutineTimelineEventDto>[]);
+    final storedLogId = raw['logId'] as String? ?? '';
+    final events = (raw['events'] as List<dynamic>? ?? const [])
+        .map((e) => RoutineTimelineEventDto.fromJson(
+            Map<String, dynamic>.from(e as Map)))
+        .toList();
+    return (storedLogId.isEmpty ? null : storedLogId, events);
+  }
+
+  Future<void> saveDraft(
+      String logId, List<RoutineTimelineEventDto> events) async {
+    _saveDraftRaw({
+      'logId': logId,
+      'events': events.map((e) => e.toJson()).toList(),
+    });
+  }
+
+  Future<void> clearDraft() async {
+    _prefs.timelineEventsDraft = "";
+    _prefs.timelineEventsDraftSavedAt = "";
+  }
+
+  bool _isExpired(DateTime? savedAt) {
+    if (savedAt == null) return false;
+    return DateTime.now().difference(savedAt) > const Duration(hours: 24);
+  }
+
+  Future<void> clearAll() async {
+    _prefs.timelineEvents = "";
+    _prefs.timelineEventsSavedAt = "";
+    _prefs.timelineEventsDraft = "";
+    _prefs.timelineEventsDraftSavedAt = "";
+  }
+
+  Future<void> saveAll(
+      String logId, List<RoutineTimelineEventDto> events) async {
+    _saveRaw({
+      'logId': logId,
+      'events': events.map((e) => e.toJson()).toList(),
+    });
   }
 
   Future<void> append(String logId, RoutineTimelineEventDto event) async {

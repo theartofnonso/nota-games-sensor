@@ -74,4 +74,33 @@ class SharedPrefs {
   set timelineEvents(String value) {
     _sharedPrefs?.setString(timelineEventsKey, value);
   }
+
+  /// Draft timeline events (for in-progress sessions; cleared on save/discard)
+  final String timelineEventsDraftKey = "timeline_events_draft_key";
+  final String timelineEventsDraftSavedAtKey =
+      "timeline_events_draft_saved_at_key";
+
+  String get timelineEventsDraft =>
+      _sharedPrefs?.getString(timelineEventsDraftKey) ?? "";
+
+  set timelineEventsDraft(String value) {
+    _sharedPrefs?.setString(timelineEventsDraftKey, value);
+  }
+
+  String get timelineEventsDraftSavedAt =>
+      _sharedPrefs?.getString(timelineEventsDraftSavedAtKey) ?? "";
+
+  set timelineEventsDraftSavedAt(String value) {
+    _sharedPrefs?.setString(timelineEventsDraftSavedAtKey, value);
+  }
+
+  /// Timestamp for persisted recap
+  final String timelineEventsSavedAtKey = "timeline_events_saved_at_key";
+
+  String get timelineEventsSavedAt =>
+      _sharedPrefs?.getString(timelineEventsSavedAtKey) ?? "";
+
+  set timelineEventsSavedAt(String value) {
+    _sharedPrefs?.setString(timelineEventsSavedAtKey, value);
+  }
 }

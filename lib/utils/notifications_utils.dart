@@ -219,7 +219,6 @@ int _logReminderNotificationId(String logId) => logId.hashCode & 0x7fffffff;
 Future<void> schedulePostWorkoutReviewReminder({
   required RoutineLogDto log,
   int reminderHour = _defaultPostWorkoutReminderHour,
-  Duration? debugDelay,
 }) async {
   if (!Platform.isIOS && !Platform.isAndroid) return;
   if (log.id.isEmpty) return;
@@ -231,11 +230,9 @@ Future<void> schedulePostWorkoutReviewReminder({
   await plugin.cancel(notificationId);
 
   // When a workout is logged, schedule a follow-up for the next day at 9am
-  // (or the provided reminderHour). For local testing, an optional debugDelay
-  // can be supplied to trigger the notification in a few minutes.
-  final tz.TZDateTime scheduledDate = debugDelay != null
-      ? tz.TZDateTime.from(DateTime.now().add(debugDelay), tz.local)
-      : nextMorningAtHour(reference: DateTime.now(), hour: reminderHour);
+  // (or the provided reminderHour).
+  final tz.TZDateTime scheduledDate =
+      nextMorningAtHour(reference: DateTime.now(), hour: reminderHour);
 
   final workoutLabel = log.name.isEmpty ? 'your last workout' : log.name;
   final payload = jsonEncode({

@@ -562,8 +562,12 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     if (!mounted) return;
 
     if (savedLog != null) {
-      // Clear in-memory + cached pending routine log once session is saved.
-      exerciseLogController.onClear();
+      // Persist timeline only for successfully saved sessions, then clear state.
+      await exerciseLogController.onClear(
+        recordSessionEnd: true,
+        persistTimeline: true,
+        savedLogId: savedLog.id,
+      );
 
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop(savedLog);

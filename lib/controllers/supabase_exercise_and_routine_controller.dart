@@ -346,8 +346,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         await schedulePreferredTrainingReminders(
             historicDateTimes: historicLogTimes);
       }
-      await schedulePostWorkoutReviewReminder(
-          log: updatedLog, debugDelay: const Duration(minutes: 5));
+      await schedulePostWorkoutReviewReminder(log: updatedLog);
       return updatedLog;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";

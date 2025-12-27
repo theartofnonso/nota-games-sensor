@@ -26,6 +26,8 @@ class ExerciseLogController extends ChangeNotifier {
 
   String? _sessionLogId;
   bool _sessionStartRecorded = false;
+  final List<RoutineTimelineEventDto> _pendingTimelineEvents = [];
+  bool _draftHydrated = false;
 
   ExerciseLogController(
     ExerciseLogRepository exerciseLogRepository, {
@@ -69,8 +71,11 @@ class ExerciseLogController extends ChangeNotifier {
       metadata: metadata,
     );
 
-    // Fire-and-forget persistence; do not block UI.
-    unawaited(_timelineRepository.append(_activeLogId, event));
+    // Only persist once the session is saved; buffer in memory for now.
+    _pendingTimelineEvents.add(event);
+    // Also persist draft so in-progress sessions survive restarts.
+    unawaited(
+        _timelineRepository.saveDraft(_activeLogId, List.of(_pendingTimelineEvents)));
   }
 
   void loadRoutineLog(
@@ -110,6 +115,8 @@ class ExerciseLogController extends ChangeNotifier {
       _shouldCacheToSharedPrefs = false;
     }
     _cache();
+    // Hydrate any draft timeline for this session so it survives restarts.
+    unawaited(_hydrateDraftTimeline());
   }
 
   void loadExerciseLogs({required List<ExerciseLogDto> exerciseLogs}) {
@@ -328,15 +335,36 @@ class ExerciseLogController extends ChangeNotifier {
     _shouldCacheToSharedPrefs = false;
     _sessionLogId = null;
     _sessionStartRecorded = false;
+    _pendingTimelineEvents.clear();
+  }
+
+  /// Persist pending timeline events for a successfully saved session.
+  Future<void> persistTimelineForSavedLog(String logId) async {
+    if (_pendingTimelineEvents.isEmpty) return;
+    await _timelineRepository.saveAll(logId, List.of(_pendingTimelineEvents));
+    await _timelineRepository.clearDraft();
+    _pendingTimelineEvents.clear();
   }
 
   /// Clear both in-memory state and the cached pending routine log.
-  /// Use this only when a session has been successfully saved/updated or explicitly discarded.
-  void onClear() {
-    _recordTimelineEvent(
-      action: 'session_end',
-      summary: 'Ended session',
-    );
+  /// Optionally record a session end event and persist timeline when the session is saved.
+  Future<void> onClear({
+    bool recordSessionEnd = false,
+    bool persistTimeline = false,
+    String? savedLogId,
+  }) async {
+    if (recordSessionEnd) {
+      _recordTimelineEvent(
+        action: 'session_end',
+        summary: 'Ended session',
+      );
+    }
+    if (persistTimeline && savedLogId != null) {
+      await persistTimelineForSavedLog(savedLogId);
+    } else {
+      _pendingTimelineEvents.clear();
+      await _timelineRepository.clearDraft();
+    }
     clearLocal();
     SharedPrefs().remove(key: SharedPrefs().routineLogKey);
   }
@@ -373,5 +401,28 @@ class ExerciseLogController extends ChangeNotifier {
       };
     }
     return {};
+  }
+
+  Future<void> _hydrateDraftTimeline() async {
+    if (_draftHydrated) return;
+    _draftHydrated = true;
+    final draft = await _timelineRepository.loadDraft();
+    final draftLogId = draft.$1;
+    final draftEvents = draft.$2;
+    if (draftLogId == null || draftLogId.isEmpty) {
+      return;
+    }
+    // Ensure the draft belongs to the active session; if no session id yet, adopt it.
+    if (_sessionLogId == null) {
+      _sessionLogId = draftLogId;
+    }
+    if (_activeLogId != draftLogId) {
+      // Different session; discard stale draft.
+      await _timelineRepository.clearDraft();
+      return;
+    }
+    _pendingTimelineEvents
+      ..clear()
+      ..addAll(draftEvents);
   }
 }
