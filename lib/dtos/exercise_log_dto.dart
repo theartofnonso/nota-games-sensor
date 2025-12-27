@@ -68,6 +68,7 @@ class ExerciseLogDto {
       required Map<String, dynamic> json}) {
     final superSetId = json["superSetId"] ?? "";
     final exerciseJson = json["exercise"];
+
     if (exerciseJson is! Map<String, dynamic>) {
       // Log offending payload to aid diagnosis.
       // ignore: avoid_print
