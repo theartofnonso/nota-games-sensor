@@ -15,6 +15,7 @@ import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/appsync/routine_plan_dto.dart';
 import '../dtos/appsync/routine_template_dto.dart';
 import '../dtos/set_dtos/set_dto.dart';
+import '../enums/exercise_type_enums.dart';
 import '../logger.dart';
 import '../repositories/supabase/supabase_exercise_repository.dart';
 import '../repositories/supabase/supabase_routine_plan_repository.dart';
@@ -533,16 +534,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   // Personal bests removed from project
 
-  /// Additional log helper methods
-  List<RoutineLogDto> whereLogsIsWithinRange(
-      {required DateTimeRange dateRange}) {
-    return logs.where((log) {
-      return log.startTime
-              .isAfter(dateRange.start.subtract(const Duration(days: 1))) &&
-          log.startTime.isBefore(dateRange.end.add(const Duration(days: 1)));
-    }).toList();
-  }
-
   List<RoutineLogDto> whereLogsIsSameMonth({required DateTime dateTime}) {
     return logs.where((log) {
       return log.startTime.year == dateTime.year &&
@@ -554,46 +545,21 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return whereLogsForTemplate(templateId: templateId);
   }
 
-  List<ExerciseLogDto> whereExerciseLogsBefore(
-      {required DateTime dateTime, required ExerciseDto exercise}) {
-    final logsBeforeDate =
-        logs.where((log) => log.startTime.isBefore(dateTime)).toList();
-    final exerciseLogs = <ExerciseLogDto>[];
-    for (final log in logsBeforeDate) {
-      exerciseLogs.addAll(
-          log.exerciseLogs.where((el) => el.exercise.id == exercise.id));
-    }
-    return exerciseLogs;
-  }
+  List<SetDto> whereRecentSetsForExercise({required ExerciseDto exercise}) {
+    // No past sets if type is unknown.
+    if (exercise.type == ExerciseType.none) return [];
 
-  List<SetDto> whereRecentSetsForExercise(
-      {required ExerciseDto exercise, String? templateId}) {
-    // If templateId is provided, filter logs by template first
-    List<({ExerciseLogDto log, DateTime timestamp})> exerciseLogsWithTimestamps;
-    if (templateId != null && templateId.isNotEmpty) {
-      // Get logs for this specific template only
-      final templateLogs = whereLogsWithTemplateId(templateId: templateId);
-      // Extract exercise logs for this exercise from template logs only, with timestamps
-      exerciseLogsWithTimestamps =
-          <({ExerciseLogDto log, DateTime timestamp})>[];
-      for (final routineLog in templateLogs) {
-        for (final exerciseLog in routineLog.exerciseLogs) {
-          if (exerciseLog.exercise.id == exercise.id) {
-            exerciseLogsWithTimestamps
-                .add((log: exerciseLog, timestamp: routineLog.startTime));
-          }
-        }
-      }
-    } else {
-      // Original behavior: get all logs for this exercise from any template
-      exerciseLogsWithTimestamps =
-          <({ExerciseLogDto log, DateTime timestamp})>[];
-      for (final routineLog in logs) {
-        for (final exerciseLog in routineLog.exerciseLogs) {
-          if (exerciseLog.exercise.id == exercise.id) {
-            exerciseLogsWithTimestamps
-                .add((log: exerciseLog, timestamp: routineLog.startTime));
-          }
+    final targetType = exercise.type;
+    final exerciseLogsWithTimestamps =
+        <({ExerciseLogDto log, DateTime timestamp})>[];
+
+    for (final routineLog in logs) {
+      for (final exerciseLog in routineLog.exerciseLogs) {
+        // Match by exercise id AND type to avoid mixing set shapes.
+        if (exerciseLog.exercise.id == exercise.id &&
+            exerciseLog.exercise.type == targetType) {
+          exerciseLogsWithTimestamps
+              .add((log: exerciseLog, timestamp: routineLog.startTime));
         }
       }
     }
