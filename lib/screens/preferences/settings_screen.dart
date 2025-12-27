@@ -145,11 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     ),
                   ],
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: _buildRecapCard(theme),
-                  ),
+                  _buildRecapCard(theme),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: _TrainingInsightsSection(
@@ -368,57 +364,61 @@ class _SettingsScreenState extends State<SettingsScreen>
         final events = snapshot.data?.$2 ?? const [];
         final logId = snapshot.data?.$1;
         final hasData = events.isNotEmpty;
-        return _FrostedCard(
-          gradientColors: [
-            const Color(0xFF22c55e).withValues(alpha: 0.25),
-            Colors.black.withValues(alpha: 0.4),
-          ],
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 14,
+        if (!hasData) return const SizedBox.shrink();
+        return Column(
+          children: [
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: _FrostedCard(
+                gradientColors: [
+                  const Color(0xFF22c55e).withValues(alpha: 0.25),
+                  Colors.black.withValues(alpha: 0.4),
+                ],
+                child: Row(
                   children: [
-                    Text(
-                      'behold your session recap!',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        height: 1.15,
-                      ),
-                    ),
-                    Text(
-                      hasData
-                          ? 'the epic story of your last session.'
-                          : 'no recap captured yet.',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.white70,
-                        height: 1.3,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 100),
-                        child: OpacityButtonWidgetTwo(
-                          solidBackground: true,
-                          showArrowRight: false,
-                          label: hasData ? "review" : 'nothing to show',
-                          buttonColor: Colors.white.withValues(alpha: 0.16),
-                          visualDensity: const VisualDensity(
-                            horizontal: -2,
-                            vertical: -3,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 14,
+                        children: [
+                          Text(
+                            'behold your session recap!',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              height: 1.15,
+                            ),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 10),
-                          textStyle: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
+                          Text(
+                            'the epic story of your last session.',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: Colors.white70,
+                              height: 1.3,
+                            ),
                           ),
-                          onPressed: hasData
-                              ? () {
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 100),
+                              child: OpacityButtonWidgetTwo(
+                                solidBackground: true,
+                                showArrowRight: false,
+                                label: "review",
+                                buttonColor:
+                                    Colors.white.withValues(alpha: 0.16),
+                                visualDensity: const VisualDensity(
+                                  horizontal: -2,
+                                  vertical: -3,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 10),
+                                textStyle: theme.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                                onPressed: () {
                                   showAppBottomSheet(
                                     context: context,
                                     isDraggable: true,
@@ -435,47 +435,49 @@ class _SettingsScreenState extends State<SettingsScreen>
                                       scrollController: scrollController,
                                     ),
                                   );
-                                }
-                              : null,
-                        ),
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 140,
+                      height: 140,
+                      child: FutureBuilder<String?>(
+                        future: LottieExerciseRegistry.randomLottie(),
+                        builder: (context, snap) {
+                          final asset = snap.data;
+                          if (asset != null) {
+                            return Lottie.asset(
+                              asset,
+                              fit: BoxFit.contain,
+                              repeat: true,
+                            );
+                          }
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.auto_awesome,
+                                color: Colors.white70,
+                                size: 32,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 140,
-                height: 140,
-                child: FutureBuilder<String?>(
-                  future: LottieExerciseRegistry.randomLottie(),
-                  builder: (context, snap) {
-                    final asset = snap.data;
-                    if (asset != null) {
-                      return Lottie.asset(
-                        asset,
-                        fit: BoxFit.contain,
-                        repeat: true,
-                      );
-                    }
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.auto_awesome,
-                          color: Colors.white70,
-                          size: 32,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
