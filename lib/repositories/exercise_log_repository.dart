@@ -22,6 +22,8 @@ class ExerciseLogRepository {
       throw const FormatException(
           'Exercise type must be selected before adding to the log');
     }
+
+    List<SetDto> seededSets = [];
     SetDto newSet = SetDto.newType(type: exercise.type);
 
     SetDto? pastSet = _wherePastSetOrNull(index: 0, pastSets: pastSets);
@@ -32,8 +34,9 @@ class ExerciseLogRepository {
 
     /// Don't add any previous set for [ExerciseType.Duration]
     /// Duration is captured in realtime from a fresh instance
-    final logToAdd = _createExerciseLog(exercise,
-        pastSets: withReps(type: exercise.type) ? [newSet] : []);
+    seededSets = withReps(type: exercise.type) ? [newSet] : [];
+
+    final logToAdd = _createExerciseLog(exercise, pastSets: seededSets);
 
     _exerciseLogs = [..._exerciseLogs, logToAdd];
   }

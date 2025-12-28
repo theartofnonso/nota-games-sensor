@@ -74,8 +74,8 @@ class ExerciseLogController extends ChangeNotifier {
     // Only persist once the session is saved; buffer in memory for now.
     _pendingTimelineEvents.add(event);
     // Also persist draft so in-progress sessions survive restarts.
-    unawaited(
-        _timelineRepository.saveDraft(_activeLogId, List.of(_pendingTimelineEvents)));
+    unawaited(_timelineRepository.saveDraft(
+        _activeLogId, List.of(_pendingTimelineEvents)));
   }
 
   void loadRoutineLog(
