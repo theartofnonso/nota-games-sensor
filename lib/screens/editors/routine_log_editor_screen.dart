@@ -562,12 +562,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     if (!mounted) return;
 
     if (savedLog != null) {
-      // Persist timeline only for successfully saved sessions, then clear state.
-      await exerciseLogController.onClear(
-        recordSessionEnd: true,
-        persistTimeline: true,
-        savedLogId: savedLog.id,
-      );
+      // Clear state after successfully saving session.
+      await exerciseLogController.onClear();
 
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop(savedLog);

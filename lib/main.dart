@@ -17,7 +17,6 @@ import 'package:trainware/controllers/supabase_exercise_and_routine_controller.d
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/appsync/routine_template_dto.dart';
 import 'package:trainware/repositories/exercise_log_repository.dart';
-import 'package:trainware/repositories/routine_timeline_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_exercise_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_log_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_plan_repository.dart';
@@ -28,7 +27,6 @@ import 'package:trainware/screens/editors/past_routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_plan_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_template_editor_screen.dart';
-import 'package:trainware/screens/exercise/history/workout_recap_screen.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/logs/routine_log_screen.dart';
 import 'package:trainware/onboarding_flow_screen.dart';
@@ -112,10 +110,6 @@ void _processPendingNotification() {
 
     _pendingNotificationPayload = null;
     _notificationRetryCount = 0;
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => WorkoutRecapScreen(
-              log: log,
-            )));
     return;
   }
 
@@ -191,9 +185,8 @@ void main() async {
           ),
         ),
         ChangeNotifierProvider<ExerciseLogController>(
-            create: (BuildContext context) => ExerciseLogController(
-                ExerciseLogRepository(),
-                timelineRepository: RoutineTimelineRepository())),
+            create: (BuildContext context) =>
+                ExerciseLogController(ExerciseLogRepository())),
       ], child: const MyApp()));
     },
   );

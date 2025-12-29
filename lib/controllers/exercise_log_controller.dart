@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:collection/collection.dart';
@@ -7,34 +6,18 @@ import 'package:flutter/material.dart';
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/exercise_log_dto.dart';
-import '../dtos/routine_timeline_event_dto.dart';
 import '../dtos/set_dtos/set_dto.dart';
-import '../dtos/set_dtos/weight_and_reps_dto.dart';
-import '../dtos/set_dtos/reps_dto.dart';
-import '../dtos/set_dtos/duration_set_dto.dart';
 import '../logger.dart';
 import '../repositories/exercise_log_repository.dart';
-import '../repositories/routine_timeline_repository.dart';
 import '../shared_prefs.dart';
-import 'package:uuid/uuid.dart';
 
 class ExerciseLogController extends ChangeNotifier {
   late ExerciseLogRepository _exerciseLogRepository;
-  late RoutineTimelineRepository _timelineRepository;
 
   final logger = getLogger(className: "ExerciseLogController");
 
-  String? _sessionLogId;
-  bool _sessionStartRecorded = false;
-  final List<RoutineTimelineEventDto> _pendingTimelineEvents = [];
-  bool _draftHydrated = false;
-
-  ExerciseLogController(
-    ExerciseLogRepository exerciseLogRepository, {
-    RoutineTimelineRepository? timelineRepository,
-  }) {
+  ExerciseLogController(ExerciseLogRepository exerciseLogRepository) {
     _exerciseLogRepository = exerciseLogRepository;
-    _timelineRepository = timelineRepository ?? RoutineTimelineRepository();
   }
 
   UnmodifiableListView<ExerciseLogDto> get exerciseLogs =>
@@ -43,55 +26,9 @@ class ExerciseLogController extends ChangeNotifier {
   RoutineLogDto? _initialRoutineLog;
   bool _shouldCacheToSharedPrefs = false;
 
-  String get _activeLogId {
-    if (_sessionLogId != null) return _sessionLogId!;
-    final id = _initialRoutineLog?.id;
-    _sessionLogId = (id != null && id.isNotEmpty) ? id : const Uuid().v4();
-    return _sessionLogId!;
-  }
-
-  void _recordTimelineEvent({
-    required String action,
-    required String summary,
-    String? exerciseId,
-    String? exerciseName,
-    int? setIndex,
-    bool? checked,
-    Map<String, dynamic>? metadata,
-  }) {
-    final event = RoutineTimelineEventDto(
-      logId: _activeLogId,
-      action: action,
-      timestamp: DateTime.now(),
-      summary: summary,
-      exerciseId: exerciseId,
-      exerciseName: exerciseName,
-      setIndex: setIndex,
-      checked: checked,
-      metadata: metadata,
-    );
-
-    // Only persist once the session is saved; buffer in memory for now.
-    _pendingTimelineEvents.add(event);
-    // Also persist draft so in-progress sessions survive restarts.
-    unawaited(_timelineRepository.saveDraft(
-        _activeLogId, List.of(_pendingTimelineEvents)));
-  }
-
   void loadRoutineLog(
       {required RoutineLogDto routineLog, bool shouldCache = false}) {
     _initialRoutineLog = routineLog;
-    if (_sessionLogId == null && routineLog.id.isNotEmpty) {
-      _sessionLogId = routineLog.id;
-    }
-    if (!_sessionStartRecorded) {
-      _recordTimelineEvent(
-        action: 'session_start',
-        summary: 'Started session',
-      );
-      _sessionStartRecorded = true;
-    }
-
     // Only enable caching if explicitly requested (for live workout sessions)
     // and if this matches the cached workout (to prevent mixing data)
     if (shouldCache) {
@@ -115,8 +52,6 @@ class ExerciseLogController extends ChangeNotifier {
       _shouldCacheToSharedPrefs = false;
     }
     _cache();
-    // Hydrate any draft timeline for this session so it survives restarts.
-    unawaited(_hydrateDraftTimeline());
   }
 
   void loadExerciseLogs({required List<ExerciseLogDto> exerciseLogs}) {
@@ -142,11 +77,6 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.addExerciseLog(
         exercise: exercise, pastSets: pastSets);
     _cache();
-    _recordTimelineEvent(
-        action: 'add_exercise',
-        summary: 'Added ${exercise.name}',
-        exerciseId: exercise.id,
-        exerciseName: exercise.name);
     logger.i("load exercise log: $exercise");
     notifyListeners();
   }
@@ -158,17 +88,8 @@ class ExerciseLogController extends ChangeNotifier {
   }
 
   void removeExerciseLog({required String logId}) {
-    final removed = _exerciseLogRepository.exerciseLogs
-        .firstWhereOrNull((e) => e.id == logId || e.exercise.id == logId);
     _exerciseLogRepository.removeExerciseLog(logId: logId);
     _cache();
-    if (removed != null) {
-      _recordTimelineEvent(
-          action: 'remove_exercise',
-          summary: 'Removed ${removed.exercise.name}',
-          exerciseId: removed.exercise.id,
-          exerciseName: removed.exercise.name);
-    }
     notifyListeners();
   }
 
@@ -214,18 +135,6 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.addSet(
         exerciseLogId: exerciseLogId, pastSets: pastSets);
     _cache();
-    final exerciseLog = _exerciseLogRepository.exerciseLogs
-        .firstWhereOrNull((e) => e.id == exerciseLogId);
-    if (exerciseLog != null) {
-      _recordTimelineEvent(
-        action: 'add_set',
-        summary:
-            'Added set ${exerciseLog.sets.length} to ${exerciseLog.exercise.name}',
-        exerciseId: exerciseLog.exercise.id,
-        exerciseName: exerciseLog.exercise.name,
-        setIndex: exerciseLog.sets.length - 1,
-      );
-    }
     notifyListeners();
   }
 
@@ -234,17 +143,6 @@ class ExerciseLogController extends ChangeNotifier {
     _exerciseLogRepository.overwriteSets(
         exerciseLogId: exerciseLogId, sets: newSets);
     _cache();
-    final exerciseLog = _exerciseLogRepository.exerciseLogs
-        .firstWhereOrNull((e) => e.id == exerciseLogId);
-    if (exerciseLog != null) {
-      _recordTimelineEvent(
-        action: 'overwrite_sets',
-        summary:
-            'Replaced sets for ${exerciseLog.exercise.name} (total ${newSets.length})',
-        exerciseId: exerciseLog.exercise.id,
-        exerciseName: exerciseLog.exercise.name,
-      );
-    }
     notifyListeners();
   }
 
@@ -293,27 +191,9 @@ class ExerciseLogController extends ChangeNotifier {
       {required String exerciseLogId,
       required int index,
       required SetDto setDto}) {
-    final exerciseLog = _exerciseLogRepository.exerciseLogs
-        .firstWhereOrNull((e) => e.id == exerciseLogId);
     _exerciseLogRepository.updateSetCheck(
         exerciseLogId: exerciseLogId, index: index, setDto: setDto);
     _cache();
-    if (exerciseLog != null) {
-      final action = setDto.checked ? 'check_set' : 'uncheck_set';
-      final setNumber = index + 1;
-      final summary = setDto.checked
-          ? 'Set $setNumber: Completed ${_setDescription(setDto)} for ${exerciseLog.exercise.name}'
-          : 'Unchecked set $setNumber for ${exerciseLog.exercise.name}';
-      _recordTimelineEvent(
-        action: action,
-        summary: summary,
-        exerciseId: exerciseLog.exercise.id,
-        exerciseName: exerciseLog.exercise.name,
-        setIndex: index,
-        checked: setDto.checked,
-        metadata: _setMetrics(setDto),
-      );
-    }
     notifyListeners();
   }
 
@@ -325,48 +205,15 @@ class ExerciseLogController extends ChangeNotifier {
     return _exerciseLogRepository.completedExerciseLogs();
   }
 
-  Future<List<RoutineTimelineEventDto>> timelineForLog(String logId) {
-    if (logId.isEmpty) return Future.value(const []);
-    return _timelineRepository.load(logId);
-  }
-
   /// Clear only in-memory state. Does NOT touch the cached routineLog in SharedPrefs.
   void clearLocal() {
     _exerciseLogRepository.clear();
     _initialRoutineLog = null;
     _shouldCacheToSharedPrefs = false;
-    _sessionLogId = null;
-    _sessionStartRecorded = false;
-    _pendingTimelineEvents.clear();
-  }
-
-  /// Persist pending timeline events for a successfully saved session.
-  Future<void> persistTimelineForSavedLog(String logId) async {
-    if (_pendingTimelineEvents.isEmpty) return;
-    await _timelineRepository.saveAll(logId, List.of(_pendingTimelineEvents));
-    await _timelineRepository.clearDraft();
-    _pendingTimelineEvents.clear();
   }
 
   /// Clear both in-memory state and the cached pending routine log.
-  /// Optionally record a session end event and persist timeline when the session is saved.
-  Future<void> onClear({
-    bool recordSessionEnd = false,
-    bool persistTimeline = false,
-    String? savedLogId,
-  }) async {
-    if (recordSessionEnd) {
-      _recordTimelineEvent(
-        action: 'session_end',
-        summary: 'Ended session',
-      );
-    }
-    if (persistTimeline && savedLogId != null) {
-      await persistTimelineForSavedLog(savedLogId);
-    } else {
-      _pendingTimelineEvents.clear();
-      await _timelineRepository.clearDraft();
-    }
+  Future<void> onClear() async {
     clearLocal();
     SharedPrefs().remove(key: SharedPrefs().routineLogKey);
   }
@@ -383,66 +230,5 @@ class ExerciseLogController extends ChangeNotifier {
               ? value.toJson()
               : throw UnsupportedError('Cannot convert to JSON: $value'));
     }
-  }
-
-  Map<String, dynamic> _setMetrics(SetDto setDto) {
-    if (setDto is WeightAndRepsSetDto) {
-      return {
-        'weight': setDto.weight,
-        'reps': setDto.reps,
-      };
-    }
-    if (setDto is RepsSetDto) {
-      return {
-        'reps': setDto.reps,
-      };
-    }
-    if (setDto is DurationSetDto) {
-      return {
-        'durationMs': setDto.duration.inMilliseconds,
-      };
-    }
-    return {};
-  }
-
-  String _setDescription(SetDto setDto) {
-    if (setDto is WeightAndRepsSetDto) {
-      return '${setDto.weight.toStringAsFixed(1)} kg for ${setDto.reps} reps';
-    }
-    if (setDto is RepsSetDto) {
-      return '${setDto.reps} reps';
-    }
-    if (setDto is DurationSetDto) {
-      final totalSeconds = setDto.duration.inSeconds;
-      final minutes = totalSeconds ~/ 60;
-      final seconds = totalSeconds % 60;
-      final mm = minutes.toString().padLeft(2, '0');
-      final ss = seconds.toString().padLeft(2, '0');
-      return '$mm:$ss';
-    }
-    return 'set';
-  }
-
-  Future<void> _hydrateDraftTimeline() async {
-    if (_draftHydrated) return;
-    _draftHydrated = true;
-    final draft = await _timelineRepository.loadDraft();
-    final draftLogId = draft.$1;
-    final draftEvents = draft.$2;
-    if (draftLogId == null || draftLogId.isEmpty) {
-      return;
-    }
-    // Ensure the draft belongs to the active session; if no session id yet, adopt it.
-    if (_sessionLogId == null) {
-      _sessionLogId = draftLogId;
-    }
-    if (_activeLogId != draftLogId) {
-      // Different session; discard stale draft.
-      await _timelineRepository.clearDraft();
-      return;
-    }
-    _pendingTimelineEvents
-      ..clear()
-      ..addAll(draftEvents);
   }
 }

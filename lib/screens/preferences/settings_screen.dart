@@ -22,18 +22,14 @@ import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../dtos/viewmodels/past_routine_log_arguments.dart';
-import '../../dtos/routine_timeline_event_dto.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/navigation_utils.dart';
-import 'package:lottie/lottie.dart';
-import '../../utils/lottie_exercise_registry.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
-import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/dividers/label_divider.dart';
@@ -42,8 +38,6 @@ import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../screens/routines/routine_plan.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
-import '../../repositories/routine_timeline_repository.dart';
-import '../exercise/history/latest_recap_screen.dart';
 
 enum WeightUnit {
   kg("kg"),
@@ -92,15 +86,11 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   bool _notificationEnabled = false;
   bool _hasCachedSession = false;
-  final RoutineTimelineRepository _timelineRepository =
-      RoutineTimelineRepository();
 
   @override
   Widget build(BuildContext context) {
     Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
-    final theme = Theme.of(context);
-
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final userEmail =
@@ -145,7 +135,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     ),
                   ],
-                  _buildRecapCard(theme),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: _TrainingInsightsSection(
@@ -355,150 +344,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _openWebpage() {
     final url = trackrWebUrl;
     openUrl(url: url, context: context);
-  }
-
-  Widget _buildRecapCard(ThemeData theme) {
-    return FutureBuilder<(String?, List<RoutineTimelineEventDto>)>(
-      future: _timelineRepository.loadLatest(),
-      builder: (context, snapshot) {
-        final events = snapshot.data?.$2 ?? const [];
-        final logId = snapshot.data?.$1;
-        final savedAtRaw = SharedPrefs().timelineEventsSavedAt;
-        final savedAt =
-            savedAtRaw.isEmpty ? null : DateTime.tryParse(savedAtRaw);
-        DateTime? availabilityStart;
-        DateTime? availabilityEnd;
-        if (savedAt != null) {
-          // Card becomes visible at 9am the day after the recap was saved,
-          // and remains for a 24h window.
-          availabilityStart =
-              DateTime(savedAt.year, savedAt.month, savedAt.day, 9)
-                  .add(const Duration(days: 1));
-          availabilityEnd = availabilityStart.add(const Duration(hours: 24));
-        }
-        final now = DateTime.now();
-        final withinWindow = availabilityStart != null &&
-            availabilityEnd != null &&
-            !now.isBefore(availabilityStart) &&
-            !now.isAfter(availabilityEnd);
-        final hasData = events.isNotEmpty;
-        if (!hasData || !withinWindow) return const SizedBox.shrink();
-        return Column(
-          children: [
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: _FrostedCard(
-                gradientColors: [
-                  const Color(0xFF22c55e).withValues(alpha: 0.25),
-                  Colors.black.withValues(alpha: 0.4),
-                ],
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 14,
-                        children: [
-                          Text(
-                            'behold your session recap!',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              height: 1.15,
-                            ),
-                          ),
-                          Text(
-                            'the epic story of your last session.',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: Colors.white70,
-                              height: 1.3,
-                            ),
-                          ),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 100),
-                              child: OpacityButtonWidgetTwo(
-                                solidBackground: true,
-                                showArrowRight: false,
-                                label: "review",
-                                buttonColor:
-                                    Colors.white.withValues(alpha: 0.16),
-                                visualDensity: const VisualDensity(
-                                  horizontal: -2,
-                                  vertical: -3,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 10),
-                                textStyle: theme.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12,
-                                ),
-                                onPressed: () {
-                                  showAppBottomSheet(
-                                    context: context,
-                                    isDraggable: true,
-                                    isScrollControlled: true,
-                                    minChildSize: 0.4,
-                                    initialChildSize: 0.8,
-                                    maxChildSize: 0.95,
-                                    useBlurredTransparentBackground: false,
-                                    builder: (ctx, scrollController) =>
-                                        LatestRecapScreen(
-                                      events: events,
-                                      logId: logId,
-                                      asSheet: true,
-                                      scrollController: scrollController,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      width: 140,
-                      height: 140,
-                      child: FutureBuilder<String?>(
-                        future: LottieExerciseRegistry.randomLottie(),
-                        builder: (context, snap) {
-                          final asset = snap.data;
-                          if (asset != null) {
-                            return Lottie.asset(
-                              asset,
-                              fit: BoxFit.contain,
-                              repeat: true,
-                            );
-                          }
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.auto_awesome,
-                                color: Colors.white70,
-                                size: 32,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _clearAppData() async {
