@@ -363,8 +363,26 @@ class _SettingsScreenState extends State<SettingsScreen>
       builder: (context, snapshot) {
         final events = snapshot.data?.$2 ?? const [];
         final logId = snapshot.data?.$1;
+        final savedAtRaw = SharedPrefs().timelineEventsSavedAt;
+        final savedAt =
+            savedAtRaw.isEmpty ? null : DateTime.tryParse(savedAtRaw);
+        DateTime? availabilityStart;
+        DateTime? availabilityEnd;
+        if (savedAt != null) {
+          // Card becomes visible at 9am the day after the recap was saved,
+          // and remains for a 24h window.
+          availabilityStart = DateTime(
+                  savedAt.year, savedAt.month, savedAt.day, 9)
+              .add(const Duration(days: 1));
+          availabilityEnd = availabilityStart.add(const Duration(hours: 24));
+        }
+        final now = DateTime.now();
+        final withinWindow = availabilityStart != null &&
+            availabilityEnd != null &&
+            !now.isBefore(availabilityStart) &&
+            !now.isAfter(availabilityEnd);
         final hasData = events.isNotEmpty;
-        if (!hasData) return const SizedBox.shrink();
+        if (!hasData || !withinWindow) return const SizedBox.shrink();
         return Column(
           children: [
             const SizedBox(height: 16),

@@ -30,12 +30,25 @@ class SupabaseRoutineTemplateRepository {
           .eq('owner', userId)
           .order('createdAt', ascending: true);
 
-      _templates = (response as List<dynamic>).map((item) {
-        final data = Map<String, dynamic>.from(item);
-        return RoutineTemplateDto.fromJson(json: data);
-      }).toList();
+      final rawItems = response as List<dynamic>;
+      final parsed = <RoutineTemplateDto>[];
+      int failed = 0;
 
-      logger.i('Loaded ${_templates.length} templates from Supabase');
+      for (final item in rawItems) {
+        try {
+          final data = Map<String, dynamic>.from(item);
+          parsed.add(RoutineTemplateDto.fromJson(json: data));
+        } catch (e, stack) {
+          failed += 1;
+          logger.w(
+              'Skipped invalid routine template payload. Error: $e\nPayload: $item\n$stack');
+        }
+      }
+
+      _templates = parsed;
+
+      logger.i(
+          'Loaded ${_templates.length} templates from Supabase (skipped $failed invalid rows)');
     } catch (e) {
       logger.e('Error loading templates: $e');
       rethrow;

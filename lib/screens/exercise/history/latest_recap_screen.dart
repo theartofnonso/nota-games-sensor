@@ -32,79 +32,86 @@ class LatestRecapScreen extends StatelessWidget {
               ),
             ),
           )
-        : ListView.builder(
-            controller: scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            itemCount: sorted.length,
-            itemBuilder: (context, index) {
-              final event = sorted[index];
-              final isFirst = index == 0;
-              final isLast = index == sorted.length - 1;
-              final prevTimestamp =
-                  index > 0 ? sorted[index - 1].timestamp : null;
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  itemCount: sorted.length,
+                  itemBuilder: (context, index) {
+                    final event = sorted[index];
+                    final isFirst = index == 0;
+                    final isLast = index == sorted.length - 1;
+                    final sessionStart = sorted.first.timestamp;
 
-              return IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Timeline gutter with icon
-                    Column(
-                      children: [
-                        // Top connector line
-                        if (!isFirst)
-                          Container(
-                            width: 2,
-                            height: 12,
-                            color: Colors.white24,
+                    return IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Timeline gutter with icon
+                          Column(
+                            children: [
+                              // Top connector line
+                              if (!isFirst)
+                                Container(
+                                  width: 2,
+                                  height: 12,
+                                  color: Colors.white24,
+                                ),
+                              // Icon only (no circle)
+                              SizedBox(
+                                width: 48,
+                                height: 48,
+                                child: Center(
+                                  child: FaIcon(
+                                    _iconFor(event),
+                                    size: 16,
+                                    color: _colorFor(event),
+                                  ),
+                                ),
+                              ),
+                              // Bottom connector line
+                              if (!isLast)
+                                Expanded(
+                                  child: Container(
+                                    width: 1,
+                                    color: Colors.white24,
+                                  ),
+                                ),
+                            ],
                           ),
-                        // Icon only (no circle)
-                        SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: Center(
-                            child: FaIcon(
-                              _iconFor(event),
-                              size: 16,
-                              color: _colorFor(event),
-                            ),
-                          ),
-                        ),
-                        // Bottom connector line
-                        if (!isLast)
+                          const SizedBox(width: 16),
+                          // Content
                           Expanded(
-                            child: Container(
-                              width: 1,
-                              color: Colors.white24,
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: 16),
-                    // Content
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSummaryText(context, event),
-                            const SizedBox(height: 4),
-                            Text(
-                              _formatRelativeTime(
-                                  event.timestamp, prevTimestamp),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.white70,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 8, bottom: 24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildSummaryText(context, event),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatRelativeTime(
+                                        event.timestamp, sessionStart),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           );
 
     if (asSheet) {
@@ -173,10 +180,10 @@ class LatestRecapScreen extends StatelessWidget {
     );
   }
 
-  String _formatRelativeTime(DateTime timestamp, DateTime? prev) {
-    if (prev == null) return 'Start';
+  String _formatRelativeTime(DateTime timestamp, DateTime sessionStart) {
+    if (timestamp.isAtSameMomentAs(sessionStart)) return 'Start';
 
-    final difference = timestamp.difference(prev);
+    final difference = timestamp.difference(sessionStart);
     if (difference.inSeconds < 60) {
       return '${difference.inSeconds}s later';
     } else if (difference.inMinutes < 60) {
@@ -245,4 +252,6 @@ class LatestRecapScreen extends StatelessWidget {
         return FontAwesomeIcons.circleInfo;
     }
   }
+
 }
+

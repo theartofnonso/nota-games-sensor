@@ -301,10 +301,12 @@ class ExerciseLogController extends ChangeNotifier {
     if (exerciseLog != null) {
       final action = setDto.checked ? 'check_set' : 'uncheck_set';
       final setNumber = index + 1;
+      final summary = setDto.checked
+          ? 'Set $setNumber: Completed ${_setDescription(setDto)} for ${exerciseLog.exercise.name}'
+          : 'Unchecked set $setNumber for ${exerciseLog.exercise.name}';
       _recordTimelineEvent(
         action: action,
-        summary:
-            '${setDto.checked ? 'Checked' : 'Unchecked'} set $setNumber for ${exerciseLog.exercise.name}',
+        summary: summary,
         exerciseId: exerciseLog.exercise.id,
         exerciseName: exerciseLog.exercise.name,
         setIndex: index,
@@ -401,6 +403,24 @@ class ExerciseLogController extends ChangeNotifier {
       };
     }
     return {};
+  }
+
+  String _setDescription(SetDto setDto) {
+    if (setDto is WeightAndRepsSetDto) {
+      return '${setDto.weight.toStringAsFixed(1)} kg for ${setDto.reps} reps';
+    }
+    if (setDto is RepsSetDto) {
+      return '${setDto.reps} reps';
+    }
+    if (setDto is DurationSetDto) {
+      final totalSeconds = setDto.duration.inSeconds;
+      final minutes = totalSeconds ~/ 60;
+      final seconds = totalSeconds % 60;
+      final mm = minutes.toString().padLeft(2, '0');
+      final ss = seconds.toString().padLeft(2, '0');
+      return '$mm:$ss';
+    }
+    return 'set';
   }
 
   Future<void> _hydrateDraftTimeline() async {
