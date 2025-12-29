@@ -47,8 +47,8 @@ class ExerciseLocalEntry {
       exercise:
           ExerciseDto.fromJson(Map<String, dynamic>.from(json['exercise'])),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
-      isDeleted: json['isDeleted'] as bool? ?? false,
-      needsSync: json['needsSync'] as bool? ?? false,
+      isDeleted: json['isDeleted'] as bool,
+      needsSync: json['needsSync'] as bool,
       lastSyncFailed: json['lastSyncFailed'] as bool? ?? false,
     );
   }

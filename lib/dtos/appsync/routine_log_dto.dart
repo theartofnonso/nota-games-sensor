@@ -37,20 +37,19 @@ class RoutineLogDto {
   }
 
   factory RoutineLogDto.fromJson({required Map<String, dynamic> json}) {
-    final id = json["id"] ?? "";
-    final templateId = json["templateId"] ?? "";
-    final name = json["name"] ?? "";
-    final startTime = DateTime.parse(json["startTime"]);
-    final endTime = DateTime.parse(json["endTime"]);
+    final id = json["id"] as String? ?? "";
+    final templateId = json["templateId"] as String? ?? "";
+    final name = json["name"] as String;
+    final startTime = DateTime.parse(json["startTime"] as String);
+    final endTime = DateTime.parse(json["endTime"] as String);
 
-    final exerciseLogJsons = json["exercises"] as List<dynamic>;
+    final exerciseLogJsons = json["exercises"] as List;
     final exerciseLogs = exerciseLogJsons
-        .map((exerciseJson) => ExerciseLogDto.safeFromJson(
+        .map((exerciseJson) => ExerciseLogDto.fromJson(
               routineLogId: id,
-              json: exerciseJson,
+              json: exerciseJson as Map<String, dynamic>,
               createdAt: startTime,
             ))
-        .whereType<ExerciseLogDto>()
         .toList();
 
     return RoutineLogDto(

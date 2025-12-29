@@ -29,33 +29,19 @@ class RoutineTemplateDto {
   }
 
   factory RoutineTemplateDto.fromJson({required Map<String, dynamic> json}) {
-    final id = json["id"] ?? "";
-    final planId = json["planId"] ?? "";
-    final name = json["name"] ?? "";
-    final notes = json["notes"] ?? "";
+    final id = json["id"] as String? ?? "";
+    final planId = json["planId"] as String;
+    final name = json["name"] as String;
+    final notes = json["notes"] as String? ?? "";
 
-    final rawExerciseTemplates = json["exercises"];
-    if (rawExerciseTemplates is! List) {
-      throw const FormatException(
-          'Invalid routine template payload: exercises must be a list');
-    }
-
-    final exerciseTemplates = <ExerciseLogDto>[];
-    for (var i = 0; i < rawExerciseTemplates.length; i++) {
-      final exerciseJson = rawExerciseTemplates[i];
-      if (exerciseJson is! Map<String, dynamic>) {
-        throw FormatException(
-            'Invalid routine template payload at index $i: exercise entry must be an object');
-      }
-      final parsed = ExerciseLogDto.safeFromJson(
-        routineLogId: id,
-        json: exerciseJson,
-        createdAt: DateTime.now(),
-      );
-      if (parsed != null) {
-        exerciseTemplates.add(parsed);
-      }
-    }
+    final rawExerciseTemplates = json["exercises"] as List;
+    final exerciseTemplates = rawExerciseTemplates
+        .map((exerciseJson) => ExerciseLogDto.fromJson(
+              routineLogId: id,
+              json: exerciseJson as Map<String, dynamic>,
+              createdAt: DateTime.now(),
+            ))
+        .toList();
 
     return RoutineTemplateDto(
       id: id,

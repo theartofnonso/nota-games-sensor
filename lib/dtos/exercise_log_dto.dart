@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:trainware/dtos/set_dtos/set_dto.dart';
+import 'package:trainware/enums/exercise_type_enums.dart';
 
 import 'appsync/exercise_dto.dart';
 
@@ -62,68 +63,29 @@ class ExerciseLogDto {
     );
   }
 
-  /// Strict parser: throws on invalid payloads.
   factory ExerciseLogDto.fromJson(
       {String? routineLogId,
       DateTime? createdAt,
       required Map<String, dynamic> json}) {
-    return _parse(routineLogId: routineLogId, createdAt: createdAt, json: json);
-  }
-
-  /// Lenient parser: returns null instead of throwing on bad payloads.
-  static ExerciseLogDto? safeFromJson(
-      {String? routineLogId,
-      DateTime? createdAt,
-      required Map<String, dynamic> json}) {
-    try {
-      return _parse(
-          routineLogId: routineLogId, createdAt: createdAt, json: json);
-    } catch (_) {
-      // Fail silently and skip invalid entry.
-      return null;
-    }
-  }
-
-  static ExerciseLogDto _parse(
-      {String? routineLogId,
-      DateTime? createdAt,
-      required Map<String, dynamic> json}) {
-    final superSetId = json["superSetId"] ?? "";
-    final exerciseJson = json["exercise"];
-
-    if (exerciseJson is! Map<String, dynamic>) {
-      // Log offending payload to aid diagnosis.
-      // ignore: avoid_print
-      print('Invalid exercise entry payload: $json');
-      throw const FormatException(
-          'Invalid exercise entry: exercise must be an object');
-    }
+    final superSetId = json["superSetId"] as String? ?? "";
+    final exerciseJson = json["exercise"] as Map<String, dynamic>;
     final exercise = ExerciseDto.fromJson(exerciseJson);
-    final notes = json["notes"] ?? "";
-    final setsRaw = json["sets"];
-    if (setsRaw is! List) {
-      // ignore: avoid_print
-      print('Invalid sets payload: $json');
+
+    if (exercise.type == ExerciseType.none) {
       throw const FormatException(
-          'Invalid exercise entry: sets must be provided as a list');
-    }
-    final setsInJsons = setsRaw;
-    List<SetDto> sets = [];
-    if (setsInJsons.isNotEmpty && setsInJsons.first is String) {
-      sets = setsInJsons
-          .map((json) => SetDto.fromJson(jsonDecode(json),
-              exerciseType: exercise.type,
-              datetime: createdAt ?? DateTime.now()))
-          .toList();
-    } else {
-      sets = setsInJsons
-          .map((json) => SetDto.fromJson(json,
-              exerciseType: exercise.type,
-              datetime: createdAt ?? DateTime.now()))
-          .toList();
+          'Exercise type must be selected for exercises in logs/templates');
     }
 
-    final exerciseLog = ExerciseLogDto(
+    final notes = json["notes"] as String? ?? "";
+    final setsRaw = json["sets"] as List;
+    final sets = setsRaw
+        .map((setJson) => SetDto.fromJson(
+            setJson is String ? jsonDecode(setJson) : setJson,
+            exerciseType: exercise.type,
+            datetime: createdAt ?? DateTime.now()))
+        .toList();
+
+    return ExerciseLogDto(
         id: exercise.id,
         routineLogId: routineLogId,
         superSetId: superSetId,
@@ -131,8 +93,6 @@ class ExerciseLogDto {
         notes: notes,
         sets: sets,
         createdAt: createdAt ?? DateTime.now());
-
-    return exerciseLog;
   }
 
   @override

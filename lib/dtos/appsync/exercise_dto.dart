@@ -42,15 +42,11 @@ class ExerciseDto {
   }
 
   factory ExerciseDto.fromJson(Map<String, dynamic> json) {
-    final id = json["id"] ?? "";
-    final name = json["name"] ?? "";
-    final type = json["type"] != null
-        ? ExerciseType.fromString(json["type"])
-        : ExerciseType.none;
-
-    final notes = json["notes"] ?? "";
-    final isSystem =
-        json["isSystem"] as bool? ?? id.toString().startsWith('ex-');
+    final id = json["id"] as String? ?? "";
+    final name = json["name"] as String;
+    final type = ExerciseType.fromString(json["type"] as String);
+    final notes = json["notes"] as String? ?? "";
+    final isSystem = json["isSystem"] as bool? ?? false;
 
     return ExerciseDto(
       id: id,
