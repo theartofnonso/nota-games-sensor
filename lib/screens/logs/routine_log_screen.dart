@@ -362,8 +362,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                                           ? Theme.of(context)
                                               .colors
                                               .vibrantAccent
-                                          : Colors.white
-                                              .withValues(alpha: 0.3),
+                                          : Colors.white.withValues(alpha: 0.3),
                                     ),
                                   ),
                                 ),
@@ -758,6 +757,7 @@ class _PersonalBestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final weightUnitLabel = weightUnit().toUpperCase();
 
     final gradientColors = [
       Colors.black.withValues(alpha: 0.55),
@@ -834,7 +834,7 @@ class _PersonalBestCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            pb.value,
+                            _formatPbValue(pb, weightUnitLabel),
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w400,
                               color: accent,
@@ -856,6 +856,24 @@ class _PersonalBestCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatPbValue(PersonalBest pb, String weightUnitLabel) {
+    final lower = pb.value.toLowerCase();
+    // If already contains a unit, leave as-is.
+    if (lower.contains('kg') || lower.contains('lb') || lower.contains('lbs')) {
+      return pb.value;
+    }
+    // If this PB is weight-based, append unit.
+    final desc = pb.description.toLowerCase();
+    final isWeight = desc.contains('weight') ||
+        desc.contains('kg') ||
+        desc.contains('lb') ||
+        desc.contains('lbs');
+    if (isWeight) {
+      return '${pb.value} $weightUnitLabel';
+    }
+    return pb.value;
   }
 }
 

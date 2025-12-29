@@ -371,9 +371,9 @@ class _SettingsScreenState extends State<SettingsScreen>
         if (savedAt != null) {
           // Card becomes visible at 9am the day after the recap was saved,
           // and remains for a 24h window.
-          availabilityStart = DateTime(
-                  savedAt.year, savedAt.month, savedAt.day, 9)
-              .add(const Duration(days: 1));
+          availabilityStart =
+              DateTime(savedAt.year, savedAt.month, savedAt.day, 9)
+                  .add(const Duration(days: 1));
           availabilityEnd = availabilityStart.add(const Duration(hours: 24));
         }
         final now = DateTime.now();
@@ -893,10 +893,10 @@ class _TrainingInsightsSection extends StatelessWidget {
 
     final dateLabel = predictionInfo.date != null
         ? _formatRelativeDate(predictionInfo.date!)
-        : 'Need more workouts logged';
+        : '';
     final timeLabel = predictionInfo.time != null
         ? 'around ${_formatTime(predictionInfo.time!)}'
-        : 'Log a few sessions to learn your timing';
+        : '';
     final percentLabel =
         (yearStats.progress * 100).clamp(0, 100).toStringAsFixed(0);
 
@@ -1026,16 +1026,17 @@ class _TrainingInsightsSection extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(
-                  width: cardWidth,
-                  child: _PredictionCard(
-                    predictionInfo: predictionInfo,
-                    hasTodayPrediction: hasTodayPrediction,
-                    hasNextPrediction: hasNextPrediction,
-                    dateLabel: dateLabel,
-                    timeLabel: timeLabel,
+                if (hasTodayPrediction || hasNextPrediction)
+                  SizedBox(
+                    width: cardWidth,
+                    child: _PredictionCard(
+                      predictionInfo: predictionInfo,
+                      hasTodayPrediction: hasTodayPrediction,
+                      hasNextPrediction: hasNextPrediction,
+                      dateLabel: dateLabel,
+                      timeLabel: timeLabel,
+                    ),
                   ),
-                ),
               ],
             );
           },

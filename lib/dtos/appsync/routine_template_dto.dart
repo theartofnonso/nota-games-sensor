@@ -47,13 +47,14 @@ class RoutineTemplateDto {
         throw FormatException(
             'Invalid routine template payload at index $i: exercise entry must be an object');
       }
-      exerciseTemplates.add(
-        ExerciseLogDto.fromJson(
-          routineLogId: id,
-          json: exerciseJson,
-          createdAt: DateTime.now(),
-        ),
+      final parsed = ExerciseLogDto.safeFromJson(
+        routineLogId: id,
+        json: exerciseJson,
+        createdAt: DateTime.now(),
       );
+      if (parsed != null) {
+        exerciseTemplates.add(parsed);
+      }
     }
 
     return RoutineTemplateDto(

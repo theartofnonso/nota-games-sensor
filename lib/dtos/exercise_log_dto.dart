@@ -62,17 +62,51 @@ class ExerciseLogDto {
     );
   }
 
+  /// Strict parser: throws on invalid payloads.
   factory ExerciseLogDto.fromJson(
+      {String? routineLogId,
+      DateTime? createdAt,
+      required Map<String, dynamic> json}) {
+    return _parse(routineLogId: routineLogId, createdAt: createdAt, json: json);
+  }
+
+  /// Lenient parser: returns null instead of throwing on bad payloads.
+  static ExerciseLogDto? safeFromJson(
+      {String? routineLogId,
+      DateTime? createdAt,
+      required Map<String, dynamic> json}) {
+    try {
+      return _parse(
+          routineLogId: routineLogId, createdAt: createdAt, json: json);
+    } catch (_) {
+      // Fail silently and skip invalid entry.
+      return null;
+    }
+  }
+
+  static ExerciseLogDto _parse(
       {String? routineLogId,
       DateTime? createdAt,
       required Map<String, dynamic> json}) {
     final superSetId = json["superSetId"] ?? "";
     final exerciseJson = json["exercise"];
 
+    if (exerciseJson is! Map<String, dynamic>) {
+      // Log offending payload to aid diagnosis.
+      // ignore: avoid_print
+      print('Invalid exercise entry payload: $json');
+      throw const FormatException(
+          'Invalid exercise entry: exercise must be an object');
+    }
     final exercise = ExerciseDto.fromJson(exerciseJson);
     final notes = json["notes"] ?? "";
     final setsRaw = json["sets"];
-
+    if (setsRaw is! List) {
+      // ignore: avoid_print
+      print('Invalid sets payload: $json');
+      throw const FormatException(
+          'Invalid exercise entry: sets must be provided as a list');
+    }
     final setsInJsons = setsRaw;
     List<SetDto> sets = [];
     if (setsInJsons.isNotEmpty && setsInJsons.first is String) {

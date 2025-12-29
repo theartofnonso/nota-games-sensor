@@ -44,13 +44,14 @@ class RoutineLogDto {
     final endTime = DateTime.parse(json["endTime"]);
 
     final exerciseLogJsons = json["exercises"] as List<dynamic>;
-    final exerciseLogs = exerciseLogJsons.map((exerciseJson) {
-      return ExerciseLogDto.fromJson(
-        routineLogId: id,
-        json: exerciseJson,
-        createdAt: startTime,
-      );
-    }).toList();
+    final exerciseLogs = exerciseLogJsons
+        .map((exerciseJson) => ExerciseLogDto.safeFromJson(
+              routineLogId: id,
+              json: exerciseJson,
+              createdAt: startTime,
+            ))
+        .whereType<ExerciseLogDto>()
+        .toList();
 
     return RoutineLogDto(
       id: id,
