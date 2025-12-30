@@ -1729,7 +1729,7 @@
   },
   {
     "id": "ex-lever-crunch",
-    "name": "Crunch",
+    "name": "Crunch (Machine)",
     "lottie": "assets/lottie/Man Doing Lever Crunch Exercise For ABS.json",
     "isSystem": true
   },
@@ -1753,7 +1753,7 @@
   },
   {
     "id": "ex-lever-hip-thrust",
-    "name": "Hip Thrust",
+    "name": "Hip Thrust (Machine)",
     "lottie": "assets/lottie/Man Doing Lever Hip Thrust Exercise For Legs.json",
     "isSystem": true
   },

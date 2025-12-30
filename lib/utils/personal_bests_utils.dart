@@ -9,22 +9,50 @@ import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/sets_utils.dart';
 
-/// Represents a personal best achievement in a workout
+/// What kind of PB did we hit?
+enum PersonalBestKind {
+  heaviestWeight,
+  mostReps,
+  heaviestVolume,
+  longestDuration,
+}
+
+/// Typed PB value (no parsing strings later).
 class PersonalBest {
   final String exerciseName;
   final ExerciseType exerciseType;
-  final String description;
-  final String value;
+  final PersonalBestKind kind;
+
+  /// Only one of these is typically used depending on kind/type.
+  final double? weightKg; // For heaviest weight / volume
+  final int? reps; // For most reps / volume
+  final Duration? duration; // For longest duration
 
   const PersonalBest({
     required this.exerciseName,
     required this.exerciseType,
-    required this.description,
-    required this.value,
+    required this.kind,
+    this.weightKg,
+    this.reps,
+    this.duration,
   });
+
+  String get description {
+    switch (kind) {
+      case PersonalBestKind.heaviestWeight:
+        return 'Heaviest Weight';
+      case PersonalBestKind.mostReps:
+        return 'Most Reps';
+      case PersonalBestKind.heaviestVolume:
+        return 'Heaviest Volume';
+      case PersonalBestKind.longestDuration:
+        return 'Longest Duration';
+    }
+  }
 }
 
-/// Calculate personal bests achieved in the current workout compared to historical data
+/// Main API: calculates PBs for the current workout, compared to historical logs.
+/// PBs are computed on demand.
 List<PersonalBest> calculatePersonalBests({
   required RoutineLogDto currentLog,
   required List<ExerciseLogDto> allHistoricalExerciseLogs,
@@ -36,64 +64,54 @@ List<PersonalBest> calculatePersonalBests({
     final exerciseType = exerciseLog.exercise.type;
     final exerciseName = exerciseLog.exercise.name;
 
-    // Get all historical logs for this exercise (excluding current log)
-    final historicalLogs = allHistoricalExerciseLogs
-        .where((log) =>
-            log.exercise.id == exerciseId && log.routineLogId != currentLog.id)
-        .toList();
+    if (exerciseType == ExerciseType.none) continue;
 
-    if (historicalLogs.isEmpty) {
-      // No historical data, skip
-      continue;
-    }
+    // Historical logs for this exercise excluding current routine log
+    final historicalLogs = allHistoricalExerciseLogs.where((log) {
+      return log.exercise.id == exerciseId && log.routineLogId != currentLog.id;
+    }).toList();
 
-    // Collect all historical sets for this exercise
-    final allHistoricalSets = historicalLogs
+    if (historicalLogs.isEmpty) continue;
+
+    // Only completed sets
+    final historicalSets = historicalLogs
         .expand((log) => log.sets)
-        .where((set) => set.isNotEmpty() && set.checked)
+        .where(_isCompletedSet)
         .toList();
 
-    if (allHistoricalSets.isEmpty) {
-      continue;
-    }
+    final currentSets = exerciseLog.sets.where(_isCompletedSet).toList();
 
-    // Get current workout sets (only checked/completed sets)
-    final currentSets = exerciseLog.sets
-        .where((set) => set.isNotEmpty() && set.checked)
-        .toList();
+    if (historicalSets.isEmpty || currentSets.isEmpty) continue;
 
-    if (currentSets.isEmpty) {
-      continue;
-    }
-
-    // Check for PBs based on exercise type
     switch (exerciseType) {
       case ExerciseType.weights:
         _checkWeightPBs(
           exerciseName: exerciseName,
           currentSets: currentSets,
-          historicalSets: allHistoricalSets,
+          historicalSets: historicalSets,
           pbs: pbs,
         );
         break;
+
       case ExerciseType.bodyWeight:
-        _checkRepsPBs(
+        _checkBodyweightPBs(
           exerciseName: exerciseName,
           currentSets: currentSets,
-          historicalSets: allHistoricalSets,
+          historicalSets: historicalSets,
           pbs: pbs,
         );
         break;
+
       case ExerciseType.duration:
         _checkDurationPBs(
           exerciseName: exerciseName,
           currentSets: currentSets,
-          historicalSets: allHistoricalSets,
+          historicalSets: historicalSets,
           pbs: pbs,
         );
         break;
+
       case ExerciseType.none:
-        // Skip PB evaluation until a type is selected
         break;
     }
   }
@@ -101,22 +119,22 @@ List<PersonalBest> calculatePersonalBests({
   return pbs;
 }
 
+bool _isCompletedSet(SetDto set) => set.isNotEmpty() && set.checked;
+
+/// WEIGHTS PBs: heaviest weight, most reps, heaviest volume
 void _checkWeightPBs({
   required String exerciseName,
   required List<SetDto> currentSets,
   required List<SetDto> historicalSets,
   required List<PersonalBest> pbs,
 }) {
-  final currentWeightSets =
-      currentSets.whereType<WeightAndRepsSetDto>().toList();
-  final historicalWeightSets =
-      historicalSets.whereType<WeightAndRepsSetDto>().toList();
+  final current = currentSets.whereType<WeightAndRepsSetDto>().toList();
+  final historical = historicalSets.whereType<WeightAndRepsSetDto>().toList();
+  if (current.isEmpty || historical.isEmpty) return;
 
-  if (currentWeightSets.isEmpty || historicalWeightSets.isEmpty) return;
-
-  // Check for heaviest weight PB
-  final currentHeaviest = getHighestWeight(currentWeightSets);
-  final historicalHeaviest = getHighestWeight(historicalWeightSets);
+  // 1) Heaviest weight
+  final currentHeaviest = getHighestWeight(current);
+  final historicalHeaviest = getHighestWeight(historical);
 
   if (currentHeaviest != null &&
       historicalHeaviest != null &&
@@ -124,14 +142,14 @@ void _checkWeightPBs({
     pbs.add(PersonalBest(
       exerciseName: exerciseName,
       exerciseType: ExerciseType.weights,
-      description: 'Heaviest Weight',
-      value: '${currentHeaviest.weight}${weightUnit()}',
+      kind: PersonalBestKind.heaviestWeight,
+      weightKg: currentHeaviest.weight,
     ));
   }
 
-  // Check for most reps PB
-  final currentHighestReps = getHighestReps(currentWeightSets);
-  final historicalHighestReps = getHighestReps(historicalWeightSets);
+  // 2) Most reps (for weight sets)
+  final currentHighestReps = getHighestReps(current);
+  final historicalHighestReps = getHighestReps(historical);
 
   if (currentHighestReps != null &&
       historicalHighestReps != null &&
@@ -139,14 +157,14 @@ void _checkWeightPBs({
     pbs.add(PersonalBest(
       exerciseName: exerciseName,
       exerciseType: ExerciseType.weights,
-      description: 'Most Reps',
-      value: '${currentHighestReps.reps} reps',
+      kind: PersonalBestKind.mostReps,
+      reps: currentHighestReps.reps,
     ));
   }
 
-  // Check for heaviest volume PB
-  final currentHeaviestVolume = getHeaviestVolume(currentWeightSets);
-  final historicalHeaviestVolume = getHeaviestVolume(historicalWeightSets);
+  // 3) Heaviest volume (weight x reps)
+  final currentHeaviestVolume = getHeaviestVolume(current);
+  final historicalHeaviestVolume = getHeaviestVolume(historical);
 
   if (currentHeaviestVolume != null &&
       historicalHeaviestVolume != null &&
@@ -154,27 +172,26 @@ void _checkWeightPBs({
     pbs.add(PersonalBest(
       exerciseName: exerciseName,
       exerciseType: ExerciseType.weights,
-      description: 'Heaviest Volume',
-      value:
-          '${currentHeaviestVolume.weight}${weightUnit()} × ${currentHeaviestVolume.reps}',
+      kind: PersonalBestKind.heaviestVolume,
+      weightKg: currentHeaviestVolume.weight,
+      reps: currentHeaviestVolume.reps,
     ));
   }
 }
 
-void _checkRepsPBs({
+/// BODYWEIGHT PBs: most reps
+void _checkBodyweightPBs({
   required String exerciseName,
   required List<SetDto> currentSets,
   required List<SetDto> historicalSets,
   required List<PersonalBest> pbs,
 }) {
-  final currentRepsSets = currentSets.whereType<RepsSetDto>().toList();
-  final historicalRepsSets = historicalSets.whereType<RepsSetDto>().toList();
+  final current = currentSets.whereType<RepsSetDto>().toList();
+  final historical = historicalSets.whereType<RepsSetDto>().toList();
+  if (current.isEmpty || historical.isEmpty) return;
 
-  if (currentRepsSets.isEmpty || historicalRepsSets.isEmpty) return;
-
-  // Check for most reps PB
-  final currentHighestReps = getHighestReps(currentRepsSets);
-  final historicalHighestReps = getHighestReps(historicalRepsSets);
+  final currentHighestReps = getHighestReps(current);
+  final historicalHighestReps = getHighestReps(historical);
 
   if (currentHighestReps != null &&
       historicalHighestReps != null &&
@@ -182,27 +199,25 @@ void _checkRepsPBs({
     pbs.add(PersonalBest(
       exerciseName: exerciseName,
       exerciseType: ExerciseType.bodyWeight,
-      description: 'Most Reps',
-      value: '${currentHighestReps.reps} reps',
+      kind: PersonalBestKind.mostReps,
+      reps: currentHighestReps.reps,
     ));
   }
 }
 
+/// DURATION PBs: longest duration
 void _checkDurationPBs({
   required String exerciseName,
   required List<SetDto> currentSets,
   required List<SetDto> historicalSets,
   required List<PersonalBest> pbs,
 }) {
-  final currentDurationSets = currentSets.whereType<DurationSetDto>().toList();
-  final historicalDurationSets =
-      historicalSets.whereType<DurationSetDto>().toList();
+  final current = currentSets.whereType<DurationSetDto>().toList();
+  final historical = historicalSets.whereType<DurationSetDto>().toList();
+  if (current.isEmpty || historical.isEmpty) return;
 
-  if (currentDurationSets.isEmpty || historicalDurationSets.isEmpty) return;
-
-  // Check for longest duration PB
-  final currentLongest = getLongestDuration(currentDurationSets);
-  final historicalLongest = getLongestDuration(historicalDurationSets);
+  final currentLongest = getLongestDuration(current);
+  final historicalLongest = getLongestDuration(historical);
 
   if (currentLongest != null &&
       historicalLongest != null &&
@@ -210,8 +225,53 @@ void _checkDurationPBs({
     pbs.add(PersonalBest(
       exerciseName: exerciseName,
       exerciseType: ExerciseType.duration,
-      description: 'Longest Duration',
-      value: currentLongest.duration.hmsDigital(),
+      kind: PersonalBestKind.longestDuration,
+      duration: currentLongest.duration,
     ));
   }
+}
+
+/// UI formatting: decision is based on exerciseType + PB kind only.
+/// No string parsing. No heuristics.
+String formatPersonalBestValue(
+  PersonalBest pb, {
+  required String weightUnitLabel, // e.g. "kg" or "lb"
+}) {
+  switch (pb.exerciseType) {
+    case ExerciseType.weights:
+      if (pb.kind == PersonalBestKind.mostReps) {
+        return '${pb.reps ?? 0} reps';
+      }
+
+      if (pb.kind == PersonalBestKind.heaviestVolume) {
+        final weightKg = pb.weightKg ?? 0;
+        final reps = pb.reps ?? 0;
+        final w = _formatWeightFromKg(weightKg, weightUnitLabel);
+        return '$w × $reps';
+      }
+
+      // Heaviest weight
+      final weightKg = pb.weightKg ?? 0;
+      return _formatWeightFromKg(weightKg, weightUnitLabel);
+
+    case ExerciseType.bodyWeight:
+      return '${pb.reps ?? 0} reps';
+
+    case ExerciseType.duration:
+      return (pb.duration ?? Duration.zero).hmsDigital();
+
+    case ExerciseType.none:
+      return '';
+  }
+}
+
+String _formatWeightFromKg(double weightKg, String weightUnitLabel) {
+  // weightWithConversion(value: kg) should already exist in your project.
+  final converted = weightWithConversion(value: weightKg);
+
+  final formatted = converted.toStringAsFixed(
+    converted.truncateToDouble() == converted ? 0 : 1,
+  );
+
+  return '$formatted $weightUnitLabel';
 }

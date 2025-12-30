@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
+import 'package:trainware/enums/exercise_type_enums.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/utils/navigation_utils.dart';
@@ -834,7 +835,8 @@ class _PersonalBestCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            _formatPbValue(pb, weightUnitLabel),
+                            _formatPbValue(pb,
+                                weightUnitLabel: weightUnitLabel),
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w400,
                               color: accent,
@@ -858,22 +860,61 @@ class _PersonalBestCard extends StatelessWidget {
     );
   }
 
-  String _formatPbValue(PersonalBest pb, String weightUnitLabel) {
-    final lower = pb.value.toLowerCase();
-    // If already contains a unit, leave as-is.
-    if (lower.contains('kg') || lower.contains('lb') || lower.contains('lbs')) {
-      return pb.value;
+  String _formatPbValue(
+    PersonalBest pb, {
+    required String weightUnitLabel, // e.g. "kg" or "lb"
+  }) {
+    switch (pb.exerciseType) {
+      case ExerciseType.weights:
+        return _formatWeightPb(pb, weightUnitLabel);
+
+      case ExerciseType.bodyWeight:
+        return '${pb.reps ?? 0} reps';
+
+      case ExerciseType.duration:
+        return (pb.duration ?? Duration.zero).hmsDigital();
+
+      case ExerciseType.none:
+        return '';
     }
-    // If this PB is weight-based, append unit.
-    final desc = pb.description.toLowerCase();
-    final isWeight = desc.contains('weight') ||
-        desc.contains('kg') ||
-        desc.contains('lb') ||
-        desc.contains('lbs');
-    if (isWeight) {
-      return '${pb.value} $weightUnitLabel';
+  }
+
+  String _formatWeightPb(
+    PersonalBest pb,
+    String weightUnitLabel,
+  ) {
+    switch (pb.kind) {
+      case PersonalBestKind.heaviestWeight:
+        return _formatWeightFromKg(pb.weightKg, weightUnitLabel);
+
+      case PersonalBestKind.heaviestVolume:
+        final weight = _formatWeightFromKg(pb.weightKg, weightUnitLabel);
+        final reps = pb.reps ?? 0;
+        return '$weight × $reps';
+
+      case PersonalBestKind.mostReps:
+        return '${pb.reps ?? 0} reps';
+
+      case PersonalBestKind.longestDuration:
+        // Should never happen for weights, but keep safe
+        return '';
     }
-    return pb.value;
+  }
+
+  String _formatWeightFromKg(
+    double? weightKg,
+    String weightUnitLabel,
+  ) {
+    if (weightKg == null || weightKg <= 0) return '';
+
+    // Existing helper: converts KG → user unit
+    final converted = weightWithConversion(value: weightKg);
+
+    final formatted = converted.truncateToDouble() == converted
+        ? converted.toStringAsFixed(0)
+        : converted.toStringAsFixed(1);
+
+    return '$formatted $weightUnitLabel';
   }
 }
 
