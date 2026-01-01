@@ -550,9 +550,15 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
       exercisesToExclude: excludeExercises,
       onSelected: (List<ExerciseDto> selectedExercises) {
         if (!mounted || _exerciseLog == null) return;
+        // Deduplicate by exercise ID to prevent duplicates
+        final existingIds =
+            _currentExerciseLog.alternatives.map((alt) => alt.id).toSet();
+        final uniqueSelected = selectedExercises
+            .where((ex) => !existingIds.contains(ex.id))
+            .toList();
         final newAlternatives = [
           ..._currentExerciseLog.alternatives,
-          ...selectedExercises,
+          ...uniqueSelected,
         ];
         controller.updateExerciseLogAlternatives(
           exerciseLogId: _currentExerciseLog.id,
@@ -641,6 +647,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
 
+    // Store the current exercise before replacement
+    final oldExercise = _currentExerciseLog.exercise;
+
     // Get past sets for the alternative exercise
     final pastSets =
         supabaseController.whereRecentSetsForExercise(exercise: alternative);
@@ -651,6 +660,29 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
       newExercise: alternative,
       pastSets: pastSets,
     );
+
+    // Update alternatives list:
+    // 1. Remove the selected alternative (since it's now the main exercise)
+    // 2. Add the old exercise to the alternatives list
+    final updatedAlternatives = _currentExerciseLog.alternatives
+        .where((alt) =>
+            alt.id != alternative.id) // Remove the selected alternative
+        .toList();
+
+    // Add the old exercise to alternatives if it's not already there
+    if (!updatedAlternatives.any((alt) => alt.id == oldExercise.id)) {
+      updatedAlternatives.add(oldExercise);
+    }
+
+    // Update the alternatives list for the new exercise log
+    final newExerciseLog =
+        controller.whereExerciseLog(exerciseId: alternative.id);
+    if (newExerciseLog != null) {
+      controller.updateExerciseLogAlternatives(
+        exerciseLogId: newExerciseLog.id,
+        alternatives: updatedAlternatives,
+      );
+    }
 
     // Update state to reflect the change
     setState(() {
@@ -1441,9 +1473,15 @@ class _AlternativesManagementWidgetState
       context: context,
       exercisesToExclude: excludeExercises,
       onSelected: (List<ExerciseDto> selectedExercises) {
+        // Deduplicate by exercise ID to prevent duplicates
+        final existingIds =
+            _currentExerciseLog.alternatives.map((alt) => alt.id).toSet();
+        final uniqueSelected = selectedExercises
+            .where((ex) => !existingIds.contains(ex.id))
+            .toList();
         final newAlternatives = [
           ..._currentExerciseLog.alternatives,
-          ...selectedExercises,
+          ...uniqueSelected,
         ];
         _updateAlternatives(newAlternatives);
       },
