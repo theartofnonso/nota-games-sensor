@@ -17,13 +17,17 @@ import 'package:trainware/widgets/routine/editors/set_rows/duration_set_row.dart
 import 'package:trainware/widgets/routine/editors/set_rows/reps_set_row.dart';
 import 'package:trainware/widgets/routine/editors/set_rows/weights_and_reps_set_row.dart';
 
+import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../dtos/set_dtos/reps_dto.dart';
 import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../../enums/routine_editor_type_enums.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
+import '../../../utils/routine_editors_utils.dart';
+import '../../../widgets/list_tile.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
+import '../../buttons/opacity_button_widget_two.dart';
 import '../../empty_states/no_list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
 import '../../weight_plate_calculator.dart';
@@ -489,6 +493,207 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     });
   }
 
+  void _showAlternativesBottomSheet() {
+    if (_exerciseLog == null) return;
+
+    showAppBottomSheet(
+      context: context,
+      isDraggable: true,
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      builder: (context, scrollController) {
+        return _AlternativesManagementWidget(
+          exerciseLog: _currentExerciseLog,
+          scrollController: scrollController,
+        );
+      },
+    );
+  }
+
+  void _addAlternativesDirectly() {
+    if (!mounted || _exerciseLog == null) return;
+
+    final controller =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final allExerciseLogs = controller.exerciseLogs;
+
+    // Build exclude list: current exercise + all exercises in routine + existing alternatives
+    // Deduplicate by exercise ID to ensure we don't exclude the same exercise multiple times
+    final excludeExercises = <ExerciseDto>[];
+    final seenIds = <String>{};
+
+    // Add current exercise
+    if (!seenIds.contains(_currentExerciseLog.exercise.id)) {
+      excludeExercises.add(_currentExerciseLog.exercise);
+      seenIds.add(_currentExerciseLog.exercise.id);
+    }
+
+    // Add all exercises in routine
+    for (final log in allExerciseLogs) {
+      if (!seenIds.contains(log.exercise.id)) {
+        excludeExercises.add(log.exercise);
+        seenIds.add(log.exercise.id);
+      }
+    }
+
+    // Add existing alternatives
+    for (final alt in _currentExerciseLog.alternatives) {
+      if (!seenIds.contains(alt.id)) {
+        excludeExercises.add(alt);
+        seenIds.add(alt.id);
+      }
+    }
+
+    showExercisesInLibrary(
+      context: context,
+      exercisesToExclude: excludeExercises,
+      onSelected: (List<ExerciseDto> selectedExercises) {
+        if (!mounted || _exerciseLog == null) return;
+        final newAlternatives = [
+          ..._currentExerciseLog.alternatives,
+          ...selectedExercises,
+        ];
+        controller.updateExerciseLogAlternatives(
+          exerciseLogId: _currentExerciseLog.id,
+          alternatives: newAlternatives,
+        );
+        // Update local state
+        setState(() {
+          _exerciseLog = controller.whereExerciseLog(
+            exerciseId: _currentExerciseLog.exercise.id,
+          );
+        });
+      },
+      type: _currentExerciseLog.exercise.type,
+    );
+  }
+
+  Future<void> _confirmReplaceWithAlternative(ExerciseDto alternative) async {
+    if (_exerciseLog == null) return;
+
+    bool shouldReplace = false;
+
+    await showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Replace exercise?",
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Replace "${_currentExerciseLog.exercise.name}" with "${alternative.name}"?',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OpacityButtonWidgetTwo(
+                    label: 'Cancel',
+                    showArrowRight: false,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      shouldReplace = false;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OpacityButtonWidgetTwo(
+                    label: 'Replace',
+                    buttonColor: vibrantGreen,
+                    showArrowRight: false,
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      shouldReplace = true;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (!shouldReplace || !mounted) return;
+
+    _replaceWithAlternative(alternative);
+  }
+
+  void _replaceWithAlternative(ExerciseDto alternative) {
+    if (_exerciseLog == null) return;
+
+    final controller =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final supabaseController =
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
+
+    // Get past sets for the alternative exercise
+    final pastSets =
+        supabaseController.whereRecentSetsForExercise(exercise: alternative);
+
+    // Replace the current exercise with the alternative
+    controller.replaceExerciseLog(
+      oldExerciseId: _currentExerciseLog.exercise.id,
+      newExercise: alternative,
+      pastSets: pastSets,
+    );
+
+    // Update state to reflect the change
+    setState(() {
+      _exerciseLog = controller.whereExerciseLog(exerciseId: alternative.id);
+      if (_exerciseLog != null) {
+        _loadControllers();
+        // Update notes controller if needed
+        _notesController.text = _exerciseLog!.notes;
+      }
+    });
+  }
+
+  Future<void> _confirmRemoveAlternativeFromCard(
+      ExerciseDto alternative) async {
+    if (_exerciseLog == null) return;
+
+    final shouldRemove = await confirmRemoveExerciseBottomSheet(
+      context: context,
+      exerciseName: alternative.name,
+      fromLabel: 'alternatives',
+    );
+
+    if (!shouldRemove || !mounted) return;
+
+    final controller =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final newAlternatives = _currentExerciseLog.alternatives
+        .where((alt) => alt.id != alternative.id)
+        .toList();
+
+    controller.updateExerciseLogAlternatives(
+      exerciseLogId: _currentExerciseLog.id,
+      alternatives: newAlternatives,
+    );
+
+    // Update local state
+    setState(() {
+      _exerciseLog = controller.whereExerciseLog(
+        exerciseId: _currentExerciseLog.exercise.id,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // If exercise log doesn't exist, show empty state
@@ -542,6 +747,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     if (_notesController.text != exerciseLog.notes) {
       _notesController.text = exerciseLog.notes;
     }
+
+    // Update _exerciseLog reference
+    _exerciseLog = exerciseLog;
 
     final exerciseType = exerciseLog.exercise.type;
 
@@ -828,6 +1036,135 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                             ],
                           ),
                         ),
+                        // Alternatives section - always show in template mode and live log mode
+                        if (isTemplateMode ||
+                            (isLogMode && widget.showSetCheck)) ...[
+                          Builder(builder: (context) {
+                            final isDark =
+                                Theme.of(context).brightness == Brightness.dark;
+                            final color = isDark
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : Colors.black.withValues(alpha: 0.06);
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: Divider(
+                                thickness: 0.5,
+                                color: color,
+                                height: 16,
+                              ),
+                            );
+                          }),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  child: Text(
+                                    'Alternative Exercises',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white70,
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: 80,
+                                  child: exerciseLog.alternatives.isEmpty
+                                      ? Center(
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 16),
+                                            child: Row(
+                                              children: [
+                                                GestureDetector(
+                                                  onTap:
+                                                      _addAlternativesDirectly,
+                                                  child: Container(
+                                                    width: 64,
+                                                    height: 64,
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      border: Border.all(
+                                                        color: Colors.white
+                                                            .withValues(
+                                                                alpha: 0.2),
+                                                        width: 1.5,
+                                                      ),
+                                                    ),
+                                                    child: const Center(
+                                                      child: FaIcon(
+                                                        FontAwesomeIcons
+                                                            .circlePlus,
+                                                        size: 24,
+                                                        color: Colors.white70,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 16),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Tap + to add alternative exercises',
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                          color: Colors.white54,
+                                                        ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          padding: EdgeInsets.zero,
+                                          itemCount:
+                                              exerciseLog.alternatives.length +
+                                                  1, // +1 for add button
+                                          itemBuilder: (context, index) {
+                                            if (index == 0) {
+                                              // Add button as first item
+                                              return _AlternativeExerciseCard(
+                                                exercise:
+                                                    null, // null indicates add button
+                                                isFirst: true,
+                                                isLast: false,
+                                                onTap: _addAlternativesDirectly,
+                                              );
+                                            }
+                                            final alternative = exerciseLog
+                                                .alternatives[index - 1];
+                                            return _AlternativeExerciseCard(
+                                              exercise: alternative,
+                                              isFirst: false,
+                                              isLast: index ==
+                                                  exerciseLog
+                                                      .alternatives.length,
+                                              onTap: () =>
+                                                  _confirmReplaceWithAlternative(
+                                                      alternative),
+                                              onLongPress: () =>
+                                                  _confirmRemoveAlternativeFromCard(
+                                                      alternative),
+                                            );
+                                          },
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -1049,6 +1386,308 @@ class _DurationSetListView extends StatelessWidget {
             },
           ),
       ],
+    );
+  }
+}
+
+class _AlternativesManagementWidget extends StatefulWidget {
+  final ExerciseLogDto exerciseLog;
+  final ScrollController? scrollController;
+
+  const _AlternativesManagementWidget({
+    required this.exerciseLog,
+    this.scrollController,
+  });
+
+  @override
+  State<_AlternativesManagementWidget> createState() =>
+      _AlternativesManagementWidgetState();
+}
+
+class _AlternativesManagementWidgetState
+    extends State<_AlternativesManagementWidget> {
+  late ExerciseLogDto _currentExerciseLog;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentExerciseLog = widget.exerciseLog;
+  }
+
+  void _updateAlternatives(List<ExerciseDto> alternatives) {
+    final controller =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final updatedLog = _currentExerciseLog.copyWith(alternatives: alternatives);
+    controller.updateExerciseLogAlternatives(
+      exerciseLogId: _currentExerciseLog.id,
+      alternatives: alternatives,
+    );
+    setState(() {
+      _currentExerciseLog = updatedLog;
+    });
+  }
+
+  void _addAlternatives() async {
+    final controller =
+        Provider.of<ExerciseLogController>(context, listen: false);
+    final allExerciseLogs = controller.exerciseLogs;
+    final excludeExercises = [
+      _currentExerciseLog.exercise,
+      ...allExerciseLogs.map((log) => log.exercise),
+      ..._currentExerciseLog.alternatives,
+    ].toList();
+
+    showExercisesInLibrary(
+      context: context,
+      exercisesToExclude: excludeExercises,
+      onSelected: (List<ExerciseDto> selectedExercises) {
+        final newAlternatives = [
+          ..._currentExerciseLog.alternatives,
+          ...selectedExercises,
+        ];
+        _updateAlternatives(newAlternatives);
+      },
+      type: _currentExerciseLog.exercise.type,
+    );
+  }
+
+  Future<bool> _confirmRemoveAlternative(ExerciseDto alternative) async {
+    return confirmRemoveExerciseBottomSheet(
+      context: context,
+      exerciseName: alternative.name,
+      fromLabel: 'alternatives',
+    );
+  }
+
+  void _removeAlternative(ExerciseDto alternative) {
+    final newAlternatives = _currentExerciseLog.alternatives
+        .where((alt) => alt.id != alternative.id)
+        .toList();
+    _updateAlternatives(newAlternatives);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final alternatives = _currentExerciseLog.alternatives;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Alternative Exercises",
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              IconButton(
+                onPressed: _addAlternatives,
+                icon: const FaIcon(
+                  FontAwesomeIcons.circlePlus,
+                  size: 22,
+                ),
+                tooltip: 'Add alternative',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: alternatives.isEmpty
+                ? NoListEmptyState(
+                    message:
+                        "No alternative exercises added yet.\nTap the + button to add alternative exercises for this exercise",
+                  )
+                : ListView.separated(
+                    controller: widget.scrollController,
+                    itemCount: alternatives.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final alternative = alternatives[index];
+                      return Dismissible(
+                        key: ValueKey(alternative.id),
+                        direction: DismissDirection.endToStart,
+                        confirmDismiss: (_) =>
+                            _confirmRemoveAlternative(alternative),
+                        onDismissed: (_) {
+                          _removeAlternative(alternative);
+                        },
+                        background: const SizedBox.shrink(),
+                        child: _AlternativeExerciseListItem(
+                          exercise: alternative,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlternativeExerciseCard extends StatelessWidget {
+  final ExerciseDto? exercise; // null means it's the add button
+  final bool isFirst;
+  final bool isLast;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+
+  const _AlternativeExerciseCard({
+    this.exercise,
+    this.isFirst = false,
+    this.isLast = false,
+    this.onTap,
+    this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Container(
+        width: 80,
+        height: 80,
+        margin: EdgeInsets.only(
+          left: isFirst ? 16 : 4,
+          right: isLast ? 16 : 4,
+        ),
+        decoration: exercise != null
+            ? BoxDecoration(
+                color: sapphireDark80,
+                borderRadius: BorderRadius.circular(12),
+              )
+            : null,
+        padding: const EdgeInsets.all(8),
+        child: Stack(
+          children: [
+            Center(
+              child: exercise == null
+                  ? // Add button
+                  const Center(
+                      child: FaIcon(
+                        FontAwesomeIcons.circlePlus,
+                        size: 24,
+                        color: Colors.white70,
+                      ),
+                    )
+                  : exercise!.isSystem
+                      ? FutureBuilder<String?>(
+                          future:
+                              LottieExerciseRegistry.lottieFor(exercise!.name),
+                          builder: (context, snapshot) {
+                            final asset = snapshot.data;
+                            if (asset != null) {
+                              return SizedBox(
+                                width: 56,
+                                height: 56,
+                                child: Lottie.asset(
+                                  asset,
+                                  fit: BoxFit.contain,
+                                  repeat: true,
+                                ),
+                              );
+                            }
+                            // System exercise without lottie - show truncated name
+                            return Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Text(
+                                exercise!.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Colors.white70,
+                                      fontSize: 10,
+                                    ),
+                              ),
+                            );
+                          },
+                        )
+                      : // Custom exercise - show truncated name
+                      Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Text(
+                            exercise!.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.white70,
+                                      fontSize: 10,
+                                    ),
+                          ),
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AlternativeExerciseListItem extends StatelessWidget {
+  final ExerciseDto exercise;
+
+  const _AlternativeExerciseListItem({required this.exercise});
+
+  @override
+  Widget build(BuildContext context) {
+    final isSystem = exercise.isSystem;
+    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
+
+    return ThemeListTile(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+        title: Text(
+          exercise.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+        ),
+        trailing: SizedBox(
+          width: 48,
+          height: 48,
+          child: isSystem
+              ? FutureBuilder<String?>(
+                  future: LottieExerciseRegistry.lottieFor(exercise.name),
+                  builder: (context, snapshot) {
+                    final asset = snapshot.data;
+                    if (asset != null) {
+                      return Lottie.asset(
+                        asset,
+                        height: 44,
+                        fit: BoxFit.contain,
+                        repeat: true,
+                      );
+                    }
+                    return const FaIcon(
+                      FontAwesomeIcons.ban,
+                      size: 26,
+                      color: banColor,
+                    );
+                  },
+                )
+              : const FaIcon(
+                  FontAwesomeIcons.ban,
+                  size: 26,
+                  color: banColor,
+                ),
+        ),
+      ),
     );
   }
 }

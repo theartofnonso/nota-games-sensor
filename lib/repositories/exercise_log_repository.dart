@@ -145,6 +145,28 @@ class ExerciseLogRepository {
     _exerciseLogs = newExerciseLogs;
   }
 
+  void updateExerciseLogAlternatives({
+    required String exerciseLogId,
+    required List<ExerciseDto> alternatives,
+  }) {
+    final exerciseLogIndex =
+        _indexWhereExerciseLog(exerciseLogId: exerciseLogId);
+
+    if (exerciseLogIndex == -1) {
+      return;
+    }
+
+    // Creating a new list by copying the original list
+    List<ExerciseLogDto> newExerciseLogs = _copyExerciseLogs();
+
+    final exerciseLog = newExerciseLogs[exerciseLogIndex];
+    newExerciseLogs[exerciseLogIndex] =
+        exerciseLog.copyWith(alternatives: alternatives);
+
+    // Assign the new list to maintain immutability
+    _exerciseLogs = newExerciseLogs;
+  }
+
   void addSuperSets(
       {required String firstExerciseLogId,
       required String secondExerciseLogId,
@@ -322,7 +344,7 @@ class ExerciseLogRepository {
   /// Helper functions
 
   ExerciseLogDto _createExerciseLog(ExerciseDto exercise,
-      {String notes = "", List<SetDto> pastSets = const []}) {
+      {String notes = "", List<SetDto> pastSets = const [], List<ExerciseDto> alternatives = const []}) {
     return ExerciseLogDto(
         id: exercise.id,
         routineLogId: "",
@@ -330,6 +352,7 @@ class ExerciseLogRepository {
         exercise: exercise,
         notes: notes,
         sets: pastSets,
+        alternatives: alternatives,
         createdAt: DateTime.now());
   }
 

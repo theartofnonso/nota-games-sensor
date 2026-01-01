@@ -113,6 +113,18 @@ class ExerciseLogController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateExerciseLogAlternatives({
+    required String exerciseLogId,
+    required List<ExerciseDto> alternatives,
+  }) {
+    _exerciseLogRepository.updateExerciseLogAlternatives(
+      exerciseLogId: exerciseLogId,
+      alternatives: alternatives,
+    );
+    _cache();
+    notifyListeners();
+  }
+
   void superSetExerciseLogs(
       {required String firstExerciseLogId,
       required String secondExerciseLogId,

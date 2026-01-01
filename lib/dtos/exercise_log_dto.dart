@@ -12,6 +12,7 @@ class ExerciseLogDto {
   final ExerciseDto exercise;
   final String notes;
   final List<SetDto> sets;
+  final List<ExerciseDto> alternatives;
   final DateTime createdAt;
 
   const ExerciseLogDto(
@@ -21,16 +22,19 @@ class ExerciseLogDto {
       required this.exercise,
       required this.notes,
       required this.sets,
+      this.alternatives = const [],
       required this.createdAt});
 
   Map<String, dynamic> toJson() {
     final setJsons = sets.map((set) => set.toJson()).toList();
+    final alternativeJsons = alternatives.map((alt) => alt.toJson()).toList();
 
     return {
       "superSetId": superSetId,
       "exercise": exercise.toJson(),
       "notes": notes,
       "sets": setJsons,
+      "alternatives": alternativeJsons,
     };
   }
 
@@ -41,6 +45,7 @@ class ExerciseLogDto {
     ExerciseDto? exercise,
     String? notes,
     List<SetDto>? sets,
+    List<ExerciseDto>? alternatives,
     DateTime? createdAt,
   }) {
     return ExerciseLogDto(
@@ -58,6 +63,9 @@ class ExerciseLogDto {
       sets: sets != null
           ? sets.map((s) => s.copyWith()).toList()
           : this.sets.map((s) => s.copyWith()).toList(),
+
+      // Deep copy for the list of alternative exercises.
+      alternatives: alternatives ?? this.alternatives.map((alt) => alt.copyWith()).toList(),
 
       createdAt: createdAt ?? this.createdAt,
     );
@@ -85,6 +93,12 @@ class ExerciseLogDto {
             datetime: createdAt ?? DateTime.now()))
         .toList();
 
+    final alternativesRaw = json["alternatives"] as List? ?? [];
+    final alternatives = alternativesRaw
+        .map((altJson) => ExerciseDto.fromJson(
+            altJson is String ? jsonDecode(altJson) : altJson as Map<String, dynamic>))
+        .toList();
+
     return ExerciseLogDto(
         id: exercise.id,
         routineLogId: routineLogId,
@@ -92,6 +106,7 @@ class ExerciseLogDto {
         exercise: exercise,
         notes: notes,
         sets: sets,
+        alternatives: alternatives,
         createdAt: createdAt ?? DateTime.now());
   }
 
