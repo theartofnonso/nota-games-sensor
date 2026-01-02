@@ -832,7 +832,6 @@ class _TrainingInsightsSection extends StatelessWidget {
                         // Segmented horizontal bar
                         _SegmentedProgressBar(
                           loggedSessions: yearStats.daysTrained,
-                          predictedRemaining: yearStats.predictedRemaining,
                           totalSessions: yearStats.totalProjectedSessions,
                           accentColor: theme.colors.vibrantAccent,
                         ),
@@ -850,15 +849,6 @@ class _TrainingInsightsSection extends StatelessWidget {
                                   .withValues(alpha: 0.6),
                               label: 'Predicted',
                             ),
-                            if (yearStats.totalProjectedSessions >
-                                yearStats.daysTrained +
-                                    yearStats.predictedRemaining) ...[
-                              const SizedBox(width: 16),
-                              _LegendItem(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                label: 'Remaining',
-                              ),
-                            ],
                           ],
                         ),
                       ],
@@ -1584,14 +1574,12 @@ class _PredictionInfo {
 class _YearTrainingStats {
   final int year;
   final int daysTrained;
-  final int predictedRemaining;
   final int totalProjectedSessions;
   final double progress;
 
   const _YearTrainingStats({
     required this.year,
     required this.daysTrained,
-    required this.predictedRemaining,
     required this.totalProjectedSessions,
     required this.progress,
   });
@@ -1627,7 +1615,6 @@ class _YearTrainingStats {
     return _YearTrainingStats(
       year: currentYear,
       daysTrained: yearDays,
-      predictedRemaining: predictedRemaining,
       totalProjectedSessions: totalProjectedSessions,
       progress: progress,
     );
@@ -1636,13 +1623,11 @@ class _YearTrainingStats {
 
 class _SegmentedProgressBar extends StatefulWidget {
   final int loggedSessions;
-  final int predictedRemaining;
   final int totalSessions;
   final Color accentColor;
 
   const _SegmentedProgressBar({
     required this.loggedSessions,
-    required this.predictedRemaining,
     required this.totalSessions,
     required this.accentColor,
   });
@@ -1651,103 +1636,134 @@ class _SegmentedProgressBar extends StatefulWidget {
   State<_SegmentedProgressBar> createState() => _SegmentedProgressBarState();
 }
 
-class _SegmentedProgressBarState extends State<_SegmentedProgressBar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
   @override
   Widget build(BuildContext context) {
     if (widget.totalSessions == 0) {
-      return Container(
-        height: 8,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(4),
-        ),
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final barWidth = constraints.maxWidth;
+          final iconSize = 24.0;
+          final iconOffset = iconSize / 2;
+
+          return Stack(
+            alignment: Alignment.centerLeft,
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  bottomLeft: Radius.circular(6),
+                ),
+                child: Container(
+                  height: 12,
+                  width: barWidth,
+                  decoration: BoxDecoration(
+                    color: widget.accentColor.withValues(alpha: 0.3),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(6),
+                      bottomLeft: Radius.circular(6),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: -iconOffset,
+                child: Container(
+                  width: iconSize,
+                  height: iconSize,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF3A3A3A),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: FaIcon(
+                      FontAwesomeIcons.star,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       );
     }
 
-    final loggedRatio = widget.loggedSessions / widget.totalSessions;
-    final predictedRatio = widget.predictedRemaining / widget.totalSessions;
-    final remainingRatio = 1.0 - loggedRatio - predictedRatio;
+    // Simple: show logged portion of total sessions
+    final maxValue = widget.totalSessions > 0 ? widget.totalSessions : 1;
+    final loggedRatio = (widget.loggedSessions / maxValue).clamp(0.0, 1.0);
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          height: 8,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            children: [
-              // Logged sessions segment
-              if (loggedRatio > 0)
-                Expanded(
-                  flex: (loggedRatio * 1000).round(),
-                  child: Container(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final barWidth = constraints.maxWidth;
+        final loggedWidth = barWidth * loggedRatio;
+        final iconSize = 24.0;
+        final iconOffset = iconSize / 2;
+
+        return Stack(
+          alignment: Alignment.centerLeft,
+          clipBehavior: Clip.none,
+          children: [
+            // Bar content with rounded corners on left
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(6),
+                bottomLeft: Radius.circular(6),
+              ),
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                clipBehavior: Clip.none,
+                children: [
+                  // Background track (predicted - darker accent color)
+                  Container(
+                    height: 12,
+                    width: barWidth,
                     decoration: BoxDecoration(
-                      color: widget.accentColor,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(4),
-                        bottomLeft: const Radius.circular(4),
-                        topRight: loggedRatio >= 1.0
-                            ? const Radius.circular(4)
-                            : Radius.zero,
-                        bottomRight: loggedRatio >= 1.0
-                            ? const Radius.circular(4)
-                            : Radius.zero,
+                      color: widget.accentColor.withValues(alpha: 0.3),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(6),
+                        bottomLeft: Radius.circular(6),
                       ),
                     ),
                   ),
-                ),
-              // Predicted remaining segment
-              if (predictedRatio > 0)
-                Expanded(
-                  flex: (predictedRatio * 1000).round(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: widget.accentColor.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ),
-              // Remaining capacity segment
-              if (remainingRatio > 0)
-                Expanded(
-                  flex: (remainingRatio * 1000).round(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.only(
-                        topRight: const Radius.circular(4),
-                        bottomRight: const Radius.circular(4),
+                  // Logged sessions (accent color) - overlays on top of predicted
+                  if (loggedWidth > 0)
+                    Container(
+                      height: 12,
+                      width: loggedWidth,
+                      decoration: BoxDecoration(
+                        color: widget.accentColor,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(6),
+                          bottomLeft: Radius.circular(6),
+                        ),
                       ),
                     ),
+                ],
+              ),
+            ),
+            // Medal icon at the far right end (outside ClipRRect so it's not clipped)
+            Positioned(
+              right: -iconOffset,
+              child: Container(
+                width: iconSize,
+                height: iconSize,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3A3A3A), // Slightly darker gray circle
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: FaIcon(
+                    FontAwesomeIcons.star,
+                    size: 14,
+                    color: Color(0xFF7DD3C0), // Teal/green color for medal
                   ),
                 ),
-            ],
-          ),
+              ),
+            ),
+          ],
         );
       },
     );
