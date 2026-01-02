@@ -1120,7 +1120,14 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
     });
   }
 
-  String _twoDigits(int n) => n.toString().padLeft(2, '0');
+  String _twoDigits(int n) {
+    // Ensure all values are displayed as exactly 2 digits
+    // For days > 99, we'll show the remainder to keep it 2 digits
+    if (n > 99) {
+      return (n % 100).toString().padLeft(2, '0');
+    }
+    return n.toString().padLeft(2, '0');
+  }
 
   @override
   Widget build(BuildContext context) {
