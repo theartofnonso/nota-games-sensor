@@ -1758,7 +1758,7 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                   child: FaIcon(
                     FontAwesomeIcons.star,
                     size: 14,
-                    color: Color(0xFF7DD3C0), // Teal/green color for medal
+                    color: Colors.white, // Teal/green color for medal
                   ),
                 ),
               ),
