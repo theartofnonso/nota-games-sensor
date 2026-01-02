@@ -736,12 +736,6 @@ class _TrainingInsightsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final dateLabel = predictionInfo.date != null
-        ? _formatRelativeDate(predictionInfo.date!)
-        : '';
-    final timeLabel = predictionInfo.time != null
-        ? 'around ${_formatTime(predictionInfo.time!)}'
-        : '';
     final percentLabel =
         (yearStats.progress * 100).clamp(0, 100).toStringAsFixed(0);
 
@@ -878,8 +872,6 @@ class _TrainingInsightsSection extends StatelessWidget {
                       predictionInfo: predictionInfo,
                       hasTodayPrediction: hasTodayPrediction,
                       hasNextPrediction: hasNextPrediction,
-                      dateLabel: dateLabel,
-                      timeLabel: timeLabel,
                     ),
                   ),
               ],
@@ -895,183 +887,410 @@ class _PredictionCard extends StatelessWidget {
   final _PredictionInfo predictionInfo;
   final bool hasTodayPrediction;
   final bool hasNextPrediction;
-  final String dateLabel;
-  final String timeLabel;
 
   const _PredictionCard({
     required this.predictionInfo,
     required this.hasTodayPrediction,
     required this.hasNextPrediction,
-    required this.dateLabel,
-    required this.timeLabel,
   });
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context);
+
+    return _NextSessionContent(
+      predictionInfo: predictionInfo,
+      isCompact: false,
+    );
+  }
+}
+
+class _NextSessionContent extends StatefulWidget {
+  final _PredictionInfo predictionInfo;
+  final bool isCompact;
+
+  const _NextSessionContent({
+    required this.predictionInfo,
+    required this.isCompact,
+  });
+
+  @override
+  State<_NextSessionContent> createState() => _NextSessionContentState();
+}
+
+class _NextSessionContentState extends State<_NextSessionContent> {
+  _PredictionInfo? _currentPredictionInfo;
+  bool _hasElapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPredictionInfo = widget.predictionInfo;
+  }
+
+  @override
+  void didUpdateWidget(_NextSessionContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset if prediction info changes
+    if (oldWidget.predictionInfo.date != widget.predictionInfo.date) {
+      _currentPredictionInfo = widget.predictionInfo;
+      _hasElapsed = false; // Reset elapsed flag when prediction changes
+    }
+  }
+
+  void _onCountdownElapsed() {
+    // Hide card immediately when countdown reaches zero
+    setState(() {
+      _hasElapsed = true;
+    });
+    if (!mounted) return;
+
+    // Recalculate next predicted session
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    final logs = controller.logs;
+
+    if (logs.isEmpty) {
+      setState(() {
+        _currentPredictionInfo = null;
+        _hasElapsed = false; // Reset flag since we're hiding anyway
+      });
+      return;
+    }
+
+    // Recalculate using same logic as _PredictionInfo.fromLogs
+    final loggedDates = logs.map((log) {
+      final date = log.startTime;
+      return DateTime(date.year, date.month, date.day);
+    }).toSet();
+
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final endOfYear = DateTime(now.year, 12, 31);
+    final daysAhead = endOfYear.difference(todayStart).inDays;
+    final predictedSet = getPredictedTrainingDates(
+      historicDateTimes: logs.map((log) => log.startTime).toList(),
+      daysAhead: daysAhead,
+    );
+
+    final predictedDaysWithoutLogs = predictedSet
+        .where((date) => !loggedDates.contains(date))
+        .toList()
+      ..sort((a, b) => a.compareTo(b));
+
+    if (predictedDaysWithoutLogs.isEmpty) {
+      setState(() {
+        _currentPredictionInfo = null;
+        _hasElapsed = false; // Reset flag since we're hiding anyway
+      });
+      return;
+    }
+
+    final futurePredictedDates = predictedDaysWithoutLogs
+        .where((date) => date.isAfter(todayStart))
+        .toList();
+
+    if (futurePredictedDates.isEmpty) {
+      setState(() {
+        _currentPredictionInfo = null;
+        _hasElapsed = false; // Reset flag since we're hiding anyway
+      });
+      return;
+    }
+
+    final nextDate = futurePredictedDates.first;
+    final time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
+
+    setState(() {
+      _currentPredictionInfo = _PredictionInfo(
+        date: nextDate,
+        time: time,
+        todayDate: null,
+        todayTime: null,
+        daysUntilNext: nextDate.difference(todayStart).inDays,
+      );
+      _hasElapsed = false; // Reset flag - new countdown is available
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Hide card immediately when countdown has elapsed (before recalculation completes)
+    if (_hasElapsed) {
+      return const SizedBox.shrink();
+    }
+
+    final predictionInfo = _currentPredictionInfo ?? widget.predictionInfo;
+    final hasCountdown =
+        predictionInfo.date != null && predictionInfo.time != null;
+
+    // Calculate countdown duration if available
+    Duration? countdownDuration;
+    if (hasCountdown) {
+      final targetDateTime = DateTime(
+        predictionInfo.date!.year,
+        predictionInfo.date!.month,
+        predictionInfo.date!.day,
+        predictionInfo.time!.hour,
+        predictionInfo.time!.minute,
+      );
+      final now = DateTime.now();
+      final difference = targetDateTime.difference(now);
+      if (!difference.isNegative && difference.inDays <= 7) {
+        countdownDuration = difference;
+      }
+    }
+
+    // Hide component if no countdown available
+    if (countdownDuration == null) {
+      return const SizedBox.shrink();
+    }
+
     final theme = Theme.of(context);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF3b82f6).withValues(alpha: 0.3),
-                const Color(0xFF60a5fa).withValues(alpha: 0.2),
-                Colors.black.withValues(alpha: 0.5),
-              ],
+    return _FrostedCard(
+      gradientColors: [
+        Colors.white.withValues(alpha: 0.9),
+        Colors.white.withValues(alpha: 0.8),
+        Colors.white.withValues(alpha: 0.7),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title
+          Text(
+            'next predicted session in',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: Colors.black.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w600,
             ),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           ),
-          child: Stack(
-            children: [
-              // Texture overlay
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.15,
-                  child: Image.asset(
-                    'images/1k_Dissolve_Noise_Texture.jpg',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              // Content with proper structure for edge-to-edge divider
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top section with padding
-                  Padding(
-                    padding: const EdgeInsets.all(22),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title
-                        Text(
-                          hasTodayPrediction
-                              ? 'today is the day to train'
-                              : 'next predicted session',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Today's prediction section
-                        if (hasTodayPrediction) ...[
-                          Text(
-                            'today',
-                            style: theme.textTheme.displayMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ) ??
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            predictionInfo.todayTime != null
-                                ? 'around ${_formatTime(predictionInfo.todayTime!)}'
-                                : 'Time to train',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ] else ...[
-                          // Next predicted session (no today prediction)
-                          Text(
-                            dateLabel,
-                            style: theme.textTheme.displayMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ) ??
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          if (timeLabel !=
-                              'Log a few sessions to learn your timing') ...[
-                            Text(
-                              timeLabel,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
-                  ),
-                  // Edge-to-edge divider (only if today is predicted and next exists)
-                  if (hasTodayPrediction && hasNextPrediction)
-                    Container(
-                      height: 1,
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                  // Bottom section with padding (only if today is predicted and next exists)
-                  if (hasTodayPrediction && hasNextPrediction)
-                    Padding(
-                      padding: const EdgeInsets.all(22),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'next predicted session',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            dateLabel,
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ) ??
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          if (timeLabel !=
-                              'Log a few sessions to learn your timing') ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              timeLabel,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.6),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
+          const SizedBox(height: 16),
+          // Countdown timer
+          _FormattedCountdownTimer(
+            duration: countdownDuration,
+            onElapsed: _onCountdownElapsed,
+            predictionInfo: _currentPredictionInfo ?? widget.predictionInfo,
+            isCompact: widget.isCompact,
           ),
-        ),
+        ],
       ),
     );
+  }
+}
+
+class _FormattedCountdownTimer extends StatefulWidget {
+  final Duration duration;
+  final VoidCallback? onElapsed;
+  final _PredictionInfo predictionInfo;
+  final bool isCompact;
+
+  const _FormattedCountdownTimer({
+    required this.duration,
+    this.onElapsed,
+    required this.predictionInfo,
+    required this.isCompact,
+  });
+
+  @override
+  State<_FormattedCountdownTimer> createState() =>
+      _FormattedCountdownTimerState();
+}
+
+class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
+  late Timer _timer;
+  late Duration _remainingDuration;
+  bool _hasElapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _remainingDuration = widget.duration;
+
+    // Fire a timer every second to decrement the remaining duration
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {
+          final secondsLeft = _remainingDuration.inSeconds;
+          if (secondsLeft <= 1) {
+            // When it hits zero or below, stop the timer and clamp to zero
+            _remainingDuration = Duration.zero;
+            _timer.cancel();
+            if (!_hasElapsed) {
+              _hasElapsed = true;
+              // Call the callback to notify parent
+              widget.onElapsed?.call();
+            }
+          } else {
+            // Decrement by one second
+            _remainingDuration =
+                _remainingDuration - const Duration(seconds: 1);
+          }
+        });
+      }
+    });
+  }
+
+  String _twoDigits(int n) => n.toString().padLeft(2, '0');
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final days = _remainingDuration.inDays;
+    final hours = _remainingDuration.inHours.remainder(24);
+    final minutes = _remainingDuration.inMinutes.remainder(60);
+    final seconds = _remainingDuration.inSeconds.remainder(60);
+
+    final numberStyle = theme.textTheme.displayLarge?.copyWith(
+          color: Colors.black,
+          fontWeight: FontWeight.w900,
+          height: 1.0,
+          fontSize: widget.isCompact ? 64 : 80,
+        ) ??
+        TextStyle(
+          color: Colors.black,
+          fontSize: widget.isCompact ? 64 : 80,
+          fontWeight: FontWeight.w900,
+          height: 1.0,
+          fontFamily: 'Grift',
+        );
+
+    final labelStyle = theme.textTheme.bodySmall?.copyWith(
+          color: Colors.black.withValues(alpha: 0.6),
+          fontWeight: FontWeight.w500,
+        ) ??
+        TextStyle(
+          color: Colors.black.withValues(alpha: 0.6),
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          fontFamily: 'Grift',
+        );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Top row: Days and Hours (labels above)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Days (top left)
+            SizedBox(
+              width: widget.isCompact ? 80 : 100,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'DAYS',
+                    style: labelStyle,
+                  ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      _twoDigits(days),
+                      style: numberStyle,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.visible,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: widget.isCompact ? 32 : 48),
+            // Hours (top right)
+            SizedBox(
+              width: widget.isCompact ? 80 : 100,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'HOURS',
+                    style: labelStyle,
+                  ),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      _twoDigits(hours),
+                      style: numberStyle,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.visible,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: widget.isCompact ? 16 : 24),
+        // Bottom row: Minutes and Seconds (labels below)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Minutes (bottom left)
+            SizedBox(
+              width: widget.isCompact ? 80 : 100,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      _twoDigits(minutes),
+                      style: numberStyle,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.visible,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'MINUTES',
+                    style: labelStyle,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: widget.isCompact ? 32 : 48),
+            // Seconds (bottom right)
+            SizedBox(
+              width: widget.isCompact ? 80 : 100,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      _twoDigits(seconds),
+                      style: numberStyle,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.visible,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'SECONDS',
+                    style: labelStyle,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
   }
 }
 
@@ -1580,36 +1799,6 @@ TimeOfDay? _deriveTypicalTimeForWeekday(List<RoutineLogDto> logs, int weekday) {
   final hour = averageMinutes ~/ 60;
   final minute = averageMinutes % 60;
   return TimeOfDay(hour: hour, minute: minute);
-}
-
-String _formatTime(TimeOfDay time) {
-  final date = DateTime(0, 1, 1, time.hour, time.minute);
-  return DateFormat('h:mm a').format(date);
-}
-
-String _formatRelativeDate(DateTime date) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final tomorrow = today.add(const Duration(days: 1));
-  final dateOnly = DateTime(date.year, date.month, date.day);
-
-  final daysDifference = dateOnly.difference(today).inDays;
-
-  if (dateOnly == today) {
-    return 'today';
-  } else if (dateOnly == tomorrow) {
-    return 'tomorrow';
-  } else if (daysDifference >= 2 && daysDifference <= 7) {
-    return 'in $daysDifference days';
-  } else {
-    final formatted = DateFormat('EEEE, MMM d').format(date);
-    // Make the day name lowercase
-    final parts = formatted.split(', ');
-    if (parts.length == 2) {
-      return '${parts[0].toLowerCase()}, ${parts[1]}';
-    }
-    return formatted.toLowerCase();
-  }
 }
 
 class _RoutinePlansSection extends StatelessWidget {
