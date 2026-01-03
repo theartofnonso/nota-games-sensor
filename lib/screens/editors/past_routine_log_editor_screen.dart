@@ -220,7 +220,12 @@ class _PastRoutineLogEditorScreenState
                 bottom: false,
                 left: true,
                 right: true,
-                minimum: const EdgeInsets.all(20),
+                minimum: const EdgeInsets.only(
+                  top: 20,
+                  left: 20,
+                  right: 20,
+                  bottom: 0,
+                ),
                 child: Stack(
                   children: [
                     // Main scrollable content (name + list)

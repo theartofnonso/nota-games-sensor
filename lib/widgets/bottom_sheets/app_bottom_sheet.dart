@@ -81,6 +81,7 @@ class AppBottomSheet extends StatelessWidget {
       child: Container(
         decoration: decoration,
         child: SafeArea(
+          bottom: false,
           child: builder != null ? builder!(context, null) : child!,
         ),
       ),
