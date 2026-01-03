@@ -13,7 +13,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:trainware/colors.dart';
 import 'package:trainware/screens/request_screens/notifications_request.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/urls.dart';
@@ -99,6 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final controller = context.watch<SupabaseExerciseAndRoutineController>();
     final logs = controller.logs;
     final yearStats = _YearTrainingStats.fromLogs(logs);
+    final yearHoursStats = _YearHoursStats.fromLogs(logs);
     final predictionInfo = _PredictionInfo.fromLogs(logs);
 
     return Scaffold(
@@ -136,12 +136,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     ),
                   ],
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: _TrainingInsightsSection(
-                      yearStats: yearStats,
-                      predictionInfo: predictionInfo,
-                    ),
+                  _TrainingInsightsSection(
+                    yearStats: yearStats,
+                    yearHoursStats: yearHoursStats,
+                    predictionInfo: predictionInfo,
                   ),
                   const SizedBox(height: 16),
                   // Routine Plans section - edge-to-edge, no padding
@@ -726,19 +724,28 @@ class _SettingsScreenState extends State<SettingsScreen>
 
 class _TrainingInsightsSection extends StatelessWidget {
   final _YearTrainingStats yearStats;
+  final _YearHoursStats yearHoursStats;
   final _PredictionInfo predictionInfo;
 
   const _TrainingInsightsSection({
     required this.yearStats,
+    required this.yearHoursStats,
     required this.predictionInfo,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.90; // 90% of screen width for each card
+    final cardSpacing = 16.0;
 
     final percentLabel =
         (yearStats.progress * 100).clamp(0, 100).toStringAsFixed(0);
+    final predictedHoursLeft =
+        (yearHoursStats.totalProjectedHours - yearHoursStats.loggedHours)
+            .clamp(0.0, double.infinity);
+    final hoursLabel = predictedHoursLeft.toStringAsFixed(1);
 
     final hasTodayPrediction = predictionInfo.todayDate != null;
     final hasNextPrediction =
@@ -748,127 +755,220 @@ class _TrainingInsightsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 12),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final maxWidth = constraints.maxWidth;
-            final availableWidth = maxWidth.isFinite
-                ? maxWidth
-                : MediaQuery.of(context).size.width - 20;
-            final isWide = availableWidth >= 600;
-            final cardWidth =
-                isWide ? (availableWidth - 16) / 2 : availableWidth;
-
-            return Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                SizedBox(
-                  width: cardWidth,
-                  child: _FrostedCard(
-                    gradientColors: [
-                      theme.colors.vibrantAccent.withValues(alpha: 0.3),
-                      const Color(0xFF22c55e).withValues(alpha: 0.2),
-                      Colors.black.withValues(alpha: 0.5),
+        // Edge-to-edge horizontal scroll view for progress cards
+        SizedBox(
+          height: 220,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            children: [
+              // Progress this year card
+              SizedBox(
+                width: cardWidth,
+                child: _FrostedCard(
+                  gradientColors: [
+                    theme.colors.vibrantAccent.withValues(alpha: 0.3),
+                    const Color(0xFF22c55e).withValues(alpha: 0.2),
+                    Colors.black.withValues(alpha: 0.5),
+                  ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header row with title
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'progress this year',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      // Large percentage display
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '$percentLabel%',
+                            style: theme.textTheme.displayLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ) ??
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ),
+                          ),
+                          const SizedBox(width: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${yearStats.daysTrained}/${yearStats.totalProjectedSessions}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Segmented horizontal bar
+                      _SegmentedProgressBar(
+                        loggedSessions: yearStats.daysTrained,
+                        totalSessions: yearStats.totalProjectedSessions,
+                        accentColor: theme.colors.vibrantAccent,
+                      ),
+                      const SizedBox(height: 12),
+                      // Legend
+                      Row(
+                        children: [
+                          _LegendItem(
+                            color: theme.colors.vibrantAccent,
+                            label: 'Logged',
+                          ),
+                          const SizedBox(width: 16),
+                          _LegendItem(
+                            color: theme.colors.vibrantAccent
+                                .withValues(alpha: 0.6),
+                            label: 'Predicted',
+                          ),
+                        ],
+                      ),
                     ],
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header row with title
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'progress this year',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // Large percentage display
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '$percentLabel%',
-                              style: theme.textTheme.displayLarge?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.0,
-                                  ) ??
-                                  const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 48,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.0,
-                                  ),
-                            ),
-                            const SizedBox(width: 8),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  '${yearStats.daysTrained}/${yearStats.totalProjectedSessions}',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // Segmented horizontal bar
-                        _SegmentedProgressBar(
-                          loggedSessions: yearStats.daysTrained,
-                          totalSessions: yearStats.totalProjectedSessions,
-                          accentColor: theme.colors.vibrantAccent,
-                        ),
-                        const SizedBox(height: 12),
-                        // Legend
-                        Row(
-                          children: [
-                            _LegendItem(
-                              color: theme.colors.vibrantAccent,
-                              label: 'Logged',
-                            ),
-                            const SizedBox(width: 16),
-                            _LegendItem(
-                              color: theme.colors.vibrantAccent
-                                  .withValues(alpha: 0.6),
-                              label: 'Predicted',
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
                   ),
                 ),
-                if (hasTodayPrediction || hasNextPrediction)
-                  SizedBox(
-                    width: cardWidth,
-                    child: _PredictionCard(
-                      predictionInfo: predictionInfo,
-                      hasTodayPrediction: hasTodayPrediction,
-                      hasNextPrediction: hasNextPrediction,
-                    ),
+              ),
+              SizedBox(width: cardSpacing),
+              // Predicted total hours card
+              SizedBox(
+                width: cardWidth,
+                child: _FrostedCard(
+                  gradientColors: [
+                    Colors.blue.withValues(alpha: 0.3),
+                    const Color(0xFF3b82f6).withValues(alpha: 0.2),
+                    Colors.black.withValues(alpha: 0.5),
+                  ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header row with title
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'progress this year',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      // Large hours display
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            hoursLabel,
+                            style: theme.textTheme.displayLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ) ??
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ),
+                          ),
+                          const SizedBox(width: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'hours left',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Segmented horizontal bar
+                      _SegmentedProgressBar(
+                        loggedSessions: yearHoursStats.loggedHours.round(),
+                        totalSessions:
+                            yearHoursStats.totalProjectedHours.round(),
+                        accentColor: Colors.blue,
+                      ),
+                      const SizedBox(height: 12),
+                      // Legend
+                      Row(
+                        children: [
+                          _LegendItem(
+                            color: Colors.blue,
+                            label: 'Logged',
+                          ),
+                          const SizedBox(width: 16),
+                          _LegendItem(
+                            color: Colors.blue.withValues(alpha: 0.6),
+                            label: 'Predicted',
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-              ],
-            );
-          },
+                ),
+              ),
+            ],
+          ),
         ),
+        // Prediction card (below the scroll view, with padding)
+        if (hasTodayPrediction || hasNextPrediction) ...[
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final maxWidth = constraints.maxWidth;
+                final availableWidth = maxWidth.isFinite
+                    ? maxWidth
+                    : MediaQuery.of(context).size.width - 20;
+                return SizedBox(
+                  width: availableWidth,
+                  child: _PredictionCard(
+                    predictionInfo: predictionInfo,
+                    hasTodayPrediction: hasTodayPrediction,
+                    hasNextPrediction: hasNextPrediction,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -1625,6 +1725,69 @@ class _YearTrainingStats {
   }
 }
 
+class _YearHoursStats {
+  final int year;
+  final double loggedHours;
+  final double totalProjectedHours;
+  final double progress;
+
+  const _YearHoursStats({
+    required this.year,
+    required this.loggedHours,
+    required this.totalProjectedHours,
+    required this.progress,
+  });
+
+  static _YearHoursStats fromLogs(List<RoutineLogDto> logs) {
+    final now = DateTime.now();
+    final currentYear = now.year;
+    final todayStart = DateTime(now.year, now.month, now.day);
+
+    // Calculate logged hours for current year
+    final loggedHours = logs
+        .where((log) => log.startTime.year == currentYear)
+        .map((log) => log.duration().inSeconds / 3600.0)
+        .fold<double>(0.0, (sum, hours) => sum + hours);
+
+    // Calculate average session duration from historical logs
+    final avgSessionDuration = logs.isEmpty
+        ? Duration.zero
+        : Duration(
+            seconds: logs
+                    .map((log) => log.duration().inSeconds)
+                    .fold<int>(0, (sum, seconds) => sum + seconds) ~/
+                logs.length,
+          );
+
+    // Calculate predicted remaining hours
+    final endOfYear = DateTime(currentYear, 12, 31);
+    final daysAhead = endOfYear.difference(todayStart).inDays;
+    int predictedRemainingSessions = 0;
+    if (daysAhead > 0 && logs.isNotEmpty) {
+      final predictedSet = getPredictedTrainingDates(
+        historicDateTimes: logs.map((log) => log.startTime).toList(),
+        daysAhead: daysAhead,
+      );
+      predictedRemainingSessions =
+          predictedSet.where((date) => !date.isBefore(todayStart)).length;
+    }
+
+    final predictedRemainingHours =
+        predictedRemainingSessions * (avgSessionDuration.inSeconds / 3600.0);
+    final totalProjectedHours = loggedHours + predictedRemainingHours;
+    final progress = totalProjectedHours == 0
+        ? 0.0
+        : (loggedHours / totalProjectedHours).clamp(0, 1).toDouble();
+
+    return _YearHoursStats(
+      year: currentYear,
+      loggedHours: loggedHours,
+      totalProjectedHours: totalProjectedHours,
+      progress: progress,
+    );
+  }
+}
+
 class _SegmentedProgressBar extends StatefulWidget {
   final int loggedSessions;
   final int totalSessions;
@@ -1680,11 +1843,11 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                     color: Color(0xFF3A3A3A),
                     shape: BoxShape.circle,
                   ),
-                  child: const Center(
+                  child: Center(
                     child: FaIcon(
                       FontAwesomeIcons.star,
                       size: 14,
-                      color: Colors.white,
+                      color: widget.accentColor,
                     ),
                   ),
                 ),
@@ -1758,11 +1921,11 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                   color: const Color(0xFF3A3A3A), // Slightly darker gray circle
                   shape: BoxShape.circle,
                 ),
-                child: const Center(
+                child: Center(
                   child: FaIcon(
                     FontAwesomeIcons.star,
                     size: 14,
-                    color: vibrantGreen, // Teal/green color for medal
+                    color: widget.accentColor,
                   ),
                 ),
               ),
