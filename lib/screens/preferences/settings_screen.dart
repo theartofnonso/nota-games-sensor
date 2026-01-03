@@ -745,7 +745,6 @@ class _TrainingInsightsSection extends StatelessWidget {
     final predictedHoursLeft =
         (yearHoursStats.totalProjectedHours - yearHoursStats.loggedHours)
             .clamp(0.0, double.infinity);
-    final hoursLabel = predictedHoursLeft.toStringAsFixed(1);
 
     final hasTodayPrediction = predictionInfo.todayDate != null;
     final hasNextPrediction =
@@ -807,27 +806,6 @@ class _TrainingInsightsSection extends StatelessWidget {
                                   height: 1.0,
                                 ),
                           ),
-                          const SizedBox(width: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '${yearStats.daysTrained}/${yearStats.totalProjectedSessions}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -844,12 +822,16 @@ class _TrainingInsightsSection extends StatelessWidget {
                           _LegendItem(
                             color: theme.colors.vibrantAccent,
                             label: 'Logged',
+                            value: yearStats.daysTrained.toString(),
                           ),
                           const SizedBox(width: 16),
                           _LegendItem(
                             color: theme.colors.vibrantAccent
                                 .withValues(alpha: 0.6),
                             label: 'Predicted',
+                            value: (yearStats.totalProjectedSessions -
+                                    yearStats.daysTrained)
+                                .toString(),
                           ),
                         ],
                       ),
@@ -876,7 +858,7 @@ class _TrainingInsightsSection extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'progress this year',
+                            'hours of training',
                             style: theme.textTheme.titleMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
@@ -885,12 +867,12 @@ class _TrainingInsightsSection extends StatelessWidget {
                         ],
                       ),
                       const Spacer(),
-                      // Large hours display
+                      // Hours left display
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            hoursLabel,
+                            predictedHoursLeft.round().toString(),
                             style: theme.textTheme.displayLarge?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,
@@ -908,10 +890,15 @@ class _TrainingInsightsSection extends StatelessWidget {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
                               'hours left',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontWeight: FontWeight.w600,
+                                  ) ??
+                                  TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
                         ],
@@ -1291,7 +1278,21 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                 ],
               ),
             ),
-            SizedBox(width: widget.isCompact ? 32 : 48),
+            SizedBox(width: widget.isCompact ? 24 : 32),
+            // Separator
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 20), // Match label height
+                Text(
+                  ':',
+                  style: numberStyle.copyWith(
+                    fontSize: widget.isCompact ? 48 : 60,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(width: widget.isCompact ? 24 : 32),
             // Hours (top right)
             SizedBox(
               width: widget.isCompact ? 80 : 100,
@@ -1319,7 +1320,7 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
             ),
           ],
         ),
-        SizedBox(height: widget.isCompact ? 16 : 24),
+        SizedBox(height: widget.isCompact ? 24 : 32),
         // Bottom row: Minutes and Seconds (labels below)
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1349,7 +1350,21 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                 ],
               ),
             ),
-            SizedBox(width: widget.isCompact ? 32 : 48),
+            SizedBox(width: widget.isCompact ? 24 : 32),
+            // Separator
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  ':',
+                  style: numberStyle.copyWith(
+                    fontSize: widget.isCompact ? 48 : 60,
+                  ),
+                ),
+                const SizedBox(height: 20), // Match label height
+              ],
+            ),
+            SizedBox(width: widget.isCompact ? 24 : 32),
             // Seconds (bottom right)
             SizedBox(
               width: widget.isCompact ? 80 : 100,
@@ -1749,31 +1764,41 @@ class _YearHoursStats {
         .map((log) => log.duration().inSeconds / 3600.0)
         .fold<double>(0.0, (sum, hours) => sum + hours);
 
-    // Calculate average session duration from historical logs
-    final avgSessionDuration = logs.isEmpty
-        ? Duration.zero
-        : Duration(
-            seconds: logs
-                    .map((log) => log.duration().inSeconds)
-                    .fold<int>(0, (sum, seconds) => sum + seconds) ~/
-                logs.length,
-          );
+    // Calculate predicted remaining hours: average duration × number of predicted days
+    // Create a set of dates that already have logs (normalized to day level)
+    final loggedDates = logs.map((log) {
+      final date = log.startTime;
+      return DateTime(date.year, date.month, date.day);
+    }).toSet();
 
-    // Calculate predicted remaining hours
-    final endOfYear = DateTime(currentYear, 12, 31);
-    final daysAhead = endOfYear.difference(todayStart).inDays;
-    int predictedRemainingSessions = 0;
-    if (daysAhead > 0 && logs.isNotEmpty) {
-      final predictedSet = getPredictedTrainingDates(
-        historicDateTimes: logs.map((log) => log.startTime).toList(),
-        daysAhead: daysAhead,
-      );
-      predictedRemainingSessions =
-          predictedSet.where((date) => !date.isBefore(todayStart)).length;
+    double predictedRemainingHours = 0.0;
+    if (logs.isNotEmpty) {
+      // Calculate average training duration from all logs
+      final avgDurationHours = logs
+              .map((log) => log.duration().inSeconds / 3600.0)
+              .fold<double>(0.0, (sum, hours) => sum + hours) /
+          logs.length;
+
+      final endOfYear = DateTime(currentYear, 12, 31);
+      final daysAhead = endOfYear.difference(todayStart).inDays;
+
+      if (daysAhead > 0) {
+        final predictedSet = getPredictedTrainingDates(
+          historicDateTimes: logs.map((log) => log.startTime).toList(),
+          daysAhead: daysAhead,
+        );
+
+        // Filter out predicted dates that already have logs, and only count from today onwards
+        final predictedDatesWithoutLogs = predictedSet
+            .where((date) =>
+                !date.isBefore(todayStart) && !loggedDates.contains(date))
+            .toList();
+
+        // Multiply average duration by number of predicted training days
+        final numberOfPredictedDays = predictedDatesWithoutLogs.length;
+        predictedRemainingHours = avgDurationHours * numberOfPredictedDays;
+      }
     }
-
-    final predictedRemainingHours =
-        predictedRemainingSessions * (avgSessionDuration.inSeconds / 3600.0);
     final totalProjectedHours = loggedHours + predictedRemainingHours;
     final progress = totalProjectedHours == 0
         ? 0.0
@@ -1940,10 +1965,12 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
+  final String? value;
 
   const _LegendItem({
     required this.color,
     required this.label,
+    this.value,
   });
 
   @override
@@ -1961,7 +1988,7 @@ class _LegendItem extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text(
-          label,
+          value != null ? '$label $value' : label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Colors.white70,
                 fontSize: 12,
