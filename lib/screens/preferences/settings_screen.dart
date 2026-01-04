@@ -137,9 +137,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ],
                   _TrainingInsightsSection(
-                    yearStats: yearStats,
+                      yearStats: yearStats,
                     yearHoursStats: yearHoursStats,
-                    predictionInfo: predictionInfo,
+                      predictionInfo: predictionInfo,
                   ),
                   const SizedBox(height: 16),
                   // Routine Plans section - edge-to-edge, no padding
@@ -760,75 +760,75 @@ class _TrainingInsightsSection extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            children: [
+              children: [
               // Progress this year card
-              SizedBox(
-                width: cardWidth,
-                child: _FrostedCard(
-                  gradientColors: [
-                    theme.colors.vibrantAccent.withValues(alpha: 0.3),
-                    const Color(0xFF22c55e).withValues(alpha: 0.2),
-                    Colors.black.withValues(alpha: 0.5),
-                  ],
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header row with title
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'progress this year',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              fontWeight: FontWeight.w600,
+                SizedBox(
+                  width: cardWidth,
+                  child: _FrostedCard(
+                    gradientColors: [
+                      theme.colors.vibrantAccent.withValues(alpha: 0.3),
+                      const Color(0xFF22c55e).withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.5),
+                    ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header row with title
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'progress this year',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
                       const Spacer(),
-                      // Large percentage display
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '$percentLabel%',
-                            style: theme.textTheme.displayLarge?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ) ??
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 48,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Segmented horizontal bar
-                      _SegmentedProgressBar(
-                        loggedSessions: yearStats.daysTrained,
-                        totalSessions: yearStats.totalProjectedSessions,
-                        accentColor: theme.colors.vibrantAccent,
-                      ),
-                      const SizedBox(height: 12),
-                      // Legend
-                      Row(
-                        children: [
-                          _LegendItem(
-                            color: theme.colors.vibrantAccent,
-                            label: 'Logged',
+                        // Large percentage display
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '$percentLabel%',
+                              style: theme.textTheme.displayLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.0,
+                                  ) ??
+                                  const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Segmented horizontal bar
+                        _SegmentedProgressBar(
+                          loggedSessions: yearStats.daysTrained,
+                          totalSessions: yearStats.totalProjectedSessions,
+                          accentColor: theme.colors.vibrantAccent,
+                        ),
+                        const SizedBox(height: 12),
+                        // Legend
+                        Row(
+                          children: [
+                            _LegendItem(
+                              color: theme.colors.vibrantAccent,
+                              label: 'Logged',
                             value: yearStats.daysTrained.toString(),
-                          ),
-                          const SizedBox(width: 16),
-                          _LegendItem(
-                            color: theme.colors.vibrantAccent
-                                .withValues(alpha: 0.6),
-                            label: 'Predicted',
+                            ),
+                            const SizedBox(width: 16),
+                            _LegendItem(
+                              color: theme.colors.vibrantAccent
+                                  .withValues(alpha: 0.6),
+                              label: 'Predicted',
                             value: (yearStats.totalProjectedSessions -
                                     yearStats.daysTrained)
                                 .toString(),
@@ -903,14 +903,15 @@ class _TrainingInsightsSection extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      // Segmented horizontal bar
-                      _SegmentedProgressBar(
-                        loggedSessions: yearHoursStats.loggedHours.round(),
-                        totalSessions:
-                            yearHoursStats.totalProjectedHours.round(),
-                        accentColor: Colors.blue,
-                      ),
+                        const SizedBox(height: 16),
+                        // Segmented horizontal bar
+                        _SegmentedProgressBar(
+                          loggedSessions: yearHoursStats.loggedHours.round(),
+                          totalSessions:
+                              yearHoursStats.totalProjectedHours.round(),
+                          accentColor: Colors.blue,
+                          icon: FontAwesomeIcons.clock,
+                        ),
                       const SizedBox(height: 12),
                       // Legend
                       Row(
@@ -919,17 +920,17 @@ class _TrainingInsightsSection extends StatelessWidget {
                             color: Colors.blue,
                             label: 'Logged',
                           ),
-                          const SizedBox(width: 16),
-                          _LegendItem(
+                              const SizedBox(width: 16),
+                              _LegendItem(
                             color: Colors.blue.withValues(alpha: 0.6),
                             label: 'Predicted',
-                          ),
-                        ],
-                      ),
-                    ],
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -946,15 +947,15 @@ class _TrainingInsightsSection extends StatelessWidget {
                     : MediaQuery.of(context).size.width - 20;
                 return SizedBox(
                   width: availableWidth,
-                  child: _PredictionCard(
-                    predictionInfo: predictionInfo,
-                    hasTodayPrediction: hasTodayPrediction,
-                    hasNextPrediction: hasNextPrediction,
-                  ),
-                );
-              },
+                    child: _PredictionCard(
+                      predictionInfo: predictionInfo,
+                      hasTodayPrediction: hasTodayPrediction,
+                      hasNextPrediction: hasNextPrediction,
+                    ),
+            );
+          },
             ),
-          ),
+        ),
         ],
       ],
     );
@@ -1131,18 +1132,18 @@ class _NextSessionContentState extends State<_NextSessionContent> {
         Colors.white.withValues(alpha: 0.8),
         Colors.white.withValues(alpha: 0.7),
       ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title
-          Text(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title
+                        Text(
             'next predicted session in',
-            style: theme.textTheme.titleMedium?.copyWith(
+                          style: theme.textTheme.titleMedium?.copyWith(
               color: Colors.black.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 16),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
           // Countdown timer
           _FormattedCountdownTimer(
             duration: countdownDuration,
@@ -1224,14 +1225,14 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
     final numberStyle = theme.textTheme.displayLarge?.copyWith(
           color: Colors.black,
           fontWeight: FontWeight.w900,
-          height: 1.0,
+                                  height: 1.0,
           fontSize: widget.isCompact ? 64 : 80,
-        ) ??
+                                ) ??
         TextStyle(
           color: Colors.black,
           fontSize: widget.isCompact ? 64 : 80,
           fontWeight: FontWeight.w900,
-          height: 1.0,
+                                  height: 1.0,
           fontFamily: 'Grift',
         );
 
@@ -1263,8 +1264,8 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                   Text(
                     'DAYS',
                     style: labelStyle,
-                  ),
-                  const SizedBox(height: 4),
+                          ),
+                          const SizedBox(height: 4),
                   SizedBox(
                     width: double.infinity,
                     child: Text(
@@ -1273,8 +1274,8 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.visible,
-                    ),
-                  ),
+                            ),
+                          ),
                 ],
               ),
             ),
@@ -1284,7 +1285,7 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 20), // Match label height
-                Text(
+                          Text(
                   ':',
                   style: numberStyle.copyWith(
                     fontSize: widget.isCompact ? 48 : 60,
@@ -1300,7 +1301,7 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
+                            Text(
                     'HOURS',
                     style: labelStyle,
                   ),
@@ -1313,11 +1314,11 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.visible,
+                              ),
+                            ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
           ],
         ),
         SizedBox(height: widget.isCompact ? 24 : 32),
@@ -1328,10 +1329,10 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
             // Minutes (bottom left)
             SizedBox(
               width: widget.isCompact ? 80 : 100,
-              child: Column(
+                      child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+                        children: [
                   SizedBox(
                     width: double.infinity,
                     child: Text(
@@ -1340,22 +1341,22 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.visible,
-                    ),
-                  ),
+                            ),
+                          ),
                   const SizedBox(height: 4),
-                  Text(
+                          Text(
                     'MINUTES',
                     style: labelStyle,
                   ),
                 ],
-              ),
-            ),
+                                ),
+                          ),
             SizedBox(width: widget.isCompact ? 24 : 32),
             // Separator
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                            Text(
                   ':',
                   style: numberStyle.copyWith(
                     fontSize: widget.isCompact ? 48 : 60,
@@ -1381,17 +1382,17 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                       maxLines: 1,
                       overflow: TextOverflow.visible,
                     ),
-                  ),
+                      ),
                   const SizedBox(height: 4),
                   Text(
                     'SECONDS',
                     style: labelStyle,
-                  ),
-                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+          ],
+      ),
       ],
     );
   }
@@ -1817,11 +1818,13 @@ class _SegmentedProgressBar extends StatefulWidget {
   final int loggedSessions;
   final int totalSessions;
   final Color accentColor;
+  final IconData? icon;
 
   const _SegmentedProgressBar({
     required this.loggedSessions,
     required this.totalSessions,
     required this.accentColor,
+    this.icon,
   });
 
   @override
@@ -1850,7 +1853,7 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                 child: Container(
                   height: 12,
                   width: barWidth,
-                  decoration: BoxDecoration(
+        decoration: BoxDecoration(
                     color: widget.accentColor.withValues(alpha: 0.3),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(6),
@@ -1870,7 +1873,7 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                   ),
                   child: Center(
                     child: FaIcon(
-                      FontAwesomeIcons.star,
+                      widget.icon ?? FontAwesomeIcons.star,
                       size: 14,
                       color: widget.accentColor,
                     ),
@@ -1903,11 +1906,11 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(6),
                 bottomLeft: Radius.circular(6),
-              ),
+          ),
               child: Stack(
                 alignment: Alignment.centerLeft,
                 clipBehavior: Clip.none,
-                children: [
+            children: [
                   // Background track (predicted - darker accent color)
                   Container(
                     height: 12,
@@ -1925,36 +1928,36 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                     Container(
                       height: 12,
                       width: loggedWidth,
-                      decoration: BoxDecoration(
+                    decoration: BoxDecoration(
                         color: widget.accentColor,
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(6),
                           bottomLeft: Radius.circular(6),
-                        ),
-                      ),
                     ),
+                  ),
+                ),
                 ],
               ),
             ),
             // Medal icon at the far right end (outside ClipRRect so it's not clipped)
             Positioned(
               right: -iconOffset,
-              child: Container(
+                  child: Container(
                 width: iconSize,
                 height: iconSize,
-                decoration: BoxDecoration(
+                    decoration: BoxDecoration(
                   color: const Color(0xFF3A3A3A), // Slightly darker gray circle
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: FaIcon(
-                    FontAwesomeIcons.star,
+                    widget.icon ?? FontAwesomeIcons.star,
                     size: 14,
                     color: widget.accentColor,
+                    ),
                   ),
                 ),
-              ),
-            ),
+          ),
           ],
         );
       },
