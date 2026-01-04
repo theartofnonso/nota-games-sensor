@@ -168,42 +168,34 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
         )
         .toList();
 
-    final weightSuggestions =
-        _findClosestWeightCombination(targetWeight: widget.target);
-
-    final weightEstimate = (weightSuggestions.sum * 2) + _selectedBar.weight;
-
-    final isExact = weightEstimate == widget.target;
+    // Calculate actual weight from selected plates and bar
+    final actualWeight =
+        _selectedPlates.fold(0.0, (sum, plate) => sum + plate.weight) * 2 +
+            _selectedBar.weight;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-              "${weightWithConversion(value: widget.target)}${weightUnit()}"
-                  .toUpperCase(),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineLarge),
-          const SizedBox(
-            height: 2,
-          ),
-          Text("Target Weight".toUpperCase(),
-              textAlign: TextAlign.start,
-              style: Theme.of(context).textTheme.bodyMedium),
-          SizedBox(
-            height: 24,
-            child: _selectedPlates.isNotEmpty && !isExact
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 10, bottom: 14),
-                    child: Text(
-                        "Closest estimate is ${weightWithConversion(value: weightEstimate)}${weightUnit()}"
-                            .toUpperCase(),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium),
-                  )
-                : const SizedBox.shrink(),
-          ),
+          if (_selectedPlates.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: _buildWeightBreakdown(actualWeight),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Text(
+                "Target: ${weightWithConversion(value: widget.target)}${weightUnit()}"
+                    .toUpperCase(),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: LabelDivider(
@@ -239,6 +231,105 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
     );
   }
 
+  Widget _buildWeightBreakdown(double totalWeight) {
+    final sortedPlates = List<_PlatesEnum>.from(_selectedPlates)
+      ..sort((a, b) => b.weight.compareTo(a.weight));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Plates on one side
+              if (sortedPlates.isNotEmpty) ...[
+                Text(
+                  sortedPlates
+                      .map((p) =>
+                          weightWithConversion(value: p.weight).toString())
+                      .join(' + '),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '× 2',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.grey,
+                      ),
+                ),
+              ] else
+                Text(
+                  '0',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              // Plus sign
+              if (sortedPlates.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '+',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.grey,
+                      ),
+                ),
+              ],
+              // Bar weight
+              const SizedBox(width: 8),
+              Text(
+                weightWithConversion(value: _selectedBar.weight).toString(),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '(bar)',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey,
+                    ),
+              ),
+              // Equals sign
+              const SizedBox(width: 8),
+              Text(
+                '=',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.grey,
+                    ),
+              ),
+              // Total weight
+              const SizedBox(width: 8),
+              Text(
+                "${weightWithConversion(value: totalWeight)}${weightUnit()}",
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: totalWeight == widget.target
+                          ? vibrantGreen
+                          : Theme.of(context).colorScheme.error,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        if (totalWeight != widget.target)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Target: ${weightWithConversion(value: widget.target)}${weightUnit()}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey,
+                  ),
+            ),
+          ),
+      ],
+    );
+  }
+
   void _onSelectPlate({required _PlatesEnum newPlate}) {
     final oldPlate = _selectedPlates.firstWhereOrNull(
         (previousPlate) => previousPlate.weight == newPlate.weight);
@@ -260,39 +351,6 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
   _PlatesEnum? _getPlate({required _PlatesEnum plate}) =>
       _selectedPlates.firstWhereOrNull(
           (previousPlate) => previousPlate.weight == plate.weight);
-
-  List<double> _findClosestWeightCombination({required double targetWeight}) {
-    // Calculate the weight needed for one side
-    double halfTargetWeight = (targetWeight - _selectedBar.weight) / 2;
-
-    // Sort weights in descending order for better efficiency
-    _selectedPlates.sort((a, b) => b.weight.compareTo(a.weight));
-
-    List<double> bestCombination = [];
-    double bestSum = 0;
-
-    // Recursive function to find the best combination
-    void findCombination(
-        List<double> currentCombination, double currentSum, int index) {
-      if (currentSum > halfTargetWeight) return;
-
-      if (currentSum > bestSum) {
-        bestSum = currentSum;
-        bestCombination = List.from(currentCombination);
-      }
-
-      for (int i = index; i < _selectedPlates.length; i++) {
-        currentCombination.add(_selectedPlates[i].weight);
-        findCombination(
-            currentCombination, currentSum + _selectedPlates[i].weight, i);
-        currentCombination.removeLast();
-      }
-    }
-
-    findCombination([], 0, 0);
-
-    return bestCombination;
-  }
 }
 
 class _BarPainter extends CustomPainter {
