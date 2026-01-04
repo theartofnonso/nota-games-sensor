@@ -282,8 +282,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
           .toList()
           .lastOrNull;
 
-      final weightText =
-          stalledSample != null ? "${stalledSample.weight} kg" : "this weight";
+      final weightText = stalledSample != null
+          ? "${weightWithConversion(value: stalledSample.weight)} ${weightUnit()}"
+          : "this weight";
       final repsText = stalledSample != null
           ? "${stalledSample.reps} reps"
           : "this rep range";

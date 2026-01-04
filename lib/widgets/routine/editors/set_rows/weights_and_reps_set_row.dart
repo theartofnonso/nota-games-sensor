@@ -5,6 +5,7 @@ import 'package:trainware/widgets/routine/editors/textfields/double_textfield.da
 import 'package:trainware/widgets/routine/editors/textfields/int_textfield.dart';
 
 import '../../../../enums/routine_editor_type_enums.dart';
+import '../../../../utils/general_utils.dart';
 import '../../../../utils/theme/color_extensions.dart';
 
 class WeightsAndRepsSetRow extends StatelessWidget {
@@ -82,7 +83,7 @@ class WeightsAndRepsSetRow extends StatelessWidget {
               onTap: onTapWeightEditor,
               controller: controllers.$1,
               textAlign: TextAlign.center,
-              suffix: 'kg',
+              suffix: weightUnit(),
             ),
           ),
           // Divider between weight and reps

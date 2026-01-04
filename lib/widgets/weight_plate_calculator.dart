@@ -527,7 +527,7 @@ class WeightPlateIcon extends StatelessWidget {
   const WeightPlateIcon({
     super.key,
     this.size = 160,
-    this.weightLabel = '5 kg',
+    required this.weightLabel,
     this.color = Colors.black,
     this.strokeWidth = 4,
   });

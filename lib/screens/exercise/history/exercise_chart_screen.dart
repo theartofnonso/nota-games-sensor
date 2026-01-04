@@ -290,7 +290,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                     ExerciseType.weights: SizedBox(
                       width: 110,
                       child: Text(
-                        "Weights (kg/lb)",
+                        "Weights (${weightUnit()})",
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
