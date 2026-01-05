@@ -38,6 +38,7 @@ import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../screens/routines/routine_plan.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
+import '../../logger.dart';
 
 enum WeightUnit {
   kg("kg"),
@@ -137,9 +138,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ],
                   _TrainingInsightsSection(
-                      yearStats: yearStats,
+                    yearStats: yearStats,
                     yearHoursStats: yearHoursStats,
-                      predictionInfo: predictionInfo,
+                    predictionInfo: predictionInfo,
                   ),
                   const SizedBox(height: 16),
                   // Routine Plans section - edge-to-edge, no padding
@@ -760,75 +761,75 @@ class _TrainingInsightsSection extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 10),
-              children: [
+            children: [
               // Progress this year card
-                SizedBox(
-                  width: cardWidth,
-                  child: _FrostedCard(
-                    gradientColors: [
-                      theme.colors.vibrantAccent.withValues(alpha: 0.3),
-                      const Color(0xFF22c55e).withValues(alpha: 0.2),
-                      Colors.black.withValues(alpha: 0.5),
-                    ],
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header row with title
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'progress this year',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontWeight: FontWeight.w600,
-                              ),
+              SizedBox(
+                width: cardWidth,
+                child: _FrostedCard(
+                  gradientColors: [
+                    theme.colors.vibrantAccent.withValues(alpha: 0.3),
+                    const Color(0xFF22c55e).withValues(alpha: 0.2),
+                    Colors.black.withValues(alpha: 0.5),
+                  ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header row with title
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'progress this year',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w600,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
                       const Spacer(),
-                        // Large percentage display
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '$percentLabel%',
-                              style: theme.textTheme.displayLarge?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.0,
-                                  ) ??
-                                  const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 48,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.0,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // Segmented horizontal bar
-                        _SegmentedProgressBar(
-                          loggedSessions: yearStats.daysTrained,
-                          totalSessions: yearStats.totalProjectedSessions,
-                          accentColor: theme.colors.vibrantAccent,
-                        ),
-                        const SizedBox(height: 12),
-                        // Legend
-                        Row(
-                          children: [
-                            _LegendItem(
-                              color: theme.colors.vibrantAccent,
-                              label: 'Logged',
+                      // Large percentage display
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '$percentLabel%',
+                            style: theme.textTheme.displayLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ) ??
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.0,
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Segmented horizontal bar
+                      _SegmentedProgressBar(
+                        loggedSessions: yearStats.daysTrained,
+                        totalSessions: yearStats.totalProjectedSessions,
+                        accentColor: theme.colors.vibrantAccent,
+                      ),
+                      const SizedBox(height: 12),
+                      // Legend
+                      Row(
+                        children: [
+                          _LegendItem(
+                            color: theme.colors.vibrantAccent,
+                            label: 'Logged',
                             value: yearStats.daysTrained.toString(),
-                            ),
-                            const SizedBox(width: 16),
-                            _LegendItem(
-                              color: theme.colors.vibrantAccent
-                                  .withValues(alpha: 0.6),
-                              label: 'Predicted',
+                          ),
+                          const SizedBox(width: 16),
+                          _LegendItem(
+                            color: theme.colors.vibrantAccent
+                                .withValues(alpha: 0.6),
+                            label: 'Predicted',
                             value: (yearStats.totalProjectedSessions -
                                     yearStats.daysTrained)
                                 .toString(),
@@ -903,15 +904,15 @@ class _TrainingInsightsSection extends StatelessWidget {
                           ),
                         ],
                       ),
-                        const SizedBox(height: 16),
-                        // Segmented horizontal bar
-                        _SegmentedProgressBar(
-                          loggedSessions: yearHoursStats.loggedHours.round(),
-                          totalSessions:
-                              yearHoursStats.totalProjectedHours.round(),
-                          accentColor: Colors.blue,
-                          icon: FontAwesomeIcons.clock,
-                        ),
+                      const SizedBox(height: 16),
+                      // Segmented horizontal bar
+                      _SegmentedProgressBar(
+                        loggedSessions: yearHoursStats.loggedHours.round(),
+                        totalSessions:
+                            yearHoursStats.totalProjectedHours.round(),
+                        accentColor: Colors.blue,
+                        icon: FontAwesomeIcons.clock,
+                      ),
                       const SizedBox(height: 12),
                       // Legend
                       Row(
@@ -920,17 +921,17 @@ class _TrainingInsightsSection extends StatelessWidget {
                             color: Colors.blue,
                             label: 'Logged',
                           ),
-                              const SizedBox(width: 16),
-                              _LegendItem(
+                          const SizedBox(width: 16),
+                          _LegendItem(
                             color: Colors.blue.withValues(alpha: 0.6),
                             label: 'Predicted',
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+              ),
             ],
           ),
         ),
@@ -947,15 +948,15 @@ class _TrainingInsightsSection extends StatelessWidget {
                     : MediaQuery.of(context).size.width - 20;
                 return SizedBox(
                   width: availableWidth,
-                    child: _PredictionCard(
-                      predictionInfo: predictionInfo,
-                      hasTodayPrediction: hasTodayPrediction,
-                      hasNextPrediction: hasNextPrediction,
-                    ),
-            );
-          },
+                  child: _PredictionCard(
+                    predictionInfo: predictionInfo,
+                    hasTodayPrediction: hasTodayPrediction,
+                    hasNextPrediction: hasNextPrediction,
+                  ),
+                );
+              },
             ),
-        ),
+          ),
         ],
       ],
     );
@@ -999,113 +1000,95 @@ class _NextSessionContent extends StatefulWidget {
 
 class _NextSessionContentState extends State<_NextSessionContent> {
   _PredictionInfo? _currentPredictionInfo;
-  bool _hasElapsed = false;
+  DateTime? _lastLogsHash; // Track when logs change
 
   @override
   void initState() {
     super.initState();
     _currentPredictionInfo = widget.predictionInfo;
+    _updateLogsHash();
   }
 
   @override
   void didUpdateWidget(_NextSessionContent oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Reset if prediction info changes
-    if (oldWidget.predictionInfo.date != widget.predictionInfo.date) {
+    if (oldWidget.predictionInfo.date != widget.predictionInfo.date ||
+        oldWidget.predictionInfo.time != widget.predictionInfo.time) {
       _currentPredictionInfo = widget.predictionInfo;
-      _hasElapsed = false; // Reset elapsed flag when prediction changes
+      _updateLogsHash();
     }
   }
 
-  void _onCountdownElapsed() {
-    // Hide card immediately when countdown reaches zero
-    setState(() {
-      _hasElapsed = true;
-    });
+  void _updateLogsHash() {
+    if (!mounted) return;
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    // Use logs count and last log time as a simple hash to detect changes
+    final logs = controller.logs;
+    if (logs.isEmpty) {
+      _lastLogsHash = null;
+    } else {
+      // Get the most recent log's start time as a hash
+      _lastLogsHash = logs
+          .map((log) => log.startTime)
+          .reduce((a, b) => a.isAfter(b) ? a : b);
+    }
+  }
+
+  void _recalculateNextSession() {
     if (!mounted) return;
 
-    // Recalculate next predicted session
     final controller = context.read<SupabaseExerciseAndRoutineController>();
     final logs = controller.logs;
 
-    if (logs.isEmpty) {
-      setState(() {
-        _currentPredictionInfo = null;
-        _hasElapsed = false; // Reset flag since we're hiding anyway
-      });
-      return;
-    }
-
-    // Recalculate using same logic as _PredictionInfo.fromLogs
-    final loggedDates = logs.map((log) {
-      final date = log.startTime;
-      return DateTime(date.year, date.month, date.day);
-    }).toSet();
-
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final endOfYear = DateTime(now.year, 12, 31);
-    final daysAhead = endOfYear.difference(todayStart).inDays;
-    final predictedSet = getPredictedTrainingDates(
-      historicDateTimes: logs.map((log) => log.startTime).toList(),
-      daysAhead: daysAhead,
-    );
-
-    final predictedDaysWithoutLogs = predictedSet
-        .where((date) => !loggedDates.contains(date))
-        .toList()
-      ..sort((a, b) => a.compareTo(b));
-
-    if (predictedDaysWithoutLogs.isEmpty) {
-      setState(() {
-        _currentPredictionInfo = null;
-        _hasElapsed = false; // Reset flag since we're hiding anyway
-      });
-      return;
-    }
-
-    final futurePredictedDates = predictedDaysWithoutLogs
-        .where((date) => date.isAfter(todayStart))
-        .toList();
-
-    if (futurePredictedDates.isEmpty) {
-      setState(() {
-        _currentPredictionInfo = null;
-        _hasElapsed = false; // Reset flag since we're hiding anyway
-      });
-      return;
-    }
-
-    final nextDate = futurePredictedDates.first;
-    final time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
+    // Recalculate prediction
+    final newPrediction = _PredictionInfo.fromLogs(logs);
 
     setState(() {
-      _currentPredictionInfo = _PredictionInfo(
-        date: nextDate,
-        time: time,
-        todayDate: null,
-        todayTime: null,
-        daysUntilNext: nextDate.difference(todayStart).inDays,
-      );
-      _hasElapsed = false; // Reset flag - new countdown is available
+      _currentPredictionInfo = newPrediction;
+      _updateLogsHash();
     });
+  }
+
+  void _onCountdownElapsed() {
+    // Silently skip the elapsed session and recalculate the next one
+    // No overdue state, no negative messaging - just move forward
+    _recalculateNextSession();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Hide card immediately when countdown has elapsed (before recalculation completes)
-    if (_hasElapsed) {
-      return const SizedBox.shrink();
+    // Listen for log changes and recalculate if needed
+    final controller = context.watch<SupabaseExerciseAndRoutineController>();
+    final logs = controller.logs;
+
+    // Check if logs have changed (session logged or deleted)
+    DateTime? currentLogsHash;
+    if (logs.isNotEmpty) {
+      currentLogsHash = logs
+          .map((log) => log.startTime)
+          .reduce((a, b) => a.isAfter(b) ? a : b);
+    }
+
+    if (currentLogsHash != _lastLogsHash) {
+      // Logs changed - recalculate immediately
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _recalculateNextSession();
+        }
+      });
     }
 
     final predictionInfo = _currentPredictionInfo ?? widget.predictionInfo;
     final hasCountdown =
         predictionInfo.date != null && predictionInfo.time != null;
 
-    // Calculate countdown duration if available
+    // Calculate countdown duration dynamically (targetDateTime - now)
+    // This ensures we always compute from the exact target time, not a stored duration
     Duration? countdownDuration;
+    DateTime? targetDateTime;
     if (hasCountdown) {
-      final targetDateTime = DateTime(
+      targetDateTime = DateTime(
         predictionInfo.date!.year,
         predictionInfo.date!.month,
         predictionInfo.date!.day,
@@ -1114,14 +1097,19 @@ class _NextSessionContentState extends State<_NextSessionContent> {
       );
       final now = DateTime.now();
       final difference = targetDateTime.difference(now);
+
+      // Only show countdown if:
+      // - Target is in the future (not negative)
+      // - Within 7 days
+      // - Target has exact start time (not just date)
       if (!difference.isNegative && difference.inDays <= 7) {
         countdownDuration = difference;
       }
     }
 
-    // Hide component if no countdown available
+    // Show empty state with positive CTA if no upcoming sessions
     if (countdownDuration == null) {
-      return const SizedBox.shrink();
+      return _buildEmptyState(context);
     }
 
     final theme = Theme.of(context);
@@ -1132,24 +1120,53 @@ class _NextSessionContentState extends State<_NextSessionContent> {
         Colors.white.withValues(alpha: 0.8),
         Colors.white.withValues(alpha: 0.7),
       ],
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title
-                        Text(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title
+          Text(
             'next predicted session in',
-                          style: theme.textTheme.titleMedium?.copyWith(
+            style: theme.textTheme.titleMedium?.copyWith(
               color: Colors.black.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-          // Countdown timer
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Countdown timer - passes targetDateTime for dynamic calculation
           _FormattedCountdownTimer(
-            duration: countdownDuration,
+            targetDateTime: targetDateTime!,
             onElapsed: _onCountdownElapsed,
-            predictionInfo: _currentPredictionInfo ?? widget.predictionInfo,
             isCompact: widget.isCompact,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    final theme = Theme.of(context);
+    return _FrostedCard(
+      gradientColors: [
+        Colors.white.withValues(alpha: 0.9),
+        Colors.white.withValues(alpha: 0.8),
+        Colors.white.withValues(alpha: 0.7),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'plan your next session',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: Colors.black.withValues(alpha: 0.8),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start a session now or create a new routine plan',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.black.withValues(alpha: 0.6),
+            ),
           ),
         ],
       ),
@@ -1158,15 +1175,13 @@ class _NextSessionContentState extends State<_NextSessionContent> {
 }
 
 class _FormattedCountdownTimer extends StatefulWidget {
-  final Duration duration;
+  final DateTime targetDateTime;
   final VoidCallback? onElapsed;
-  final _PredictionInfo predictionInfo;
   final bool isCompact;
 
   const _FormattedCountdownTimer({
-    required this.duration,
+    required this.targetDateTime,
     this.onElapsed,
-    required this.predictionInfo,
     required this.isCompact,
   });
 
@@ -1177,36 +1192,41 @@ class _FormattedCountdownTimer extends StatefulWidget {
 
 class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
   late Timer _timer;
-  late Duration _remainingDuration;
   bool _hasElapsed = false;
 
   @override
   void initState() {
     super.initState();
-    _remainingDuration = widget.duration;
 
-    // Fire a timer every second to decrement the remaining duration
+    // Fire a timer every second to recalculate remaining duration
+    // Always compute: targetDateTime - now (not decrementing stored duration)
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
+        final now = DateTime.now();
+        final difference = widget.targetDateTime.difference(now);
+
         setState(() {
-          final secondsLeft = _remainingDuration.inSeconds;
-          if (secondsLeft <= 1) {
-            // When it hits zero or below, stop the timer and clamp to zero
-            _remainingDuration = Duration.zero;
+          if (difference.isNegative || difference.inSeconds <= 0) {
+            // Timer reached zero or target is in the past
             _timer.cancel();
             if (!_hasElapsed) {
               _hasElapsed = true;
-              // Call the callback to notify parent
+              // Call the callback to notify parent (silently skip and recalculate)
               widget.onElapsed?.call();
             }
-          } else {
-            // Decrement by one second
-            _remainingDuration =
-                _remainingDuration - const Duration(seconds: 1);
           }
+          // Duration is computed dynamically in build(), no need to store it
         });
       }
     });
+  }
+
+  Duration get _remainingDuration {
+    // Always compute dynamically: targetDateTime - now
+    final now = DateTime.now();
+    final difference = widget.targetDateTime.difference(now);
+    // Clamp to zero if negative
+    return difference.isNegative ? Duration.zero : difference;
   }
 
   String _twoDigits(int n) {
@@ -1225,14 +1245,14 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
     final numberStyle = theme.textTheme.displayLarge?.copyWith(
           color: Colors.black,
           fontWeight: FontWeight.w900,
-                                  height: 1.0,
+          height: 1.0,
           fontSize: widget.isCompact ? 64 : 80,
-                                ) ??
+        ) ??
         TextStyle(
           color: Colors.black,
           fontSize: widget.isCompact ? 64 : 80,
           fontWeight: FontWeight.w900,
-                                  height: 1.0,
+          height: 1.0,
           fontFamily: 'Grift',
         );
 
@@ -1264,8 +1284,8 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                   Text(
                     'DAYS',
                     style: labelStyle,
-                          ),
-                          const SizedBox(height: 4),
+                  ),
+                  const SizedBox(height: 4),
                   SizedBox(
                     width: double.infinity,
                     child: Text(
@@ -1274,8 +1294,8 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.visible,
-                            ),
-                          ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1285,7 +1305,7 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 20), // Match label height
-                          Text(
+                Text(
                   ':',
                   style: numberStyle.copyWith(
                     fontSize: widget.isCompact ? 48 : 60,
@@ -1301,7 +1321,7 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                            Text(
+                  Text(
                     'HOURS',
                     style: labelStyle,
                   ),
@@ -1314,11 +1334,11 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.visible,
-                              ),
-                            ),
-                      ],
                     ),
                   ),
+                ],
+              ),
+            ),
           ],
         ),
         SizedBox(height: widget.isCompact ? 24 : 32),
@@ -1329,10 +1349,10 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
             // Minutes (bottom left)
             SizedBox(
               width: widget.isCompact ? 80 : 100,
-                      child: Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
+                children: [
                   SizedBox(
                     width: double.infinity,
                     child: Text(
@@ -1341,22 +1361,22 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.visible,
-                            ),
-                          ),
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                          Text(
+                  Text(
                     'MINUTES',
                     style: labelStyle,
                   ),
                 ],
-                                ),
-                          ),
+              ),
+            ),
             SizedBox(width: widget.isCompact ? 24 : 32),
             // Separator
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                            Text(
+                Text(
                   ':',
                   style: numberStyle.copyWith(
                     fontSize: widget.isCompact ? 48 : 60,
@@ -1382,17 +1402,17 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                       maxLines: 1,
                       overflow: TextOverflow.visible,
                     ),
-                      ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     'SECONDS',
                     style: labelStyle,
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
           ],
-      ),
+        ),
       ],
     );
   }
@@ -1650,42 +1670,75 @@ class _PredictionInfo {
       return const _PredictionInfo(date: null, time: null);
     }
 
-    final startOfToday = DateTime(now.year, now.month, now.day);
-
-    // Check if today is predicted
-    final isTodayPredicted = predictedDaysWithoutLogs.contains(startOfToday);
-    DateTime? todayDate;
-    TimeOfDay? todayTime;
-
-    if (isTodayPredicted) {
-      todayDate = startOfToday;
-      todayTime = _deriveTypicalTimeForWeekday(logs, startOfToday.weekday);
-    }
-
-    // Find the next predicted date after today
+    // Find the next predicted session with exact start time
+    // Only consider future sessions (including today if time hasn't passed)
     DateTime? nextDate;
     TimeOfDay? time;
     int? daysUntilNext;
 
-    final futurePredictedDates = predictedDaysWithoutLogs
-        .where((date) => date.isAfter(startOfToday))
-        .toList();
+    // Check if today is predicted and if the typical time is still in the future
+    final isTodayPredicted = predictedDaysWithoutLogs.contains(todayStart);
+    if (isTodayPredicted) {
+      final todayTime = _deriveTypicalTimeForWeekday(logs, todayStart.weekday);
+      if (todayTime != null) {
+        final todayTargetDateTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          todayTime.hour,
+          todayTime.minute,
+        );
+        // Only use today if the target time is still in the future
+        if (todayTargetDateTime.isAfter(now)) {
+          nextDate = todayStart;
+          time = todayTime;
+          daysUntilNext = 0;
+        }
+      }
+    }
 
-    if (futurePredictedDates.isNotEmpty) {
-      nextDate = futurePredictedDates.first;
-      time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
-      daysUntilNext = nextDate.difference(startOfToday).inDays;
-    } else if (!isTodayPredicted) {
-      // If today is not predicted and no future dates, use the first available predicted date
-      nextDate = predictedDaysWithoutLogs.first;
-      time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
+    // If today's session time has passed or today isn't predicted,
+    // find the next future predicted date
+    if (nextDate == null) {
+      final futurePredictedDates = predictedDaysWithoutLogs
+          .where((date) =>
+              date.isAfter(todayStart) ||
+              (date == todayStart && !isTodayPredicted))
+          .toList();
+
+      if (futurePredictedDates.isNotEmpty) {
+        nextDate = futurePredictedDates.first;
+        time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
+        if (time != null) {
+          final targetDateTime = DateTime(
+            nextDate.year,
+            nextDate.month,
+            nextDate.day,
+            time.hour,
+            time.minute,
+          );
+          // Only return if target is in the future
+          if (targetDateTime.isAfter(now)) {
+            daysUntilNext = nextDate.difference(todayStart).inDays;
+          } else {
+            // Target time has passed, skip this session
+            nextDate = null;
+            time = null;
+          }
+        }
+      }
+    }
+
+    // If no valid future session found, return null
+    if (nextDate == null || time == null) {
+      return const _PredictionInfo(date: null, time: null);
     }
 
     return _PredictionInfo(
       date: nextDate,
       time: time,
-      todayDate: todayDate,
-      todayTime: todayTime,
+      todayDate: null, // Not used for countdown
+      todayTime: null, // Not used for countdown
       daysUntilNext: daysUntilNext,
     );
   }
@@ -1853,7 +1906,7 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                 child: Container(
                   height: 12,
                   width: barWidth,
-        decoration: BoxDecoration(
+                  decoration: BoxDecoration(
                     color: widget.accentColor.withValues(alpha: 0.3),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(6),
@@ -1906,11 +1959,11 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(6),
                 bottomLeft: Radius.circular(6),
-          ),
+              ),
               child: Stack(
                 alignment: Alignment.centerLeft,
                 clipBehavior: Clip.none,
-            children: [
+                children: [
                   // Background track (predicted - darker accent color)
                   Container(
                     height: 12,
@@ -1928,24 +1981,24 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                     Container(
                       height: 12,
                       width: loggedWidth,
-                    decoration: BoxDecoration(
+                      decoration: BoxDecoration(
                         color: widget.accentColor,
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(6),
                           bottomLeft: Radius.circular(6),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
                 ],
               ),
             ),
             // Medal icon at the far right end (outside ClipRRect so it's not clipped)
             Positioned(
               right: -iconOffset,
-                  child: Container(
+              child: Container(
                 width: iconSize,
                 height: iconSize,
-                    decoration: BoxDecoration(
+                decoration: BoxDecoration(
                   color: const Color(0xFF3A3A3A), // Slightly darker gray circle
                   shape: BoxShape.circle,
                 ),
@@ -1954,10 +2007,10 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                     widget.icon ?? FontAwesomeIcons.star,
                     size: 14,
                     color: widget.accentColor,
-                    ),
                   ),
                 ),
-          ),
+              ),
+            ),
           ],
         );
       },
@@ -2003,14 +2056,69 @@ class _LegendItem extends StatelessWidget {
 }
 
 TimeOfDay? _deriveTypicalTimeForWeekday(List<RoutineLogDto> logs, int weekday) {
-  final matches =
-      logs.where((log) => log.startTime.weekday == weekday).toList();
-  if (matches.isEmpty) return null;
-  final totalMinutes = matches.fold<int>(
+  final logger = getLogger(className: "_deriveTypicalTimeForWeekday");
+  
+  final weekdayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  final weekdayName = weekdayNames[weekday - 1];
+  
+  logger.i("Deriving typical time for $weekdayName (weekday $weekday)");
+  
+  // Only consider logs from the last 30 days (matching _calendarHistoryWindow)
+  const historyWindow = Duration(days: 30);
+  const minSessionsThreshold = 3; // Must have 3+ sessions in the window
+  
+  final now = DateTime.now();
+  final todayNormalized = DateTime(now.year, now.month, now.day);
+  final cutoff = todayNormalized.subtract(historyWindow);
+  
+  logger.i("Filtering to last 30 days (since ${DateFormat('yyyy-MM-dd').format(cutoff)})");
+  
+  // Filter to only logs from the last 30 days on this weekday
+  final recentMatches = logs.where((log) {
+    final logDate = DateTime(log.startTime.year, log.startTime.month, log.startTime.day);
+    return log.startTime.weekday == weekday && !logDate.isBefore(cutoff);
+  }).toList();
+  
+  logger.i("Found ${recentMatches.length} sessions on $weekdayName in the last 30 days:");
+  
+  // Count distinct dates (same as _getCalendarLikelyTrainingWeekdays logic)
+  final Set<DateTime> seenDates = <DateTime>{};
+  final distinctSessions = <RoutineLogDto>[];
+  
+  for (final log in recentMatches) {
+    final normalized = DateTime(log.startTime.year, log.startTime.month, log.startTime.day);
+    if (seenDates.add(normalized)) {
+      distinctSessions.add(log);
+    }
+  }
+  
+  logger.i("Distinct dates on $weekdayName in last 30 days: ${distinctSessions.length}");
+  
+  if (distinctSessions.length < minSessionsThreshold) {
+    logger.w("Only ${distinctSessions.length} distinct $weekdayName sessions in last 30 days (need ${minSessionsThreshold}+) - cannot derive time");
+    return null;
+  }
+  
+  // Log each matching session
+  for (final log in distinctSessions) {
+    final dateStr = DateFormat('yyyy-MM-dd').format(log.startTime);
+    final timeStr = DateFormat('HH:mm').format(log.startTime);
+    final minutes = log.startTime.hour * 60 + log.startTime.minute;
+    logger.i("  - $dateStr at $timeStr (${minutes} minutes)");
+  }
+  
+  final totalMinutes = distinctSessions.fold<int>(
       0, (sum, log) => sum + log.startTime.hour * 60 + log.startTime.minute);
-  final averageMinutes = totalMinutes ~/ matches.length;
+  final averageMinutes = totalMinutes ~/ distinctSessions.length;
   final hour = averageMinutes ~/ 60;
   final minute = averageMinutes % 60;
+  
+  logger.i("Calculation:");
+  logger.i("  Total minutes: $totalMinutes");
+  logger.i("  Number of sessions: ${distinctSessions.length}");
+  logger.i("  Average minutes: $averageMinutes");
+  logger.i("  Result: ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}");
+  
   return TimeOfDay(hour: hour, minute: minute);
 }
 
