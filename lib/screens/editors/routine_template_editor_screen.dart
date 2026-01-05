@@ -207,7 +207,17 @@ class _RoutineTemplateEditorScreenState
 
     bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom != 0;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
+        
+        final shouldPop = await _handleBackNavigation();
+        if (shouldPop && mounted) {
+          context.pop();
+        }
+      },
+      child: Scaffold(
       floatingActionButton: isKeyboardOpen
           ? SafeArea(
               minimum: EdgeInsets.only(left: 32),
@@ -405,6 +415,7 @@ class _RoutineTemplateEditorScreenState
           );
         },
       ),
+      ),
     );
   }
 
@@ -436,6 +447,7 @@ class _RoutineTemplateEditorScreenState
 
   void _initializeWorkoutTemplateData() {
     final exercises = widget.template?.exerciseTemplates;
+    
     if (exercises != null && exercises.isNotEmpty) {
       final updatedExerciseLogs = exercises.map((exerciseLog) {
         final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(
@@ -484,6 +496,17 @@ class _RoutineTemplateEditorScreenState
       exerciseName: exerciseLog.exercise.name,
       fromLabel: 'template',
     );
+  }
+
+  /// Handles back navigation - always shows confirmation
+  Future<bool> _handleBackNavigation() async {
+    final shouldLeave = await confirmDiscardChangesBottomSheet(
+      context: context,
+      title: 'Leave editor?',
+      description: 'Are you sure you want to leave?',
+    );
+
+    return shouldLeave;
   }
 
   @override

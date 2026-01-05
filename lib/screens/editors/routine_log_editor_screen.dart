@@ -434,7 +434,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                   ),
                 ),
                 // Suggestions removed
-                // Bottom fixed CTA (does not scroll) – same pattern as PastRoutineLogEditor
+                // Bottom fixed CTA (does not scroll)
                 if (_isRoutinePartiallyComplete())
                   Align(
                     alignment: Alignment.bottomCenter,

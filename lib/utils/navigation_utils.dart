@@ -15,12 +15,10 @@ import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/appsync/routine_plan_dto.dart';
 import '../dtos/appsync/routine_template_dto.dart';
 import '../dtos/viewmodels/exercise_editor_arguments.dart';
-import '../dtos/viewmodels/past_routine_log_arguments.dart';
 import '../dtos/viewmodels/routine_log_arguments.dart';
 import '../dtos/viewmodels/routine_plan_arguments.dart';
 import '../dtos/viewmodels/routine_template_arguments.dart';
 import '../enums/routine_editor_type_enums.dart';
-import '../screens/editors/past_routine_log_editor_screen.dart';
 import '../screens/editors/routine_template_editor_screen.dart';
 import '../screens/logs/routine_log_screen.dart';
 import '../screens/routines/routine_plan.dart';
@@ -42,6 +40,7 @@ Future<RoutineTemplateDto?> navigateToRoutineTemplateEditor(
   final template = await showAppBottomSheet<RoutineTemplateDto>(
     context: context,
     isDraggable: true,
+    isDismissible: false, // Prevent auto-dismiss - PopScope will handle via GestureDetector
     initialChildSize: 0.9,
     minChildSize: 0.6,
     maxChildSize: 0.98,
@@ -87,25 +86,6 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
     );
     final created = await controller.savePlan(planDto: newPlan);
     return created;
-  }
-}
-
-void navigateToPastRoutineLogEditor(
-    {required BuildContext context,
-    required PastRoutineLogArguments arguments}) async {
-  final log = await showAppBottomSheet<RoutineLogDto>(
-    context: context,
-    child: PastRoutineLogEditorScreen(log: arguments.log),
-  );
-  if (log != null && context.mounted) {
-    navigateWithSlideTransition(
-      context: context,
-      child: RoutineLogScreen(
-        id: log.id,
-        isEditable: true,
-        showShareOnLoad: false,
-      ),
-    );
   }
 }
 

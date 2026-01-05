@@ -22,7 +22,6 @@ import '../../utils/navigation_utils.dart';
 import '../../utils/editor_bottom_sheet.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
-import '../../dtos/viewmodels/past_routine_log_arguments.dart';
 import '../../extensions/duration_extension.dart';
 import '../../shared_prefs.dart';
 import '../../utils/string_utils.dart';
@@ -360,7 +359,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final selectedDate = DateTime(date.year, date.month, date.day);
 
     final isToday = selectedDate == today;
-    final isPast = selectedDate.isBefore(today);
     final isFuture = selectedDate.isAfter(today);
 
     // Check if this is a predicted training day
@@ -427,18 +425,12 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       ],
                     ),
                   ),
-                  // Log workout button (hide for future dates)
-                  if (!isFuture)
+                  // Log workout button (only show for today)
+                  if (isToday)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
-                        if (isToday) {
-                          // Log a fresh session for today
-                          logEmptyRoutine(context: context);
-                        } else if (isPast) {
-                          // Log a past session for the selected date
-                          _logPastSessionForDate(context, date);
-                        }
+                        logEmptyRoutine(context: context);
                       },
                       icon: FaIcon(
                         FontAwesomeIcons.circlePlus,
@@ -492,18 +484,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     );
   }
 
-  void _logPastSessionForDate(BuildContext context, DateTime date) {
-    final log = RoutineLogDto(
-      id: "",
-      templateId: "",
-      name: "${timeOfDay()} Session",
-      exerciseLogs: [],
-      startTime: date,
-      endTime: date,
-    );
-    final arguments = PastRoutineLogArguments(log: log);
-    navigateToPastRoutineLogEditor(context: context, arguments: arguments);
-  }
 
   void _deleteRoutine({required RoutineTemplateDto template}) async {
     try {

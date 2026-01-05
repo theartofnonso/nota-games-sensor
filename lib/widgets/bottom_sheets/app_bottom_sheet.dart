@@ -10,6 +10,7 @@ class AppBottomSheet extends StatelessWidget {
       BuildContext context, ScrollController? scrollController)? builder;
   final Widget? child;
   final bool isDraggable;
+  final bool isDismissible;
   final double? initialChildSize;
   final double? minChildSize;
   final double? maxChildSize;
@@ -21,6 +22,7 @@ class AppBottomSheet extends StatelessWidget {
     this.builder,
     this.child,
     this.isDraggable = false,
+    this.isDismissible = true,
     this.initialChildSize = 0.7,
     this.minChildSize = 0.5,
     this.maxChildSize = 0.9,
@@ -54,7 +56,9 @@ class AppBottomSheet extends StatelessWidget {
     if (isDraggable) {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => Navigator.of(context).pop(),
+        onTap: isDismissible
+            ? () => Navigator.of(context).pop()
+            : () => Navigator.of(context).maybePop(), // Trigger PopScope
         child: DraggableScrollableSheet(
           initialChildSize: initialChildSize ?? 0.7,
           minChildSize: minChildSize ?? 0.5,
@@ -118,16 +122,34 @@ Future<T?> showAppBottomSheet<T>({
     showDragHandle: false,
     useSafeArea: true,
     // Dim the backdrop so transparent sheets still pop against the content behind.
-    barrierColor: Colors.black.withValues(alpha: 0.55),
-    builder: (context) => AppBottomSheet(
-      isDraggable: isDraggable,
-      initialChildSize: initialChildSize,
-      minChildSize: minChildSize,
-      maxChildSize: maxChildSize,
-      useBlurredTransparentBackground: useBlurredTransparentBackground,
-      blurSigma: blurSigma,
-      builder: builder,
-      child: child,
+    barrierColor: isDismissible
+        ? Colors.black.withValues(alpha: 0.55)
+        : Colors.transparent, // Make barrier transparent when non-dismissible
+    builder: (context) => Stack(
+      children: [
+        // Custom tappable barrier when isDismissible is false
+        if (!isDismissible)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.of(context).maybePop(), // Trigger PopScope
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.55), // Match barrier color
+              ),
+            ),
+          ),
+        AppBottomSheet(
+          isDraggable: isDraggable,
+          isDismissible: isDismissible,
+          initialChildSize: initialChildSize,
+          minChildSize: minChildSize,
+          maxChildSize: maxChildSize,
+          useBlurredTransparentBackground: useBlurredTransparentBackground,
+          blurSigma: blurSigma,
+          builder: builder,
+          child: child,
+        ),
+      ],
     ),
   );
 }

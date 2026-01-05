@@ -5,8 +5,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:trainware/dtos/appsync/routine_log_dto.dart';
-import 'package:trainware/dtos/viewmodels/past_routine_log_arguments.dart';
 import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/utils/general_utils.dart';
@@ -237,7 +235,6 @@ class _OverviewScreenState extends State<OverviewScreen>
     final selectedDate = DateTime(date.year, date.month, date.day);
 
     final isToday = selectedDate == today;
-    final isPast = selectedDate.isBefore(today);
     final isFuture = selectedDate.isAfter(today);
 
     // Check if this is a predicted training day
@@ -305,18 +302,12 @@ class _OverviewScreenState extends State<OverviewScreen>
                       ],
                     ),
                   ),
-                  // Log workout button (hide for future dates)
-                  if (!isFuture)
+                  // Log workout button (only show for today)
+                  if (isToday)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
-                        if (isToday) {
-                          // Log a fresh session for today
-                          logEmptyRoutine(context: context);
-                        } else if (isPast) {
-                          // Log a past session for the selected date
-                          _logPastSessionForDate(context, date);
-                        }
+                        logEmptyRoutine(context: context);
                       },
                       icon: FaIcon(
                         FontAwesomeIcons.circlePlus,
@@ -370,18 +361,6 @@ class _OverviewScreenState extends State<OverviewScreen>
     );
   }
 
-  void _logPastSessionForDate(BuildContext context, DateTime date) {
-    final log = RoutineLogDto(
-      id: "",
-      templateId: "",
-      name: "${timeOfDay()} Session",
-      exerciseLogs: [],
-      startTime: date,
-      endTime: date,
-    );
-    final arguments = PastRoutineLogArguments(log: log);
-    navigateToPastRoutineLogEditor(context: context, arguments: arguments);
-  }
 
   void _hideLoadingScreen() {
     if (mounted) {

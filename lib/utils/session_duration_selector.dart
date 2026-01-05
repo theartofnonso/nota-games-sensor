@@ -37,7 +37,6 @@ String? validateSessionDuration(DateTime startTime, DateTime endTime) {
 }
 
 /// Shows a reusable duration selector bottom sheet used for:
-/// - Logging past sessions
 /// - Editing existing log duration
 ///
 /// The [onConfirm] callback is called only when the selected duration is valid.
@@ -226,7 +225,7 @@ class _SessionDurationSelectorRowState
         ),
         const SizedBox(height: 12),
         Container(
-          height: 120,
+          height: 216, // Increased height for date and time picker
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
@@ -237,19 +236,13 @@ class _SessionDurationSelectorRowState
           ),
           clipBehavior: Clip.antiAlias,
           child: CupertinoDatePicker(
-            mode: CupertinoDatePickerMode.time,
+            mode: CupertinoDatePickerMode.dateAndTime,
             use24hFormat: true,
             initialDateTime: _currentDateTime,
             itemExtent: 40,
             onDateTimeChanged: (DateTime value) {
               setState(() {
-                _currentDateTime = DateTime(
-                  _currentDateTime.year,
-                  _currentDateTime.month,
-                  _currentDateTime.day,
-                  value.hour,
-                  value.minute,
-                );
+                _currentDateTime = value;
               });
               widget.onTimeChanged(_currentDateTime);
             },

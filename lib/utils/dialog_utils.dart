@@ -348,3 +348,63 @@ Future<bool> showSimilarExercisesDialog({
 
   return result ?? false;
 }
+
+/// Shows a confirmation dialog when user tries to exit with unsaved changes
+/// Returns true if user confirms to discard changes, false otherwise
+Future<bool> confirmDiscardChangesBottomSheet({
+  required BuildContext context,
+  required String title,
+  required String description,
+}) async {
+  bool? result;
+  await showAppBottomSheet<bool>(
+    context: context,
+    isScrollControlled: false,
+    isDismissible: true, // Allow dismissal for the confirmation dialog itself
+    child: Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge,
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              OpacityButtonWidget(
+                onPressed: () {
+                  result = false;
+                  Navigator.of(context).pop(false);
+                },
+                label: 'Cancel',
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+              const SizedBox(width: 10),
+              OpacityButtonWidget(
+                onPressed: () {
+                  result = true;
+                  Navigator.of(context).pop(true);
+                },
+                label: 'Leave',
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                buttonColor: vibrantGreen,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+  return result ?? false;
+}

@@ -23,7 +23,6 @@ import 'package:trainware/repositories/supabase/supabase_routine_plan_repository
 import 'package:trainware/repositories/supabase/supabase_routine_template_repository.dart';
 import 'package:trainware/screens/auth/supabase_auth_screen.dart';
 import 'package:trainware/screens/editors/exercise_editor_screen.dart';
-import 'package:trainware/screens/editors/past_routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_plan_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_template_editor_screen.dart';
@@ -44,7 +43,6 @@ import 'dtos/viewmodels/routine_log_arguments.dart';
 import 'dtos/viewmodels/routine_plan_arguments.dart';
 import 'dtos/viewmodels/routine_template_arguments.dart';
 import 'dtos/viewmodels/exercise_editor_arguments.dart';
-import 'dtos/viewmodels/past_routine_log_arguments.dart';
 import 'logger.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -224,13 +222,6 @@ final _router = GoRouter(
       builder: (context, state) {
         final args = state.extra as RoutinePlanArguments?;
         return RoutinePlanEditorScreen(plan: args?.plan);
-      },
-    ),
-    GoRoute(
-      path: PastRoutineLogEditorScreen.routeName,
-      builder: (context, state) {
-        final args = state.extra as PastRoutineLogArguments;
-        return PastRoutineLogEditorScreen(log: args.log);
       },
     ),
     GoRoute(

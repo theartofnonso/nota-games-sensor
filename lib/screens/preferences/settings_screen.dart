@@ -21,7 +21,6 @@ import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
-import '../../dtos/viewmodels/past_routine_log_arguments.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
@@ -573,7 +572,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     final selectedDate = DateTime(date.year, date.month, date.day);
 
     final isToday = selectedDate == today;
-    final isPast = selectedDate.isBefore(today);
     final isFuture = selectedDate.isAfter(today);
 
     // Check if this is a predicted training day
@@ -643,18 +641,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ],
                     ),
                   ),
-                  // Log workout button (hide for future dates)
-                  if (!isFuture)
+                  // Log workout button (only show for today)
+                  if (isToday)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
-                        if (isToday) {
-                          // Log a fresh session for today
-                          logEmptyRoutine(context: context);
-                        } else if (isPast) {
-                          // Log a past session for the selected date
-                          _logPastSessionForDate(context, date);
-                        }
+                        logEmptyRoutine(context: context);
                       },
                       icon: FaIcon(
                         FontAwesomeIcons.circlePlus,
@@ -709,18 +701,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  void _logPastSessionForDate(BuildContext context, DateTime date) {
-    final log = RoutineLogDto(
-      id: "",
-      templateId: "",
-      name: "${timeOfDay()} Session",
-      exerciseLogs: [],
-      startTime: date,
-      endTime: date,
-    );
-    final arguments = PastRoutineLogArguments(log: log);
-    navigateToPastRoutineLogEditor(context: context, arguments: arguments);
-  }
 }
 
 class _TrainingInsightsSection extends StatelessWidget {
