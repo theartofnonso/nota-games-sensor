@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 import '../colors.dart';
@@ -16,8 +15,14 @@ class WeightPlateCalculator extends StatefulWidget {
 }
 
 class _WeightCalculatorState extends State<WeightPlateCalculator> {
-  final List<_PlatesEnum> _selectedPlates = [];
+  // Available plate types (which plates the user has access to)
+  final List<_PlatesEnum> _availablePlates = [];
   _BarsEnum _selectedBar = _BarsEnum.twenty;
+
+  // Calculated plate quantities needed to reach target (computed on demand)
+  Map<_PlatesEnum, int> get _calculatedPlateQuantities {
+    return _calculateOptimalCombination();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +49,7 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
                       ],
                       stops: const [0.0, 0.5, 1.0],
                     ),
-                    border: _getPlate(plate: plate) != null
+                    border: _isPlateAvailable(plate: plate)
                         ? Border.all(
                             color: vibrantGreen,
                             width: 1,
@@ -168,19 +173,21 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
         )
         .toList();
 
-    // Calculate actual weight from selected plates and bar
-    final actualWeight =
-        _selectedPlates.fold(0.0, (sum, plate) => sum + plate.weight) * 2 +
-            _selectedBar.weight;
+    // Calculate actual weight from calculated plate quantities and bar
+    final actualWeight = _calculatedPlateQuantities.entries.fold(
+                0.0, (sum, entry) => sum + (entry.key.weight * entry.value)) *
+            2 +
+        _selectedBar.weight;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (_selectedPlates.isNotEmpty)
+          if (_availablePlates.isNotEmpty &&
+              _calculatedPlateQuantities.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
               child: _buildWeightBreakdown(actualWeight),
             )
           else
@@ -232,89 +239,120 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
   }
 
   Widget _buildWeightBreakdown(double totalWeight) {
-    final sortedPlates = List<_PlatesEnum>.from(_selectedPlates)
-      ..sort((a, b) => b.weight.compareTo(a.weight));
+    // Get plates with quantities, sorted by weight descending
+    final platesWithQuantities = _calculatedPlateQuantities.entries
+        .where((entry) => entry.value > 0)
+        .toList()
+      ..sort((a, b) => b.key.weight.compareTo(a.key.weight));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Plates on one side
-              if (sortedPlates.isNotEmpty) ...[
-                Text(
-                  sortedPlates
-                      .map((p) =>
-                          weightWithConversion(value: p.weight).toString())
-                      .join(' + '),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '× 2',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.grey,
-                      ),
-                ),
-              ] else
-                Text(
-                  '0',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              // Plus sign
-              if (sortedPlates.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Text(
-                  '+',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.grey,
-                      ),
-                ),
-              ],
-              // Bar weight
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            // Plates on one side
+            if (platesWithQuantities.isNotEmpty) ...[
+              ...platesWithQuantities.asMap().entries.expand((mapEntry) {
+                final index = mapEntry.key;
+                final entry = mapEntry.value;
+                final plate = entry.key;
+                final quantity = entry.value;
+                final isLast = index == platesWithQuantities.length - 1;
+                return [
+                  if (quantity > 1) ...[
+                    Text(
+                      quantity.toString(),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '×',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.grey,
+                          ),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Text(
+                    "${weightWithConversion(value: plate.weight)}${weightUnit()}",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  if (!isLast) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      '+',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.grey,
+                          ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ];
+              }),
               const SizedBox(width: 8),
               Text(
-                weightWithConversion(value: _selectedBar.weight).toString(),
+                '× 2',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.grey,
+                    ),
+              ),
+            ] else
+              Text(
+                '0',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
               ),
+            // Plus sign
+            if (platesWithQuantities.isNotEmpty) ...[
               const SizedBox(width: 8),
               Text(
-                '(bar)',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey,
-                    ),
-              ),
-              // Equals sign
-              const SizedBox(width: 8),
-              Text(
-                '=',
+                '+',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Colors.grey,
-                    ),
-              ),
-              // Total weight
-              const SizedBox(width: 8),
-              Text(
-                "${weightWithConversion(value: totalWeight)}${weightUnit()}",
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: totalWeight == widget.target
-                          ? vibrantGreen
-                          : Theme.of(context).colorScheme.error,
                     ),
               ),
             ],
-          ),
+            // Bar weight
+            const SizedBox(width: 8),
+            Text(
+              "${weightWithConversion(value: _selectedBar.weight)}${weightUnit()}",
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '(bar)',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey,
+                  ),
+            ),
+            // Equals sign
+            const SizedBox(width: 8),
+            Text(
+              '=',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.grey,
+                  ),
+            ),
+            // Total weight
+            const SizedBox(width: 8),
+            Text(
+              "${weightWithConversion(value: totalWeight)}${weightUnit()}",
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: totalWeight == widget.target
+                        ? vibrantGreen
+                        : Theme.of(context).colorScheme.error,
+                  ),
+            ),
+          ],
         ),
         if (totalWeight != widget.target)
           Padding(
@@ -331,13 +369,14 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
   }
 
   void _onSelectPlate({required _PlatesEnum newPlate}) {
-    final oldPlate = _selectedPlates.firstWhereOrNull(
-        (previousPlate) => previousPlate.weight == newPlate.weight);
     setState(() {
-      if (oldPlate != null) {
-        _selectedPlates.remove(oldPlate);
+      final isAvailable =
+          _availablePlates.any((plate) => plate.weight == newPlate.weight);
+      if (isAvailable) {
+        _availablePlates
+            .removeWhere((plate) => plate.weight == newPlate.weight);
       } else {
-        _selectedPlates.add(newPlate);
+        _availablePlates.add(newPlate);
       }
     });
   }
@@ -348,9 +387,50 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
     });
   }
 
-  _PlatesEnum? _getPlate({required _PlatesEnum plate}) =>
-      _selectedPlates.firstWhereOrNull(
-          (previousPlate) => previousPlate.weight == plate.weight);
+  bool _isPlateAvailable({required _PlatesEnum plate}) =>
+      _availablePlates.any((p) => p.weight == plate.weight);
+
+  /// Calculates the optimal combination of available plates to reach the target weight
+  Map<_PlatesEnum, int> _calculateOptimalCombination() {
+    final quantities = <_PlatesEnum, int>{};
+
+    if (_availablePlates.isEmpty) {
+      return quantities;
+    }
+
+    // Calculate weight needed from plates (on one side)
+    // Total weight = (plates on one side × 2) + bar weight
+    // So: plates on one side = (target - bar weight) / 2
+    final barWeight = _selectedBar.weight;
+    final targetPlateWeight = (widget.target - barWeight) / 2;
+
+    if (targetPlateWeight <= 0) {
+      // Target is less than or equal to bar weight, no plates needed
+      return quantities;
+    }
+
+    // Sort available plates by weight descending (greedy approach)
+    final sortedAvailablePlates = List<_PlatesEnum>.from(_availablePlates)
+      ..sort((a, b) => b.weight.compareTo(a.weight));
+
+    double remainingWeight = targetPlateWeight;
+
+    // Greedy algorithm: use largest plates first
+    for (final plate in sortedAvailablePlates) {
+      if (remainingWeight <= 0) break;
+
+      final plateWeight = plate.weight;
+      if (plateWeight <= remainingWeight) {
+        final count = (remainingWeight / plateWeight).floor();
+        if (count > 0) {
+          quantities[plate] = count;
+          remainingWeight -= plateWeight * count;
+        }
+      }
+    }
+
+    return quantities;
+  }
 }
 
 class _BarPainter extends CustomPainter {
