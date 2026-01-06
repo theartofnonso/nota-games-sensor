@@ -54,30 +54,24 @@ class AppBottomSheet extends StatelessWidget {
     }
 
     if (isDraggable) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: isDismissible
-            ? () => Navigator.of(context).pop()
-            : () => Navigator.of(context).maybePop(), // Trigger PopScope
-        child: DraggableScrollableSheet(
-          initialChildSize: initialChildSize ?? 0.7,
-          minChildSize: minChildSize ?? 0.5,
-          maxChildSize: maxChildSize ?? 0.9,
-          snap: true,
-          builder: (context, scrollController) {
-            return GestureDetector(
-              onTap: () {}, // Absorb taps on the sheet content
-              child: wrapWithBlur(
-                child: Container(
-                  decoration: decoration,
-                  child: builder != null
-                      ? builder!(context, scrollController)
-                      : child!,
-                ),
+      return DraggableScrollableSheet(
+        initialChildSize: initialChildSize ?? 0.7,
+        minChildSize: minChildSize ?? 0.5,
+        maxChildSize: maxChildSize ?? 0.9,
+        snap: true,
+        builder: (context, scrollController) {
+          return GestureDetector(
+            onTap: () {}, // Absorb taps on the sheet content
+            child: wrapWithBlur(
+              child: Container(
+                decoration: decoration,
+                child: builder != null
+                    ? builder!(context, scrollController)
+                    : child!,
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       );
     }
 
@@ -107,6 +101,7 @@ Future<T?> showAppBottomSheet<T>({
   double? maxChildSize,
   bool useBlurredTransparentBackground = true,
   double blurSigma = 16,
+  Future<bool> Function()? onBarrierTap,
 }) {
   assert(builder != null || child != null,
       'Either builder or child must be provided');
@@ -127,17 +122,29 @@ Future<T?> showAppBottomSheet<T>({
         : Colors.transparent, // Make barrier transparent when non-dismissible
     builder: (context) => Stack(
       children: [
-        // Custom tappable barrier when isDismissible is false
+        // Custom tappable barrier when isDismissible is false (behind sheet to catch outside taps)
         if (!isDismissible)
           Positioned.fill(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => Navigator.of(context).maybePop(), // Trigger PopScope
+              onTap: () async {
+                // If a callback is provided, use it to show confirmation dialog
+                if (onBarrierTap != null) {
+                  final shouldPop = await onBarrierTap();
+                  if (shouldPop && context.mounted) {
+                    Navigator.of(context, rootNavigator: false).pop();
+                  }
+                } else {
+                  // Fallback: try maybePop to trigger PopScope's onPopInvokedWithResult
+                  Navigator.of(context, rootNavigator: false).maybePop();
+                }
+              },
               child: Container(
                 color: Colors.black.withValues(alpha: 0.55), // Match barrier color
               ),
             ),
           ),
+        // Sheet content on top (so taps on sheet don't hit barrier)
         AppBottomSheet(
           isDraggable: isDraggable,
           isDismissible: isDismissible,

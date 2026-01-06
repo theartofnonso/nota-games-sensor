@@ -398,7 +398,7 @@ Future<bool> confirmDiscardChangesBottomSheet({
                 },
                 label: 'Leave',
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                buttonColor: vibrantGreen,
+                buttonColor: Colors.red,
               ),
             ],
           ),

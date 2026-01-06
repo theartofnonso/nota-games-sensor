@@ -23,6 +23,7 @@ import '../../utils/notifications_utils.dart';
 import '../../extensions/duration_extension.dart';
 import 'package:lottie/lottie.dart';
 import '../../utils/lottie_exercise_registry.dart';
+import '../../utils/dialog_utils.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/routine-log-editor';
@@ -180,6 +181,17 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             (log) => log.sets.any((set) => set.isNotEmpty() && set.checked));
   }
 
+  /// Handles back navigation for edit mode - always shows confirmation
+  Future<bool> _handleBackNavigation() async {
+    final shouldLeave = await confirmDiscardChangesBottomSheet(
+      context: context,
+      title: 'Leave editor?',
+      description: 'Are you sure you want to leave?',
+    );
+
+    return shouldLeave;
+  }
+
   // initState is defined later once all helper methods are declared.
 
   @override
@@ -194,7 +206,17 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     // Suggestions removed
 
     return PopScope(
-        canPop: true,
+        canPop: !isLogMode, // Allow pop in log mode, prevent in edit mode
+        onPopInvokedWithResult: isLogMode
+            ? null
+            : (bool didPop, dynamic result) async {
+                if (didPop) return;
+                
+                final shouldPop = await _handleBackNavigation();
+                if (shouldPop && mounted) {
+                  Navigator.of(context).pop();
+                }
+              },
         child: Scaffold(
             body: Container(
           decoration: BoxDecoration(

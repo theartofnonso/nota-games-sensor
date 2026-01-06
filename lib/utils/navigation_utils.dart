@@ -9,6 +9,7 @@ import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/exercise/history/exercise_home_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/home.dart';
+import 'package:trainware/utils/dialog_utils.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
@@ -40,7 +41,8 @@ Future<RoutineTemplateDto?> navigateToRoutineTemplateEditor(
   final template = await showAppBottomSheet<RoutineTemplateDto>(
     context: context,
     isDraggable: true,
-    isDismissible: false, // Prevent auto-dismiss - PopScope will handle via GestureDetector
+    isDismissible:
+        false, // Prevent auto-dismiss - PopScope will handle via GestureDetector
     initialChildSize: 0.9,
     minChildSize: 0.6,
     maxChildSize: 0.98,
@@ -116,8 +118,24 @@ Future<void> navigateToRoutineLogEditor(
 Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
     {required BuildContext context,
     required RoutineLogArguments arguments}) async {
-  final log = await showAppBottomSheet<RoutineLogDto>(
+  // Create a callback for barrier taps when in edit mode
+  Future<bool> Function()? onBarrierTap;
+  if (arguments.editorMode == RoutineEditorMode.edit) {
+    onBarrierTap = () async {
+      // Show confirmation dialog when barrier is tapped in edit mode
+      return await confirmDiscardChangesBottomSheet(
+        context: context,
+        title: 'Leave editor?',
+        description: 'Are you sure you want to leave?',
+      );
+    };
+  }
+
+  final log = await showEditorBottomSheet<RoutineLogDto>(
     context: context,
+    isDismissible: arguments.editorMode ==
+        RoutineEditorMode.log, // Only dismissible in log mode, not edit mode
+    onBarrierTap: onBarrierTap,
     child: RoutineLogEditorScreen(
       log: arguments.log,
       mode: arguments.editorMode,
