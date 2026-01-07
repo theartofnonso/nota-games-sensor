@@ -154,6 +154,44 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                         spacing: 12,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Builder(
+                            builder: (context) {
+                              if (updatedLog.templateId.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              final template = exerciseAndRoutineController.templateWhere(id: updatedLog.templateId);
+                              if (template == null) {
+                                return const SizedBox.shrink();
+                              }
+                              final plan = exerciseAndRoutineController.planWhere(id: template.planId);
+                              final isSystemTemplate = plan?.isSystemPlan ?? false;
+                              
+                              if (isSystemTemplate) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      updatedLog.name,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        height: 1.5,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Not Athletes',
+                                      style: TextStyle(
+                                        fontFamily: 'GroutpixFlow',
+                                        color: Colors.blueGrey.shade400,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                          ),
                           ChipOne(
                               label: updatedLog.endTime.formattedDayMonthTime(),
                               child: CustomIcon(FontAwesomeIcons.calendarDay,

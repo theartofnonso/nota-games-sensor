@@ -92,6 +92,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
           (index, template) => GestureDetector(
             child: RoutineTemplateGridItemWidget(
               template: template,
+              plan: plan,
               onTap: () => navigateToRoutineTemplatePreview(
                   context: context, template: template),
             ),

@@ -20,9 +20,6 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = Theme.of(context).brightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     final exercises = template.exerciseTemplates;
     final totalSets = exercises
         .map((e) => e.sets.length)
@@ -63,42 +60,18 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                // System template badge indicator
-                if (plan?.isSystemPlan ?? false)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Text(
-                      'Not Athletes',
-                      style: TextStyle(
-                        fontFamily: 'GroutpixFlow',
-                        color: Colors.blueGrey.shade400,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
                 // Content
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (plan != null)
-                        Text("In ${plan?.name}",
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 2,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color:
-                                    isDarkMode ? Colors.white70 : Colors.black,
-                                height: 1.5,
-                                fontWeight: FontWeight.w400)),
                       const Spacer(),
                       Text(
                         template.name,
                         style: Theme.of(context).textTheme.titleMedium,
                         overflow: TextOverflow.ellipsis,
-                        maxLines: plan != null ? 1 : 3,
+                        maxLines: 3,
                       ),
                       // Exercises line
                       const SizedBox(height: 14),
