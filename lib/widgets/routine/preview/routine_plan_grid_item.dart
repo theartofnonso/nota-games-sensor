@@ -67,20 +67,6 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                // System plan badge indicator
-                if (plan.isSystemPlan)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Text(
-                      'Not Athletes',
-                      style: TextStyle(
-                        fontFamily: 'GroutpixFlow',
-                        color: Colors.blueGrey.shade400,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
                 // Content
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -89,11 +75,25 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Spacer(),
-                        Text(
-                          plan.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 3,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              plan.name,
+                              style: Theme.of(context).textTheme.titleMedium,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 3,
+                            ),
+                            if (plan.isSystemPlan)
+                              Text(
+                                'Not Athletes',
+                                style: TextStyle(
+                                  fontFamily: 'GroutpixFlow',
+                                  color: Colors.blueGrey.shade400,
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
                         ),
                         Column(
                           spacing: 6,
