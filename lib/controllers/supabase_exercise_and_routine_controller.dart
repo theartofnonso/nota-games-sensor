@@ -218,6 +218,14 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   Future<void> updatePlan({required RoutinePlanDto plan}) async {
+    // Prevent updating system plans
+    if (plan.isSystemPlan) {
+      errorMessage = "System plans cannot be edited.";
+      logger.w("Attempted to update system plan: ${plan.id}");
+      notifyListeners();
+      return;
+    }
+    
     isLoading = true;
     try {
       await _offlinePlanRepository.upsertLocal(plan);
@@ -234,6 +242,14 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   Future<void> deletePlan({required RoutinePlanDto plan}) async {
+    // Prevent deletion of system plans
+    if (plan.isSystemPlan) {
+      errorMessage = "System plans cannot be deleted.";
+      logger.w("Attempted to delete system plan: ${plan.id}");
+      notifyListeners();
+      return;
+    }
+    
     isLoading = true;
     try {
       await _offlinePlanRepository.deleteLocal(plan.id);
@@ -254,6 +270,15 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<RoutineTemplateDto?> saveTemplate({
     required RoutineTemplateDto templateDto,
   }) async {
+    // Check if template belongs to a system plan
+    final plan = planWhere(id: templateDto.planId);
+    if (plan?.isSystemPlan ?? false) {
+      errorMessage = "Cannot add workouts to system plans.";
+      logger.w("Attempted to save template to system plan: ${templateDto.planId}");
+      notifyListeners();
+      return null;
+    }
+    
     isLoading = true;
     RoutineTemplateDto? result;
     try {
@@ -279,6 +304,15 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> updateTemplate({
     required RoutineTemplateDto template,
   }) async {
+    // Check if template belongs to a system plan
+    final plan = planWhere(id: template.planId);
+    if (plan?.isSystemPlan ?? false) {
+      errorMessage = "Templates from system plans cannot be edited.";
+      logger.w("Attempted to update template from system plan: ${template.id}");
+      notifyListeners();
+      return;
+    }
+    
     isLoading = true;
     try {
       await _offlineTemplateRepository.upsertLocal(template);
@@ -297,6 +331,15 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> deleteTemplate({
     required RoutineTemplateDto template,
   }) async {
+    // Check if template belongs to a system plan
+    final plan = planWhere(id: template.planId);
+    if (plan?.isSystemPlan ?? false) {
+      errorMessage = "Templates from system plans cannot be deleted.";
+      logger.w("Attempted to delete template from system plan: ${template.id}");
+      notifyListeners();
+      return;
+    }
+    
     isLoading = true;
     try {
       await _offlineTemplateRepository.deleteLocal(template.id);

@@ -258,6 +258,34 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                Builder(
+                                  builder: (context) {
+                                    if (widget.log.templateId.isEmpty) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+                                        context,
+                                        listen: false);
+                                    final template = controller.templateWhere(id: widget.log.templateId);
+                                    if (template == null) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    final plan = controller.planWhere(id: template.planId);
+                                    final isSystemTemplate = plan?.isSystemPlan ?? false;
+                                    
+                                    if (isSystemTemplate) {
+                                      return Text(
+                                        'Not Athletes',
+                                        style: TextStyle(
+                                          fontFamily: 'GroutpixFlow',
+                                          color: Colors.blueGrey.shade400,
+                                          fontSize: 14,
+                                        ),
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
                                 if (isLogMode) ...[
                                   const SizedBox(height: 6),
                                   GestureDetector(

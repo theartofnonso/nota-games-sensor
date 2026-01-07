@@ -130,13 +130,27 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                   spacing: 20,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      plan.name,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        height: 1.5,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          plan.name,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            height: 1.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        if (plan.isSystemPlan)
+                          Text(
+                            'Not Athletes',
+                            style: TextStyle(
+                              fontFamily: 'GroutpixFlow',
+                              color: Colors.blueGrey.shade400,
+                              fontSize: 14,
+                            ),
+                          ),
+                      ],
                     ),
                     Text(
                       plan.notes.isNotEmpty ? plan.notes : "No notes",
@@ -335,7 +349,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     );
   }
 
-
   void _deleteRoutinePlan({required RoutinePlanDto plan}) async {
     try {
       final exerciseAndRoutineController =
@@ -405,6 +418,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             listen: false);
     final plan = exerciseAndRoutineController.planWhere(id: widget.id);
 
+    if (plan == null) return;
+
     showEditorBottomSheet(
         context: context,
         // Tighter height to better fit the short menu contents
@@ -417,54 +432,52 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const FaIcon(
-                      FontAwesomeIcons.circlePlus,
-                      size: 22,
-                    ),
-                    horizontalTitleGap: 6,
-                    title: Text("Add new workout",
-                        style: Theme.of(context).textTheme.bodyLarge),
-                    onTap: () async {
-                      Navigator.of(context).pop();
-                      if (plan != null) {
+                if (!plan.isSystemPlan) ...[
+                  ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const FaIcon(
+                        FontAwesomeIcons.circlePlus,
+                        size: 22,
+                      ),
+                      horizontalTitleGap: 6,
+                      title: Text("Add new workout",
+                          style: Theme.of(context).textTheme.bodyLarge),
+                      onTap: () async {
+                        Navigator.of(context).pop();
                         _showCreateWorkoutBottomSheet(plan: plan);
-                      }
-                    }),
-                ListTile(
+                      }),
+                  ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const FaIcon(
+                        FontAwesomeIcons.penToSquare,
+                        size: 18,
+                      ),
+                      horizontalTitleGap: 6,
+                      title: Text("Edit",
+                          style: Theme.of(context).textTheme.bodyLarge),
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        await _navigateToRoutinePlanEditor();
+                        if (mounted) {
+                          _showMenuBottomSheet();
+                        }
+                      }),
+                  ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(
-                      FontAwesomeIcons.penToSquare,
-                      size: 18,
+                      FontAwesomeIcons.trash,
+                      size: 16,
+                      color: Colors.redAccent,
                     ),
                     horizontalTitleGap: 6,
-                    title: Text("Edit",
-                        style: Theme.of(context).textTheme.bodyLarge),
-                    onTap: () async {
+                    title: Text("Delete",
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyLarge
+                            ?.copyWith(color: Colors.red)),
+                    onTap: () {
                       Navigator.of(context).pop();
-                      await _navigateToRoutinePlanEditor();
-                      if (mounted) {
-                        _showMenuBottomSheet();
-                      }
-                    }),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const FaIcon(
-                    FontAwesomeIcons.trash,
-                    size: 16,
-                    color: Colors.redAccent,
-                  ),
-                  horizontalTitleGap: 6,
-                  title: Text("Delete",
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyLarge
-                          ?.copyWith(color: Colors.red)),
-                  onTap: () {
-                    Navigator.of(context).pop();
 
-                    if (plan != null) {
                       showBottomSheetWithMultiActions(
                           context: context,
                           title: "Delete plan?",
@@ -479,9 +492,30 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                           leftActionLabel: 'Cancel',
                           rightActionLabel: 'Delete',
                           isRightActionDestructive: true);
-                    }
-                  },
-                )
+                    },
+                  ),
+                ] else
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const FaIcon(
+                      FontAwesomeIcons.shield,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                    horizontalTitleGap: 6,
+                    title: Text("Read-only plan",
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: Colors.grey)),
+                    subtitle: Text(
+                      "This is a system plan. You can log sessions but cannot edit or delete it.",
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: Colors.grey.shade600),
+                    ),
+                  ),
               ]),
         ));
   }

@@ -116,6 +116,10 @@ flutter:
         - asset: assets/fonts/Grift-BoldItalic.ttf
           weight: 700
           style: italic
+    - family: GroutpixFlow
+      fonts:
+        - asset: assets/fonts/GroutpixFlow-Regular.ttf
+          weight: 400
 
 flutter_launcher_icons:
   android: "launcher_icon"

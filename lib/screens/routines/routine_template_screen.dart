@@ -105,7 +105,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       return const SizedBox.shrink();
     }
 
+    // Get the plan this template belongs to
     final plan = exerciseAndRoutineController.planWhere(id: template.planId);
+    
+    // Check if this template belongs to a system plan
+    final isSystemTemplate = plan?.isSystemPlan ?? false;
 
     final allLogsForTemplate = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: template.id)
@@ -185,7 +189,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: 4,
                                 children: [
                                   Text(
                                     template.name,
@@ -195,16 +198,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
-                                  if (template.notes.isNotEmpty)
+                                  if (isSystemTemplate)
                                     Text(
-                                      template.notes,
+                                      'Not Athletes',
                                       style: TextStyle(
+                                        fontFamily: 'GroutpixFlow',
+                                        color: Colors.blueGrey.shade400,
                                         fontSize: 14,
-                                        color: isDarkMode
-                                            ? Colors.white70
-                                            : Colors.black,
-                                        height: 1.6,
-                                        fontWeight: FontWeight.w400,
                                       ),
                                     ),
                                 ],
@@ -220,6 +220,18 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             ),
                           ],
                         ),
+                        if (template.notes.isNotEmpty)
+                          Text(
+                            template.notes,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : Colors.black,
+                              height: 1.8,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
                         Row(
                           spacing: 8,
                           children: [
@@ -602,6 +614,15 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _showMenuBottomSheet({required RoutinePlanDto? planDto}) {
+    final exerciseAndRoutineController =
+        Provider.of<SupabaseExerciseAndRoutineController>(context,
+            listen: false);
+    final template = exerciseAndRoutineController.templateWhere(id: widget.id);
+    final plan = template != null
+        ? exerciseAndRoutineController.planWhere(id: template.planId)
+        : null;
+    final isSystemTemplate = plan?.isSystemPlan ?? false;
+
     showAppBottomSheet(
         context: context,
         isScrollControlled: false,
@@ -611,108 +632,125 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const FaIcon(
-                    FontAwesomeIcons.circlePlus,
-                    size: 22,
+                if (!isSystemTemplate) ...[
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const FaIcon(
+                      FontAwesomeIcons.circlePlus,
+                      size: 22,
+                    ),
+                    horizontalTitleGap: 10,
+                    title: Text("Add exercises",
+                        style: Theme.of(context).textTheme.bodyLarge),
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _navigateToRoutineTemplateEditor();
+                      if (mounted) {
+                        _showMenuBottomSheet(planDto: planDto);
+                      }
+                    },
                   ),
-                  horizontalTitleGap: 10,
-                  title: Text("Add exercises",
-                      style: Theme.of(context).textTheme.bodyLarge),
-                  onTap: () async {
-                    Navigator.of(context).pop();
-                    await _navigateToRoutineTemplateEditor();
-                    if (mounted) {
-                      _showMenuBottomSheet(planDto: planDto);
-                    }
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const FaIcon(
-                    FontAwesomeIcons.penToSquare,
-                    size: 18,
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const FaIcon(
+                      FontAwesomeIcons.penToSquare,
+                      size: 18,
+                    ),
+                    horizontalTitleGap: 10,
+                    title: Text("Edit",
+                        style: Theme.of(context).textTheme.bodyLarge),
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      _showRenameTemplateBottomSheet();
+                    },
                   ),
-                  horizontalTitleGap: 10,
-                  title: Text("Edit",
-                      style: Theme.of(context).textTheme.bodyLarge),
-                  onTap: () async {
-                    Navigator.of(context).pop();
-                    _showRenameTemplateBottomSheet();
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const FaIcon(
-                    FontAwesomeIcons.copy,
-                    size: 18,
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const FaIcon(
+                      FontAwesomeIcons.copy,
+                      size: 18,
+                    ),
+                    horizontalTitleGap: 6,
+                    title: Text("Copy",
+                        style: Theme.of(context).textTheme.bodyLarge),
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _createTemplate(copy: true);
+                      if (mounted) {
+                        _showMenuBottomSheet(planDto: planDto);
+                      }
+                    },
                   ),
-                  horizontalTitleGap: 6,
-                  title: Text("Copy",
-                      style: Theme.of(context).textTheme.bodyLarge),
-                  onTap: () async {
-                    Navigator.of(context).pop();
-                    await _createTemplate(copy: true);
-                    if (mounted) {
-                      _showMenuBottomSheet(planDto: planDto);
-                    }
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: FaIcon(
-                    FontAwesomeIcons.arrowRightArrowLeft,
-                    size: 18,
-                    color: Colors.white,
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: FaIcon(
+                      FontAwesomeIcons.arrowRightArrowLeft,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                    horizontalTitleGap: 6,
+                    title: Text("Move to another plan",
+                        style: Theme.of(context).textTheme.bodyLarge),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _showPlanPicker();
+                    },
                   ),
-                  horizontalTitleGap: 6,
-                  title: Text("Move to another plan",
-                      style: Theme.of(context).textTheme.bodyLarge),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _showPlanPicker();
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const FaIcon(
-                    FontAwesomeIcons.trash,
-                    size: 16,
-                    color: Colors.redAccent,
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const FaIcon(
+                      FontAwesomeIcons.trash,
+                      size: 16,
+                      color: Colors.redAccent,
+                    ),
+                    horizontalTitleGap: 6,
+                    title: Text("Delete",
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyLarge
+                            ?.copyWith(color: Colors.red)),
+                    onTap: () {
+                      Navigator.of(context).pop();
+
+                      if (template != null) {
+                        showBottomSheetWithMultiActions(
+                            context: context,
+                            title: "Delete workout?",
+                            description: planDto != null
+                                ? "Are you sure you want to delete this workout and remove it from ${planDto.name}?"
+                                : "Are you sure you want to delete this workout?",
+                            leftAction: Navigator.of(context).pop,
+                            rightAction: () {
+                              _deleteRoutine(template: template);
+                            },
+                            leftActionLabel: 'Cancel',
+                            rightActionLabel: 'Delete',
+                            isRightActionDestructive: true);
+                      }
+                    },
                   ),
-                  horizontalTitleGap: 6,
-                  title: Text("Delete",
+                ] else
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const FaIcon(
+                      FontAwesomeIcons.shield,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                    horizontalTitleGap: 6,
+                    title: Text("Read-only workout",
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: Colors.grey)),
+                    subtitle: Text(
+                      "This is a system workout. You can log sessions but cannot edit or delete it.",
                       style: Theme.of(context)
                           .textTheme
-                          .bodyLarge
-                          ?.copyWith(color: Colors.red)),
-                  onTap: () {
-                    Navigator.of(context).pop();
-
-                    final controller =
-                        Provider.of<SupabaseExerciseAndRoutineController>(
-                            context,
-                            listen: false);
-                    final template = controller.templateWhere(id: widget.id);
-
-                    if (template != null) {
-                      showBottomSheetWithMultiActions(
-                          context: context,
-                          title: "Delete workout?",
-                          description: planDto != null
-                              ? "Are you sure you want to delete this workout and remove it from ${planDto.name}?"
-                              : "Are you sure you want to delete this workout?",
-                          leftAction: Navigator.of(context).pop,
-                          rightAction: () {
-                            _deleteRoutine(template: template);
-                          },
-                          leftActionLabel: 'Cancel',
-                          rightActionLabel: 'Delete',
-                          isRightActionDestructive: true);
-                    }
-                  },
-                )
+                          .bodySmall
+                          ?.copyWith(color: Colors.grey.shade600),
+                    ),
+                  ),
               ]),
         ));
   }

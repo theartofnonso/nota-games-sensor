@@ -81,6 +81,17 @@ class _RoutineTemplateEditorScreenState
   void _createRoutineTemplate() async {
     if (!_validateRoutineTemplateInputs()) return;
 
+    // Check if plan is a system plan
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final plan = controller.planWhere(id: widget.planId);
+
+    if (plan?.isSystemPlan ?? false) {
+      _showSnackbar('Cannot add workouts to system plans.');
+      return;
+    }
+
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
     final exercises = exerciseLogController.exerciseLogs;
@@ -211,210 +222,214 @@ class _RoutineTemplateEditorScreenState
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (didPop) return;
-        
+
         final shouldPop = await _handleBackNavigation();
         if (shouldPop && mounted) {
           context.pop();
         }
       },
       child: Scaffold(
-      floatingActionButton: isKeyboardOpen
-          ? SafeArea(
-              minimum: EdgeInsets.only(left: 32),
-              child: Row(children: [
-                FloatingActionButton(
-                  heroTag: UniqueKey(),
-                  onPressed: _dismissKeyboard,
-                  enableFeedback: true,
-                  child: FaIcon(Icons.keyboard_hide_rounded),
-                ),
-                Spacer(),
-                _selectedSetDto != null
-                    ? FloatingActionButton(
-                        heroTag: UniqueKey(),
-                        onPressed: _showWeightCalculator,
-                        enableFeedback: true,
-                        child: Image.asset(
-                          'icons/dumbbells.png',
-                          fit: BoxFit.contain,
-                          color: isDarkMode ? Colors.white : Colors.white,
-                          height: 24, // Adjust the height as needed
-                        ),
-                      )
-                    : SizedBox.shrink()
-              ]),
-            )
-          : null,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: themeGradient(context: context),
-            ),
-            child: SafeArea(
-              top: true,
-              bottom: false,
-              left: true,
-              right: true,
-              minimum: const EdgeInsets.all(20),
-              child: Stack(
-                children: [
-                  // Main scrollable content: header + list
-                  Positioned.fill(
-                    bottom: exerciseTemplates.isNotEmpty ? 88.0 : 0.0,
-                    child: GestureDetector(
-                      onTap: _dismissKeyboard,
-                      child: Column(
-                        children: [
-                          // Header: template name + add button (top-right)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    _templateNameController.text.isNotEmpty
-                                        ? _templateNameController.text
-                                        : 'New workout',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w900,
-                                          height: 1.2,
-                                        ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: _selectExercisesInLibrary,
-                                  icon: const FaIcon(
-                                    FontAwesomeIcons.circlePlus,
-                                    size: 22,
-                                    color: Colors.white,
-                                  ),
-                                  tooltip: 'Add exercises',
-                                ),
-                              ],
-                            ),
+        floatingActionButton: isKeyboardOpen
+            ? SafeArea(
+                minimum: EdgeInsets.only(left: 32),
+                child: Row(children: [
+                  FloatingActionButton(
+                    heroTag: UniqueKey(),
+                    onPressed: _dismissKeyboard,
+                    enableFeedback: true,
+                    child: FaIcon(Icons.keyboard_hide_rounded),
+                  ),
+                  Spacer(),
+                  _selectedSetDto != null
+                      ? FloatingActionButton(
+                          heroTag: UniqueKey(),
+                          onPressed: _showWeightCalculator,
+                          enableFeedback: true,
+                          child: Image.asset(
+                            'icons/dumbbells.png',
+                            fit: BoxFit.contain,
+                            color: isDarkMode ? Colors.white : Colors.white,
+                            height: 24, // Adjust the height as needed
                           ),
-                          Expanded(
-                            child: exerciseTemplates.isEmpty
-                                ? Center(
+                        )
+                      : SizedBox.shrink()
+                ]),
+              )
+            : null,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return Container(
+              decoration: BoxDecoration(
+                gradient: themeGradient(context: context),
+              ),
+              child: SafeArea(
+                top: true,
+                bottom: false,
+                left: true,
+                right: true,
+                minimum: const EdgeInsets.all(20),
+                child: Stack(
+                  children: [
+                    // Main scrollable content: header + list
+                    Positioned.fill(
+                      bottom: exerciseTemplates.isNotEmpty ? 88.0 : 0.0,
+                      child: GestureDetector(
+                        onTap: _dismissKeyboard,
+                        child: Column(
+                          children: [
+                            // Header: template name + add button (top-right)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
                                     child: Text(
-                                      'No exercises in this workout yet.\nTap + to add exercises.',
-                                      textAlign: TextAlign.center,
+                                      _templateNameController.text.isNotEmpty
+                                          ? _templateNameController.text
+                                          : 'New workout',
                                       style: Theme.of(context)
                                           .textTheme
-                                          .bodyMedium
+                                          .headlineMedium
                                           ?.copyWith(
-                                            color: Colors.white70,
+                                            fontWeight: FontWeight.w900,
+                                            height: 1.2,
                                           ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  )
-                                : ReorderableListView.builder(
-                                    padding: const EdgeInsets.only(
-                                      top: 8,
-                                    ),
-                                    itemCount: exerciseTemplates.length,
-                                    onReorder: (oldIndex, newIndex) {
-                                      if (newIndex > oldIndex) {
-                                        newIndex -= 1;
-                                      }
-
-                                      final updated =
-                                          exerciseTemplates.toList();
-                                      final item = updated.removeAt(oldIndex);
-                                      updated.insert(newIndex, item);
-
-                                      exerciseLogController.reOrderExerciseLogs(
-                                        reOrderedList: updated,
-                                      );
-                                    },
-                                    proxyDecorator:
-                                        (Widget child, int index, animation) {
-                                      return Material(
-                                        type: MaterialType.transparency,
-                                        child: child,
-                                      );
-                                    },
-                                    itemBuilder: (context, index) {
-                                      final exerciseLog =
-                                          exerciseTemplates[index];
-                                      return Dismissible(
-                                        key: ValueKey(exerciseLog.id),
-                                        direction: DismissDirection.endToStart,
-                                        confirmDismiss: (_) =>
-                                            _confirmRemoveExercise(exerciseLog),
-                                        onDismissed: (_) {
-                                          exerciseLogController
-                                              .removeExerciseLog(
-                                                  logId: exerciseLog.id);
-                                        },
-                                        background: const SizedBox.shrink(),
-                                        child: Column(
-                                          children: [
-                                            ExerciseLogListItem(
-                                              exerciseLogDto: exerciseLog,
-                                              showOnlyTotalSets: true,
-                                              showStatusIcon: true,
-                                              onTap: () {
-                                                showExerciseLogEditor(
-                                                  context: context,
-                                                  exerciseLogId:
-                                                      exerciseLog.exercise.id,
-                                                  editorType:
-                                                      RoutineEditorMode.edit,
-                                                  showSetCheck: false,
-                                                );
-                                              },
-                                            ),
-                                            const SizedBox(height: 12),
-                                          ],
-                                        ),
-                                      );
-                                    },
                                   ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Bottom fixed CTA (does not scroll) – only when there is at least one exercise
-                  if (exerciseTemplates.isNotEmpty)
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: SafeArea(
-                        minimum: const EdgeInsets.only(
-                            left: 20, right: 20, bottom: 16),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: OpacityButtonWidgetTwo(
-                            buttonColor: Theme.of(context).colors.vibrantAccent,
-                            label: widget.template?.id.isNotEmpty ?? false
-                                ? "Update Workout"
-                                : "Create Workout",
-                            onPressed: () {
-                              final isUpdate =
-                                  widget.template?.id.isNotEmpty ?? false;
-                              if (isUpdate) {
-                                _updateRoutineTemplate();
-                              } else {
-                                _showTemplateNameBottomSheet(isUpdate: false);
-                              }
-                            },
-                          ),
+                                  IconButton(
+                                    onPressed: _selectExercisesInLibrary,
+                                    icon: const FaIcon(
+                                      FontAwesomeIcons.circlePlus,
+                                      size: 22,
+                                      color: Colors.white,
+                                    ),
+                                    tooltip: 'Add exercises',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: exerciseTemplates.isEmpty
+                                  ? Center(
+                                      child: Text(
+                                        'No exercises in this workout yet.\nTap + to add exercises.',
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Colors.white70,
+                                            ),
+                                      ),
+                                    )
+                                  : ReorderableListView.builder(
+                                      padding: const EdgeInsets.only(
+                                        top: 8,
+                                      ),
+                                      itemCount: exerciseTemplates.length,
+                                      onReorder: (oldIndex, newIndex) {
+                                        if (newIndex > oldIndex) {
+                                          newIndex -= 1;
+                                        }
+
+                                        final updated =
+                                            exerciseTemplates.toList();
+                                        final item = updated.removeAt(oldIndex);
+                                        updated.insert(newIndex, item);
+
+                                        exerciseLogController
+                                            .reOrderExerciseLogs(
+                                          reOrderedList: updated,
+                                        );
+                                      },
+                                      proxyDecorator:
+                                          (Widget child, int index, animation) {
+                                        return Material(
+                                          type: MaterialType.transparency,
+                                          child: child,
+                                        );
+                                      },
+                                      itemBuilder: (context, index) {
+                                        final exerciseLog =
+                                            exerciseTemplates[index];
+                                        return Dismissible(
+                                          key: ValueKey(exerciseLog.id),
+                                          direction:
+                                              DismissDirection.endToStart,
+                                          confirmDismiss: (_) =>
+                                              _confirmRemoveExercise(
+                                                  exerciseLog),
+                                          onDismissed: (_) {
+                                            exerciseLogController
+                                                .removeExerciseLog(
+                                                    logId: exerciseLog.id);
+                                          },
+                                          background: const SizedBox.shrink(),
+                                          child: Column(
+                                            children: [
+                                              ExerciseLogListItem(
+                                                exerciseLogDto: exerciseLog,
+                                                showOnlyTotalSets: true,
+                                                showStatusIcon: true,
+                                                onTap: () {
+                                                  showExerciseLogEditor(
+                                                    context: context,
+                                                    exerciseLogId:
+                                                        exerciseLog.exercise.id,
+                                                    editorType:
+                                                        RoutineEditorMode.edit,
+                                                    showSetCheck: false,
+                                                  );
+                                                },
+                                              ),
+                                              const SizedBox(height: 12),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                ],
+                    // Bottom fixed CTA (does not scroll) – only when there is at least one exercise
+                    if (exerciseTemplates.isNotEmpty)
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: SafeArea(
+                          minimum: const EdgeInsets.only(
+                              left: 20, right: 20, bottom: 16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OpacityButtonWidgetTwo(
+                              buttonColor:
+                                  Theme.of(context).colors.vibrantAccent,
+                              label: widget.template?.id.isNotEmpty ?? false
+                                  ? "Update Workout"
+                                  : "Create Workout",
+                              onPressed: () {
+                                final isUpdate =
+                                    widget.template?.id.isNotEmpty ?? false;
+                                if (isUpdate) {
+                                  _updateRoutineTemplate();
+                                } else {
+                                  _showTemplateNameBottomSheet(isUpdate: false);
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -447,7 +462,7 @@ class _RoutineTemplateEditorScreenState
 
   void _initializeWorkoutTemplateData() {
     final exercises = widget.template?.exerciseTemplates;
-    
+
     if (exercises != null && exercises.isNotEmpty) {
       final updatedExerciseLogs = exercises.map((exerciseLog) {
         final previousSets = Provider.of<SupabaseExerciseAndRoutineController>(

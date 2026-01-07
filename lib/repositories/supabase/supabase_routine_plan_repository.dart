@@ -24,10 +24,11 @@ class SupabaseRoutinePlanRepository {
         return;
       }
 
+      // Load both user-created plans and system plans (with clientId)
       final response = await _client
           .from('routine_plans')
           .select()
-          .eq('owner', userId)
+          .or('owner.eq.$userId,clientId.not.is.null')
           .order('createdAt', ascending: false);
 
       _plans = (response as List<dynamic>).map((item) {

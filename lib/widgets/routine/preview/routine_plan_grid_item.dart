@@ -67,6 +67,20 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                     ),
                   ),
                 ),
+                // System plan badge indicator
+                if (plan.isSystemPlan)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Text(
+                      'Not Athletes',
+                      style: TextStyle(
+                        fontFamily: 'GroutpixFlow',
+                        color: Colors.blueGrey.shade400,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
                 // Content
                 Padding(
                   padding: const EdgeInsets.all(16),

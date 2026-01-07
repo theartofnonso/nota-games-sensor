@@ -462,6 +462,9 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   void _showPlanPickerForTemplate(
       {required RoutineLogDto log, required List<RoutinePlanDto> plans}) {
+    // Filter out system plans - users cannot add templates to system plans
+    final userPlans = plans.where((plan) => !plan.isSystemPlan).toList();
+    
     showAppBottomSheet(
       context: context,
       isScrollControlled: false,
@@ -469,7 +472,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         padding: const EdgeInsets.fromLTRB(26, 26, 26, 0),
         child: PlanPicker(
           title: "Save as workout into...",
-          plans: plans,
+          plans: userPlans,
           onSelect: (selectedPlan) async {
             Navigator.of(context).pop();
             await _doCreateTemplate(log: log, planId: selectedPlan.id);
