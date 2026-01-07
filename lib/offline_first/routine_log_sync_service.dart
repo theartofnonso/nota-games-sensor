@@ -212,7 +212,11 @@ class OfflineRoutineLogRepository {
 
       final byId = {for (final e in _entries) e.log.id: e};
 
+      // Track which remote IDs we've seen
+      final remoteIds = <String>{};
+
       for (final remoteLog in remoteLogs) {
+        remoteIds.add(remoteLog.id);
         final remoteUpdatedAt =
             updatedAtById[remoteLog.id] ?? DateTime.now().toUtc();
         final local = byId[remoteLog.id];
@@ -244,6 +248,10 @@ class OfflineRoutineLogRepository {
       // Remove entries that are marked deleted locally and have been
       // successfully deleted from the server (i.e., no remote row exists).
       byId.removeWhere((_, entry) => entry.isDeleted && !entry.needsSync);
+
+      // Remove local entries that no longer exist on the remote (unless they need sync)
+      byId.removeWhere((id, entry) =>
+          !remoteIds.contains(id) && !entry.needsSync && !entry.isDeleted);
 
       _entries = byId.values.toList();
     } catch (e, stackTrace) {

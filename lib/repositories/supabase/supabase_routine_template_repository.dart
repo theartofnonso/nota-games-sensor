@@ -27,7 +27,7 @@ class SupabaseRoutineTemplateRepository {
       final response = await _client
           .from('routine_templates')
           .select()
-          .eq('owner', userId)
+          .or('owner.eq.$userId,clientId.eq.$userId')
           .order('createdAt', ascending: true);
 
       final rawItems = response as List;

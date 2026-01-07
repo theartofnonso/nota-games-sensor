@@ -28,7 +28,7 @@ class SupabaseRoutinePlanRepository {
       final response = await _client
           .from('routine_plans')
           .select()
-          .or('owner.eq.$userId,clientId.not.is.null')
+          .or('owner.eq.$userId,clientId.eq.$userId')
           .order('createdAt', ascending: false);
 
       _plans = (response as List<dynamic>).map((item) {

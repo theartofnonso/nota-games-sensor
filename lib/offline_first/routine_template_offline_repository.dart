@@ -43,8 +43,8 @@ class OfflineRoutineTemplateRepository {
 
     await _localStore.saveAll(_entries);
 
-    _logger
-        .i('Routine template sync completed. Local templates: ${offlineTemplates.length}');
+    _logger.i(
+        'Routine template sync completed. Local templates: ${offlineTemplates.length}');
   }
 
   Future<void> upsertLocal(RoutineTemplateDto template) async {
@@ -170,7 +170,7 @@ class OfflineRoutineTemplateRepository {
       final rawRows = await _client
           .from('routine_templates')
           .select('id, "updatedAt"')
-          .eq('owner', userId);
+          .or('owner.eq.$userId,clientId.eq.$userId');
 
       final updatedAtById = <String, DateTime>{};
       for (final row in rawRows as List<dynamic>) {
@@ -182,7 +182,11 @@ class OfflineRoutineTemplateRepository {
 
       final byId = {for (final e in _entries) e.template.id: e};
 
+      // Track which remote IDs we've seen
+      final remoteIds = <String>{};
+
       for (final remote in remoteTemplates) {
+        remoteIds.add(remote.id);
         final remoteUpdatedAt =
             updatedAtById[remote.id] ?? DateTime.now().toUtc();
         final local = byId[remote.id];
@@ -208,7 +212,12 @@ class OfflineRoutineTemplateRepository {
         }
       }
 
+      // Remove entries that are marked deleted locally and have been successfully deleted from the server
       byId.removeWhere((_, entry) => entry.isDeleted && !entry.needsSync);
+
+      // Remove local entries that no longer exist on the remote (unless they need sync)
+      byId.removeWhere((id, entry) =>
+          !remoteIds.contains(id) && !entry.needsSync && !entry.isDeleted);
 
       _entries = byId.values.toList();
     } catch (e, stackTrace) {
@@ -216,5 +225,3 @@ class OfflineRoutineTemplateRepository {
     }
   }
 }
-
-

@@ -15,8 +15,7 @@ class OfflineRoutinePlanRepository {
     SupabaseRoutinePlanRepository? remoteRepository,
     SupabaseClient? client,
   })  : _localStore = localStore ?? RoutinePlanLocalStore(),
-        _remoteRepository =
-            remoteRepository ?? SupabaseRoutinePlanRepository(),
+        _remoteRepository = remoteRepository ?? SupabaseRoutinePlanRepository(),
         _client = client ?? Supabase.instance.client;
 
   final RoutinePlanLocalStore _localStore;
@@ -43,7 +42,8 @@ class OfflineRoutinePlanRepository {
 
     await _localStore.saveAll(_entries);
 
-    _logger.i('Routine plan sync completed. Local plans: ${offlinePlans.length}');
+    _logger
+        .i('Routine plan sync completed. Local plans: ${offlinePlans.length}');
   }
 
   Future<void> upsertLocal(RoutinePlanDto plan) async {
@@ -111,13 +111,11 @@ class OfflineRoutinePlanRepository {
       try {
         if (entry.isDeleted) {
           await _client.from('routine_plans').delete().eq('id', entry.plan.id);
-          _entries =
-              _entries.where((e) => e.plan.id != entry.plan.id).toList();
+          _entries = _entries.where((e) => e.plan.id != entry.plan.id).toList();
         } else {
           await _client.from('routine_plans').upsert(entry.plan.toJson());
 
-          final index =
-              _entries.indexWhere((e) => e.plan.id == entry.plan.id);
+          final index = _entries.indexWhere((e) => e.plan.id == entry.plan.id);
           if (index != -1) {
             final current = _entries[index];
             _entries = [
@@ -135,8 +133,7 @@ class OfflineRoutinePlanRepository {
           'Failed to push local routine plan change for ${entry.plan.id}: $e\n$stackTrace',
         );
 
-        final index =
-            _entries.indexWhere((e) => e.plan.id == entry.plan.id);
+        final index = _entries.indexWhere((e) => e.plan.id == entry.plan.id);
         if (index != -1) {
           final current = _entries[index];
           _entries = [
@@ -163,7 +160,7 @@ class OfflineRoutinePlanRepository {
       final rawRows = await _client
           .from('routine_plans')
           .select('id, "updatedAt"')
-          .eq('owner', userId);
+          .or('owner.eq.$userId,clientId.eq.$userId');
 
       final updatedAtById = <String, DateTime>{};
       for (final row in rawRows as List<dynamic>) {
@@ -175,7 +172,11 @@ class OfflineRoutinePlanRepository {
 
       final byId = {for (final e in _entries) e.plan.id: e};
 
+      // Track which remote IDs we've seen
+      final remoteIds = <String>{};
+
       for (final remote in remotePlans) {
+        remoteIds.add(remote.id);
         final remoteUpdatedAt =
             updatedAtById[remote.id] ?? DateTime.now().toUtc();
         final local = byId[remote.id];
@@ -201,7 +202,12 @@ class OfflineRoutinePlanRepository {
         }
       }
 
+      // Remove entries that are marked deleted locally and have been successfully deleted from the server
       byId.removeWhere((_, entry) => entry.isDeleted && !entry.needsSync);
+
+      // Remove local entries that no longer exist on the remote (unless they need sync)
+      byId.removeWhere((id, entry) =>
+          !remoteIds.contains(id) && !entry.needsSync && !entry.isDeleted);
 
       _entries = byId.values.toList();
     } catch (e, stackTrace) {
@@ -209,5 +215,3 @@ class OfflineRoutinePlanRepository {
     }
   }
 }
-
-

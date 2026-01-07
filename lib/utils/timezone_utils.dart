@@ -10,10 +10,10 @@ Future<void> configureLocalTimezone({String fallback = 'UTC'}) async {
   }
 }
 
-tz.TZDateTime _nextInstanceOfHour({required int hours}) {
+tz.TZDateTime _nextInstanceOfHour({required int hours, int minutes = 0}) {
   final DateTime now = DateTime.now();
   tz.TZDateTime scheduledDate = tz.TZDateTime.from(
-    DateTime(now.year, now.month, now.day, hours, 0, 0, 0, 0),
+    DateTime(now.year, now.month, now.day, hours, minutes, 0, 0, 0),
     tz.local,
   );
 
@@ -24,9 +24,12 @@ tz.TZDateTime _nextInstanceOfHour({required int hours}) {
   return scheduledDate;
 }
 
-tz.TZDateTime nextInstanceOfHourAndWeekDay(
-    {required int hours, required int weekday}) {
-  tz.TZDateTime scheduledDate = _nextInstanceOfHour(hours: hours);
+tz.TZDateTime nextInstanceOfHourAndWeekDay({
+  required int hours,
+  required int weekday,
+  int minutes = 0,
+}) {
+  tz.TZDateTime scheduledDate = _nextInstanceOfHour(hours: hours, minutes: minutes);
   while (scheduledDate.weekday != weekday) {
     scheduledDate = scheduledDate.add(const Duration(days: 1));
   }

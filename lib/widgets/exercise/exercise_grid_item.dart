@@ -36,8 +36,7 @@ class ExerciseGridItem extends StatelessWidget {
                   opacity: 0.9,
                   child: exercise.isSystem
                       ? FutureBuilder<String?>(
-                          future:
-                              LottieExerciseRegistry.lottieFor(exercise.name),
+                          future: LottieExerciseRegistry.lottieFor(exercise.id),
                           builder: (context, snapshot) {
                             final asset = snapshot.data;
                             if (asset != null) {

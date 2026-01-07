@@ -2,151 +2,52 @@ import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:trainware/utils/timezone_utils.dart';
+import 'package:trainware/services/training_prediction_service.dart';
+import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 
 const int notificationIDLongRunningSession = 999;
-const Duration _trainingHistoryWindow = Duration(days: 30);
-const Duration _trainingHistoryFallbackWindow = Duration(days: 365);
-const Duration _calendarHistoryWindow =
-    Duration(days: 30); // 4 weeks for prediction
-const int _calendarWeekdayThreshold =
-    3; // At least 3 sessions per weekday in the window
 const String _trainingReminderChannelId = 'preferred_training_reminders';
 const String _trainingReminderChannelName = 'Preferred training reminders';
 const String _trainingReminderChannelDescription =
     'Nudges you to train on the days and times you usually work out.';
 
-class _ReminderTime {
-  final int weekday;
-  final int hour;
-
-  _ReminderTime({required this.weekday, required this.hour});
-
-  @override
-  String toString() => '$weekday at $hour:00';
-}
-
-List<_ReminderTime> _getExerciseReminders(List<DateTime> logDates) {
-  if (logDates.isEmpty) return [];
-
-  final now = DateTime.now();
-  final primaryCutoff = now.subtract(_trainingHistoryWindow);
-  List<DateTime> sourceDates =
-      logDates.where((date) => !date.isBefore(primaryCutoff)).toList();
-
-  if (sourceDates.isEmpty) {
-    final fallbackCutoff = now.subtract(_trainingHistoryFallbackWindow);
-    sourceDates =
-        logDates.where((date) => !date.isBefore(fallbackCutoff)).toList();
-  }
-
-  if (sourceDates.isEmpty) {
-    sourceDates = List<DateTime>.from(logDates);
-  }
-
-  // Group exercise hours by weekday
-  final Map<int, List<int>> weekdayHours = {};
-  for (final logDate in sourceDates) {
-    final hour = logDate.hour;
-    weekdayHours.putIfAbsent(logDate.weekday, () => []).add(hour);
-  }
-
-  final List<_ReminderTime> reminders = [];
-
-  // Process each weekday to find most frequent hour
-  weekdayHours.forEach((weekday, hours) {
-    if (hours.isEmpty) return;
-
-    // Count frequency of each hour
-    final hourCounts = <int, int>{};
-    for (final hour in hours) {
-      hourCounts[hour] = (hourCounts[hour] ?? 0) + 1;
-    }
-
-    // Sort hours by frequency (desc) and time (asc)
-    final sortedEntries = hourCounts.entries.toList()
-      ..sort((a, b) {
-        final countCompare = b.value.compareTo(a.value);
-        return countCompare != 0 ? countCompare : a.key.compareTo(b.key);
-      });
-
-    reminders.add(_ReminderTime(
-      weekday: weekday,
-      hour: sortedEntries.first.key,
-    ));
-  });
-
-  reminders.sort((a, b) => a.weekday.compareTo(b.weekday));
-
-  return reminders;
-}
-
-/// Get likely training weekdays based on the same logic used to schedule
-/// preferred training reminders (i.e. any weekday that has historical logs).
-/// Returns a Set of weekdays (1-7, where 1 is Monday).
-Set<int> getLikelyTrainingWeekdays(
-    {required List<DateTime> historicDateTimes}) {
-  if (historicDateTimes.isEmpty) return {};
-
-  final reminders = _getExerciseReminders(historicDateTimes);
-  return reminders.map((reminder) => reminder.weekday).toSet();
-}
-
-/// Determine "likely" training weekdays for calendar surfacing.
-/// Looks at the last 30 days and predicts weekdays that have at least 3 sessions.
-Set<int> _getCalendarLikelyTrainingWeekdays(
-    {required List<DateTime> historicDateTimes}) {
-  if (historicDateTimes.isEmpty) return {};
-
-  final today = DateTime.now();
-  final todayNormalized = DateTime(today.year, today.month, today.day);
-  final cutoff = todayNormalized.subtract(_calendarHistoryWindow);
-
-  // Count distinct dates per weekday within the last 30 days
-  final Map<int, int> weekdayCounts = {};
-  final Set<DateTime> seenDates = <DateTime>{};
-
-  for (final date in historicDateTimes) {
-    final normalized = DateTime(date.year, date.month, date.day);
-    if (normalized.isBefore(cutoff)) continue;
-    if (!seenDates.add(normalized)) continue; // Count each date only once
-
-    weekdayCounts[normalized.weekday] =
-        (weekdayCounts[normalized.weekday] ?? 0) + 1;
-  }
-
-  // Return weekdays with 3+ sessions
-  return weekdayCounts.entries
-      .where((entry) => entry.value >= _calendarWeekdayThreshold)
-      .map((entry) => entry.key)
-      .toSet();
-}
-
 /// Get predicted training dates by projecting weekdays that have 3+ sessions
 /// in the last 30 days. Includes today if it matches a likely training weekday.
+/// 
+/// This is a convenience wrapper around TrainingPredictionService.getPredictedTrainingDates
+/// to maintain backward compatibility.
 Set<DateTime> getPredictedTrainingDates({
   required List<DateTime> historicDateTimes,
   int daysAhead = 14,
 }) {
-  final likelyWeekdays =
-      _getCalendarLikelyTrainingWeekdays(historicDateTimes: historicDateTimes);
-  if (likelyWeekdays.isEmpty) return {};
-
-  final today = DateTime.now();
-  final predictedDates = <DateTime>{};
-
-  for (int i = 0; i <= daysAhead; i++) {
-    final date = today.add(Duration(days: i));
-    final dateNormalized = DateTime(date.year, date.month, date.day);
-    if (likelyWeekdays.contains(date.weekday)) {
-      predictedDates.add(dateNormalized);
-    }
-  }
-
-  return predictedDates;
+  return TrainingPredictionService.getPredictedTrainingDates(
+    historicDateTimes: historicDateTimes,
+    daysAhead: daysAhead,
+  );
 }
 
-Future<void> schedulePreferredTrainingReminders(
-    {required List<DateTime> historicDateTimes}) async {
+/// Get likely training weekdays based on the same logic used for predictions.
+/// Returns a Set of weekdays (1-7, where 1 is Monday).
+/// 
+/// This uses the unified prediction logic (3+ sessions in last 30 days).
+Set<int> getLikelyTrainingWeekdays(
+    {required List<DateTime> historicDateTimes}) {
+  // Use the prediction service's logic by getting predicted dates and extracting weekdays
+  final predictedDates = TrainingPredictionService.getPredictedTrainingDates(
+    historicDateTimes: historicDateTimes,
+    daysAhead: 7, // Just need to check current week
+  );
+  
+  return predictedDates.map((date) => date.weekday).toSet();
+}
+
+/// Schedule training reminder notifications based on predicted training sessions.
+/// Uses the unified prediction logic to determine when to send reminders.
+/// 
+/// [logs] - List of routine logs to analyze for predictions
+Future<void> schedulePreferredTrainingReminders({
+  required List<RoutineLogDto> logs,
+}) async {
   if (!Platform.isIOS && !Platform.isAndroid) return;
 
   final plugin = FlutterLocalNotificationsPlugin();
@@ -156,8 +57,11 @@ Future<void> schedulePreferredTrainingReminders(
   await Future.wait(
       [for (int weekday = 1; weekday <= 7; weekday++) plugin.cancel(weekday)]);
 
-  final trainingTimes = _getExerciseReminders(historicDateTimes);
-  if (trainingTimes.isEmpty) return;
+  // Get predicted sessions using unified prediction logic
+  final predictedSessions =
+      TrainingPredictionService.getPredictedSessionsForNotifications(logs);
+  
+  if (predictedSessions.isEmpty) return;
 
   final notificationDetails = NotificationDetails(
     android: const AndroidNotificationDetails(
@@ -173,32 +77,44 @@ Future<void> schedulePreferredTrainingReminders(
     ),
   );
 
-  for (final trainingTime in trainingTimes) {
-    final hour = Duration(hours: trainingTime.hour);
-    final weekDay = trainingTime.weekday;
+  // Schedule notifications for each predicted session
+  for (final entry in predictedSessions.entries) {
+    final weekday = entry.key;
+    final time = entry.value;
+    final hour = Duration(hours: time.hour, minutes: time.minute);
+    
     await _scheduleNotification(
       plugin: plugin,
       duration: hour,
-      weekday: weekDay,
+      weekday: weekday,
       details: notificationDetails,
     );
   }
 }
 
-Future<void> _scheduleNotification(
-    {required FlutterLocalNotificationsPlugin plugin,
-    required Duration duration,
-    required int weekday,
-    required NotificationDetails details}) async {
-  final tzDateTime =
-      nextInstanceOfHourAndWeekDay(hours: duration.inHours, weekday: weekday);
+Future<void> _scheduleNotification({
+  required FlutterLocalNotificationsPlugin plugin,
+  required Duration duration,
+  required int weekday,
+  required NotificationDetails details,
+}) async {
+  // Calculate hours and minutes from duration
+  final totalMinutes = duration.inMinutes;
+  final hours = totalMinutes ~/ 60;
+  final minutes = totalMinutes % 60;
+  
+  final tzDateTime = nextInstanceOfHourAndWeekDay(
+    hours: hours,
+    weekday: weekday,
+    minutes: minutes,
+  );
 
   const matchDateTimeComponents = DateTimeComponents.dayOfWeekAndTime;
 
   await plugin.zonedSchedule(
     weekday,
     "Time to Get Moving!",
-    "You usually train around this time—let’s keep up the habit and crush today’s workout!",
+    "You usually train around this time—let's keep up the habit and crush today's workout!",
     tzDateTime,
     details,
     matchDateTimeComponents: matchDateTimeComponents,

@@ -68,7 +68,7 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
                       child: exerciseLogDto.exercise.isSystem
                           ? FutureBuilder<String?>(
                               future: LottieExerciseRegistry.lottieFor(
-                                  exerciseLogDto.exercise.name),
+                                  exerciseLogDto.exercise.id),
                               builder: (context, snapshot) {
                                 final asset = snapshot.data;
                                 if (asset != null) {

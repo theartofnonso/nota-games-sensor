@@ -113,7 +113,7 @@ class ExerciseLogListItem extends StatelessWidget {
           Center(
             child: isSystem
                 ? FutureBuilder<String?>(
-                    future: LottieExerciseRegistry.lottieFor(exercise.name),
+                    future: LottieExerciseRegistry.lottieFor(exercise.id),
                     builder: (context, snapshot) {
                       final asset = snapshot.data;
                       if (asset != null) {

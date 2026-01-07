@@ -25,6 +25,7 @@ import '../../extensions/duration_extension.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
+import '../../services/training_prediction_service.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
@@ -103,7 +104,14 @@ class _SettingsScreenState extends State<SettingsScreen>
     final logs = controller.logs;
     final yearStats = _YearTrainingStats.fromLogs(logs);
     final yearHoursStats = _YearHoursStats.fromLogs(logs);
-    final predictionInfo = _PredictionInfo.fromLogs(logs);
+    final nextSession = TrainingPredictionService.getNextPredictedSession(logs);
+    final predictionInfo = nextSession != null
+        ? _PredictionInfo(
+            date: nextSession.date,
+            time: nextSession.time,
+            daysUntilNext: nextSession.daysUntilNext,
+          )
+        : const _PredictionInfo(date: null, time: null);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -631,7 +639,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final todayStart = DateTime(now.year, now.month, now.day);
     final endOfYear = DateTime(now.year, 12, 31);
     final daysAhead = endOfYear.difference(todayStart).inDays;
-    final predictedDates = getPredictedTrainingDates(
+    final predictedDates = TrainingPredictionService.getPredictedTrainingDates(
       historicDateTimes: historicDates,
       daysAhead: daysAhead,
     );
@@ -779,7 +787,9 @@ class _TrainingInsightsSection extends StatelessWidget {
         (yearHoursStats.totalProjectedHours - yearHoursStats.loggedHours)
             .clamp(0.0, double.infinity);
 
-    final hasTodayPrediction = predictionInfo.todayDate != null;
+    // Check if today is predicted (date is today and daysUntilNext is 0)
+    final hasTodayPrediction = predictionInfo.date != null &&
+        predictionInfo.daysUntilNext == 0;
     final hasNextPrediction =
         predictionInfo.date != null && predictionInfo.daysUntilNext != null;
 
@@ -1074,7 +1084,14 @@ class _NextSessionContentState extends State<_NextSessionContent> {
     final logs = controller.logs;
 
     // Recalculate prediction
-    final newPrediction = _PredictionInfo.fromLogs(logs);
+    final nextSession = TrainingPredictionService.getNextPredictedSession(logs);
+    final newPrediction = nextSession != null
+        ? _PredictionInfo(
+            date: nextSession.date,
+            time: nextSession.time,
+            daysUntilNext: nextSession.daysUntilNext,
+          )
+        : const _PredictionInfo(date: null, time: null);
 
     setState(() {
       _currentPredictionInfo = newPrediction;
@@ -1660,120 +1677,16 @@ class _UnsavedSessionCardState extends State<_UnsavedSessionCard> {
 class _PredictionInfo {
   final DateTime? date;
   final TimeOfDay? time;
-  final DateTime? todayDate;
-  final TimeOfDay? todayTime;
   final int? daysUntilNext;
 
   const _PredictionInfo({
     required this.date,
     required this.time,
-    this.todayDate,
-    this.todayTime,
     this.daysUntilNext,
   });
 
-  static _PredictionInfo fromLogs(List<RoutineLogDto> logs) {
-    if (logs.isEmpty) {
-      return const _PredictionInfo(date: null, time: null);
-    }
-
-    // Create a set of dates that already have logs (normalized to day level)
-    final loggedDates = logs.map((log) {
-      final date = log.startTime;
-      return DateTime(date.year, date.month, date.day);
-    }).toSet();
-
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final endOfYear = DateTime(now.year, 12, 31);
-    final daysAhead = endOfYear.difference(todayStart).inDays;
-    final predictedSet = getPredictedTrainingDates(
-      historicDateTimes: logs.map((log) => log.startTime).toList(),
-      daysAhead: daysAhead,
-    );
-
-    // Filter out predicted dates that already have logs
-    final predictedDaysWithoutLogs = predictedSet
-        .where((date) => !loggedDates.contains(date))
-        .toList()
-      ..sort((a, b) => a.compareTo(b));
-
-    if (predictedDaysWithoutLogs.isEmpty) {
-      return const _PredictionInfo(date: null, time: null);
-    }
-
-    // Find the next predicted session with exact start time
-    // Only consider future sessions (including today if time hasn't passed)
-    DateTime? nextDate;
-    TimeOfDay? time;
-    int? daysUntilNext;
-
-    // Check if today is predicted and if the typical time is still in the future
-    final isTodayPredicted = predictedDaysWithoutLogs.contains(todayStart);
-    if (isTodayPredicted) {
-      final todayTime = _deriveTypicalTimeForWeekday(logs, todayStart.weekday);
-      if (todayTime != null) {
-        final todayTargetDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          todayTime.hour,
-          todayTime.minute,
-        );
-        // Only use today if the target time is still in the future
-        if (todayTargetDateTime.isAfter(now)) {
-          nextDate = todayStart;
-          time = todayTime;
-          daysUntilNext = 0;
-        }
-      }
-    }
-
-    // If today's session time has passed or today isn't predicted,
-    // find the next future predicted date
-    if (nextDate == null) {
-    final futurePredictedDates = predictedDaysWithoutLogs
-          .where((date) =>
-              date.isAfter(todayStart) ||
-              (date == todayStart && !isTodayPredicted))
-        .toList();
-
-    if (futurePredictedDates.isNotEmpty) {
-      nextDate = futurePredictedDates.first;
-      time = _deriveTypicalTimeForWeekday(logs, nextDate.weekday);
-        if (time != null) {
-          final targetDateTime = DateTime(
-            nextDate.year,
-            nextDate.month,
-            nextDate.day,
-            time.hour,
-            time.minute,
-          );
-          // Only return if target is in the future
-          if (targetDateTime.isAfter(now)) {
-            daysUntilNext = nextDate.difference(todayStart).inDays;
-          } else {
-            // Target time has passed, skip this session
-            nextDate = null;
-            time = null;
-          }
-        }
-      }
-    }
-
-    // If no valid future session found, return null
-    if (nextDate == null || time == null) {
-      return const _PredictionInfo(date: null, time: null);
-    }
-
-    return _PredictionInfo(
-      date: nextDate,
-      time: time,
-      todayDate: null, // Not used for countdown
-      todayTime: null, // Not used for countdown
-      daysUntilNext: daysUntilNext,
-    );
-  }
+  // This method is no longer used - replaced by TrainingPredictionService.getNextPredictedSession
+  // Kept for backward compatibility with _PredictionInfo structure
 }
 
 class _YearTrainingStats {
@@ -2087,72 +2000,7 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-TimeOfDay? _deriveTypicalTimeForWeekday(List<RoutineLogDto> logs, int weekday) {
-  final logger = getLogger(className: "_deriveTypicalTimeForWeekday");
-  
-  final weekdayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  final weekdayName = weekdayNames[weekday - 1];
-  
-  logger.i("Deriving typical time for $weekdayName (weekday $weekday)");
-  
-  // Only consider logs from the last 30 days (matching _calendarHistoryWindow)
-  const historyWindow = Duration(days: 30);
-  const minSessionsThreshold = 3; // Must have 3+ sessions in the window
-  
-  final now = DateTime.now();
-  final todayNormalized = DateTime(now.year, now.month, now.day);
-  final cutoff = todayNormalized.subtract(historyWindow);
-  
-  logger.i("Filtering to last 30 days (since ${DateFormat('yyyy-MM-dd').format(cutoff)})");
-  
-  // Filter to only logs from the last 30 days on this weekday
-  final recentMatches = logs.where((log) {
-    final logDate = DateTime(log.startTime.year, log.startTime.month, log.startTime.day);
-    return log.startTime.weekday == weekday && !logDate.isBefore(cutoff);
-  }).toList();
-  
-  logger.i("Found ${recentMatches.length} sessions on $weekdayName in the last 30 days:");
-  
-  // Count distinct dates (same as _getCalendarLikelyTrainingWeekdays logic)
-  final Set<DateTime> seenDates = <DateTime>{};
-  final distinctSessions = <RoutineLogDto>[];
-  
-  for (final log in recentMatches) {
-    final normalized = DateTime(log.startTime.year, log.startTime.month, log.startTime.day);
-    if (seenDates.add(normalized)) {
-      distinctSessions.add(log);
-    }
-  }
-  
-  logger.i("Distinct dates on $weekdayName in last 30 days: ${distinctSessions.length}");
-  
-  if (distinctSessions.length < minSessionsThreshold) {
-    logger.w("Only ${distinctSessions.length} distinct $weekdayName sessions in last 30 days (need ${minSessionsThreshold}+) - cannot derive time");
-    return null;
-  }
-  
-  // Log each matching session
-  for (final log in distinctSessions) {
-    final dateStr = DateFormat('yyyy-MM-dd').format(log.startTime);
-    final timeStr = DateFormat('HH:mm').format(log.startTime);
-    final minutes = log.startTime.hour * 60 + log.startTime.minute;
-    logger.i("  - $dateStr at $timeStr (${minutes} minutes)");
-  }
-  
-  final totalMinutes = distinctSessions.fold<int>(
-      0, (sum, log) => sum + log.startTime.hour * 60 + log.startTime.minute);
-  final averageMinutes = totalMinutes ~/ distinctSessions.length;
-  final hour = averageMinutes ~/ 60;
-  final minute = averageMinutes % 60;
-  
-  logger.i("Calculation:");
-  logger.i("  Total minutes: $totalMinutes");
-  logger.i("  Number of sessions: ${distinctSessions.length}");
-  logger.i("  Average minutes: $averageMinutes");
-  logger.i("  Result: ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}");
-  
-  return TimeOfDay(hour: hour, minute: minute);
-}
+// This function is no longer used - replaced by TrainingPredictionService.deriveTypicalTimeForWeekday
 
 class _RoutinePlansSection extends StatelessWidget {
   const _RoutinePlansSection();

@@ -847,7 +847,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                       child: exerciseLog.exercise.isSystem
                           ? FutureBuilder<String?>(
                               future: LottieExerciseRegistry.lottieFor(
-                                  exerciseLog.exercise.name),
+                                  exerciseLog.exercise.id),
                               builder: (context, snapshot) {
                                 final asset = snapshot.data;
                                 if (asset != null) {
@@ -1650,7 +1650,7 @@ class _AlternativeExerciseCard extends StatelessWidget {
                   : exercise!.isSystem
                       ? FutureBuilder<String?>(
                           future:
-                              LottieExerciseRegistry.lottieFor(exercise!.name),
+                              LottieExerciseRegistry.lottieFor(exercise!.id),
                           builder: (context, snapshot) {
                             final asset = snapshot.data;
                             if (asset != null) {
@@ -1733,7 +1733,7 @@ class _AlternativeExerciseListItem extends StatelessWidget {
           height: 48,
           child: isSystem
               ? FutureBuilder<String?>(
-                  future: LottieExerciseRegistry.lottieFor(exercise.name),
+                  future: LottieExerciseRegistry.lottieFor(exercise.id),
                   builder: (context, snapshot) {
                     final asset = snapshot.data;
                     if (asset != null) {

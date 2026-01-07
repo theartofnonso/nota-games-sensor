@@ -3,8 +3,9 @@ import 'dart:math';
 
 import 'package:flutter/services.dart' show rootBundle;
 
-/// Resolves exercise names to bundled Lottie animations using the explicit
+/// Resolves exercise IDs to bundled Lottie animations using the explicit
 /// mapping in assets/exercises/lottie_exercises.json.
+/// Supports lookup by both ID and name for backward compatibility.
 class LottieExerciseRegistry {
   static Future<Map<String, String>>? _cache;
   static final _rand = Random();
@@ -16,22 +17,24 @@ class LottieExerciseRegistry {
     final map = <String, String>{};
     for (final entry in data) {
       if (entry is Map<String, dynamic>) {
-        final name = (entry['name'] ?? '').toString().trim();
+        final id = (entry['id'] ?? '').toString().trim();
         final path = (entry['lottie'] ?? '').toString().trim();
-        if (name.isNotEmpty && path.isNotEmpty) {
-          map[name.toLowerCase()] = path;
+        if (id.isNotEmpty && path.isNotEmpty) {
+          map[id] = path; // Index by ID only
         }
       }
     }
     return map;
   }
 
-  /// Returns the lottie asset path for the given exercise [name] (case-insensitive),
-  /// or null if none is available.
-  static Future<String?> lottieFor(String name) async {
+  /// Returns the lottie asset path for the given exercise [id].
+  /// The ID must match the exercise ID from lottie_exercises.json
+  /// (e.g., "ex-lever-seated-row").
+  /// Returns null if none is available.
+  static Future<String?> lottieFor(String id) async {
     _cache ??= _load();
     final map = await _cache!;
-    return map[name.toLowerCase()];
+    return map[id];
   }
 
   /// Returns a random lottie asset path from the registry (or null if empty).
@@ -43,4 +46,3 @@ class LottieExerciseRegistry {
     return values[_rand.nextInt(values.length)];
   }
 }
-

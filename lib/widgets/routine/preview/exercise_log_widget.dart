@@ -39,7 +39,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
             height: 68,
             child: exercise.isSystem
                 ? FutureBuilder<String?>(
-                    future: LottieExerciseRegistry.lottieFor(exercise.name),
+                    future: LottieExerciseRegistry.lottieFor(exercise.id),
                     builder: (context, snapshot) {
                       final asset = snapshot.data;
                       if (asset != null) {
