@@ -210,14 +210,15 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                 ],
                               ),
                             ),
-                            IconButton(
-                              onPressed: () =>
-                                  _showMenuBottomSheet(planDto: plan),
-                              icon: const FaIcon(
-                                  FontAwesomeIcons.ellipsisVertical),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
+                            if (!isSystemTemplate)
+                              IconButton(
+                                onPressed: () =>
+                                    _showMenuBottomSheet(planDto: plan),
+                                icon: const FaIcon(
+                                    FontAwesomeIcons.ellipsisVertical),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
                           ],
                         ),
                         if (template.notes.isNotEmpty)

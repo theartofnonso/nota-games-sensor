@@ -112,9 +112,11 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            IconButton(
-                onPressed: _showMenuBottomSheet,
-                icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, size: 22))
+            if (!plan.isSystemPlan)
+              IconButton(
+                  onPressed: _showMenuBottomSheet,
+                  icon:
+                      const FaIcon(FontAwesomeIcons.ellipsisVertical, size: 22))
           ],
         ),
         body: Container(
