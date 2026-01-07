@@ -23,7 +23,7 @@ PODS:
     - FlutterMacOS
     - PostHog (< 4.0.0, >= 3.32.0)
   - Sentry/HybridSDK (8.56.2)
-  - sentry_flutter (9.9.1):
+  - sentry_flutter (9.9.2):
     - Flutter
     - FlutterMacOS
     - Sentry/HybridSDK (= 8.56.2)
@@ -105,7 +105,7 @@ SPEC CHECKSUMS:
   PostHog: 43ba4f42cc8dda909b33033e9ba0a1f64a2a8eb2
   posthog_flutter: 9535ac2d4ab65ccb9ace3886dcc0b3105198bad5
   Sentry: b53951377b78e21a734f5dc8318e333dbfc682d7
-  sentry_flutter: 580133c878f86698e23bb5dd7217a3387c4b79b5
+  sentry_flutter: 5738b8324c46ffa43e5b68da4bbbf68803c2718d
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
