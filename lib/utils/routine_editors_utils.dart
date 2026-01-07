@@ -19,6 +19,7 @@ void showSuperSetExercisePicker(
   showAppBottomSheet(
     context: context,
     isDraggable: true,
+    isDismissible: true,
     builder: (context, scrollController) {
       return Padding(
         padding: const EdgeInsets.all(26),
@@ -42,6 +43,7 @@ void showExerciseLogEditor({
   showAppBottomSheet(
     context: context,
     isDraggable: true,
+    isDismissible: true,
     initialChildSize: 0.9,
     minChildSize: 0.5,
     maxChildSize: 0.95,
@@ -97,6 +99,7 @@ Future<ExerciseType?> _pickExerciseType(
   return showAppBottomSheet<ExerciseType>(
     context: context,
     isDraggable: true,
+    isDismissible: true,
     builder: (context, scrollController) {
       final options = ExerciseType.values
           .where((t) => t != ExerciseType.none)

@@ -50,6 +50,19 @@ class RoutineTemplateLocalStore {
       _logger.w('Failed to save local routine templates: $e\n$stackTrace');
     }
   }
+
+  /// Delete all cached data
+  Future<void> deleteAll() async {
+    try {
+      final file = await _getFile();
+      if (await file.exists()) {
+        await file.delete();
+        _logger.i('Deleted routine templates cache file');
+      }
+    } catch (e, stackTrace) {
+      _logger.w('Failed to delete local routine templates cache: $e\n$stackTrace');
+    }
+  }
 }
 
 

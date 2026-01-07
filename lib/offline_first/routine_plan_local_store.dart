@@ -50,6 +50,19 @@ class RoutinePlanLocalStore {
       _logger.w('Failed to save local routine plans: $e\n$stackTrace');
     }
   }
+
+  /// Delete all cached data
+  Future<void> deleteAll() async {
+    try {
+      final file = await _getFile();
+      if (await file.exists()) {
+        await file.delete();
+        _logger.i('Deleted routine plans cache file');
+      }
+    } catch (e, stackTrace) {
+      _logger.w('Failed to delete local routine plans cache: $e\n$stackTrace');
+    }
+  }
 }
 
 

@@ -61,7 +61,8 @@ class AppBottomSheet extends StatelessWidget {
         snap: true,
         builder: (context, scrollController) {
           return GestureDetector(
-            onTap: () {}, // Absorb taps on the sheet content
+            // Only consume gestures within the sheet content, not outside
+            behavior: HitTestBehavior.deferToChild,
             child: wrapWithBlur(
               child: Container(
                 decoration: decoration,
@@ -122,6 +123,20 @@ Future<T?> showAppBottomSheet<T>({
         : Colors.transparent, // Make barrier transparent when non-dismissible
     builder: (context) => Stack(
       children: [
+        // Always include a tappable barrier when dismissible (behind sheet to catch outside taps)
+        if (isDismissible)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                // Close the sheet when barrier is tapped
+                Navigator.of(context, rootNavigator: false).pop();
+              },
+              child: Container(
+                color: Colors.transparent, // Transparent so it doesn't interfere with barrierColor
+              ),
+            ),
+          ),
         // Custom tappable barrier when isDismissible is false (behind sheet to catch outside taps)
         if (!isDismissible)
           Positioned.fill(

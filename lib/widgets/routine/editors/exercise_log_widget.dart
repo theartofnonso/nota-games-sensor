@@ -475,11 +475,42 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
   }
 
   void _showWeightCalculator() {
+    // Get the current weight from the text field controller if available
+    double targetWeight = 0;
+
+    if (_selectedSetDto != null && _selectedSetDto is WeightAndRepsSetDto) {
+      final selectedSet = _selectedSetDto as WeightAndRepsSetDto;
+      final weightSets =
+          _currentExerciseLog.sets.whereType<WeightAndRepsSetDto>().toList();
+
+      // Find the index of the selected set
+      final setIndex = weightSets.indexWhere((s) => s == selectedSet);
+
+      if (setIndex >= 0 && setIndex < _weightAndRepsControllers.length) {
+        // Get the weight controller for this set
+        final weightController = _weightAndRepsControllers[setIndex].$1;
+        final weightText = weightController.text.trim();
+
+        // Parse the weight from the text field
+        final parsedWeight = double.tryParse(weightText);
+        if (parsedWeight != null && parsedWeight > 0) {
+          // Convert to kg if using lbs (weight is stored in kg internally)
+          targetWeight =
+              isDefaultWeightUnit() ? parsedWeight : toKg(parsedWeight);
+        } else {
+          // Fallback to the set's weight property if text field is empty/invalid
+          targetWeight = selectedSet.weight;
+        }
+      } else {
+        // Fallback to the set's weight property if index not found
+        targetWeight = selectedSet.weight;
+      }
+    }
+
     showAppBottomSheet(
         context: context,
         isScrollControlled: false,
-        child: WeightPlateCalculator(
-            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0));
+        child: WeightPlateCalculator(target: targetWeight));
   }
 
   void _onTapWeightEditor({required SetDto setDto}) {

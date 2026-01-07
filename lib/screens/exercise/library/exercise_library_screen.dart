@@ -134,6 +134,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     final chosen = await showModalBottomSheet<ExerciseType>(
       context: context,
       backgroundColor: Colors.black87,
+      isDismissible: true,
+      enableDrag: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
