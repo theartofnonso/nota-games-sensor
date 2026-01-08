@@ -19,7 +19,8 @@ class RoutinePlanDto {
       'id': id,
       'name': name,
       'notes': notes,
-      if (clientId != null) 'clientId': clientId,
+      // Explicitly set clientId (null for user-created plans) to ensure RLS compliance
+      'clientId': clientId,
     };
   }
 

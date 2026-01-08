@@ -8,6 +8,7 @@ class RoutineTemplateDto {
   final String name;
   final String notes;
   final List<ExerciseLogDto> exerciseTemplates;
+  final String? clientId;
 
   RoutineTemplateDto({
     this.id = "",
@@ -15,6 +16,7 @@ class RoutineTemplateDto {
     required this.name,
     this.notes = "",
     required this.exerciseTemplates,
+    this.clientId,
   });
 
   Map<String, dynamic> toJson() {
@@ -25,6 +27,8 @@ class RoutineTemplateDto {
       'notes': notes,
       'exercises':
           exerciseTemplates.map((exercise) => exercise.toJson()).toList(),
+      // Explicitly set clientId to null for user-created templates to ensure RLS compliance
+      'clientId': clientId,
     };
   }
 
@@ -33,6 +37,7 @@ class RoutineTemplateDto {
     final planId = json["planId"] as String;
     final name = json["name"] as String;
     final notes = json["notes"] as String? ?? "";
+    final clientId = json["clientId"] as String?;
 
     final rawExerciseTemplates = json["exercises"] as List;
     final exerciseTemplates = rawExerciseTemplates
@@ -49,6 +54,7 @@ class RoutineTemplateDto {
       name: name,
       notes: notes,
       exerciseTemplates: exerciseTemplates,
+      clientId: clientId,
     );
   }
 
@@ -68,6 +74,7 @@ class RoutineTemplateDto {
     String? name,
     String? notes,
     List<ExerciseLogDto>? exerciseTemplates,
+    String? clientId,
   }) {
     return RoutineTemplateDto(
       id: id ?? this.id,
@@ -77,6 +84,7 @@ class RoutineTemplateDto {
       exerciseTemplates: exerciseTemplates != null
           ? exerciseTemplates.map((e) => e.copyWith()).toList()
           : this.exerciseTemplates.map((e) => e.copyWith()).toList(),
+      clientId: clientId ?? this.clientId,
     );
   }
 
