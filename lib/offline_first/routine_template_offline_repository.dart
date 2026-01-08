@@ -48,6 +48,16 @@ class OfflineRoutineTemplateRepository {
   }
 
   Future<void> upsertLocal(RoutineTemplateDto template) async {
+    // Defense in depth: Prevent modifying system-created templates (those with clientId)
+    if (template.clientId != null && template.clientId!.isNotEmpty) {
+      _logger.w(
+        'Cannot upsert system template (has clientId): ${template.id}. System templates can only be modified by the backend.',
+      );
+      throw UnsupportedError(
+        'Cannot modify system-created routine templates. These templates are managed by the backend system.',
+      );
+    }
+
     final now = DateTime.now().toUtc();
     final index = _entries.indexWhere((e) => e.template.id == template.id);
 
@@ -84,6 +94,18 @@ class OfflineRoutineTemplateRepository {
     if (index == -1) return;
 
     final existing = _entries[index];
+
+    // Defense in depth: Prevent deleting system-created templates (those with clientId)
+    if (existing.template.clientId != null &&
+        existing.template.clientId!.isNotEmpty) {
+      _logger.w(
+        'Cannot delete system template (has clientId): $templateId. System templates can only be deleted by the backend.',
+      );
+      throw UnsupportedError(
+        'Cannot delete system-created routine templates. These templates are managed by the backend system.',
+      );
+    }
+
     final now = DateTime.now().toUtc();
 
     _entries = [
@@ -110,6 +132,33 @@ class OfflineRoutineTemplateRepository {
 
     for (final entry in pending) {
       try {
+        // Defense in depth: Skip system-created templates (those with clientId)
+        // These should never be modified by the frontend, but if they somehow got into
+        // the local store with needsSync=true, we skip them here
+        if (entry.template.clientId != null &&
+            entry.template.clientId!.isNotEmpty) {
+          _logger.w(
+            'Skipping push for system template (has clientId): ${entry.template.id}. '
+            'System templates are managed by the backend and cannot be modified from the frontend.',
+          );
+
+          // Mark as not needing sync since we're intentionally skipping it
+          final index =
+              _entries.indexWhere((e) => e.template.id == entry.template.id);
+          if (index != -1) {
+            final current = _entries[index];
+            _entries = [
+              ..._entries.sublist(0, index),
+              current.copyWith(
+                needsSync: false,
+                lastSyncFailed: false,
+              ),
+              ..._entries.sublist(index + 1),
+            ];
+          }
+          continue;
+        }
+
         if (entry.isDeleted) {
           await _client
               .from('routine_templates')
@@ -119,9 +168,18 @@ class OfflineRoutineTemplateRepository {
               .where((e) => e.template.id != entry.template.id)
               .toList();
         } else {
-          await _client
-              .from('routine_templates')
-              .upsert(entry.template.toJson());
+          final userId = _client.auth.currentUser?.id;
+          if (userId == null) {
+            throw Exception('Cannot upsert template: user not authenticated');
+          }
+
+          // Ensure owner is set to current user and clientId is null for user-created templates
+          final json = entry.template.toJson();
+          json['owner'] = userId;
+          // Explicitly set clientId to null for user-created templates (RLS requirement)
+          json['clientId'] = null;
+
+          await _client.from('routine_templates').upsert(json);
 
           final index =
               _entries.indexWhere((e) => e.template.id == entry.template.id);

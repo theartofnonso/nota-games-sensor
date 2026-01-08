@@ -47,6 +47,16 @@ class OfflineRoutinePlanRepository {
   }
 
   Future<void> upsertLocal(RoutinePlanDto plan) async {
+    // Defense in depth: Prevent modifying system-created plans (those with clientId)
+    if (plan.clientId != null && plan.clientId!.isNotEmpty) {
+      _logger.w(
+        'Cannot upsert system plan (has clientId): ${plan.id}. System plans can only be modified by the backend.',
+      );
+      throw UnsupportedError(
+        'Cannot modify system-created routine plans. These plans are managed by the backend system.',
+      );
+    }
+
     final now = DateTime.now().toUtc();
     final index = _entries.indexWhere((e) => e.plan.id == plan.id);
 
@@ -83,6 +93,17 @@ class OfflineRoutinePlanRepository {
     if (index == -1) return;
 
     final existing = _entries[index];
+
+    // Defense in depth: Prevent deleting system-created plans (those with clientId)
+    if (existing.plan.clientId != null && existing.plan.clientId!.isNotEmpty) {
+      _logger.w(
+        'Cannot delete system plan (has clientId): $planId. System plans can only be deleted by the backend.',
+      );
+      throw UnsupportedError(
+        'Cannot delete system-created routine plans. These plans are managed by the backend system.',
+      );
+    }
+
     final now = DateTime.now().toUtc();
 
     _entries = [
@@ -109,11 +130,47 @@ class OfflineRoutinePlanRepository {
 
     for (final entry in pending) {
       try {
+        // Defense in depth: Skip system-created plans (those with clientId)
+        // These should never be modified by the frontend, but if they somehow got into
+        // the local store with needsSync=true, we skip them here
+        if (entry.plan.clientId != null && entry.plan.clientId!.isNotEmpty) {
+          _logger.w(
+            'Skipping push for system plan (has clientId): ${entry.plan.id}. '
+            'System plans are managed by the backend and cannot be modified from the frontend.',
+          );
+
+          // Mark as not needing sync since we're intentionally skipping it
+          final index = _entries.indexWhere((e) => e.plan.id == entry.plan.id);
+          if (index != -1) {
+            final current = _entries[index];
+            _entries = [
+              ..._entries.sublist(0, index),
+              current.copyWith(
+                needsSync: false,
+                lastSyncFailed: false,
+              ),
+              ..._entries.sublist(index + 1),
+            ];
+          }
+          continue;
+        }
+
         if (entry.isDeleted) {
           await _client.from('routine_plans').delete().eq('id', entry.plan.id);
           _entries = _entries.where((e) => e.plan.id != entry.plan.id).toList();
         } else {
-          await _client.from('routine_plans').upsert(entry.plan.toJson());
+          final userId = _client.auth.currentUser?.id;
+          if (userId == null) {
+            throw Exception('Cannot upsert plan: user not authenticated');
+          }
+
+          // Ensure owner is set to current user and clientId is null for user-created plans
+          final json = entry.plan.toJson();
+          json['owner'] = userId;
+          // Explicitly set clientId to null for user-created plans (RLS requirement)
+          json['clientId'] = null;
+
+          await _client.from('routine_plans').upsert(json);
 
           final index = _entries.indexWhere((e) => e.plan.id == entry.plan.id);
           if (index != -1) {
