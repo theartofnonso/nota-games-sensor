@@ -24,6 +24,9 @@ class SupabaseRoutineTemplateRepository {
         return;
       }
 
+      // Load templates where user is owner OR where user is the client (system-created templates)
+      // This query matches the RLS policy: auth.uid() = owner OR auth.uid() = "clientId"
+      // RLS will also enforce this, but the explicit filter makes intent clear and may improve performance
       final response = await _client
           .from('routine_templates')
           .select()
