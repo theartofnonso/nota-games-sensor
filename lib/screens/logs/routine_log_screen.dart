@@ -127,7 +127,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
               onPressed: context.pop,
             ),
-            title: Text(updatedLog.name),
             actions: widget.isEditable
                 ? [
                     IconButton(
@@ -169,30 +168,29 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                               final isSystemTemplate =
                                   plan?.isSystemPlan ?? false;
 
-                              if (isSystemTemplate) {
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      updatedLog.name,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        height: 1.5,
-                                        fontWeight: FontWeight.w900,
-                                      ),
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    updatedLog.name,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      height: 1.5,
+                                      fontWeight: FontWeight.w900,
                                     ),
-                                    Text(
-                                      'Not Athletes',
-                                      style: TextStyle(
-                                        fontFamily: 'GroutpixFlow',
-                                        color: Colors.blueGrey.shade400,
-                                        fontSize: 14,
-                                      ),
+                                  ),
+                                  Text(
+                                    isSystemTemplate
+                                        ? 'Not Athletes'
+                                        : 'Created by you',
+                                    style: TextStyle(
+                                      fontFamily: 'GroutpixFlow',
+                                      color: Colors.blueGrey.shade400,
+                                      fontSize: 14,
                                     ),
-                                  ],
-                                );
-                              }
-                              return const SizedBox.shrink();
+                                  ),
+                                ],
+                              );
                             },
                           ),
                           ChipOne(

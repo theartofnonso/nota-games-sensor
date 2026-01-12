@@ -196,15 +196,16 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
-                                  if (isSystemTemplate)
-                                    Text(
-                                      'Not Athletes',
-                                      style: TextStyle(
-                                        fontFamily: 'GroutpixFlow',
-                                        color: Colors.blueGrey.shade400,
-                                        fontSize: 14,
-                                      ),
+                                  Text(
+                                    isSystemTemplate
+                                        ? 'Not Athletes'
+                                        : 'Created by you',
+                                    style: TextStyle(
+                                      fontFamily: 'GroutpixFlow',
+                                      color: Colors.blueGrey.shade400,
+                                      fontSize: 14,
                                     ),
+                                  ),
                                 ],
                               ),
                             ),

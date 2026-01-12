@@ -144,15 +144,14 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        if (plan.isSystemPlan)
-                          Text(
-                            'Not Athletes',
-                            style: TextStyle(
-                              fontFamily: 'GroutpixFlow',
-                              color: Colors.blueGrey.shade400,
-                              fontSize: 14,
-                            ),
+                        Text(
+                          plan.isSystemPlan ? 'Not Athletes' : 'Created by you',
+                          style: TextStyle(
+                            fontFamily: 'GroutpixFlow',
+                            color: Colors.blueGrey.shade400,
+                            fontSize: 14,
                           ),
+                        ),
                       ],
                     ),
                     Text(
