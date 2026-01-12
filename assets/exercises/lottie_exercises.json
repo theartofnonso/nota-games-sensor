@@ -4342,5 +4342,11 @@
     "name": "Pec Deck",
     "lottie": "assets/lottie/Lever Pec Deck Exercise Men.json",
     "isSystem": true
+  },
+  {
+    "id": "ex-plank",
+    "name": "Plank",
+    "lottie": "assets/lottie/Man Doing Plank Exercise For Core.json",
+    "isSystem": true
   }
 ]
