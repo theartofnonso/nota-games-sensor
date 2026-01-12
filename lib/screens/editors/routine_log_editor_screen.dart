@@ -232,7 +232,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             ? null
             : (bool didPop, dynamic result) async {
                 if (didPop) return;
-                
+
                 final shouldPop = await _handleBackNavigation();
                 if (shouldPop && mounted) {
                   Navigator.of(context).pop();
@@ -284,16 +284,20 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                     if (widget.log.templateId.isEmpty) {
                                       return const SizedBox.shrink();
                                     }
-                                    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+                                    final controller = Provider.of<
+                                            SupabaseExerciseAndRoutineController>(
                                         context,
                                         listen: false);
-                                    final template = controller.templateWhere(id: widget.log.templateId);
+                                    final template = controller.templateWhere(
+                                        id: widget.log.templateId);
                                     if (template == null) {
                                       return const SizedBox.shrink();
                                     }
-                                    final plan = controller.planWhere(id: template.planId);
-                                    final isSystemTemplate = plan?.isSystemPlan ?? false;
-                                    
+                                    final plan = controller.planWhere(
+                                        id: template.planId);
+                                    final isSystemTemplate =
+                                        plan?.isSystemPlan ?? false;
+
                                     if (isSystemTemplate) {
                                       return Text(
                                         'Not Athletes',
@@ -360,14 +364,17 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                   ),
                                   Builder(
                                     builder: (context) {
-                                      final progress = _calculateWorkoutProgress(exerciseLogs);
+                                      final progress =
+                                          _calculateWorkoutProgress(
+                                              exerciseLogs);
                                       if (exerciseLogs.isEmpty) {
                                         return const SizedBox.shrink();
                                       }
                                       return Padding(
                                         padding: const EdgeInsets.only(top: 8),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               '${progress.toStringAsFixed(0)}% Complete',
@@ -381,13 +388,19 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                             ),
                                             const SizedBox(height: 4),
                                             ClipRRect(
-                                              borderRadius: BorderRadius.circular(4),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                               child: LinearProgressIndicator(
                                                 value: progress / 100,
                                                 minHeight: 6,
-                                                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                                                valueColor: AlwaysStoppedAnimation<Color>(
-                                                  Theme.of(context).colors.vibrantAccent,
+                                                backgroundColor: Colors.white
+                                                    .withValues(alpha: 0.2),
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                        Color>(
+                                                  Theme.of(context)
+                                                      .colors
+                                                      .vibrantAccent,
                                                 ),
                                               ),
                                             ),
@@ -577,70 +590,23 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   }
 
   Future<void> _confirmDiscardSession() async {
-    bool shouldDiscard = false;
-
-    await showAppBottomSheet(
+    showBottomSheetWithSingleAction(
       context: context,
-      isScrollControlled: false,
-      useBlurredTransparentBackground: false,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Discard session?",
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Are you sure you want to discard this workout session? This cannot be undone.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Cancel',
-                    showArrowRight: false,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      shouldDiscard = false;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Discard',
-                    buttonColor: Colors.red,
-                    showArrowRight: false,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      shouldDiscard = true;
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+      title: "Discard session?",
+      description:
+          'Are you sure you want to discard this workout session? This cannot be undone.',
+      action: () {
+        Navigator.of(context).pop();
+        // Clear both in-memory state and cached pending routine log.
+        Provider.of<ExerciseLogController>(context, listen: false).onClear();
+
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      },
+      actionLabel: 'Discard',
+      isDestructive: true,
     );
-
-    if (!shouldDiscard) return;
-
-    // Clear both in-memory state and cached pending routine log.
-    Provider.of<ExerciseLogController>(context, listen: false).onClear();
-
-    if (mounted && Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
   }
 
   Future<void> _finishOrUpdateSession() async {
