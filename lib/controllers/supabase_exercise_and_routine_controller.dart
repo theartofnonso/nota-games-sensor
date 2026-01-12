@@ -223,7 +223,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    
+
     isLoading = true;
     try {
       await _offlinePlanRepository.upsertLocal(plan);
@@ -247,9 +247,16 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    
+
     isLoading = true;
     try {
+      // Delete all templates associated with this plan
+      final associatedTemplates = whereTemplatesForPlan(planId: plan.id);
+      for (final template in associatedTemplates) {
+        await _offlineTemplateRepository.deleteLocal(template.id);
+      }
+
+      // Delete the plan itself
       await _offlinePlanRepository.deleteLocal(plan.id);
       // ignore: discarded_futures
       syncRoutineLogs();
@@ -272,11 +279,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     final plan = planWhere(id: templateDto.planId);
     if (plan?.isSystemPlan ?? false) {
       errorMessage = "Cannot add workouts to system plans.";
-      logger.w("Attempted to save template to system plan: ${templateDto.planId}");
+      logger.w(
+          "Attempted to save template to system plan: ${templateDto.planId}");
       notifyListeners();
       return null;
     }
-    
+
     isLoading = true;
     RoutineTemplateDto? result;
     try {
@@ -310,7 +318,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    
+
     isLoading = true;
     try {
       await _offlineTemplateRepository.upsertLocal(template);
@@ -337,7 +345,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    
+
     isLoading = true;
     try {
       await _offlineTemplateRepository.deleteLocal(template.id);

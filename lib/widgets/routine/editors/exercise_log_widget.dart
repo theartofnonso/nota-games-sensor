@@ -525,24 +525,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     });
   }
 
-  void _showAlternativesBottomSheet() {
-    if (_exerciseLog == null) return;
-
-    showAppBottomSheet(
-      context: context,
-      isDraggable: true,
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.9,
-      builder: (context, scrollController) {
-        return _AlternativesManagementWidget(
-          exerciseLog: _currentExerciseLog,
-          scrollController: scrollController,
-        );
-      },
-    );
-  }
-
   void _addAlternativesDirectly() {
     if (!mounted || _exerciseLog == null) return;
 
@@ -615,6 +597,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     await showAppBottomSheet(
       context: context,
       isScrollControlled: false,
+      isDismissible: true,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(
@@ -634,31 +617,17 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Cancel',
-                    showArrowRight: false,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      shouldReplace = false;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Replace',
-                    buttonColor: vibrantGreen,
-                    showArrowRight: false,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      shouldReplace = true;
-                    },
-                  ),
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Replace',
+                buttonColor: vibrantGreen,
+                showArrowRight: false,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  shouldReplace = true;
+                },
+              ),
             ),
           ],
         ),
@@ -1456,11 +1425,9 @@ class _DurationSetListView extends StatelessWidget {
 
 class _AlternativesManagementWidget extends StatefulWidget {
   final ExerciseLogDto exerciseLog;
-  final ScrollController? scrollController;
 
   const _AlternativesManagementWidget({
     required this.exerciseLog,
-    this.scrollController,
   });
 
   @override
@@ -1574,7 +1541,6 @@ class _AlternativesManagementWidgetState
                         "No alternative exercises added yet.\nTap the + button to add alternative exercises for this exercise",
                   )
                 : ListView.separated(
-                    controller: widget.scrollController,
                     itemCount: alternatives.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {

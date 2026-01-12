@@ -21,9 +21,8 @@ import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../extensions/duration_extension.dart';
-import 'package:lottie/lottie.dart';
-import '../../utils/lottie_exercise_registry.dart';
 import '../../utils/dialog_utils.dart';
+import '../../widgets/empty_states/lottie_empty_state.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/routine-log-editor';
@@ -46,8 +45,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   final ValueNotifier<Duration> _elapsedNotifier =
       ValueNotifier<Duration>(Duration.zero);
   Duration? _averageSessionDuration;
-  final Future<String?> _emptyStateLottieFuture =
-      LottieExerciseRegistry.randomLottie();
   void _selectExercisesInLibrary() async {
     final controller =
         Provider.of<ExerciseLogController>(context, listen: false);
@@ -232,7 +229,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             ? null
             : (bool didPop, dynamic result) async {
                 if (didPop) return;
-                
+
                 final shouldPop = await _handleBackNavigation();
                 if (shouldPop && mounted) {
                   Navigator.of(context).pop();
@@ -284,16 +281,20 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                     if (widget.log.templateId.isEmpty) {
                                       return const SizedBox.shrink();
                                     }
-                                    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+                                    final controller = Provider.of<
+                                            SupabaseExerciseAndRoutineController>(
                                         context,
                                         listen: false);
-                                    final template = controller.templateWhere(id: widget.log.templateId);
+                                    final template = controller.templateWhere(
+                                        id: widget.log.templateId);
                                     if (template == null) {
                                       return const SizedBox.shrink();
                                     }
-                                    final plan = controller.planWhere(id: template.planId);
-                                    final isSystemTemplate = plan?.isSystemPlan ?? false;
-                                    
+                                    final plan = controller.planWhere(
+                                        id: template.planId);
+                                    final isSystemTemplate =
+                                        plan?.isSystemPlan ?? false;
+
                                     if (isSystemTemplate) {
                                       return Text(
                                         'Not Athletes',
@@ -360,14 +361,17 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                   ),
                                   Builder(
                                     builder: (context) {
-                                      final progress = _calculateWorkoutProgress(exerciseLogs);
+                                      final progress =
+                                          _calculateWorkoutProgress(
+                                              exerciseLogs);
                                       if (exerciseLogs.isEmpty) {
                                         return const SizedBox.shrink();
                                       }
                                       return Padding(
                                         padding: const EdgeInsets.only(top: 8),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               '${progress.toStringAsFixed(0)}% Complete',
@@ -381,13 +385,19 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                             ),
                                             const SizedBox(height: 4),
                                             ClipRRect(
-                                              borderRadius: BorderRadius.circular(4),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                               child: LinearProgressIndicator(
                                                 value: progress / 100,
                                                 minHeight: 6,
-                                                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                                                valueColor: AlwaysStoppedAnimation<Color>(
-                                                  Theme.of(context).colors.vibrantAccent,
+                                                backgroundColor: Colors.white
+                                                    .withValues(alpha: 0.2),
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                        Color>(
+                                                  Theme.of(context)
+                                                      .colors
+                                                      .vibrantAccent,
                                                 ),
                                               ),
                                             ),
@@ -438,44 +448,10 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                             ? Center(
                                 child: Padding(
                                   padding: const EdgeInsets.only(bottom: 100),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    spacing: 16,
-                                    children: [
-                                      SizedBox(
-                                        width: 160,
-                                        height: 160,
-                                        child: FutureBuilder<String?>(
-                                          future: _emptyStateLottieFuture,
-                                          builder: (context, snapshot) {
-                                            final asset = snapshot.data;
-                                            if (asset != null) {
-                                              return Lottie.asset(
-                                                asset,
-                                                fit: BoxFit.contain,
-                                                repeat: true,
-                                              );
-                                            }
-                                            return const Icon(
-                                              Icons.self_improvement,
-                                              size: 96,
-                                              color: Colors.white38,
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      Text(
-                                        'No exercises yet.\nTap + to add exercises and start logging.',
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyLarge
-                                            ?.copyWith(
-                                              color: Colors.white70,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                      ),
-                                    ],
+                                  child: LottieEmptyState(
+                                    message:
+                                        'Tap + to add exercises and start logging.',
+                                    padding: EdgeInsets.zero,
                                   ),
                                 ),
                               )
@@ -582,6 +558,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     await showAppBottomSheet(
       context: context,
       isScrollControlled: false,
+      isDismissible: true,
       useBlurredTransparentBackground: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
@@ -602,31 +579,17 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Cancel',
-                    showArrowRight: false,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      shouldDiscard = false;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Discard',
-                    buttonColor: Colors.red,
-                    showArrowRight: false,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      shouldDiscard = true;
-                    },
-                  ),
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Discard',
+                buttonColor: Colors.red,
+                showArrowRight: false,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  shouldDiscard = true;
+                },
+              ),
             ),
           ],
         ),

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:provider/provider.dart';
+import '../../widgets/empty_states/lottie_empty_state.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/string_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -23,7 +24,6 @@ import '../../utils/editor_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
@@ -191,11 +191,11 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                             mainAxisSpacing: 10.0,
                             crossAxisSpacing: 10.0,
                             children: children)
-                        : Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 50.0),
-                            child: const NoListEmptyState(
-                                message:
-                                    "It might feel quiet now, but your workout templates will soon appear here."),
+                        : LottieEmptyState(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20.0, vertical: 50.0),
+                            message:
+                                "Tap the + button above to create your first workout template.",
                           ),
                   ]),
             ),
@@ -481,20 +481,18 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                     onTap: () {
                       Navigator.of(context).pop();
 
-                      showBottomSheetWithMultiActions(
+                      showBottomSheetWithSingleAction(
                           context: context,
                           title: "Delete plan?",
                           description:
                               "Are you sure you want to delete this plan?",
-                          leftAction: Navigator.of(context).pop,
-                          rightAction: () {
+                          action: () {
                             context.pop();
                             _toggleLoadingState();
                             _deleteRoutinePlan(plan: plan);
                           },
-                          leftActionLabel: 'Cancel',
-                          rightActionLabel: 'Delete',
-                          isRightActionDestructive: true);
+                          actionLabel: 'Delete',
+                          isDestructive: true);
                     },
                   ),
                 ] else

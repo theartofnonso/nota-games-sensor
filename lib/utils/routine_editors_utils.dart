@@ -144,6 +144,7 @@ Future<bool> confirmRemoveExerciseBottomSheet({
   await showAppBottomSheet(
     context: context,
     isScrollControlled: false,
+    isDismissible: true,
     child: Padding(
       padding: const EdgeInsets.all(26),
       child: Column(
@@ -163,31 +164,17 @@ Future<bool> confirmRemoveExerciseBottomSheet({
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: OpacityButtonWidgetTwo(
-                  label: 'Cancel',
-                  showArrowRight: false,
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    shouldRemove = false;
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OpacityButtonWidgetTwo(
-                  label: 'Remove',
-                  buttonColor: Colors.red,
-                  showArrowRight: false,
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    shouldRemove = true;
-                  },
-                ),
-              ),
-            ],
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              label: 'Remove',
+              buttonColor: Colors.red,
+              showArrowRight: false,
+              onPressed: () {
+                Navigator.of(context).pop();
+                shouldRemove = true;
+              },
+            ),
           ),
         ],
       ),

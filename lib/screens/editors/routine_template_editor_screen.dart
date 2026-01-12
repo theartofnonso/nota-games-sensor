@@ -21,6 +21,7 @@ import '../../utils/routine_editors_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/routine/editors/exercise_log_list_item.dart';
 import '../../widgets/weight_plate_calculator.dart';
+import '../../widgets/empty_states/lottie_empty_state.dart';
 
 class RoutineTemplateEditorScreen extends StatefulWidget {
   static const routeName = '/routine-template-editor';
@@ -112,21 +113,19 @@ class _RoutineTemplateEditorScreenState
     if (!_validateRoutineTemplateInputs()) return;
     final template = widget.template;
     if (template != null) {
-      showBottomSheetWithMultiActions(
+      showBottomSheetWithSingleAction(
           context: context,
+          title: "Update workout",
           description: "Do you want to update workout?",
-          leftAction: _closeDialog,
-          rightAction: () {
+          action: () {
             _closeDialog();
             final updatedTemplate =
                 _getUpdatedRoutineTemplate(template: template);
             _doUpdateRoutineTemplate(updatedTemplate: updatedTemplate);
             _navigateBack(template: updatedTemplate);
           },
-          leftActionLabel: 'Cancel',
-          rightActionLabel: 'Update',
-          isRightActionDestructive: true,
-          title: "Update workout");
+          actionLabel: 'Update',
+          isDestructive: false);
     }
   }
 
@@ -314,15 +313,14 @@ class _RoutineTemplateEditorScreenState
                             Expanded(
                               child: exerciseTemplates.isEmpty
                                   ? Center(
-                                      child: Text(
-                                        'No exercises in this workout yet.\nTap + to add exercises.',
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: Colors.white70,
-                                            ),
+                                      child: Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 100),
+                                        child: LottieEmptyState(
+                                          message:
+                                              'Tap + to add exercises to your workout.',
+                                          padding: EdgeInsets.zero,
+                                        ),
                                       ),
                                     )
                                   : ReorderableListView.builder(
