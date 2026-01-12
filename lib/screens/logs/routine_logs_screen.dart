@@ -6,7 +6,7 @@ import 'package:trainware/extensions/datetime/datetime_extension.dart';
 
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../utils/general_utils.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
+import '../../widgets/empty_states/list_empty_state.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 
 class RoutineLogsScreen extends StatelessWidget {
@@ -65,7 +65,7 @@ class RoutineLogsScreen extends StatelessWidget {
                   : Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        child: const NoListEmptyState(
+                        child: const ListEmptyState(
                             message:
                                 "It might feel quiet now, but your logged workouts will soon appear here."),
                       ),

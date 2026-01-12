@@ -11,7 +11,7 @@ import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/system_exercises.dart';
 import '../../../utils/name_notes_bottom_sheet.dart';
-import '../../../widgets/empty_states/no_list_empty_state.dart';
+import '../../../widgets/empty_states/list_empty_state.dart';
 import '../../../widgets/exercise/exercise_grid_item.dart';
 
 class ExerciseLibraryScreen extends StatefulWidget {
@@ -300,7 +300,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                   : Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        child: const NoListEmptyState(
+                        child: const ListEmptyState(
                             message:
                                 "No exercises yet. Create your first exercise to get started."),
                       ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 
-import '../../../widgets/empty_states/no_list_empty_state.dart';
+import '../../../widgets/empty_states/list_empty_state.dart';
 import '../../../widgets/exercise_history/exercise_log_history_widget.dart';
 
 class ExerciseLogHistoryScreen extends StatelessWidget {
@@ -31,7 +31,7 @@ class ExerciseLogHistoryScreen extends StatelessWidget {
               : Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: const NoListEmptyState(
+                    child: const ListEmptyState(
                         message:
                             "It might feel quiet now, but your logged exercises will soon appear here."),
                   ),

@@ -34,7 +34,7 @@ import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
-import '../../widgets/empty_states/no_list_empty_state.dart';
+import '../../widgets/empty_states/list_empty_state.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 
 enum _OriginalNewValues {
@@ -330,7 +330,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10.0, vertical: 40.0),
-                      child: const NoListEmptyState(
+                      child: const ListEmptyState(
                         message:
                             "It might feel quiet now, but tap the + button to add exercises to this workout.",
                       ),

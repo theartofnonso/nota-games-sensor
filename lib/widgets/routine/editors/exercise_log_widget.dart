@@ -28,7 +28,7 @@ import '../../../utils/routine_editors_utils.dart';
 import '../../../widgets/list_tile.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../../buttons/opacity_button_widget_two.dart';
-import '../../empty_states/no_list_empty_state.dart';
+import '../../empty_states/list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
 import '../../weight_plate_calculator.dart';
 
@@ -958,7 +958,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                       .isEmpty)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 10),
-                                      child: NoListEmptyState(
+                                      child: ListEmptyState(
                                         message:
                                             "Tap the + button to start adding sets to your exercise",
                                       ),
@@ -982,7 +982,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                       .isEmpty)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 10),
-                                      child: NoListEmptyState(
+                                      child: ListEmptyState(
                                         message:
                                             "Tap the + button to start adding sets to your exercise",
                                       ),
@@ -1005,7 +1005,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                       .isEmpty)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 10),
-                                      child: NoListEmptyState(
+                                      child: ListEmptyState(
                                         message:
                                             "Tap the + button to start adding sets to your exercise",
                                       ),
@@ -1555,7 +1555,7 @@ class _AlternativesManagementWidgetState
           const SizedBox(height: 16),
           Expanded(
             child: alternatives.isEmpty
-                ? NoListEmptyState(
+                ? ListEmptyState(
                     message:
                         "No alternative exercises added yet.\nTap the + button to add alternative exercises for this exercise",
                   )

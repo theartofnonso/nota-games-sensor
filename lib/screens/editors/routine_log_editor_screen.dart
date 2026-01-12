@@ -21,8 +21,8 @@ import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../extensions/duration_extension.dart';
-import 'package:lottie/lottie.dart';
 import '../../utils/lottie_exercise_registry.dart';
+import '../../widgets/empty_states/list_empty_state.dart';
 import '../../utils/dialog_utils.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
@@ -448,49 +448,10 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                       const SizedBox(height: 16),
                       Expanded(
                         child: exerciseLogs.isEmpty
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 100),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    spacing: 16,
-                                    children: [
-                                      SizedBox(
-                                        width: 160,
-                                        height: 160,
-                                        child: FutureBuilder<String?>(
-                                          future: _emptyStateLottieFuture,
-                                          builder: (context, snapshot) {
-                                            final asset = snapshot.data;
-                                            if (asset != null) {
-                                              return Lottie.asset(
-                                                asset,
-                                                fit: BoxFit.contain,
-                                                repeat: true,
-                                              );
-                                            }
-                                            return const Icon(
-                                              Icons.self_improvement,
-                                              size: 96,
-                                              color: Colors.white38,
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      Text(
-                                        'No exercises yet.\nTap + to add exercises and start logging.',
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyLarge
-                                            ?.copyWith(
-                                              color: Colors.white70,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                            ? ListEmptyState(
+                                message:
+                                    'No exercises yet.\nTap + to add exercises and start logging.',
+                                lottieFuture: _emptyStateLottieFuture,
                               )
                             : ReorderableListView.builder(
                                 padding: const EdgeInsets.only(
