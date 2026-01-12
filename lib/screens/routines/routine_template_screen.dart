@@ -39,17 +39,15 @@ import '../../utils/name_notes_bottom_sheet.dart';
 
 enum _OriginalNewValues {
   originalValues(
-      name: "Original Values",
-      description:
-          "Showing values from the last time this template was saved or updated."),
+    name: "Original Values",
+  ),
   newValues(
-      name: "Recent Values",
-      description: "Showing values from your last logged session.");
+    name: "Last Session",
+  );
 
-  const _OriginalNewValues({required this.name, required this.description});
+  const _OriginalNewValues({required this.name});
 
   final String name;
-  final String description;
 }
 
 class RoutineTemplateScreen extends StatefulWidget {
@@ -307,15 +305,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                   }
                                 },
                               ),
-                              Text(_originalNewValues.description,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w400,
-                                          color: isDarkMode
-                                              ? Colors.white70
-                                              : Colors.black)),
                             ],
                           ),
                           ExerciseLogListView(
@@ -760,9 +749,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final allPlans = exerciseAndRoutineController.plans;
 
     if (template != null) {
-      // Filter out plans the template already belongs to
-      final eligiblePlans =
-          allPlans.where((plan) => plan.id != template.planId).toList();
+      // Filter out plans the template already belongs to and system plans
+      final eligiblePlans = allPlans
+          .where((plan) => plan.id != template.planId && !plan.isSystemPlan)
+          .toList();
 
       showAppBottomSheet(
         context: context,
