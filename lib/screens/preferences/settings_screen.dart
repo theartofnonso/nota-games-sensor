@@ -149,45 +149,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ],
                   _TrainingInsightsSection(
-                    yearStats: yearStats,
+                      yearStats: yearStats,
                     yearHoursStats: yearHoursStats,
-                    predictionInfo: predictionInfo,
+                      predictionInfo: predictionInfo,
                   ),
                   const SizedBox(height: 16),
                   // Routine Plans section - edge-to-edge, no padding
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Routine Plans',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                        const SizedBox(height: 4),
-                        Consumer<SupabaseExerciseAndRoutineController>(
-                          builder: (context, controller, _) {
-                            final hasPlans = controller.plans.isNotEmpty;
-                            return Text(
-                              hasPlans
-                                  ? 'Create workout plans to organize and reuse your favorite sessions'
-                                  : 'Routine plans help you organize workouts into groups.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Colors.grey.shade400,
-                                  ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                    ),
-                  ),
                   _RoutinePlansSection(),
                   const SizedBox(height: 16),
                   Padding(
@@ -393,13 +360,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _clearAppData() async {
     try {
       // Clear analytics
-      Posthog().reset();
+    Posthog().reset();
 
       // Clear SharedPreferences
-      SharedPrefs().clear();
+    SharedPrefs().clear();
 
       // Cancel all notifications
-      await FlutterLocalNotificationsPlugin().cancelAll();
+    await FlutterLocalNotificationsPlugin().cancelAll();
 
       // Delete all local cache files
       final exerciseStore = ExerciseLocalStore();
@@ -438,10 +405,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       }
 
       // Clear controller state
-      if (mounted) {
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-                listen: false)
-            .clear();
+    if (mounted) {
+      Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
+          .clear();
       }
     } catch (e) {
       // Log error but don't throw - we still want to sign out even if cleanup fails
@@ -525,11 +491,12 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _logout() async {
-    showBottomSheetWithSingleAction(
+    showBottomSheetWithMultiActions(
         context: context,
         title: "Log out?",
         description: "Are you sure you want to log out?",
-        action: () async {
+        leftAction: Navigator.of(context).pop,
+        rightAction: () async {
           Navigator.of(context).pop();
           _showLoadingScreen();
           _clearAppData();
@@ -538,17 +505,19 @@ class _SettingsScreenState extends State<SettingsScreen>
             context.go('/'); // Navigate to auth screen
           }
         },
-        actionLabel: 'Logout',
-        isDestructive: true);
+        leftActionLabel: 'Cancel',
+        rightActionLabel: 'Logout',
+        isRightActionDestructive: true);
   }
 
   void _delete() async {
-    showBottomSheetWithSingleAction(
+    showBottomSheetWithMultiActions(
         context: context,
         title: "Delete account?",
         description:
             "Are you sure you want to delete your account? This action cannot be undone.",
-        action: () async {
+        leftAction: Navigator.of(context).pop,
+        rightAction: () async {
           Navigator.of(context).pop();
           _showLoadingScreen();
 
@@ -595,8 +564,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             }
           }
         },
-        actionLabel: 'Delete',
-        isDestructive: true);
+        leftActionLabel: 'Cancel',
+        rightActionLabel: 'Delete',
+        isRightActionDestructive: true);
   }
 
   void _getAppVersion() async {
@@ -736,7 +706,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
-                        logEmptyRoutine(context: context);
+                          logEmptyRoutine(context: context);
                       },
                       icon: FaIcon(
                         FontAwesomeIcons.circlePlus,
@@ -790,6 +760,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       },
     );
   }
+
 }
 
 class _TrainingInsightsSection extends StatelessWidget {
@@ -817,8 +788,8 @@ class _TrainingInsightsSection extends StatelessWidget {
             .clamp(0.0, double.infinity);
 
     // Check if today is predicted (date is today and daysUntilNext is 0)
-    final hasTodayPrediction =
-        predictionInfo.date != null && predictionInfo.daysUntilNext == 0;
+    final hasTodayPrediction = predictionInfo.date != null &&
+        predictionInfo.daysUntilNext == 0;
     final hasNextPrediction =
         predictionInfo.date != null && predictionInfo.daysUntilNext != null;
 
@@ -832,75 +803,75 @@ class _TrainingInsightsSection extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            children: [
+              children: [
               // Progress this year card
-              SizedBox(
-                width: cardWidth,
-                child: _FrostedCard(
-                  gradientColors: [
-                    theme.colors.vibrantAccent.withValues(alpha: 0.3),
-                    const Color(0xFF22c55e).withValues(alpha: 0.2),
-                    Colors.black.withValues(alpha: 0.5),
-                  ],
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header row with title
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'progress this year',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              fontWeight: FontWeight.w600,
+                SizedBox(
+                  width: cardWidth,
+                  child: _FrostedCard(
+                    gradientColors: [
+                      theme.colors.vibrantAccent.withValues(alpha: 0.3),
+                      const Color(0xFF22c55e).withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.5),
+                    ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header row with title
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'progress this year',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
                       const Spacer(),
-                      // Large percentage display
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '$percentLabel%',
-                            style: theme.textTheme.displayLarge?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ) ??
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 48,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.0,
-                                ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Segmented horizontal bar
-                      _SegmentedProgressBar(
-                        loggedSessions: yearStats.daysTrained,
-                        totalSessions: yearStats.totalProjectedSessions,
-                        accentColor: theme.colors.vibrantAccent,
-                      ),
-                      const SizedBox(height: 12),
-                      // Legend
-                      Row(
-                        children: [
-                          _LegendItem(
-                            color: theme.colors.vibrantAccent,
-                            label: 'Logged',
+                        // Large percentage display
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '$percentLabel%',
+                              style: theme.textTheme.displayLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.0,
+                                  ) ??
+                                  const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Segmented horizontal bar
+                        _SegmentedProgressBar(
+                          loggedSessions: yearStats.daysTrained,
+                          totalSessions: yearStats.totalProjectedSessions,
+                          accentColor: theme.colors.vibrantAccent,
+                        ),
+                        const SizedBox(height: 12),
+                        // Legend
+                        Row(
+                          children: [
+                            _LegendItem(
+                              color: theme.colors.vibrantAccent,
+                              label: 'Logged',
                             value: yearStats.daysTrained.toString(),
-                          ),
-                          const SizedBox(width: 16),
-                          _LegendItem(
-                            color: theme.colors.vibrantAccent
-                                .withValues(alpha: 0.6),
-                            label: 'Predicted',
+                            ),
+                            const SizedBox(width: 16),
+                            _LegendItem(
+                              color: theme.colors.vibrantAccent
+                                  .withValues(alpha: 0.6),
+                              label: 'Predicted',
                             value: (yearStats.totalProjectedSessions -
                                     yearStats.daysTrained)
                                 .toString(),
@@ -992,17 +963,17 @@ class _TrainingInsightsSection extends StatelessWidget {
                             color: Colors.blue,
                             label: 'Logged',
                           ),
-                          const SizedBox(width: 16),
-                          _LegendItem(
+                              const SizedBox(width: 16),
+                              _LegendItem(
                             color: Colors.blue.withValues(alpha: 0.6),
                             label: 'Predicted',
-                          ),
-                        ],
-                      ),
-                    ],
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -1019,15 +990,15 @@ class _TrainingInsightsSection extends StatelessWidget {
                     : MediaQuery.of(context).size.width - 20;
                 return SizedBox(
                   width: availableWidth,
-                  child: _PredictionCard(
-                    predictionInfo: predictionInfo,
-                    hasTodayPrediction: hasTodayPrediction,
-                    hasNextPrediction: hasNextPrediction,
-                  ),
-                );
-              },
+                    child: _PredictionCard(
+                      predictionInfo: predictionInfo,
+                      hasTodayPrediction: hasTodayPrediction,
+                      hasNextPrediction: hasNextPrediction,
+                    ),
+            );
+          },
             ),
-          ),
+        ),
         ],
       ],
     );
@@ -1200,7 +1171,7 @@ class _NextSessionContentState extends State<_NextSessionContent> {
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+            children: [
           // Title
           Text(
             'next predicted session in',
@@ -1229,18 +1200,18 @@ class _NextSessionContentState extends State<_NextSessionContent> {
         Colors.white.withValues(alpha: 0.8),
         Colors.white.withValues(alpha: 0.7),
       ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
             'plan your next session',
-            style: theme.textTheme.titleMedium?.copyWith(
+                          style: theme.textTheme.titleMedium?.copyWith(
               color: Colors.black.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
           const SizedBox(height: 8),
-          Text(
+                          Text(
             'Start a session now or create a new routine plan',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.black.withValues(alpha: 0.6),
@@ -1323,14 +1294,14 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
     final numberStyle = theme.textTheme.displayLarge?.copyWith(
           color: Colors.black,
           fontWeight: FontWeight.w900,
-          height: 1.0,
+                                  height: 1.0,
           fontSize: widget.isCompact ? 64 : 80,
         ) ??
         TextStyle(
           color: Colors.black,
           fontSize: widget.isCompact ? 64 : 80,
           fontWeight: FontWeight.w900,
-          height: 1.0,
+                                  height: 1.0,
           fontFamily: 'Grift',
         );
 
@@ -1362,8 +1333,8 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                   Text(
                     'DAYS',
                     style: labelStyle,
-                  ),
-                  const SizedBox(height: 4),
+                          ),
+                          const SizedBox(height: 4),
                   SizedBox(
                     width: double.infinity,
                     child: Text(
@@ -1383,7 +1354,7 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 20), // Match label height
-                Text(
+                          Text(
                   ':',
                   style: numberStyle.copyWith(
                     fontSize: widget.isCompact ? 48 : 60,
@@ -1399,7 +1370,7 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
+                            Text(
                     'HOURS',
                     style: labelStyle,
                   ),
@@ -1414,9 +1385,9 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                       overflow: TextOverflow.visible,
                     ),
                   ),
-                ],
-              ),
-            ),
+                      ],
+                    ),
+                  ),
           ],
         ),
         SizedBox(height: widget.isCompact ? 24 : 32),
@@ -1427,10 +1398,10 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
             // Minutes (bottom left)
             SizedBox(
               width: widget.isCompact ? 80 : 100,
-              child: Column(
+                      child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+                        children: [
                   SizedBox(
                     width: double.infinity,
                     child: Text(
@@ -1442,7 +1413,7 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
+                          Text(
                     'MINUTES',
                     style: labelStyle,
                   ),
@@ -1454,7 +1425,7 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                            Text(
                   ':',
                   style: numberStyle.copyWith(
                     fontSize: widget.isCompact ? 48 : 60,
@@ -1485,10 +1456,10 @@ class _FormattedCountdownTimerState extends State<_FormattedCountdownTimer> {
                   Text(
                     'SECONDS',
                     style: labelStyle,
-                  ),
-                ],
               ),
-            ),
+            ],
+          ),
+        ),
           ],
         ),
       ],
@@ -1880,7 +1851,7 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                 child: Container(
                   height: 12,
                   width: barWidth,
-                  decoration: BoxDecoration(
+        decoration: BoxDecoration(
                     color: widget.accentColor.withValues(alpha: 0.3),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(6),
@@ -1937,7 +1908,7 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
               child: Stack(
                 alignment: Alignment.centerLeft,
                 clipBehavior: Clip.none,
-                children: [
+            children: [
                   // Background track (predicted - darker accent color)
                   Container(
                     height: 12,
@@ -1955,24 +1926,24 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                     Container(
                       height: 12,
                       width: loggedWidth,
-                      decoration: BoxDecoration(
+                    decoration: BoxDecoration(
                         color: widget.accentColor,
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(6),
                           bottomLeft: Radius.circular(6),
-                        ),
-                      ),
                     ),
+                  ),
+                ),
                 ],
               ),
             ),
             // Medal icon at the far right end (outside ClipRRect so it's not clipped)
             Positioned(
               right: -iconOffset,
-              child: Container(
+                  child: Container(
                 width: iconSize,
                 height: iconSize,
-                decoration: BoxDecoration(
+                    decoration: BoxDecoration(
                   color: const Color(0xFF3A3A3A), // Slightly darker gray circle
                   shape: BoxShape.circle,
                 ),
@@ -1981,10 +1952,10 @@ class _SegmentedProgressBarState extends State<_SegmentedProgressBar> {
                     widget.icon ?? FontAwesomeIcons.star,
                     size: 14,
                     color: widget.accentColor,
+                    ),
                   ),
                 ),
-              ),
-            ),
+          ),
           ],
         );
       },
@@ -2039,7 +2010,6 @@ class _RoutinePlansSection extends StatelessWidget {
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
         final plans = controller.plans;
-        final hasPlans = plans.isNotEmpty;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2078,7 +2048,6 @@ class _RoutinePlansSection extends StatelessWidget {
                             }
                           });
                         },
-                        isEmpty: !hasPlans,
                       ),
                     );
                   }
@@ -2111,12 +2080,8 @@ class _RoutinePlansSection extends StatelessWidget {
 
 class _CreatePlanCard extends StatelessWidget {
   final VoidCallback onTap;
-  final bool isEmpty;
 
-  const _CreatePlanCard({
-    required this.onTap,
-    this.isEmpty = false,
-  });
+  const _CreatePlanCard({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -2132,33 +2097,13 @@ class _CreatePlanCard extends StatelessWidget {
               color: Colors.black.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(22),
             ),
-            child: isEmpty
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FaIcon(
-                        FontAwesomeIcons.circlePlus,
-                        size: 32,
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Tap to get started',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 11,
-                            ),
-                      ),
-                    ],
-                  )
-                : Center(
-                    child: FaIcon(
-                      FontAwesomeIcons.circlePlus,
-                      size: 32,
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
-                  ),
+            child: Center(
+              child: FaIcon(
+                FontAwesomeIcons.circlePlus,
+                size: 32,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
           ),
         ),
       ),

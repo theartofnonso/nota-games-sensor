@@ -159,16 +159,13 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                               if (updatedLog.templateId.isEmpty) {
                                 return const SizedBox.shrink();
                               }
-                              final template = exerciseAndRoutineController
-                                  .templateWhere(id: updatedLog.templateId);
+                              final template = exerciseAndRoutineController.templateWhere(id: updatedLog.templateId);
                               if (template == null) {
                                 return const SizedBox.shrink();
                               }
-                              final plan = exerciseAndRoutineController
-                                  .planWhere(id: template.planId);
-                              final isSystemTemplate =
-                                  plan?.isSystemPlan ?? false;
-
+                              final plan = exerciseAndRoutineController.planWhere(id: template.planId);
+                              final isSystemTemplate = plan?.isSystemPlan ?? false;
+                              
                               if (isSystemTemplate) {
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -505,7 +502,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       {required RoutineLogDto log, required List<RoutinePlanDto> plans}) {
     // Filter out system plans - users cannot add templates to system plans
     final userPlans = plans.where((plan) => !plan.isSystemPlan).toList();
-
+    
     showAppBottomSheet(
       context: context,
       isScrollControlled: false,
@@ -633,17 +630,19 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   void _deleteLog() {
     Navigator.of(context).pop(); // Close the previous BottomSheet
-    showBottomSheetWithSingleAction(
+    showBottomSheetWithMultiActions(
         context: context,
         title: "Delete log?",
         description: "Are you sure you want to delete this log?",
-        action: () {
+        leftAction: Navigator.of(context).pop,
+        rightAction: () {
           Navigator.of(context).pop(); // Close current BottomSheet
           _showLoadingScreen();
           _doDeleteLog();
         },
-        actionLabel: 'Delete',
-        isDestructive: true);
+        leftActionLabel: 'Cancel',
+        rightActionLabel: 'Delete',
+        isRightActionDestructive: true);
   }
 
   // PBs bottom sheet removed

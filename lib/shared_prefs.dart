@@ -64,4 +64,5 @@ class SharedPrefs {
   void _bumpRoutineLogRevision() {
     _routineLogRevision.value++;
   }
+
 }

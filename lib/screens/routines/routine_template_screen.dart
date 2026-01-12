@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:provider/provider.dart';
-import '../../widgets/empty_states/lottie_empty_state.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
@@ -35,15 +34,22 @@ import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
 import '../../widgets/routine/preview/plan_picker.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
+import '../../widgets/empty_states/no_list_empty_state.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 
 enum _OriginalNewValues {
-  originalValues(name: "Original Values"),
-  lastSession(name: "Last session");
+  originalValues(
+      name: "Original Values",
+      description:
+          "Showing values from the last time this template was saved or updated."),
+  newValues(
+      name: "Recent Values",
+      description: "Showing values from your last logged session.");
 
-  const _OriginalNewValues({required this.name});
+  const _OriginalNewValues({required this.name, required this.description});
 
   final String name;
+  final String description;
 }
 
 class RoutineTemplateScreen extends StatefulWidget {
@@ -62,7 +68,7 @@ class RoutineTemplateScreen extends StatefulWidget {
 class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   bool _loading = false;
 
-  _OriginalNewValues _originalNewValues = _OriginalNewValues.lastSession;
+  _OriginalNewValues _originalNewValues = _OriginalNewValues.newValues;
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +107,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     // Get the plan this template belongs to
     final plan = exerciseAndRoutineController.planWhere(id: template.planId);
-
+    
     // Check if this template belongs to a system plan
     final isSystemTemplate = plan?.isSystemPlan ?? false;
 
@@ -110,8 +116,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         .map((log) => routineWithLoggedExercises(log: log))
         .toList();
 
-    final exerciseTemplates = _originalNewValues ==
-            _OriginalNewValues.lastSession
+    final exerciseTemplates = _originalNewValues == _OriginalNewValues.newValues
         ? () {
             // Find the most recent log for this template
             final templateLogs = exerciseAndRoutineController
@@ -221,7 +226,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             template.notes,
                             style: TextStyle(
                               fontSize: 14,
-                              color: isDarkMode ? Colors.white70 : Colors.black,
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : Colors.black,
                               height: 1.8,
                               fontWeight: FontWeight.w400,
                             ),
@@ -285,10 +292,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                               .textTheme
                                               .bodySmall,
                                           textAlign: TextAlign.center)),
-                                  _OriginalNewValues.lastSession: SizedBox(
+                                  _OriginalNewValues.newValues: SizedBox(
                                       width: 100,
                                       child: Text(
-                                          _OriginalNewValues.lastSession.name,
+                                          _OriginalNewValues.newValues.name,
                                           style: Theme.of(context)
                                               .textTheme
                                               .bodySmall,
@@ -302,6 +309,15 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                   }
                                 },
                               ),
+                              Text(_originalNewValues.description,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                          fontWeight: FontWeight.w400,
+                                          color: isDarkMode
+                                              ? Colors.white70
+                                              : Colors.black)),
                             ],
                           ),
                           ExerciseLogListView(
@@ -313,9 +329,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       ),
                     )
                   else
-                    LottieEmptyState(
-                      message:
-                          "Tap the + button above to add exercises to your workout.",
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0, vertical: 40.0),
+                      child: const NoListEmptyState(
+                        message:
+                            "It might feel quiet now, but tap the + button to add exercises to this workout.",
+                      ),
                     ),
                 ],
               ),
@@ -476,6 +496,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       },
     );
   }
+
 
   void _deleteRoutine({required RoutineTemplateDto template}) async {
     try {
@@ -693,18 +714,19 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       Navigator.of(context).pop();
 
                       if (template != null) {
-                        showBottomSheetWithSingleAction(
+                        showBottomSheetWithMultiActions(
                             context: context,
                             title: "Delete workout?",
                             description: planDto != null
                                 ? "Are you sure you want to delete this workout and remove it from ${planDto.name}?"
                                 : "Are you sure you want to delete this workout?",
-                            action: () {
-                              Navigator.of(context).pop();
+                            leftAction: Navigator.of(context).pop,
+                            rightAction: () {
                               _deleteRoutine(template: template);
                             },
-                            actionLabel: 'Delete',
-                            isDestructive: true);
+                            leftActionLabel: 'Cancel',
+                            rightActionLabel: 'Delete',
+                            isRightActionDestructive: true);
                       }
                     },
                   ),

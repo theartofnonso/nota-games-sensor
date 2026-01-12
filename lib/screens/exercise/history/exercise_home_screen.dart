@@ -72,17 +72,16 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
                       ?.copyWith(color: Colors.red)),
               onTap: () {
                 Navigator.of(context).pop();
-                showBottomSheetWithSingleAction(
+                showBottomSheetWithMultiActions(
                     context: context,
                     title: "Delete exercise?",
                     description:
                         "Are you sure you want to delete this exercise?",
-                    action: () {
-                      Navigator.of(context).pop();
-                      _deleteExercise(context);
-                    },
-                    actionLabel: 'Delete',
-                    isDestructive: true);
+                    leftAction: Navigator.of(context).pop,
+                    rightAction: () => _deleteExercise(context),
+                    leftActionLabel: 'Cancel',
+                    rightActionLabel: 'Delete',
+                    isRightActionDestructive: true);
               },
             ),
           ],
@@ -235,9 +234,8 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
     );
     if (details == null) return;
 
-    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context,
-        listen: false);
+    final controller =
+        Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false);
     final updated = exercise.copyWith(
       name: details.name,
       notes: details.notes,
