@@ -112,21 +112,19 @@ class _RoutineTemplateEditorScreenState
     if (!_validateRoutineTemplateInputs()) return;
     final template = widget.template;
     if (template != null) {
-      showBottomSheetWithMultiActions(
+      showBottomSheetWithSingleAction(
           context: context,
+          title: "Update workout",
           description: "Do you want to update workout?",
-          leftAction: _closeDialog,
-          rightAction: () {
+          action: () {
             _closeDialog();
             final updatedTemplate =
                 _getUpdatedRoutineTemplate(template: template);
             _doUpdateRoutineTemplate(updatedTemplate: updatedTemplate);
             _navigateBack(template: updatedTemplate);
           },
-          leftActionLabel: 'Cancel',
-          rightActionLabel: 'Update',
-          isRightActionDestructive: true,
-          title: "Update workout");
+          actionLabel: 'Update',
+          isDestructive: false);
     }
   }
 

@@ -162,32 +162,18 @@ Future<bool> confirmRemoveExerciseBottomSheet({
             'Are you sure you want to remove "$exerciseName" from this $fromLabel?',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: OpacityButtonWidgetTwo(
-                  label: 'Cancel',
-                  showArrowRight: false,
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    shouldRemove = false;
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OpacityButtonWidgetTwo(
-                  label: 'Remove',
-                  buttonColor: Colors.red,
-                  showArrowRight: false,
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    shouldRemove = true;
-                  },
-                ),
-              ),
-            ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              label: 'Remove',
+              buttonColor: Colors.red,
+              showArrowRight: false,
+              onPressed: () {
+                Navigator.of(context).pop();
+                shouldRemove = true;
+              },
+            ),
           ),
         ],
       ),

@@ -633,32 +633,18 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
               'Replace "${_currentExerciseLog.exercise.name}" with "${alternative.name}"?',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Cancel',
-                    showArrowRight: false,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      shouldReplace = false;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OpacityButtonWidgetTwo(
-                    label: 'Replace',
-                    buttonColor: vibrantGreen,
-                    showArrowRight: false,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      shouldReplace = true;
-                    },
-                  ),
-                ),
-              ],
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Replace',
+                buttonColor: vibrantGreen,
+                showArrowRight: false,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  shouldReplace = true;
+                },
+              ),
             ),
           ],
         ),

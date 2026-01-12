@@ -481,20 +481,19 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                     onTap: () {
                       Navigator.of(context).pop();
 
-                      showBottomSheetWithMultiActions(
+                      showBottomSheetWithSingleAction(
                           context: context,
                           title: "Delete plan?",
                           description:
                               "Are you sure you want to delete this plan?",
-                          leftAction: Navigator.of(context).pop,
-                          rightAction: () {
+                          action: () {
+                            Navigator.of(context).pop();
                             context.pop();
                             _toggleLoadingState();
                             _deleteRoutinePlan(plan: plan);
                           },
-                          leftActionLabel: 'Cancel',
-                          rightActionLabel: 'Delete',
-                          isRightActionDestructive: true);
+                          actionLabel: 'Delete',
+                          isDestructive: true);
                     },
                   ),
                 ] else

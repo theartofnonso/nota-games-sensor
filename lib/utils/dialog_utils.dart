@@ -6,7 +6,7 @@ import 'package:trainware/widgets/timers/datetime_range_picker.dart';
 
 import '../colors.dart';
 import '../dtos/appsync/exercise_dto.dart';
-import '../widgets/buttons/opacity_button_widget.dart';
+import '../widgets/buttons/opacity_button_widget_two.dart';
 import '../widgets/timers/time_picker.dart';
 
 void showSnackbar({
@@ -205,17 +205,14 @@ void showBottomSheetWithNoAction(
       ));
 }
 
-void showBottomSheetWithMultiActions(
+void showBottomSheetWithSingleAction(
     {required BuildContext context,
     required String title,
     required String description,
-    required void Function() leftAction,
-    required void Function() rightAction,
-    required String leftActionLabel,
-    required String rightActionLabel,
-    bool isLeftActionDestructive = false,
-    bool isRightActionDestructive = true,
-    Color? rightActionColor}) {
+    required void Function() action,
+    required String actionLabel,
+    bool isDestructive = false,
+    Color? actionColor}) {
   showAppBottomSheet(
       context: context,
       isScrollControlled: false,
@@ -232,20 +229,16 @@ void showBottomSheetWithMultiActions(
                 style: Theme.of(context).textTheme.titleSmall,
                 textAlign: TextAlign.start),
             const SizedBox(height: 16),
-            Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-              OpacityButtonWidget(
-                  onPressed: leftAction,
-                  label: leftActionLabel,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
-              const SizedBox(width: 10),
-              OpacityButtonWidget(
-                  onPressed: rightAction,
-                  label: rightActionLabel,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  buttonColor: vibrantGreen)
-            ])
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                  onPressed: action,
+                  label: actionLabel,
+                  buttonColor: isDestructive
+                      ? Colors.red
+                      : (actionColor ?? vibrantGreen),
+                  showArrowRight: false),
+            ),
           ],
         ),
       ));
@@ -258,11 +251,12 @@ Future<bool> showSimilarExercisesDialog({
   required String exerciseName,
   required List<ExerciseDto> similarExercises,
 }) async {
-  final result = await showAppBottomSheet<bool>(
+  bool? result;
+  await showAppBottomSheet<bool>(
     context: context,
     isScrollControlled: similarExercises.length > 3,
     isDraggable: similarExercises.length > 3,
-    isDismissible: false,
+    isDismissible: true,
     child: Padding(
       padding: const EdgeInsets.all(26),
       child: Column(
@@ -318,28 +312,17 @@ Future<bool> showSimilarExercisesDialog({
                   ),
             ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              OpacityButtonWidget(
-                onPressed: () {
-                  Navigator.of(context).pop(false);
-                },
-                label: 'Cancel',
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-              const SizedBox(width: 10),
-              OpacityButtonWidget(
-                onPressed: () {
-                  Navigator.of(context).pop(true);
-                },
-                label: 'Proceed',
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                buttonColor: vibrantGreen,
-              ),
-            ],
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              onPressed: () {
+                result = true;
+                Navigator.of(context).pop(true);
+              },
+              label: 'Proceed',
+              buttonColor: vibrantGreen,
+              showArrowRight: false,
+            ),
           ),
         ],
       ),
@@ -379,28 +362,17 @@ Future<bool> confirmDiscardChangesBottomSheet({
             textAlign: TextAlign.start,
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              OpacityButtonWidget(
-                onPressed: () {
-                  result = false;
-                  Navigator.of(context).pop(false);
-                },
-                label: 'Cancel',
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-              const SizedBox(width: 10),
-              OpacityButtonWidget(
-                onPressed: () {
-                  result = true;
-                  Navigator.of(context).pop(true);
-                },
-                label: 'Leave',
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                buttonColor: Colors.red,
-              ),
-            ],
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              onPressed: () {
+                result = true;
+                Navigator.of(context).pop(true);
+              },
+              label: 'Leave',
+              buttonColor: Colors.red,
+              showArrowRight: false,
+            ),
           ),
         ],
       ),

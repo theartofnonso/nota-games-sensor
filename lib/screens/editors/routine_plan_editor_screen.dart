@@ -60,20 +60,18 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
     if (!_validateRoutinePlanInputs()) return;
     final plan = widget.plan;
     if (plan != null) {
-      showBottomSheetWithMultiActions(
+      showBottomSheetWithSingleAction(
           context: context,
+          title: "Update plan",
           description: "Do you want to update plan?",
-          leftAction: _closeDialog,
-          rightAction: () {
+          action: () {
             _closeDialog();
             final updatedTemplate = _getUpdatedRoutinePlan(plan: plan);
             _doUpdateRoutinePlan(planToBeUpdated: updatedTemplate);
             _navigateBack(plan: updatedTemplate);
           },
-          leftActionLabel: 'Cancel',
-          rightActionLabel: 'Update',
-          isRightActionDestructive: true,
-          title: "Update plan");
+          actionLabel: 'Update',
+          isDestructive: false);
     }
   }
 

@@ -491,12 +491,11 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _logout() async {
-    showBottomSheetWithMultiActions(
+    showBottomSheetWithSingleAction(
         context: context,
         title: "Log out?",
         description: "Are you sure you want to log out?",
-        leftAction: Navigator.of(context).pop,
-        rightAction: () async {
+        action: () async {
           Navigator.of(context).pop();
           _showLoadingScreen();
           _clearAppData();
@@ -505,19 +504,17 @@ class _SettingsScreenState extends State<SettingsScreen>
             context.go('/'); // Navigate to auth screen
           }
         },
-        leftActionLabel: 'Cancel',
-        rightActionLabel: 'Logout',
-        isRightActionDestructive: true);
+        actionLabel: 'Logout',
+        isDestructive: true);
   }
 
   void _delete() async {
-    showBottomSheetWithMultiActions(
+    showBottomSheetWithSingleAction(
         context: context,
         title: "Delete account?",
         description:
             "Are you sure you want to delete your account? This action cannot be undone.",
-        leftAction: Navigator.of(context).pop,
-        rightAction: () async {
+        action: () async {
           Navigator.of(context).pop();
           _showLoadingScreen();
 
@@ -564,9 +561,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             }
           }
         },
-        leftActionLabel: 'Cancel',
-        rightActionLabel: 'Delete',
-        isRightActionDestructive: true);
+        actionLabel: 'Delete',
+        isDestructive: true);
   }
 
   void _getAppVersion() async {

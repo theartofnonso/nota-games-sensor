@@ -107,7 +107,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     // Get the plan this template belongs to
     final plan = exerciseAndRoutineController.planWhere(id: template.planId);
-    
+
     // Check if this template belongs to a system plan
     final isSystemTemplate = plan?.isSystemPlan ?? false;
 
@@ -226,9 +226,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                             template.notes,
                             style: TextStyle(
                               fontSize: 14,
-                              color: isDarkMode
-                                  ? Colors.white70
-                                  : Colors.black,
+                              color: isDarkMode ? Colors.white70 : Colors.black,
                               height: 1.8,
                               fontWeight: FontWeight.w400,
                             ),
@@ -497,7 +495,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     );
   }
 
-
   void _deleteRoutine({required RoutineTemplateDto template}) async {
     try {
       await Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -714,19 +711,18 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       Navigator.of(context).pop();
 
                       if (template != null) {
-                        showBottomSheetWithMultiActions(
+                        showBottomSheetWithSingleAction(
                             context: context,
                             title: "Delete workout?",
                             description: planDto != null
                                 ? "Are you sure you want to delete this workout and remove it from ${planDto.name}?"
                                 : "Are you sure you want to delete this workout?",
-                            leftAction: Navigator.of(context).pop,
-                            rightAction: () {
+                            action: () {
+                              Navigator.of(context).pop();
                               _deleteRoutine(template: template);
                             },
-                            leftActionLabel: 'Cancel',
-                            rightActionLabel: 'Delete',
-                            isRightActionDestructive: true);
+                            actionLabel: 'Delete',
+                            isDestructive: true);
                       }
                     },
                   ),
