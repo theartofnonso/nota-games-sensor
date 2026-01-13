@@ -84,15 +84,15 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               maxLines: 3,
                             ),
-                            if (plan.isSystemPlan)
                               Text(
-                                'Not Athletes',
+                                plan.isSystemPlan ? 'Not Athletes' : 'Created by you',
                                 style: TextStyle(
                                   fontFamily: 'GroutpixFlow',
                                   color: Colors.blueGrey.shade400,
                                   fontSize: 12,
                                 ),
-                              ),
+                              )
+                            
                           ],
                         ),
                         Column(
