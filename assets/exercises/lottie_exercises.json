@@ -1609,7 +1609,7 @@
   },
   {
     "id": "ex-sled-leg-press-calf-raise",
-    "name": "Sled Leg Press Calf Raise",
+    "name": "Leg Press Calf Raise",
     "lottie": "assets/lottie/Man Doing Sled Leg Press Calf Raise Exercise For Legs.json",
     "isSystem": true
   },
@@ -1681,7 +1681,7 @@
   },
   {
     "id": "ex-sled-leg-press",
-    "name": "Sled Leg Press",
+    "name": "Leg Press",
     "lottie": "assets/lottie/Man Doing Sled Leg Press Exercise For Legs.json",
     "isSystem": true
   },
@@ -1717,7 +1717,7 @@
   },
   {
     "id": "ex-sled-horizontal-leg-press-calf-raise",
-    "name": "Sled Horizontal Leg Press Calf Raise",
+    "name": "Horizontal Leg Press Calf Raise",
     "lottie": "assets/lottie/Man Doing Sled Horizontal Leg Press Calf Raise Exercise For Legs.json",
     "isSystem": true
   },
@@ -1741,7 +1741,7 @@
   },
   {
     "id": "ex-sled-single-leg-press",
-    "name": "Sled Single Leg Press",
+    "name": "Single Leg Press",
     "lottie": "assets/lottie/Man Doing Sled Single Leg Press Exercise For Legs.json",
     "isSystem": true
   },
@@ -1795,7 +1795,7 @@
   },
   {
     "id": "ex-sled-horizontal-single-leg-press",
-    "name": "Sled Horizontal Single Leg Press",
+    "name": "Horizontal Single Leg Press",
     "lottie": "assets/lottie/Man Doing Sled Horizontal Single Leg Press Exercise For Legs.json",
     "isSystem": true
   },
@@ -1867,7 +1867,7 @@
   },
   {
     "id": "ex-sled-full-hack-squat",
-    "name": "Sled Full Hack Squat",
+    "name": "Full Hack Squat",
     "lottie": "assets/lottie/Man Doing Sled Full Hack Squat Exercise For Legs.json",
     "isSystem": true
   },
@@ -1885,7 +1885,7 @@
   },
   {
     "id": "ex-sled-hack-squat",
-    "name": "Sled Hack Squat",
+    "name": "Hack Squat",
     "lottie": "assets/lottie/Man Doing Sled Hack Squat Exercise For Legs.json",
     "isSystem": true
   },
@@ -1921,7 +1921,7 @@
   },
   {
     "id": "ex-sled-horizontal-leg-press",
-    "name": "Sled Horizontal Leg Press",
+    "name": "Horizontal Leg Press",
     "lottie": "assets/lottie/Man Doing Sled Horizontal Leg Press Exercise For Legs.json",
     "isSystem": true
   },
@@ -1969,7 +1969,7 @@
   },
   {
     "id": "ex-sled-reverse-hack-squat",
-    "name": "Sled Reverse Hack Squat",
+    "name": "Reverse Hack Squat",
     "lottie": "assets/lottie/Man Doing Sled Reverse Hack Squat Exercise For Legs.json",
     "isSystem": true
   },
