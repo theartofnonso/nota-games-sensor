@@ -14,9 +14,13 @@ class ChatScreen extends StatefulWidget {
   /// Admin/Coach user ID for the one-to-one chat
   final String adminUserId;
 
+  /// Optional scroll controller for bottom sheet integration
+  final ScrollController? scrollController;
+
   const ChatScreen({
     super.key,
     required this.adminUserId,
+    this.scrollController,
   });
 
   @override
@@ -26,7 +30,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final SendbirdChatService _chatService = SendbirdChatService();
   final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  late final ScrollController _scrollController;
   final List<sendbird.RootMessage> _messages = [];
 
   bool _isLoading = true;
@@ -38,6 +42,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController = widget.scrollController ?? ScrollController();
     _initializeChat();
   }
 
@@ -189,7 +194,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageSubscription?.cancel();
     _connectionSubscription?.cancel();
     _messageController.dispose();
-    _scrollController.dispose();
+    // Only dispose if we created the controller ourselves
+    if (widget.scrollController == null) {
+      _scrollController.dispose();
+    }
     super.dispose();
   }
 
@@ -203,167 +211,156 @@ class _ChatScreenState extends State<ChatScreen> {
     final isDarkMode = theme.brightness == Brightness.dark;
     final colors = theme.extension<TRKRColors>();
 
-    return Scaffold(
-      backgroundColor: isDarkMode ? Colors.black : Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: FaIcon(
-            FontAwesomeIcons.arrowLeft,
-            color: isDarkMode ? Colors.white : Colors.black,
-            size: 20,
+    return Column(
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Support',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: isDarkMode ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (!_isConnected)
+                      Text(
+                        'Connecting...',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (_chatService.getUnreadCount() > 0)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: colors?.vibrantAccent ?? Colors.green,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${_chatService.getUnreadCount()}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
           ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Support',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: isDarkMode ? Colors.white : Colors.black,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            if (!_isConnected)
-              Text(
-                'Connecting...',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.grey,
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          if (_chatService.getUnreadCount() > 0)
-            Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: colors?.vibrantAccent ?? Colors.green,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${_chatService.getUnreadCount()}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Messages list
-          Expanded(
-            child: _messages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        FaIcon(
-                          FontAwesomeIcons.message,
-                          size: 48,
+
+        // Messages list
+        Expanded(
+          child: _messages.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.message,
+                        size: 48,
+                        color: Colors.grey.withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No messages yet',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: Colors.grey.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Start a conversation with support',
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.grey.withValues(alpha: 0.5),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No messages yet',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: Colors.grey.withValues(alpha: 0.7),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Start a conversation with support',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.grey.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final message = _messages[index];
-                      final isCurrentUser = _isCurrentUserMessage(message);
-
-                      return _ChatMessageBubble(
-                        message: message,
-                        isCurrentUser: isCurrentUser,
-                        timestamp: _formatTimestamp(message.createdAt),
-                        isDarkMode: isDarkMode,
-                        vibrantAccent: colors?.vibrantAccent ?? Colors.green,
-                      );
-                    },
+                      ),
+                    ],
                   ),
-          ),
+                )
+              : ListView.builder(
+                  controller: _scrollController,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    final message = _messages[index];
+                    final isCurrentUser = _isCurrentUserMessage(message);
 
-          // Message input
-          Container(
-            decoration: BoxDecoration(
-              color: isDarkMode ? Colors.grey.shade900 : Colors.grey.shade100,
-              border: Border(
-                top: BorderSide(
-                  color: Colors.grey.withValues(alpha: 0.2),
-                  width: 1,
+                    return _ChatMessageBubble(
+                      message: message,
+                      isCurrentUser: isCurrentUser,
+                      timestamp: _formatTimestamp(message.createdAt),
+                      isDarkMode: isDarkMode,
+                      vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+                    );
+                  },
                 ),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isDarkMode ? Colors.grey.shade800 : Colors.white,
+        ),
+
+        // Message input - simplified
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    enabled: _isConnected && !_isSending,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Type a message...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.withValues(alpha: 0.5),
+                      ),
+                      filled: true,
+                      fillColor: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.3),
-                        ),
+                        borderSide: BorderSide.none,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: TextField(
-                        controller: _messageController,
-                        enabled: _isConnected && !_isSending,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isDarkMode ? Colors.white : Colors.black,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Type a message...',
-                          hintStyle: TextStyle(
-                            color: Colors.grey.withValues(alpha: 0.5),
-                          ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        maxLines: null,
-                        textCapitalization: TextCapitalization.sentences,
-                        onSubmitted: (_) => _sendMessage(),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
                       ),
                     ),
+                    maxLines: null,
+                    textCapitalization: TextCapitalization.sentences,
+                    onSubmitted: (_) => _sendMessage(),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: _isConnected && !_isSending
-                          ? (colors?.vibrantAccent ?? Colors.green)
-                          : Colors.grey,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: _isSending
+                ),
+                const SizedBox(width: 12),
+                // Clean send button
+                Material(
+                  color: _isConnected && !_isSending
+                      ? (colors?.vibrantAccent ?? Colors.green)
+                      : Colors.grey,
+                  borderRadius: BorderRadius.circular(24),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: _isConnected && !_isSending ? _sendMessage : null,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      alignment: Alignment.center,
+                      child: _isSending
                           ? const SizedBox(
                               width: 20,
                               height: 20,
@@ -378,16 +375,14 @@ class _ChatScreenState extends State<ChatScreen> {
                               color: Colors.white,
                               size: 18,
                             ),
-                      onPressed:
-                          _isConnected && !_isSending ? _sendMessage : null,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

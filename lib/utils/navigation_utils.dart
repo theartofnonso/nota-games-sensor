@@ -233,8 +233,19 @@ Future<void> navigateToChat({
   String? adminUserId,
 }) async {
   final finalAdminUserId = adminUserId ?? SendbirdConfig.adminUserId;
-  context.push(
-    '${ChatScreen.routeName}?adminUserId=$finalAdminUserId',
+  await showAppBottomSheet(
+    context: context,
+    isDraggable: true,
+    isDismissible: true,
+    initialChildSize: 0.9,
+    minChildSize: 0.5,
+    maxChildSize: 0.95,
+    builder: (context, scrollController) {
+      return ChatScreen(
+        adminUserId: finalAdminUserId,
+        scrollController: scrollController,
+      );
+    },
   );
 }
 
