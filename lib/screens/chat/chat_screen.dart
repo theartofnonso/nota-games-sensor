@@ -10,10 +10,10 @@ import '../../widgets/backgrounds/trkr_loading_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   static const routeName = '/chat_screen';
-  
+
   /// Admin/Coach user ID for the one-to-one chat
   final String adminUserId;
-  
+
   const ChatScreen({
     super.key,
     required this.adminUserId,
@@ -28,7 +28,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<sendbird.RootMessage> _messages = [];
-  
+
   bool _isLoading = true;
   bool _isConnected = false;
   bool _isSending = false;
@@ -62,26 +62,43 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       // Load previous messages
-      final previousMessages = await _chatService.loadPreviousMessages(limit: 50);
+      final previousMessages =
+          await _chatService.loadPreviousMessages(limit: 50);
       setState(() {
         _messages.addAll(previousMessages.reversed);
       });
 
       // Set up message stream listener
       _messageSubscription = _chatService.messageStream.listen((message) {
+        if (!mounted) return;
+
         setState(() {
-          if (message is sendbird.RootMessage) {
-            final rootMessage = message as sendbird.RootMessage;
-            if (!_messages.any((m) => m.requestId == rootMessage.requestId)) {
-              _messages.add(rootMessage);
-              _scrollToBottom();
+          // Check for duplicates using a combination of properties
+          // For UserMessage, use messageId if available, otherwise use createdAt + sender
+          final isDuplicate = _messages.any((m) {
+            if (m is sendbird.UserMessage && message is sendbird.UserMessage) {
+              // Use messageId for sent messages (more reliable)
+              if (m.messageId > 0 && message.messageId > 0) {
+                return m.messageId == message.messageId;
+              }
+              // Fallback: compare by createdAt and sender for pending messages
+              return m.createdAt == message.createdAt &&
+                  m.sender?.userId == message.sender?.userId;
             }
+            // For other message types, compare by createdAt
+            return m.createdAt == message.createdAt;
+          });
+
+          if (!isDuplicate) {
+            _messages.add(message as sendbird.RootMessage);
+            _scrollToBottom();
           }
         });
       });
 
       // Set up connection stream listener
-      _connectionSubscription = _chatService.connectionStream.listen((connected) {
+      _connectionSubscription =
+          _chatService.connectionStream.listen((connected) {
         setState(() => _isConnected = connected);
       });
 
@@ -271,12 +288,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   )
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: _messages.length,
                     itemBuilder: (context, index) {
                       final message = _messages[index];
                       final isCurrentUser = _isCurrentUserMessage(message);
-                      
+
                       return _ChatMessageBubble(
                         message: message,
                         isCurrentUser: isCurrentUser,
@@ -287,13 +305,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                   ),
           ),
-          
+
           // Message input
           Container(
             decoration: BoxDecoration(
-              color: isDarkMode
-                  ? Colors.grey.shade900
-                  : Colors.grey.shade100,
+              color: isDarkMode ? Colors.grey.shade900 : Colors.grey.shade100,
               border: Border(
                 top: BorderSide(
                   color: Colors.grey.withValues(alpha: 0.2),
@@ -308,9 +324,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isDarkMode
-                            ? Colors.grey.shade800
-                            : Colors.white,
+                        color: isDarkMode ? Colors.grey.shade800 : Colors.white,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: Colors.grey.withValues(alpha: 0.3),
@@ -331,7 +345,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 12),
                         ),
                         maxLines: null,
                         textCapitalization: TextCapitalization.sentences,
@@ -354,7 +369,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : const FaIcon(
@@ -362,9 +378,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               color: Colors.white,
                               size: 18,
                             ),
-                      onPressed: _isConnected && !_isSending
-                          ? _sendMessage
-                          : null,
+                      onPressed:
+                          _isConnected && !_isSending ? _sendMessage : null,
                     ),
                   ),
                 ],
@@ -395,10 +410,10 @@ class _ChatMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     if (message is sendbird.UserMessage) {
       final userMessage = message as sendbird.UserMessage;
-      
+
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Row(
@@ -416,11 +431,19 @@ class _ChatMessageBubble extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                        child: Text(
-                          (message is sendbird.UserMessage && 
-                           message.sender?.nickname?.isNotEmpty ?? false)
-                              ? message.sender!.nickname!.substring(0, 1).toUpperCase()
-                              : 'S',
+                  child: Text(
+                    (message is sendbird.UserMessage &&
+                            (message as sendbird.UserMessage)
+                                    .sender
+                                    ?.nickname
+                                    .isNotEmpty ==
+                                true)
+                        ? (message as sendbird.UserMessage)
+                            .sender!
+                            .nickname
+                            .substring(0, 1)
+                            .toUpperCase()
+                        : 'S',
                     style: TextStyle(
                       color: vibrantAccent,
                       fontWeight: FontWeight.bold,
@@ -433,7 +456,8 @@ class _ChatMessageBubble extends StatelessWidget {
             ],
             Flexible(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: isCurrentUser
                       ? vibrantAccent
@@ -458,8 +482,15 @@ class _ChatMessageBubble extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Text(
-                          (message is sendbird.UserMessage)
-                              ? (message.sender?.nickname ?? 'Support')
+                          (message is sendbird.UserMessage &&
+                                  (message as sendbird.UserMessage)
+                                          .sender
+                                          ?.nickname
+                                          .isNotEmpty ==
+                                      true)
+                              ? (message as sendbird.UserMessage)
+                                  .sender!
+                                  .nickname
                               : 'Support',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: isCurrentUser
@@ -471,7 +502,7 @@ class _ChatMessageBubble extends StatelessWidget {
                         ),
                       ),
                     Text(
-                      userMessage.message ?? '',
+                      userMessage.message,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: isCurrentUser
                             ? Colors.white
@@ -503,8 +534,8 @@ class _ChatMessageBubble extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                        child: Text(
-                          'You',
+                  child: Text(
+                    'You',
                     style: TextStyle(
                       color: vibrantAccent,
                       fontWeight: FontWeight.bold,
@@ -518,7 +549,7 @@ class _ChatMessageBubble extends StatelessWidget {
         ),
       );
     }
-    
+
     // Handle other message types (file messages, etc.)
     return const SizedBox.shrink();
   }

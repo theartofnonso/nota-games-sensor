@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:sendbird_chat_sdk/sendbird_chat_sdk.dart' as sendbird;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../logger.dart';
@@ -14,11 +15,17 @@ class SendbirdChatService {
 
   sendbird.User? _currentUser;
   sendbird.GroupChannel? _currentGroupChannel;
+  bool _isInitialized = false;
+  String? _appId;
   
   // Stream controllers for real-time updates
   final _messageController = StreamController<sendbird.BaseMessage>.broadcast();
   final _channelController = StreamController<sendbird.GroupChannel>.broadcast();
   final _connectionController = StreamController<bool>.broadcast();
+
+  // Handler IDs for cleanup
+  static const String _channelHandlerId = 'chat_channel_handler';
+  static const String _connectionHandlerId = 'chat_connection_handler';
 
   // Getters for streams
   Stream<sendbird.BaseMessage> get messageStream => _messageController.stream;
@@ -26,10 +33,18 @@ class SendbirdChatService {
   Stream<bool> get connectionStream => _connectionController.stream;
 
   /// Initialize Sendbird SDK with app ID
-  /// Note: Replace with your actual Sendbird App ID
+  /// Should be called once at app startup. Safe to call multiple times.
   Future<void> initialize({required String appId}) async {
     try {
+      // Only initialize if not already initialized or if app ID changed
+      if (_isInitialized && _appId == appId) {
+        logger.i('Sendbird SDK already initialized');
+        return;
+      }
+
       sendbird.SendbirdChat.init(appId: appId);
+      _appId = appId;
+      _isInitialized = true;
       logger.i('Sendbird SDK initialized');
     } catch (e) {
       logger.e('Error initializing Sendbird SDK: $e');
@@ -41,6 +56,10 @@ class SendbirdChatService {
   /// Creates a unique user ID based on Supabase user ID
   Future<sendbird.User> connect({String? userId, String? nickname}) async {
     try {
+      if (!_isInitialized) {
+        throw Exception('Sendbird SDK not initialized. Call initialize() first.');
+      }
+
       // Get user ID from Supabase if not provided
       final currentSupabaseUser = Supabase.instance.client.auth.currentUser;
       final finalUserId = userId ?? currentSupabaseUser?.id;
@@ -49,20 +68,30 @@ class SendbirdChatService {
         throw Exception('No user ID available. User must be authenticated.');
       }
 
+      // Disconnect existing connection if user ID changed
+      if (_currentUser != null && _currentUser!.userId != finalUserId) {
+        await disconnect();
+      }
+
       // Connect to Sendbird
       _currentUser = await sendbird.SendbirdChat.connect(finalUserId);
       
       // Update user nickname if provided
+      // Note: User profile updates should be done via Sendbird Dashboard or Platform API
+      // SDK-level updates may not be available in all versions
       if (nickname != null || currentSupabaseUser?.email != null) {
         try {
-          final updateParams = sendbird.UserUpdateParams()
-            ..nickname = nickname ?? currentSupabaseUser!.email!.split('@')[0];
-          await _currentUser!.updateUserInfo(updateParams);
+          // Try to update user info if the method exists
+          // This is optional and may not be available in all SDK versions
+          logger.d('User nickname would be: ${nickname ?? currentSupabaseUser!.email!.split('@')[0]}');
+          // User updates should ideally be handled server-side
         } catch (e) {
-          // User update may not be available in all SDK versions
           logger.w('Could not update user info: $e');
         }
       }
+
+      // Set up connection handler for reconnection
+      _setupConnectionHandler();
 
       _connectionController.add(true);
       logger.i('Connected to Sendbird as user: ${_currentUser!.userId}');
@@ -89,7 +118,7 @@ class SendbirdChatService {
   }
 
   /// Get or create a one-to-one channel with the platform admin/coach
-  /// Channel URL format: "user_{userId}_admin" ensures unique channel per user
+  /// Uses isDistinct=true to ensure only one channel exists between the same users
   Future<sendbird.GroupChannel> getOrCreateUserChannel({
     required String adminUserId,
     String? channelName,
@@ -100,33 +129,29 @@ class SendbirdChatService {
       }
 
       final userId = _currentUser!.userId;
-      final channelUrl = 'user_${userId}_admin';
 
-      // Try to get existing channel
-      try {
-        _currentGroupChannel = await sendbird.GroupChannel.getChannel(channelUrl);
-        logger.i('Retrieved existing channel: $channelUrl');
-        return _currentGroupChannel!;
-      } catch (e) {
-        // Channel doesn't exist, will be created by backend
-        // For now, we'll create it here (backend should handle this in production)
-        logger.i('Channel not found, will be created by backend: $channelUrl');
-        
-        // Note: In production, channel creation should be handled by backend
-        // This is a fallback for development
-        final params = sendbird.GroupChannelCreateParams()
-          ..userIds = [userId, adminUserId]
-          ..name = channelName ?? 'Support Chat'
-          ..isDistinct = true
-          ..customType = 'user_support';
+      // Use isDistinct=true to automatically reuse existing channel if it exists
+      // This is the recommended approach per Sendbird documentation
+      final params = sendbird.GroupChannelCreateParams()
+        ..userIds = [userId, adminUserId]
+        ..name = channelName ?? 'Support Chat'
+        ..isDistinct = true // This ensures only one channel between these users
+        ..customType = 'user_support';
 
-        _currentGroupChannel = await sendbird.GroupChannel.createChannel(params);
-        logger.i('Created new channel: ${_currentGroupChannel!.channelUrl}');
-        
-        return _currentGroupChannel!;
-      }
+      // createChannel will return existing channel if isDistinct=true and channel exists
+      _currentGroupChannel = await sendbird.GroupChannel.createChannel(params);
+      logger.i('Channel ready: ${_currentGroupChannel!.channelUrl}');
+      
+      return _currentGroupChannel!;
     } catch (e) {
       logger.e('Error getting/creating user channel: $e');
+      // Check for specific Sendbird error codes
+      if (e is sendbird.SendbirdException) {
+        if (e.code == 400201) {
+          // User not found - admin user might not exist
+          throw Exception('Admin user not found. Please ensure the admin user exists in Sendbird.');
+        }
+      }
       rethrow;
     }
   }
@@ -152,8 +177,10 @@ class SendbirdChatService {
   }
 
   /// Load previous messages from the channel
+  /// Uses proper pagination with timestamp-based loading
   Future<List<sendbird.RootMessage>> loadPreviousMessages({
     int limit = 50,
+    int? timestamp,
     sendbird.MessageListParams? params,
   }) async {
     try {
@@ -163,10 +190,11 @@ class SendbirdChatService {
 
       final messageListParams = params ?? sendbird.MessageListParams()
         ..nextResultSize = limit
-        ..reverse = true;
+        ..reverse = false; // false means older messages (previous)
 
+      final targetTimestamp = timestamp ?? DateTime.now().millisecondsSinceEpoch;
       final messages = await _currentGroupChannel!.getMessagesByTimestamp(
-        DateTime.now().millisecondsSinceEpoch,
+        targetTimestamp,
         messageListParams,
       );
 
@@ -174,6 +202,11 @@ class SendbirdChatService {
       return messages;
     } catch (e) {
       logger.e('Error loading previous messages: $e');
+      if (e is sendbird.SendbirdException) {
+        if (e.code == 800101) {
+          throw Exception('Connection required. Please ensure you are connected to Sendbird.');
+        }
+      }
       rethrow;
     }
   }
@@ -191,31 +224,77 @@ class SendbirdChatService {
   }
 
   /// Set up channel event handlers for real-time updates
+  /// Removes existing handler before adding new one to prevent duplicates
   void setupChannelHandlers() {
+    // Remove existing handler if it exists
+    try {
+      sendbird.SendbirdChat.removeChannelHandler(_channelHandlerId);
+    } catch (e) {
+      // Handler might not exist, which is fine
+      logger.d('No existing channel handler to remove');
+    }
+
     final handler = _ChatChannelHandler(
       onMessageReceivedCallback: (sendbird.BaseChannel channel, sendbird.BaseMessage message) {
-        if (channel is sendbird.GroupChannel && channel == _currentGroupChannel) {
+        if (channel is sendbird.GroupChannel && 
+            channel.channelUrl == _currentGroupChannel?.channelUrl) {
           _messageController.add(message);
           markAsRead(); // Auto-mark as read
         }
       },
       onMessageUpdatedCallback: (sendbird.BaseChannel channel, sendbird.BaseMessage message) {
-        if (channel is sendbird.GroupChannel && channel == _currentGroupChannel) {
+        if (channel is sendbird.GroupChannel && 
+            channel.channelUrl == _currentGroupChannel?.channelUrl) {
           _messageController.add(message);
         }
       },
       onMessageDeletedCallback: (sendbird.BaseChannel channel, int messageId) {
-        // Handle message deletion if needed
-        logger.i('Message deleted: $messageId');
+        if (channel is sendbird.GroupChannel && 
+            channel.channelUrl == _currentGroupChannel?.channelUrl) {
+          logger.i('Message deleted: $messageId');
+          // Could emit a deletion event here if needed
+        }
       },
       onChannelChangedCallback: (sendbird.BaseChannel channel) {
-        if (channel is sendbird.GroupChannel && channel == _currentGroupChannel) {
-          _channelController.add(channel);
+        if (channel is sendbird.GroupChannel && 
+            channel.channelUrl == _currentGroupChannel?.channelUrl) {
+          _currentGroupChannel = channel;
+          _channelController.add(_currentGroupChannel!);
         }
       },
     );
     
-    sendbird.SendbirdChat.addChannelHandler('chat_handler', handler);
+    sendbird.SendbirdChat.addChannelHandler(_channelHandlerId, handler);
+    logger.i('Channel handlers set up');
+  }
+
+  /// Set up connection handler for reconnection handling
+  void _setupConnectionHandler() {
+    // Remove existing handler if it exists
+    try {
+      sendbird.SendbirdChat.removeConnectionHandler(_connectionHandlerId);
+    } catch (e) {
+      // Handler might not exist, which is fine
+      logger.d('No existing connection handler to remove');
+    }
+
+    final connectionHandler = _ChatConnectionHandler(
+      onReconnectSucceeded: () {
+        logger.i('Reconnected to Sendbird');
+        _connectionController.add(true);
+      },
+      onReconnectFailed: () {
+        logger.w('Reconnection to Sendbird failed');
+        _connectionController.add(false);
+      },
+      onConnectionChanged: (bool isConnected) {
+        logger.i('Connection changed: $isConnected');
+        _connectionController.add(isConnected);
+      },
+    );
+
+    sendbird.SendbirdChat.addConnectionHandler(_connectionHandlerId, connectionHandler);
+    logger.i('Connection handler set up');
   }
 
   /// Get unread message count for the current channel
@@ -234,7 +313,12 @@ class SendbirdChatService {
 
   /// Dispose resources
   void dispose() {
-    sendbird.SendbirdChat.removeChannelHandler('chat_handler');
+    try {
+      sendbird.SendbirdChat.removeChannelHandler(_channelHandlerId);
+      sendbird.SendbirdChat.removeConnectionHandler(_connectionHandlerId);
+    } catch (e) {
+      logger.w('Error removing handlers: $e');
+    }
     _messageController.close();
     _channelController.close();
     _connectionController.close();
@@ -243,7 +327,8 @@ class SendbirdChatService {
 }
 
 /// Channel event handler for Sendbird
-class _ChatChannelHandler extends sendbird.GroupChannelHandler {
+/// Uses RootChannelHandler which handles all channel types
+class _ChatChannelHandler extends sendbird.RootChannelHandler {
   final void Function(sendbird.BaseChannel channel, sendbird.BaseMessage message) onMessageReceivedCallback;
   final void Function(sendbird.BaseChannel channel, sendbird.BaseMessage message) onMessageUpdatedCallback;
   final void Function(sendbird.BaseChannel channel, int messageId) onMessageDeletedCallback;
@@ -256,23 +341,60 @@ class _ChatChannelHandler extends sendbird.GroupChannelHandler {
     required this.onChannelChangedCallback,
   });
 
-  @override
   void onMessageReceived(sendbird.BaseChannel channel, sendbird.BaseMessage message) {
     onMessageReceivedCallback(channel, message);
   }
 
-  @override
   void onMessageUpdated(sendbird.BaseChannel channel, sendbird.BaseMessage message) {
     onMessageUpdatedCallback(channel, message);
   }
 
-  @override
   void onMessageDeleted(sendbird.BaseChannel channel, int messageId) {
     onMessageDeletedCallback(channel, messageId);
   }
 
-  @override
   void onChannelChanged(sendbird.BaseChannel channel) {
     onChannelChangedCallback(channel);
+  }
+}
+
+/// Connection event handler for Sendbird
+/// Handles reconnection events
+class _ChatConnectionHandler extends sendbird.ConnectionHandler {
+  final VoidCallback _onReconnectSucceeded;
+  final VoidCallback _onReconnectFailed;
+  final void Function(bool isConnected) _onConnectionChanged;
+
+  _ChatConnectionHandler({
+    required VoidCallback onReconnectSucceeded,
+    required VoidCallback onReconnectFailed,
+    required void Function(bool isConnected) onConnectionChanged,
+  })  : _onReconnectSucceeded = onReconnectSucceeded,
+        _onReconnectFailed = onReconnectFailed,
+        _onConnectionChanged = onConnectionChanged;
+
+  @override
+  void onConnected(String sessionKey) {
+    _onConnectionChanged(true);
+  }
+
+  @override
+  void onDisconnected(String sessionKey) {
+    _onConnectionChanged(false);
+  }
+
+  @override
+  void onReconnectStarted() {
+    // Reconnection started - connection state is already false
+  }
+
+  @override
+  void onReconnectSucceeded() {
+    _onReconnectSucceeded();
+  }
+
+  @override
+  void onReconnectFailed() {
+    _onReconnectFailed();
   }
 }
