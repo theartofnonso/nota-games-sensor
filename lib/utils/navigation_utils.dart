@@ -233,19 +233,40 @@ Future<void> navigateToChat({
   String? adminUserId,
 }) async {
   final finalAdminUserId = adminUserId ?? SendbirdConfig.adminUserId;
-  await showAppBottomSheet(
+  await showModalBottomSheet(
     context: context,
-    isDraggable: true,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
     isDismissible: true,
-    initialChildSize: 0.9,
-    minChildSize: 0.5,
-    maxChildSize: 0.95,
-    builder: (context, scrollController) {
-      return ChatScreen(
-        adminUserId: finalAdminUserId,
-        scrollController: scrollController,
-      );
-    },
+    enableDrag: false, // Explicitly disable dragging
+    showDragHandle: false,
+    useSafeArea: true,
+    barrierColor: Colors.black.withValues(alpha: 0.55),
+    builder: (context) => Stack(
+      children: [
+        // Tappable barrier for dismissing
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              Navigator.of(context, rootNavigator: false).pop();
+            },
+            child: Container(
+              color: Colors.transparent,
+            ),
+          ),
+        ),
+        // Sheet content (non-draggable)
+        AppBottomSheet(
+          isDraggable: false,
+          isDismissible: true,
+          child: ChatScreen(
+            adminUserId: finalAdminUserId,
+            scrollController: null,
+          ),
+        ),
+      ],
+    ),
   );
 }
 

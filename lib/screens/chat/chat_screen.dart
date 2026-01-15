@@ -223,7 +223,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Support',
+                      'Check In',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: isDarkMode ? Colors.white : Colors.black,
                         fontWeight: FontWeight.w600,
@@ -241,6 +241,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               if (_chatService.getUnreadCount() > 0)
                 Container(
+                  margin: const EdgeInsets.only(right: 12),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -256,6 +257,17 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 ),
+              // Close button
+              IconButton(
+                icon: FaIcon(
+                  FontAwesomeIcons.solidCircleXmark,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  size: 20,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
             ],
           ),
         ),
@@ -311,7 +323,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
         // Message input - simplified
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            16 + MediaQuery.of(context).viewInsets.bottom,
+          ),
           child: SafeArea(
             top: false,
             child: Row(
@@ -336,6 +353,14 @@ class _ChatScreenState extends State<ChatScreen> {
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 12,
@@ -349,9 +374,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 const SizedBox(width: 12),
                 // Clean send button
                 Material(
-                  color: _isConnected && !_isSending
-                      ? (colors?.vibrantAccent ?? Colors.green)
-                      : Colors.grey,
+                  color: (_isConnected && !_isSending
+                          ? (colors?.vibrantAccent ?? Colors.green)
+                          : Colors.grey)
+                      .withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(24),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(24),
@@ -370,9 +396,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                     AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : const FaIcon(
+                          : FaIcon(
                               FontAwesomeIcons.paperPlane,
-                              color: Colors.white,
+                              color: Colors.white.withValues(alpha: 0.9),
                               size: 18,
                             ),
                     ),
@@ -454,21 +480,8 @@ class _ChatMessageBubble extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isCurrentUser
-                      ? vibrantAccent
-                      : (isDarkMode
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade200),
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: isCurrentUser
-                        ? const Radius.circular(20)
-                        : const Radius.circular(4),
-                    bottomRight: isCurrentUser
-                        ? const Radius.circular(4)
-                        : const Radius.circular(20),
-                  ),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,9 +501,7 @@ class _ChatMessageBubble extends StatelessWidget {
                                   .nickname
                               : 'Support',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: isCurrentUser
-                                ? Colors.white.withValues(alpha: 0.9)
-                                : vibrantAccent,
+                            color: Colors.black.withValues(alpha: 0.8),
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),
@@ -499,18 +510,14 @@ class _ChatMessageBubble extends StatelessWidget {
                     Text(
                       userMessage.message,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isCurrentUser
-                            ? Colors.white
-                            : (isDarkMode ? Colors.white : Colors.black),
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       timestamp,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: isCurrentUser
-                            ? Colors.white.withValues(alpha: 0.7)
-                            : Colors.grey.withValues(alpha: 0.7),
+                        color: Colors.black.withValues(alpha: 0.7),
                         fontSize: 10,
                       ),
                     ),
@@ -518,28 +525,6 @@ class _ChatMessageBubble extends StatelessWidget {
                 ),
               ),
             ),
-            if (isCurrentUser) ...[
-              const SizedBox(width: 8),
-              // Avatar for current user
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: vibrantAccent.withValues(alpha: 0.3),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    'You',
-                    style: TextStyle(
-                      color: vibrantAccent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       );
