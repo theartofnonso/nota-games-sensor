@@ -3450,6 +3450,12 @@
     "isSystem": true
   },
   {
+    "id": "ex-stairmaster",
+    "name": "Stairmaster",
+    "lottie": "assets/lottie/Man Doing Stairmaster Exercise.json",
+    "isSystem": true
+  },
+  {
     "id": "ex-bulgarian-split-jump-cardio",
     "name": "Bulgarian Split Jump Cardio",
     "lottie": "assets/lottie/Man Doing Bulgarian Split Jump Cardio Exercise.json",
