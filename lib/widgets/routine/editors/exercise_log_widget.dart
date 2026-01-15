@@ -225,7 +225,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     // Vibrate when logging a set
     if (checked) {
-      HapticFeedback.mediumImpact();
+      HapticFeedback.heavyImpact();
     }
 
     final updatedSet = currentSet.copyWith(checked: checked);

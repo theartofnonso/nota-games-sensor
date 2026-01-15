@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../controllers/exercise_log_controller.dart';
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/exercise_log_dto.dart';
 import '../enums/exercise_type_enums.dart';
 import '../enums/routine_editor_type_enums.dart';
 import '../screens/exercise/library/exercise_library_screen.dart';
+import '../utils/dialog_utils.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
 import '../widgets/routine/editors/exercise_log_widget.dart';
@@ -40,19 +43,61 @@ void showExerciseLogEditor({
   required RoutineEditorMode editorType,
   bool showSetCheck = true,
 }) {
+  // Check if exercise type is duration (DR) to prevent closing without confirmation
+  final exerciseLogController =
+      Provider.of<ExerciseLogController>(context, listen: false);
+  final exerciseLog = exerciseLogController.whereExerciseLog(
+      exerciseId: exerciseLogId);
+  final isDurationExercise = exerciseLog?.exercise.type == ExerciseType.duration;
+
+  // Create barrier tap handler for duration exercises
+  Future<bool> Function()? onBarrierTap;
+  if (isDurationExercise) {
+    onBarrierTap = () async {
+      return await confirmDiscardChangesBottomSheet(
+        context: context,
+        title: 'Leave exercise?',
+        description: 'Are you sure you want to leave?',
+      );
+    };
+  }
+
   showAppBottomSheet(
     context: context,
     isDraggable: true,
-    isDismissible: true,
+    isDismissible: !isDurationExercise, // Prevent auto-dismiss for duration exercises
+    onBarrierTap: onBarrierTap,
     initialChildSize: 0.9,
     minChildSize: 0.5,
     maxChildSize: 0.95,
     builder: (context, scrollController) {
-      return ExerciseLogWidget(
+      final widget = ExerciseLogWidget(
         exerciseLogId: exerciseLogId,
         editorType: editorType,
         showSetCheck: showSetCheck,
       );
+
+      // Wrap with PopScope to handle back button for duration exercises
+      if (isDurationExercise) {
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (bool didPop, dynamic result) async {
+            if (didPop) return;
+
+            final shouldPop = await confirmDiscardChangesBottomSheet(
+              context: context,
+              title: 'Leave exercise?',
+              description: 'Are you sure you want to leave?',
+            );
+            if (shouldPop && context.mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+          child: widget,
+        );
+      }
+
+      return widget;
     },
   );
 }
