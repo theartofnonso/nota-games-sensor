@@ -2,9 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:sendbird_chat_sdk/sendbird_chat_sdk.dart' as sendbird;
-import '../../services/sendbird_chat_service.dart';
-import '../../config/sendbird_config.dart';
+import '../../services/chat_service.dart';
+import '../../dtos/appsync/chat_message_dto.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 
@@ -28,16 +27,14 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final SendbirdChatService _chatService = SendbirdChatService();
+  final ChatService _chatService = ChatService();
   final TextEditingController _messageController = TextEditingController();
   late final ScrollController _scrollController;
-  final List<sendbird.RootMessage> _messages = [];
+  final List<ChatMessageDto> _messages = [];
 
   bool _isLoading = true;
-  bool _isConnected = false;
   bool _isSending = false;
-  StreamSubscription<sendbird.BaseMessage>? _messageSubscription;
-  StreamSubscription<bool>? _connectionSubscription;
+  StreamSubscription<ChatMessageEvent>? _messageSubscription;
 
   @override
   void initState() {
@@ -50,72 +47,61 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       setState(() => _isLoading = true);
 
-      // Initialize Sendbird
-      await _chatService.initialize(appId: SendbirdConfig.appId);
-
-      // Connect to Sendbird
-      await _chatService.connect();
-      setState(() => _isConnected = true);
-
-      // Set up channel handlers
-      _chatService.setupChannelHandlers();
-
-      // Get or create user channel
-      await _chatService.getOrCreateUserChannel(
-        adminUserId: widget.adminUserId,
-        channelName: 'Support Chat',
+      // Get or create conversation
+      await _chatService.getOrCreateConversation(
+        coachId: widget.adminUserId,
       );
+
+      // Set up real-time message subscription
+      _chatService.setupMessageSubscription();
 
       // Load previous messages
       final previousMessages =
           await _chatService.loadPreviousMessages(limit: 50);
       setState(() {
         _messages.addAll(previousMessages);
-        // Sort messages by timestamp (oldest first)
+        // Sort messages by timestamp in ascending order (oldest first, newest last)
+        // Oldest messages at top, newest messages at bottom
         _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       });
 
-      // Set up message stream listener
-      _messageSubscription = _chatService.messageStream.listen((message) {
+      // Set up message stream listener for real-time updates
+      _messageSubscription = _chatService.messageStream.listen((event) {
         if (!mounted) return;
 
         setState(() {
-          // Check for duplicates using a combination of properties
-          // For UserMessage, use messageId if available, otherwise use createdAt + sender
-          final isDuplicate = _messages.any((m) {
-            if (m is sendbird.UserMessage && message is sendbird.UserMessage) {
-              // Use messageId for sent messages (more reliable)
-              if (m.messageId > 0 && message.messageId > 0) {
-                return m.messageId == message.messageId;
+          switch (event.type) {
+            case ChatMessageEventType.insert:
+              final message = event.message;
+              if (message == null) return;
+              if (_messages.any((m) => m.id == message.id)) return;
+              _messages.add(message);
+              break;
+            case ChatMessageEventType.update:
+              final message = event.message;
+              if (message == null) return;
+              final index = _messages.indexWhere((m) => m.id == message.id);
+              if (index != -1) {
+                _messages[index] = message;
               }
-              // Fallback: compare by createdAt and sender for pending messages
-              return m.createdAt == message.createdAt &&
-                  m.sender?.userId == message.sender?.userId;
-            }
-            // For other message types, compare by createdAt
-            return m.createdAt == message.createdAt;
-          });
-
-          if (!isDuplicate) {
-            _messages.add(message as sendbird.RootMessage);
-            // Sort messages by timestamp to maintain correct order
-            _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-            _scrollToBottom();
+              break;
+            case ChatMessageEventType.delete:
+              final id = event.messageId;
+              if (id == null) return;
+              _messages.removeWhere((m) => m.id == id);
+              break;
           }
+          _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          _scrollToBottom();
+          _chatService.markConversationAsRead();
         });
       });
 
-      // Set up connection stream listener
-      _connectionSubscription =
-          _chatService.connectionStream.listen((connected) {
-        setState(() => _isConnected = connected);
+      setState(() {
+        _isLoading = false;
       });
-
-      // Mark messages as read
-      await _chatService.markAsRead();
-
-      setState(() => _isLoading = false);
       _scrollToBottom();
+      _chatService.markConversationAsRead();
     } catch (e) {
       debugPrint('Error initializing chat: $e');
       if (mounted) {
@@ -133,6 +119,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
+        // Scroll to maxScrollExtent to show newest messages at bottom
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -150,7 +137,17 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.clear();
 
     try {
-      await _chatService.sendMessage(messageText);
+      final sentMessage = await _chatService.sendMessage(messageText);
+      // Add to local list if not already added by stream
+      setState(() {
+        final isDuplicate = _messages.any((m) => m.id == sentMessage.id);
+        if (!isDuplicate) {
+          _messages.add(sentMessage);
+          // Sort messages by timestamp in ascending order (oldest first, newest last)
+          // Oldest messages at top, newest messages at bottom
+          _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        }
+      });
       _scrollToBottom();
     } catch (e) {
       debugPrint('Error sending message: $e');
@@ -171,32 +168,59 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  String _formatTimestamp(int timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+  String _formatTimestamp(DateTime dateTime) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final messageDate = DateTime(date.year, date.month, date.day);
+    final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
 
     if (messageDate == today) {
-      return DateFormat('HH:mm').format(date);
+      return DateFormat('HH:mm').format(dateTime);
     } else if (messageDate == today.subtract(const Duration(days: 1))) {
-      return 'Yesterday ${DateFormat('HH:mm').format(date)}';
+      return 'Yesterday ${DateFormat('HH:mm').format(dateTime)}';
     } else {
-      return DateFormat('MMM d, HH:mm').format(date);
+      return DateFormat('MMM d, HH:mm').format(dateTime);
     }
   }
 
-  bool _isCurrentUserMessage(sendbird.RootMessage message) {
-    if (message is sendbird.UserMessage) {
-      return message.sender?.userId == _chatService.currentUser?.userId;
+  bool _isCurrentUserMessage(ChatMessageDto message) {
+    final currentUserId = _chatService.currentUserId;
+    return message.senderId == currentUserId;
+  }
+
+  List<_ChatListEntry> _buildChatEntries() {
+    final entries = <_ChatListEntry>[];
+    String? lastLabel;
+
+    for (final message in _messages) {
+      final label = _dateBucketLabel(message.createdAt);
+      if (label != lastLabel) {
+        entries.add(_ChatListEntry.divider(label));
+        lastLabel = label;
+      }
+      entries.add(_ChatListEntry.message(message));
     }
-    return false;
+
+    return entries;
+  }
+
+  String _dateBucketLabel(DateTime timestamp) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDate =
+        DateTime(timestamp.year, timestamp.month, timestamp.day);
+
+    if (messageDate == today) {
+      return 'Today';
+    }
+    if (messageDate == today.subtract(const Duration(days: 1))) {
+      return 'Yesterday';
+    }
+    return DateFormat('EEEE, d MMM').format(messageDate);
   }
 
   @override
   void dispose() {
     _messageSubscription?.cancel();
-    _connectionSubscription?.cancel();
     _messageController.dispose();
     // Only dispose if we created the controller ourselves
     if (widget.scrollController == null) {
@@ -230,37 +254,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       'Check In',
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: isDarkMode ? Colors.white : Colors.black,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    if (!_isConnected)
-                      Text(
-                        'Connecting...',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
-                        ),
-                      ),
                   ],
                 ),
               ),
-              if (_chatService.getUnreadCount() > 0)
-                Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: colors?.vibrantAccent ?? Colors.green,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${_chatService.getUnreadCount()}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
               // Close button
               IconButton(
                 icon: FaIcon(
@@ -316,9 +315,16 @@ class _ChatScreenState extends State<ChatScreen> {
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
-                    itemCount: _messages.length,
+                    itemCount: _buildChatEntries().length,
                     itemBuilder: (context, index) {
-                      final message = _messages[index];
+                      final entries = _buildChatEntries();
+                      final entry = entries[index];
+
+                      if (entry.isDivider) {
+                        return _ChatDateDivider(label: entry.label!);
+                      }
+
+                      final message = entry.message!;
                       final isCurrentUser = _isCurrentUserMessage(message);
 
                       return _ChatMessageBubble(
@@ -337,7 +343,7 @@ class _ChatScreenState extends State<ChatScreen> {
         Padding(
           padding: EdgeInsets.fromLTRB(
             16,
-            8,
+            16,
             16,
             16 + MediaQuery.of(context).viewInsets.bottom,
           ),
@@ -348,7 +354,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    enabled: _isConnected && !_isSending,
+                    enabled: !_isSending,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: isDarkMode ? Colors.white : Colors.black,
                     ),
@@ -362,7 +368,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           ? Colors.white.withValues(alpha: 0.1)
                           : Colors.black.withValues(alpha: 0.05),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(5),
                         borderSide: BorderSide(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.2)
@@ -371,7 +377,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(5),
                         borderSide: BorderSide(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.2)
@@ -380,7 +386,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(5),
                         borderSide: BorderSide(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.4)
@@ -400,23 +406,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(width: 12),
                 // Send button - no background, with border
-                Container(
+                SizedBox(
                   width: 48,
                   height: 48,
-                  // decoration: BoxDecoration(
-                  //   border: Border.all(
-                  //     color: isDarkMode
-                  //         ? Colors.white.withValues(alpha: 0.2)
-                  //         : Colors.black.withValues(alpha: 0.2),
-                  //     width: 1,
-                  //   ),
-                  //   borderRadius: BorderRadius.circular(24),
-                  // ),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(24),
-                      onTap: _isConnected && !_isSending ? _sendMessage : null,
+                      onTap: _isSending ? null : _sendMessage,
                       child: Container(
                         alignment: Alignment.center,
                         child: _isSending
@@ -448,7 +445,7 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class _ChatMessageBubble extends StatelessWidget {
-  final sendbird.RootMessage message;
+  final ChatMessageDto message;
   final bool isCurrentUser;
   final String timestamp;
   final bool isDarkMode;
@@ -466,107 +463,100 @@ class _ChatMessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (message is sendbird.UserMessage) {
-      final userMessage = message as sendbird.UserMessage;
-
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Row(
-          mainAxisAlignment:
-              isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (!isCurrentUser) ...[
-              // Avatar for other user
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: vibrantAccent.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    (message is sendbird.UserMessage &&
-                            (message as sendbird.UserMessage)
-                                    .sender
-                                    ?.nickname
-                                    .isNotEmpty ==
-                                true)
-                        ? (message as sendbird.UserMessage)
-                            .sender!
-                            .nickname
-                            .substring(0, 1)
-                            .toUpperCase()
-                        : 'S',
-                    style: TextStyle(
-                      color: vibrantAccent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment:
+            isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Flexible(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final maxBubbleWidth = constraints.maxWidth * 0.75;
+                return ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: 100,
+                    maxWidth: maxBubbleWidth,
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Flexible(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (!isCurrentUser)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          (message is sendbird.UserMessage &&
-                                  (message as sendbird.UserMessage)
-                                          .sender
-                                          ?.nickname
-                                          .isNotEmpty ==
-                                      true)
-                              ? (message as sendbird.UserMessage)
-                                  .sender!
-                                  .nickname
-                              : 'Support',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.black.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isCurrentUser ? Colors.white : Colors.black,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          message.content,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: isCurrentUser ? Colors.black : Colors.white,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
                           ),
                         ),
-                      ),
-                    Text(
-                      userMessage.message,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.black,
-                        fontFamily: 'monospace',
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          timestamp,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: isCurrentUser
+                                ? Colors.black.withValues(alpha: 0.7)
+                                : Colors.white.withValues(alpha: 0.7),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      timestamp,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.black.withValues(alpha: 0.7),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
-      );
-    }
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-    // Handle other message types (file messages, etc.)
-    return const SizedBox.shrink();
+class _ChatListEntry {
+  final ChatMessageDto? message;
+  final String? label;
+
+  const _ChatListEntry.message(this.message) : label = null;
+  const _ChatListEntry.divider(this.label) : message = null;
+
+  bool get isDivider => label != null;
+}
+
+class _ChatDateDivider extends StatelessWidget {
+  final String label;
+
+  const _ChatDateDivider({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.black.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
