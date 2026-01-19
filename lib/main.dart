@@ -14,6 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/appsync/routine_template_dto.dart';
 import 'package:trainware/repositories/exercise_log_repository.dart';
@@ -183,6 +184,9 @@ void main() async {
             planRepository: SupabaseRoutinePlanRepository(),
             logRepository: SupabaseRoutineLogRepository(),
           ),
+        ),
+        ChangeNotifierProvider<NutritionLogController>(
+          create: (BuildContext context) => NutritionLogController(),
         ),
         ChangeNotifierProvider<ExerciseLogController>(
             create: (BuildContext context) =>

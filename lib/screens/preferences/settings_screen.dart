@@ -12,6 +12,8 @@ import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/controllers/nutrition_log_controller.dart';
+import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/screens/request_screens/notifications_request.dart';
@@ -99,12 +101,19 @@ class _SettingsScreenState extends State<SettingsScreen>
   int _chatUnreadCount = 0;
   RealtimeChannel? _chatUnreadChannel;
   String? _chatConversationId;
+  bool _nutritionInitialized = false;
 
   @override
   Widget build(BuildContext context) {
     Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
+
+    final nutritionController = context.watch<NutritionLogController>();
+    final consumedCalories = _sumCaloriesToday(nutritionController.logs);
+    final goalCalories = NutritionLogController.defaultCalorieTarget.round();
+    final remainingCalories =
+        (goalCalories - consumedCalories).clamp(0, goalCalories);
 
     final userEmail =
         Supabase.instance.client.auth.currentUser?.email ?? "User";
@@ -225,6 +234,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: CalorieTrackingCard(
+                      goalCalories: goalCalories,
+                      remainingCalories: remainingCalories,
                       onTap: () {
                         Navigator.of(context).push(
                           PageRouteBuilder(
@@ -681,6 +692,17 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  int _sumCaloriesToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs = logs.where(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+    return todayLogs.fold(0, (sum, log) => sum + log.caloriesRounded);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -691,6 +713,11 @@ class _SettingsScreenState extends State<SettingsScreen>
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
     _initChatUnread();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _nutritionInitialized) return;
+      _nutritionInitialized = true;
+      context.read<NutritionLogController>().initialize();
+    });
   }
 
   Future<void> _initChatUnread() async {

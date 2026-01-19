@@ -9,8 +9,8 @@ class CalorieTrackingCard extends StatelessWidget {
 
   const CalorieTrackingCard({
     super.key,
-    this.goalCalories = 2000,
-    this.remainingCalories = 1512,
+    required this.goalCalories,
+    required this.remainingCalories,
     this.onTap,
   });
 

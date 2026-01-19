@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
+import 'package:trainware/controllers/nutrition_log_controller.dart';
+import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:trainware/utils/general_utils.dart';
+import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
+import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 import 'package:trainware/widgets/nutrition/calorie_tracking_card.dart';
 
 class NutritionTrackerScreen extends StatefulWidget {
@@ -15,63 +22,29 @@ class NutritionTrackerScreen extends StatefulWidget {
 }
 
 class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
-  final List<_MacroLog> _logs = [
-    _MacroLog(
-      title: 'Sunrise Bowl',
-      time: DateTime.now().subtract(const Duration(minutes: 15)),
-      fat: 9.3,
-      carbs: 9.4,
-      protein: 16.0,
-      fatTarget: 24,
-      carbsTarget: 60,
-      proteinTarget: 30,
-      calories: 187,
-      calorieTarget: 456,
-    ),
-    _MacroLog(
-      title: 'Citrus Salad',
-      time: DateTime.now().subtract(const Duration(hours: 2, minutes: 10)),
-      fat: 14.2,
-      carbs: 38.0,
-      protein: 28.5,
-      fatTarget: 30,
-      carbsTarget: 80,
-      proteinTarget: 40,
-      calories: 412,
-      calorieTarget: 680,
-    ),
-    _MacroLog(
-      title: 'Garden Wrap',
-      time: DateTime.now().subtract(const Duration(hours: 5, minutes: 40)),
-      fat: 6.8,
-      carbs: 15.2,
-      protein: 10.4,
-      fatTarget: 20,
-      carbsTarget: 45,
-      proteinTarget: 25,
-      calories: 145,
-      calorieTarget: 280,
-    ),
-    _MacroLog(
-      title: 'Morning Toast',
-      time: DateTime.now().subtract(const Duration(hours: 8, minutes: 20)),
-      fat: 7.1,
-      carbs: 22.5,
-      protein: 11.4,
-      fatTarget: 18,
-      carbsTarget: 50,
-      proteinTarget: 28,
-      calories: 210,
-      calorieTarget: 350,
-    ),
-  ];
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _initialized) return;
+      _initialized = true;
+      context.read<NutritionLogController>().initialize();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final sortedLogs = _logs.toList()..sort((a, b) => b.time.compareTo(a.time));
+    final controller = context.watch<NutritionLogController>();
+    final sortedLogs = controller.logs.toList()
+      ..sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
+    final consumedCalories = _sumCaloriesToday(controller.logs);
+    final goalCalories = NutritionLogController.defaultCalorieTarget.round();
+    final remainingCalories =
+        (goalCalories - consumedCalories).clamp(0, goalCalories);
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final colors = Theme.of(context).colors;
     return Scaffold(
       backgroundColor: appBarBackgroundColor(context: context),
       body: SafeArea(
@@ -81,23 +54,36 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
             ListView(
               padding: const EdgeInsets.fromLTRB(16, 56, 16, 24),
               children: [
-                const CalorieTrackingCard(),
-                const SizedBox(height: 16),
-                Text(
-                  'Today',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isDarkMode ? Colors.white : Colors.black,
-                      ),
+                CalorieTrackingCard(
+                  goalCalories: goalCalories,
+                  remainingCalories: remainingCalories,
                 ),
-                const SizedBox(height: 8),
-                ...sortedLogs.map((log) => _MacroLogCard(
-                      log: log,
-                      colors: colors,
-                      isDarkMode: isDarkMode,
-                      onDelete: () => _confirmDelete(log),
-                      onTap: () => _showMacroDetails(log),
-                    )),
+                const SizedBox(height: 16),
+                if (sortedLogs.isNotEmpty) ...[
+                  Text(
+                    'Today',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                if (sortedLogs.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 50.0),
+                    child: ListEmptyState(
+                      message:
+                          "It might feel quiet now, but your nutrition logs will soon appear here.",
+                    ),
+                  )
+                else
+                  ...sortedLogs.map((log) => _MacroLogCard(
+                        log: log,
+                        isDarkMode: isDarkMode,
+                        onDelete: () => _confirmDelete(log),
+                        onTap: () => _showMacroDetails(log),
+                      )),
               ],
             ),
             Positioned(
@@ -138,7 +124,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     );
   }
 
-  Future<bool> _confirmDelete(_MacroLog log) async {
+  Future<bool> _confirmDelete(NutritionLogDto log) async {
     final shouldDelete = await showAppBottomSheet<bool>(
       context: context,
       isScrollControlled: false,
@@ -178,14 +164,12 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
       return false;
     }
 
-    setState(() {
-      _logs.removeWhere((item) => item.id == log.id);
-    });
+    await context.read<NutritionLogController>().removeLog(id: log.id);
     return true;
   }
 
-  Future<void> _showMacroDetails(_MacroLog log) async {
-    final timeLabel = DateFormat('h:mm a').format(log.time);
+  Future<void> _showMacroDetails(NutritionLogDto log) async {
+    final timeLabel = DateFormat('h:mm a').format(log.loggedAt);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     await showAppBottomSheet<void>(
       context: context,
@@ -226,7 +210,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    log.title,
+                                    log.foodName,
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleLarge
@@ -256,7 +240,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${log.calories}',
+                                    '${log.caloriesRounded}',
                                     style: Theme.of(context)
                                             .textTheme
                                             .displaySmall
@@ -279,7 +263,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${log.calorieTarget} kcal goal',
+                                    '${NutritionLogController.defaultCalorieTarget.toStringAsFixed(0)} kcal goal',
                                     style: Theme.of(context)
                                             .textTheme
                                             .bodySmall
@@ -309,8 +293,9 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                       ),
                       const SizedBox(width: 12),
                       CalorieGauge(
-                        progress:
-                            (log.calories / log.calorieTarget).clamp(0.0, 1.0),
+                        progress: (log.calories /
+                                NutritionLogController.defaultCalorieTarget)
+                            .clamp(0.0, 1.0),
                         progressColor: Colors.white,
                         trackColor: Colors.white.withValues(alpha: 0.08),
                         knobColor: Colors.white,
@@ -322,21 +307,21 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                   _MacroDetailRow(
                     label: 'Protein',
                     value: log.protein,
-                    target: log.proteinTarget,
+                    target: NutritionLogController.defaultProteinTarget,
                     barColor: const Color(0xFF22c55e),
                   ),
                   const SizedBox(height: 20),
                   _MacroDetailRow(
                     label: 'Carbs',
                     value: log.carbs,
-                    target: log.carbsTarget,
+                    target: NutritionLogController.defaultCarbsTarget,
                     barColor: const Color(0xFF3b82f6),
                   ),
                   const SizedBox(height: 20),
                   _MacroDetailRow(
                     label: 'Fats',
-                    value: log.fat,
-                    target: log.fatTarget,
+                    value: log.fats,
+                    target: NutritionLogController.defaultFatsTarget,
                     barColor: const Color(0xFFf59e0b),
                   ),
                 ],
@@ -434,7 +419,50 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: OpacityButtonWidgetTwo(
-                    onPressed: () => Navigator.of(ctx).pop(),
+                    onPressed: () async {
+                      final userId =
+                          Supabase.instance.client.auth.currentUser?.id;
+                      if (userId == null) {
+                        showSnackbar(
+                          context: ctx,
+                          message: 'Please sign in to log nutrition.',
+                        );
+                        return;
+                      }
+
+                      final name = titleController.text.trim();
+                      if (name.isEmpty) {
+                        showSnackbar(
+                          context: ctx,
+                          message: 'Please enter a food name.',
+                        );
+                        return;
+                      }
+
+                      final protein = _parseMacro(proteinController.text);
+                      final carbs = _parseMacro(carbsController.text);
+                      final fats = _parseMacro(fatsController.text);
+                      final now = DateTime.now();
+
+                      final log = NutritionLogDto(
+                        id: const Uuid().v4(),
+                        userId: userId,
+                        foodName: name,
+                        protein: protein,
+                        carbs: carbs,
+                        fats: fats,
+                        loggedAt: now,
+                        createdAt: now,
+                        updatedAt: now,
+                      );
+
+                      await context
+                          .read<NutritionLogController>()
+                          .addLog(log: log);
+                      if (ctx.mounted) {
+                        Navigator.of(ctx).pop();
+                      }
+                    },
                     label: 'Log calories',
                     buttonColor: Theme.of(ctx).colors.vibrantAccent,
                     showArrowRight: false,
@@ -446,6 +474,21 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
         },
       ),
     );
+  }
+
+  int _sumCaloriesToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs = logs.where(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+    return todayLogs.fold(0, (sum, log) => sum + log.caloriesRounded);
+  }
+
+  double _parseMacro(String value) {
+    return double.tryParse(value.trim()) ?? 0;
   }
 }
 
@@ -515,7 +558,7 @@ class _MacroDetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = (value / target).clamp(0.0, 1.0);
+    final progress = target <= 0 ? 0.0 : (value / target).clamp(0.0, 1.0);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -576,15 +619,13 @@ class _MacroProgressBar extends StatelessWidget {
 }
 
 class _MacroLogCard extends StatelessWidget {
-  final _MacroLog log;
-  final TRKRColors colors;
+  final NutritionLogDto log;
   final bool isDarkMode;
   final Future<bool> Function() onDelete;
   final VoidCallback onTap;
 
   const _MacroLogCard({
     required this.log,
-    required this.colors,
     required this.isDarkMode,
     required this.onDelete,
     required this.onTap,
@@ -592,10 +633,12 @@ class _MacroLogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeLabel = DateFormat('h:mm a').format(log.time);
-    final calorieProgress = (log.calories / log.calorieTarget).clamp(0.0, 1.0);
-    final iconData = _iconForHour(log.time.hour);
-    final iconColor = _iconColorForHour(log.time.hour);
+    final timeLabel = DateFormat('h:mm a').format(log.loggedAt);
+    final calorieProgress =
+        (log.calories / NutritionLogController.defaultCalorieTarget)
+            .clamp(0.0, 1.0);
+    final iconData = _iconForHour(log.loggedAt.hour);
+    final iconColor = _iconColorForHour(log.loggedAt.hour);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -644,7 +687,7 @@ class _MacroLogCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            log.title,
+                            log.foodName,
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyLarge
@@ -656,7 +699,7 @@ class _MacroLogCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${log.calories} / ${log.calorieTarget} kcal',
+                            '${log.caloriesRounded} / ${NutritionLogController.defaultCalorieTarget.toStringAsFixed(0)} kcal',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: isDarkMode
@@ -696,7 +739,7 @@ class _MacroLogCard extends StatelessWidget {
                 Text(
                   '${log.protein.toStringAsFixed(1)}g protein, '
                   '${log.carbs.toStringAsFixed(1)}g carbs, '
-                  'and ${log.fat.toStringAsFixed(1)}g fat',
+                  'and ${log.fats.toStringAsFixed(1)}g fat',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isDarkMode
                             ? Colors.white.withValues(alpha: 0.6)
@@ -737,31 +780,4 @@ class _MacroLogCard extends StatelessWidget {
     }
     return const Color(0xFF6366f1);
   }
-}
-
-class _MacroLog {
-  final String id;
-  final String title;
-  final DateTime time;
-  final double fat;
-  final double carbs;
-  final double protein;
-  final double fatTarget;
-  final double carbsTarget;
-  final double proteinTarget;
-  final int calories;
-  final int calorieTarget;
-
-  _MacroLog({
-    required this.title,
-    required this.time,
-    required this.fat,
-    required this.carbs,
-    required this.protein,
-    required this.fatTarget,
-    required this.carbsTarget,
-    required this.proteinTarget,
-    required this.calories,
-    required this.calorieTarget,
-  }) : id = UniqueKey().toString();
 }
