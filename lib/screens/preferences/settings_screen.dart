@@ -13,6 +13,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/screens/request_screens/notifications_request.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/urls.dart';
@@ -32,6 +33,7 @@ import '../../utils/uri_utils.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/dividers/label_divider.dart';
@@ -102,7 +104,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget build(BuildContext context) {
     Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
-    final colors = Theme.of(context).extension<TRKRColors>();
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final userEmail =
@@ -219,6 +220,30 @@ class _SettingsScreenState extends State<SettingsScreen>
                     yearStats: yearStats,
                     yearHoursStats: yearHoursStats,
                     predictionInfo: predictionInfo,
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: CalorieTrackingCard(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          PageRouteBuilder(
+                            pageBuilder: (_, __, ___) =>
+                                const NutritionTrackerScreen(),
+                            transitionsBuilder: (_, animation, __, child) {
+                              final tween = Tween(
+                                begin: const Offset(0, 1),
+                                end: Offset.zero,
+                              ).chain(CurveTween(curve: Curves.easeOutCubic));
+                              return SlideTransition(
+                                position: animation.drive(tween),
+                                child: child,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
                   ),
                   const SizedBox(height: 16),
                   // Routine Plans section - edge-to-edge, no padding
