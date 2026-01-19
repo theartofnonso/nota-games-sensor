@@ -9,6 +9,8 @@ import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/exercise/history/exercise_home_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/home.dart';
+import 'package:trainware/screens/chat/chat_screen.dart';
+import 'package:trainware/config/sendbird_config.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
@@ -221,6 +223,50 @@ Future<void> navigateToSettings({required BuildContext context}) async {
         child: child,
       );
     },
+  );
+}
+
+/// Navigate to the chat screen
+/// Uses the adminUserId from SendbirdConfig by default, or can be overridden
+Future<void> navigateToChat({
+  required BuildContext context,
+  String? adminUserId,
+}) async {
+  final finalAdminUserId = adminUserId ?? SendbirdConfig.adminUserId;
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    isDismissible: true,
+    enableDrag: false, // Explicitly disable dragging
+    showDragHandle: false,
+    useSafeArea: true,
+    barrierColor: Colors.black.withValues(alpha: 0.55),
+    builder: (context) => Stack(
+      children: [
+        // Tappable barrier for dismissing
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              Navigator.of(context, rootNavigator: false).pop();
+            },
+            child: Container(
+              color: Colors.transparent,
+            ),
+          ),
+        ),
+        // Sheet content (non-draggable)
+        AppBottomSheet(
+          isDraggable: false,
+          isDismissible: true,
+          child: ChatScreen(
+            adminUserId: finalAdminUserId,
+            scrollController: null,
+          ),
+        ),
+      ],
+    ),
   );
 }
 

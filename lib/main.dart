@@ -32,6 +32,9 @@ import 'package:trainware/onboarding_flow_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
+import 'package:trainware/screens/chat/chat_screen.dart';
+import 'package:trainware/config/sendbird_config.dart';
+import 'package:trainware/services/sendbird_chat_service.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
@@ -131,6 +134,17 @@ void main() async {
     url: SupabaseConfig.supabaseUrl,
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
+
+  // Initialize Sendbird Chat SDK (optional - can also be done on chat screen open)
+  // This improves performance by initializing early
+  try {
+    final sendbirdService = SendbirdChatService();
+    await sendbirdService.initialize(appId: SendbirdConfig.appId);
+    logger.i('Sendbird SDK initialized at app startup');
+  } catch (e) {
+    logger.w('Sendbird initialization failed at startup: $e');
+    // Continue app startup even if Sendbird fails - it will be initialized when chat opens
+  }
 
   const DarwinInitializationSettings iOSInitializationSettingsDarwin =
       DarwinInitializationSettings(
@@ -276,6 +290,15 @@ final _router = GoRouter(
     GoRoute(
       path: SettingsScreen.routeName,
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: ChatScreen.routeName,
+      builder: (context, state) {
+        // Get adminUserId from state params or use default from config
+        final adminUserId = state.uri.queryParameters['adminUserId'] ??
+            SendbirdConfig.adminUserId;
+        return ChatScreen(adminUserId: adminUserId);
+      },
     ),
     GoRoute(
       path: Home.routeName,
