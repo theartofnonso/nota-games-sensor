@@ -4309,7 +4309,7 @@
   },
   {
     "id": "ex-back-extension-lumbar-focused",
-    "name": "Back Extension (Lumbar Focused)",
+    "name": "Back Extension (Lower Back Focused)",
     "lottie": "assets/lottie/Back Extension Lumbar Focused Exercise Men.json",
     "isSystem": true
   },
@@ -4353,6 +4353,12 @@
     "id": "ex-plank",
     "name": "Plank",
     "lottie": "assets/lottie/Man Doing Plank Exercise For Core.json",
+    "isSystem": true
+  },
+  {
+    "id": "ex-back-extension-glute-focused",
+    "name": "Back Extension (Glute Focused)",
+    "lottie": "assets/lottie/Man Doing Back Extension Exercise for Glute and Lower Back.json",
     "isSystem": true
   }
 ]
