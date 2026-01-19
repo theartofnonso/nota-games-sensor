@@ -358,86 +358,92 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
       context: context,
       isScrollControlled: true,
       isDismissible: true,
-      child: AnimatedPadding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(26, 26, 26, 26),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Add calorie entry',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.only(
-                  left: 20,
-                  top: 6,
-                  bottom: 6,
-                  right: 6,
+      child: Builder(
+        builder: (ctx) {
+          final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+          final isDarkMode = Theme.of(ctx).brightness == Brightness.dark;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 26,
+              right: 26,
+              top: 26,
+              bottom: 26 + bottomInset,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Add calorie entry',
+                  style: Theme.of(ctx).textTheme.titleLarge,
                 ),
-                child: TextField(
-                  controller: titleController,
-                  textInputAction: TextInputAction.next,
-                  cursorColor: Colors.white,
-                  decoration: const InputDecoration(
-                    hintText: 'Food name',
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                    top: 6,
+                    bottom: 6,
+                    right: 6,
                   ),
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white,
-                    fontSize: 14,
+                  child: TextField(
+                    controller: titleController,
+                    textInputAction: TextInputAction.next,
+                    cursorColor: isDarkMode ? Colors.white : Colors.black,
+                    decoration: const InputDecoration(
+                      hintText: 'Food name',
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                    ),
+                    keyboardType: TextInputType.text,
+                    textCapitalization: TextCapitalization.words,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w400,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(999),
+                const SizedBox(height: 12),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    children: [
+                      _MacroInputField(
+                        label: 'protein',
+                        controller: proteinController,
+                      ),
+                      _MacroInputField(
+                        label: 'carbs',
+                        controller: carbsController,
+                      ),
+                      _MacroInputField(
+                        label: 'fats',
+                        controller: fatsController,
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    _MacroInputField(
-                      label: 'protein',
-                      controller: proteinController,
-                    ),
-                    _MacroInputField(
-                      label: 'carbs',
-                      controller: carbsController,
-                    ),
-                    _MacroInputField(
-                      label: 'fats',
-                      controller: fatsController,
-                    ),
-                  ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OpacityButtonWidgetTwo(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    label: 'Log calories',
+                    buttonColor: Theme.of(ctx).colors.vibrantAccent,
+                    showArrowRight: false,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OpacityButtonWidgetTwo(
-                  onPressed: () => Navigator.of(context).pop(),
-                  label: 'Log calories',
-                  buttonColor: Theme.of(context).colors.vibrantAccent,
-                  showArrowRight: false,
-                ),
-              ),
-            ],
-          ),
-        ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
