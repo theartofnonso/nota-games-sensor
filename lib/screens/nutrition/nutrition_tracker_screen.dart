@@ -304,6 +304,32 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          _showAddEntrySheet(existingLog: log);
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: (isDarkMode ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Icon(
+                            Icons.edit_rounded,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   _MacroDetailRow(
                     label: 'Protein',
                     value: log.protein,
@@ -333,11 +359,20 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     );
   }
 
-  Future<void> _showAddEntrySheet() async {
-    final titleController = TextEditingController();
-    final proteinController = TextEditingController();
-    final carbsController = TextEditingController();
-    final fatsController = TextEditingController();
+  Future<void> _showAddEntrySheet({NutritionLogDto? existingLog}) async {
+    final titleController = TextEditingController(
+      text: existingLog?.foodName ?? '',
+    );
+    final proteinController = TextEditingController(
+      text: existingLog?.protein.toString() ?? '',
+    );
+    final carbsController = TextEditingController(
+      text: existingLog?.carbs.toString() ?? '',
+    );
+    final fatsController = TextEditingController(
+      text: existingLog?.fats.toString() ?? '',
+    );
+    final isEditing = existingLog != null;
 
     await showAppBottomSheet<void>(
       context: context,
@@ -360,7 +395,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Add calorie entry',
+                  isEditing ? 'Edit entry' : 'Add calorie entry',
                   style: Theme.of(ctx).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 12),
@@ -445,14 +480,14 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                       final now = DateTime.now();
 
                       final log = NutritionLogDto(
-                        id: const Uuid().v4(),
+                        id: existingLog?.id ?? const Uuid().v4(),
                         userId: userId,
                         foodName: name,
                         protein: protein,
                         carbs: carbs,
                         fats: fats,
-                        loggedAt: now,
-                        createdAt: now,
+                        loggedAt: existingLog?.loggedAt ?? now,
+                        createdAt: existingLog?.createdAt ?? now,
                         updatedAt: now,
                       );
 
@@ -463,7 +498,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                         Navigator.of(ctx).pop();
                       }
                     },
-                    label: 'Log calories',
+                    label: isEditing ? 'Update log' : 'Log calories',
                     buttonColor: Theme.of(ctx).colors.vibrantAccent,
                     showArrowRight: false,
                   ),
