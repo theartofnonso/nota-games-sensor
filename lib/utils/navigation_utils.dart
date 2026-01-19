@@ -10,7 +10,7 @@ import 'package:trainware/screens/exercise/history/exercise_home_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
-import 'package:trainware/config/chat_config.dart';
+import 'package:trainware/config/sendbird_config.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
@@ -227,12 +227,12 @@ Future<void> navigateToSettings({required BuildContext context}) async {
 }
 
 /// Navigate to the chat screen
-/// Uses the adminUserId from ChatConfig by default, or can be overridden
+/// Uses the adminUserId from SendbirdConfig by default, or can be overridden
 Future<void> navigateToChat({
   required BuildContext context,
   String? adminUserId,
 }) async {
-  final finalAdminUserId = adminUserId ?? ChatConfig.adminUserId;
+  final finalAdminUserId = adminUserId ?? SendbirdConfig.adminUserId;
   await showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
