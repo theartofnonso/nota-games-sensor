@@ -1705,7 +1705,7 @@
   },
   {
     "id": "ex-man-is-engaged-on-an-stepper-machine",
-    "name": "Man is Engaged on an Stepper Machine",
+    "name": "Stepper Machine",
     "lottie": "assets/lottie/Man is Engaged on an Stepper Machine.json",
     "isSystem": true
   },
@@ -1819,7 +1819,7 @@
   },
   {
     "id": "ex-man-walking-on-treadmill",
-    "name": "Man Walking On Treadmill",
+    "name": "Walking On Treadmill",
     "lottie": "assets/lottie/Man Walking On Treadmill.json",
     "isSystem": true
   },
@@ -1849,7 +1849,7 @@
   },
   {
     "id": "ex-man-running-on-treadmill",
-    "name": "Man Running On Treadmill",
+    "name": "Running On Treadmill",
     "lottie": "assets/lottie/Man Running On Treadmill.json",
     "isSystem": true
   },
@@ -1873,7 +1873,7 @@
   },
   {
     "id": "ex-man-is-engaged-on-an-stationary-bike",
-    "name": "Man is Engaged on an Stationary Bike",
+    "name": "Stationary Bike",
     "lottie": "assets/lottie/Man is Engaged on an Stationary Bike.json",
     "isSystem": true
   },
@@ -1903,7 +1903,7 @@
   },
   {
     "id": "ex-man-is-engaged-on-an-elliptical-machine",
-    "name": "Man is Engaged on an Elliptical Machine",
+    "name": "Elliptical Machine",
     "lottie": "assets/lottie/Man is Engaged on an Elliptical Machine.json",
     "isSystem": true
   },
@@ -3559,7 +3559,7 @@
   },
   {
     "id": "ex-man-running-in-place-cardio",
-    "name": "Man Running In Place Cardio",
+    "name": "Running In Place Cardio",
     "lottie": "assets/lottie/Man Running In Place Cardio Exercise.json",
     "isSystem": true
   },
@@ -4310,7 +4310,7 @@
   {
     "id": "ex-back-extension-lumbar-focused",
     "name": "Back Extension (Lower Back Focused)",
-    "lottie": "assets/Back Extension Lumbar Focused Exercise Men.json",
+    "lottie": "assets/lottie/Back Extension Lumbar Focused Exercise Men.json",
     "isSystem": true
   },
   {
