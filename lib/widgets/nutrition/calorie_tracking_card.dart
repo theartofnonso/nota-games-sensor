@@ -1,7 +1,6 @@
 import 'dart:math';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:trainware/widgets/cards/frosted_card.dart';
 
 class CalorieTrackingCard extends StatelessWidget {
   final int goalCalories;
@@ -22,11 +21,11 @@ class CalorieTrackingCard extends StatelessWidget {
     final progress =
         (consumedCalories / goalCalories).clamp(0.0, 1.0).toDouble();
 
-    final card = _FrostedCard(
+    final card = FrostedCard(
       gradientColors: const [
-        Color(0xFFF7D76A),
-        Color(0xFFF2C94C),
-        Color(0xFFF6D365),
+        Color(0xFFf5c451),
+        Color(0xFFf2b744),
+        Color(0xFFf1a93a),
       ],
       child: SizedBox(
         height: 170,
@@ -227,38 +226,5 @@ class _ProgressArcPainter extends CustomPainter {
         strokeWidth != oldDelegate.strokeWidth ||
         startAngle != oldDelegate.startAngle ||
         sweepAngle != oldDelegate.sweepAngle;
-  }
-}
-
-class _FrostedCard extends StatelessWidget {
-  final Widget child;
-  final List<Color> gradientColors;
-
-  const _FrostedCard({
-    required this.child,
-    required this.gradientColors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: gradientColors,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-          ),
-          child: child,
-        ),
-      ),
-    );
   }
 }

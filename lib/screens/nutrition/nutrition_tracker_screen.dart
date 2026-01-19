@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -74,7 +72,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colors = Theme.of(context).colors;
-
     return Scaffold(
       backgroundColor: appBarBackgroundColor(context: context),
       body: SafeArea(
@@ -116,6 +113,23 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 tooltip: 'Close',
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 12,
+              child: IconButton(
+                icon: FaIcon(
+                  FontAwesomeIcons.circlePlus,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  size: 24,
+                ),
+                onPressed: () {
+                  _showAddEntrySheet();
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                tooltip: 'Add entry',
               ),
             ),
           ],
@@ -173,7 +187,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   Future<void> _showMacroDetails(_MacroLog log) async {
     final timeLabel = DateFormat('h:mm a').format(log.time);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final colors = Theme.of(context).colors;
     await showAppBottomSheet<void>(
       context: context,
       isScrollControlled: false,
@@ -184,15 +197,18 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _FrostedCard(
+            Container(
               padding: const EdgeInsets.all(18),
-              gradientColors: [
-                (isDarkMode ? Colors.white : Colors.black)
-                    .withValues(alpha: 0.06),
-                (isDarkMode ? Colors.white : Colors.black)
-                    .withValues(alpha: 0.03),
-                colors.sapphireDark.withValues(alpha: 0.2),
-              ],
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: (isDarkMode ? Colors.white : Colors.black)
+                      .withValues(alpha: 0.08),
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -331,6 +347,151 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
       ),
     );
   }
+
+  Future<void> _showAddEntrySheet() async {
+    final titleController = TextEditingController();
+    final proteinController = TextEditingController();
+    final carbsController = TextEditingController();
+    final fatsController = TextEditingController();
+
+    await showAppBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      child: AnimatedPadding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(26, 26, 26, 26),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Add calorie entry',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  top: 6,
+                  bottom: 6,
+                  right: 6,
+                ),
+                child: TextField(
+                  controller: titleController,
+                  textInputAction: TextInputAction.next,
+                  cursorColor: Colors.white,
+                  decoration: const InputDecoration(
+                    hintText: 'Food name',
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.words,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  children: [
+                    _MacroInputField(
+                      label: 'protein',
+                      controller: proteinController,
+                    ),
+                    _MacroInputField(
+                      label: 'carbs',
+                      controller: carbsController,
+                    ),
+                    _MacroInputField(
+                      label: 'fats',
+                      controller: fatsController,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  onPressed: () => Navigator.of(context).pop(),
+                  label: 'Log calories',
+                  buttonColor: Theme.of(context).colors.vibrantAccent,
+                  showArrowRight: false,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MacroInputField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+
+  const _MacroInputField({
+    required this.label,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Row(
+        children: [
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              cursorColor: Colors.white,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                isDense: true,
+                hintText: '0',
+              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
+      ),
+    );
+  }
 }
 
 class _MacroDetailRow extends StatelessWidget {
@@ -439,15 +600,18 @@ class _MacroLogCard extends StatelessWidget {
         background: const SizedBox.shrink(),
         child: GestureDetector(
           onTap: onTap,
-          child: _FrostedCard(
+          child: Container(
             padding: const EdgeInsets.all(16),
-            gradientColors: [
-              (isDarkMode ? Colors.white : Colors.black)
-                  .withValues(alpha: 0.06),
-              (isDarkMode ? Colors.white : Colors.black)
-                  .withValues(alpha: 0.03),
-              colors.sapphireDark.withValues(alpha: 0.2),
-            ],
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: (isDarkMode ? Colors.white : Colors.black)
+                    .withValues(alpha: 0.08),
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -594,41 +758,4 @@ class _MacroLog {
     required this.calories,
     required this.calorieTarget,
   }) : id = UniqueKey().toString();
-}
-
-class _FrostedCard extends StatelessWidget {
-  final Widget child;
-  final List<Color> gradientColors;
-  final EdgeInsets padding;
-
-  const _FrostedCard({
-    required this.child,
-    required this.gradientColors,
-    this.padding = const EdgeInsets.all(20),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: gradientColors,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.05),
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
 }
