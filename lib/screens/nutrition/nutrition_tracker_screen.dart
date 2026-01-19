@@ -395,7 +395,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  isEditing ? 'Edit entry' : 'Add calorie entry',
+                  isEditing ? 'Edit entry' : 'What did you eat?',
                   style: Theme.of(ctx).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 12),
