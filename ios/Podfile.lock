@@ -12,8 +12,6 @@ PODS:
     - Flutter
   - in_app_review (2.0.0):
     - Flutter
-  - isar_community_flutter_libs (1.0.0):
-    - Flutter
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
@@ -48,7 +46,6 @@ DEPENDENCIES:
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_native_timezone (from `.symlinks/plugins/flutter_native_timezone/ios`)
   - in_app_review (from `.symlinks/plugins/in_app_review/ios`)
-  - isar_community_flutter_libs (from `.symlinks/plugins/isar_community_flutter_libs/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - posthog_flutter (from `.symlinks/plugins/posthog_flutter/ios`)
@@ -78,8 +75,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_native_timezone/ios"
   in_app_review:
     :path: ".symlinks/plugins/in_app_review/ios"
-  isar_community_flutter_libs:
-    :path: ".symlinks/plugins/isar_community_flutter_libs/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
@@ -105,7 +100,6 @@ SPEC CHECKSUMS:
   flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
   flutter_native_timezone: 5fe32678d72d1894880e94303ef41c2919f014e5
   in_app_review: 7dd1ea365263f834b8464673f9df72c80c17c937
-  isar_community_flutter_libs: bede843185a61a05ff364a05c9b23209523f7e0d
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
   PostHog: 43ba4f42cc8dda909b33033e9ba0a1f64a2a8eb2

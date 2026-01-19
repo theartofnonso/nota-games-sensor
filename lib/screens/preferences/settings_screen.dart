@@ -18,6 +18,7 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
+import '../../config/chat_config.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
@@ -28,6 +29,7 @@ import '../../utils/notifications_utils.dart';
 import '../../services/training_prediction_service.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/uri_utils.dart';
+import '../../utils/theme/color_extensions.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -38,7 +40,6 @@ import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../screens/routines/routine_plan.dart';
-import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../logger.dart';
 import '../../offline_first/exercise_local_store.dart';
 import '../../offline_first/routine_log_local_store.dart';
@@ -93,10 +94,15 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _notificationEnabled = false;
   bool _hasCachedSession = false;
 
+  int _chatUnreadCount = 0;
+  RealtimeChannel? _chatUnreadChannel;
+  String? _chatConversationId;
+
   @override
   Widget build(BuildContext context) {
     Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
+    final colors = Theme.of(context).extension<TRKRColors>();
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final userEmail =
@@ -116,39 +122,65 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.amber.withValues(alpha: 0.3),
-                width: 1.5,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  navigateToChat(context: context);
-                },
-                borderRadius: BorderRadius.circular(28),
-                child: Center(
-                  child: FaIcon(
-                    FontAwesomeIcons.headset,
-                    color: Colors.amber,
-                    size: 22,
+      floatingActionButton: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.amber.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () async {
+                      await navigateToChat(context: context);
+                      await _refreshChatUnreadCount();
+                    },
+                    borderRadius: BorderRadius.circular(28),
+                    child: Center(
+                      child: FaIcon(
+                        FontAwesomeIcons.headset,
+                        color: Colors.amber,
+                        size: 22,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+          if (_chatUnreadCount > 0)
+            Positioned(
+              top: -1,
+              right: -1,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.amber,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  _chatUnreadCount > 99 ? '99+' : '$_chatUnreadCount+',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         bottom: false,
@@ -633,12 +665,83 @@ class _SettingsScreenState extends State<SettingsScreen>
     _checkNotificationPermission();
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
+    _initChatUnread();
+  }
+
+  Future<void> _initChatUnread() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final conversation = await Supabase.instance.client
+        .from('chat_conversations')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('coach_id', ChatConfig.adminUserId)
+        .maybeSingle();
+
+    if (conversation == null) {
+      if (mounted) {
+        setState(() => _chatUnreadCount = 0);
+      }
+      return;
+    }
+
+    _chatConversationId = conversation['id'] as String;
+    await _refreshChatUnreadCount();
+    _subscribeChatUnread();
+  }
+
+  Future<void> _refreshChatUnreadCount() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final conversationId = _chatConversationId;
+    if (userId == null || conversationId == null) return;
+
+    final response = await Supabase.instance.client
+        .from('chat_messages')
+        .select()
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', userId)
+        .eq('is_read', false);
+
+    if (mounted) {
+      setState(() => _chatUnreadCount = (response as List).length);
+    }
+  }
+
+  void _subscribeChatUnread() {
+    final conversationId = _chatConversationId;
+    if (conversationId == null) return;
+
+    if (_chatUnreadChannel != null) {
+      Supabase.instance.client.removeChannel(_chatUnreadChannel!);
+    }
+
+    _chatUnreadChannel = Supabase.instance.client
+        .channel('chat_messages_unread_$conversationId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'chat_messages',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'conversation_id',
+            value: conversationId,
+          ),
+          callback: (_) {
+            _refreshChatUnreadCount();
+          },
+        )
+        .subscribe();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     SharedPrefs().routineLogRevision.removeListener(_checkCachedSession);
+    if (_chatUnreadChannel != null) {
+      Supabase.instance.client.removeChannel(_chatUnreadChannel!);
+      _chatUnreadChannel = null;
+    }
     super.dispose();
   }
 
