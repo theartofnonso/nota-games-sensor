@@ -57,7 +57,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
         child: Stack(
           children: [
             ListView(
-              padding: const EdgeInsets.fromLTRB(16, 56, 16, 24),
+              padding: const EdgeInsets.fromLTRB(0, 56, 0, 24),
               children: [
                 NutritionTrackingCarousel(
                   goalCalories: goalCalories,
@@ -71,32 +71,43 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                   hasLogsToday: hasLogsToday,
                 ),
                 const SizedBox(height: 16),
-                if (sortedLogs.isNotEmpty) ...[
-                  Text(
-                    'Today',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isDarkMode ? Colors.white : Colors.black,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (sortedLogs.isNotEmpty) ...[
+                        Text(
+                          'Today',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isDarkMode ? Colors.white : Colors.black,
+                              ),
                         ),
+                        const SizedBox(height: 8),
+                      ],
+                      if (sortedLogs.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 50.0),
+                          child: ListEmptyState(
+                            message:
+                                "It might feel quiet now, but your nutrition logs will soon appear here.",
+                          ),
+                        )
+                      else
+                        ...sortedLogs.map((log) => _MacroLogCard(
+                              log: log,
+                              isDarkMode: isDarkMode,
+                              calorieTarget: controller.calorieTarget,
+                              onDelete: () => _confirmDelete(log),
+                              onTap: () => _showMacroDetails(log),
+                            )),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                ],
-                if (sortedLogs.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 50.0),
-                    child: ListEmptyState(
-                      message:
-                          "It might feel quiet now, but your nutrition logs will soon appear here.",
-                    ),
-                  )
-                else
-                  ...sortedLogs.map((log) => _MacroLogCard(
-                        log: log,
-                        isDarkMode: isDarkMode,
-                        calorieTarget: controller.calorieTarget,
-                        onDelete: () => _confirmDelete(log),
-                        onTap: () => _showMacroDetails(log),
-                      )),
+                ),
               ],
             ),
             Positioned(
