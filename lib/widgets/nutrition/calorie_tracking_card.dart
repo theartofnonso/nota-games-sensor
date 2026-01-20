@@ -16,16 +16,18 @@ class CalorieTrackingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final consumedCalories =
-        (goalCalories - remainingCalories).clamp(0, goalCalories);
-    final progress =
-        (consumedCalories / goalCalories).clamp(0.0, 1.0).toDouble();
+    final consumedCalories = goalCalories > 0
+        ? (goalCalories - remainingCalories).clamp(0, goalCalories)
+        : 0;
+    final progress = goalCalories > 0
+        ? (consumedCalories / goalCalories).clamp(0.0, 1.0).toDouble()
+        : 0.0;
 
     final card = FrostedCard(
       gradientColors: const [
-        Color(0xFFf5c451),
-        Color(0xFFf2b744),
-        Color(0xFFf1a93a),
+        Color(0xFFc08a1d),
+        Color(0xFFa86f16),
+        Color(0xFF8f590f),
       ],
       child: SizedBox(
         height: 170,
@@ -78,6 +80,209 @@ class CalorieTrackingCard extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             CalorieGauge(progress: progress),
+          ],
+        ),
+      ),
+    );
+
+    if (onTap == null) {
+      return card;
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: card,
+    );
+  }
+}
+
+class NutritionTrackingCarousel extends StatelessWidget {
+  final int goalCalories;
+  final int remainingCalories;
+  final double proteinTarget;
+  final double carbsTarget;
+  final double fatsTarget;
+  final double consumedProtein;
+  final double consumedCarbs;
+  final double consumedFats;
+  final bool hasLogsToday;
+  final VoidCallback? onCardTap;
+
+  const NutritionTrackingCarousel({
+    super.key,
+    required this.goalCalories,
+    required this.remainingCalories,
+    required this.proteinTarget,
+    required this.carbsTarget,
+    required this.fatsTarget,
+    required this.consumedProtein,
+    required this.consumedCarbs,
+    required this.consumedFats,
+    required this.hasLogsToday,
+    this.onCardTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = screenWidth * 0.9;
+
+    return SizedBox(
+      height: 180,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        children: [
+          SizedBox(
+            width: cardWidth,
+            child: CalorieTrackingCard(
+              goalCalories: goalCalories,
+              remainingCalories: remainingCalories,
+              onTap: onCardTap,
+            ),
+          ),
+          const SizedBox(width: 16),
+          SizedBox(
+            width: cardWidth,
+            child: _MacroTrackingCard(
+              label: 'protein left',
+              target: proteinTarget,
+              consumed: consumedProtein,
+              hasLogsToday: hasLogsToday,
+              gradientColors: const [
+                Color(0xFF1f7a41),
+                Color(0xFF166534),
+                Color(0xFF14532d),
+              ],
+              progressColor: Colors.black,
+              onTap: onCardTap,
+            ),
+          ),
+          const SizedBox(width: 16),
+          SizedBox(
+            width: cardWidth,
+            child: _MacroTrackingCard(
+              label: 'carbs left',
+              target: carbsTarget,
+              consumed: consumedCarbs,
+              hasLogsToday: hasLogsToday,
+              gradientColors: const [
+                Color(0xFF1e3a8a),
+                Color(0xFF1d4ed8),
+                Color(0xFF1e40af),
+              ],
+              progressColor: Colors.black,
+              onTap: onCardTap,
+            ),
+          ),
+          const SizedBox(width: 16),
+          SizedBox(
+            width: cardWidth,
+            child: _MacroTrackingCard(
+              label: 'fats left',
+              target: fatsTarget,
+              consumed: consumedFats,
+              hasLogsToday: hasLogsToday,
+              gradientColors: const [
+                Color(0xFF92400e),
+                Color(0xFF7c2d12),
+                Color(0xFF9a3412),
+              ],
+              progressColor: Colors.black,
+              onTap: onCardTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MacroTrackingCard extends StatelessWidget {
+  final String label;
+  final double target;
+  final double consumed;
+  final bool hasLogsToday;
+  final List<Color> gradientColors;
+  final Color progressColor;
+  final VoidCallback? onTap;
+
+  const _MacroTrackingCard({
+    required this.label,
+    required this.target,
+    required this.consumed,
+    required this.hasLogsToday,
+    required this.gradientColors,
+    required this.progressColor,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final remaining =
+        hasLogsToday && target > 0 ? (target - consumed).clamp(0, target) : 0.0;
+    final progress =
+        target > 0 ? (consumed / target).clamp(0.0, 1.0).toDouble() : 0.0;
+
+    final card = FrostedCard(
+      gradientColors: gradientColors,
+      child: SizedBox(
+        height: 170,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.black.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    remaining.toStringAsFixed(0),
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w900,
+                              height: 1.0,
+                              fontSize: 48,
+                            ) ??
+                        const TextStyle(
+                          color: Colors.black,
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          height: 1.0,
+                          fontFamily: 'Grift',
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${target.toStringAsFixed(0)} grams goal',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w500,
+                            ) ??
+                        TextStyle(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            CalorieGauge(
+              progress: progress,
+              progressColor: progressColor,
+              trackColor: Colors.black.withValues(alpha: 0.12),
+              knobColor: progressColor,
+              textColor: Colors.black,
+            ),
           ],
         ),
       ),

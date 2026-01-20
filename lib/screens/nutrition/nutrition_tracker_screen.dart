@@ -40,9 +40,14 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     final sortedLogs = controller.logs.toList()
       ..sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
     final consumedCalories = _sumCaloriesToday(controller.logs);
-    final goalCalories = NutritionLogController.defaultCalorieTarget.round();
-    final remainingCalories =
-        (goalCalories - consumedCalories).clamp(0, goalCalories);
+    final goalCalories = controller.calorieTarget.round();
+    final hasLogsToday = _hasLogsToday(controller.logs);
+    final remainingCalories = hasLogsToday && goalCalories > 0
+        ? (goalCalories - consumedCalories).clamp(0, goalCalories)
+        : 0;
+    final consumedProtein = _sumProteinToday(controller.logs);
+    final consumedCarbs = _sumCarbsToday(controller.logs);
+    final consumedFats = _sumFatsToday(controller.logs);
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
@@ -54,9 +59,16 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
             ListView(
               padding: const EdgeInsets.fromLTRB(16, 56, 16, 24),
               children: [
-                CalorieTrackingCard(
+                NutritionTrackingCarousel(
                   goalCalories: goalCalories,
                   remainingCalories: remainingCalories,
+                  proteinTarget: controller.proteinTarget,
+                  carbsTarget: controller.carbsTarget,
+                  fatsTarget: controller.fatsTarget,
+                  consumedProtein: consumedProtein,
+                  consumedCarbs: consumedCarbs,
+                  consumedFats: consumedFats,
+                  hasLogsToday: hasLogsToday,
                 ),
                 const SizedBox(height: 16),
                 if (sortedLogs.isNotEmpty) ...[
@@ -81,6 +93,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                   ...sortedLogs.map((log) => _MacroLogCard(
                         log: log,
                         isDarkMode: isDarkMode,
+                        calorieTarget: controller.calorieTarget,
                         onDelete: () => _confirmDelete(log),
                         onTap: () => _showMacroDetails(log),
                       )),
@@ -171,6 +184,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   Future<void> _showMacroDetails(NutritionLogDto log) async {
     final timeLabel = DateFormat('h:mm a').format(log.loggedAt);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final controller = context.read<NutritionLogController>();
+    final calorieTarget = controller.calorieTarget;
     await showAppBottomSheet<void>(
       context: context,
       isScrollControlled: false,
@@ -263,7 +278,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${NutritionLogController.defaultCalorieTarget.toStringAsFixed(0)} kcal goal',
+                                    '${calorieTarget.toStringAsFixed(0)} kcal goal',
                                     style: Theme.of(context)
                                             .textTheme
                                             .bodySmall
@@ -293,9 +308,9 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                       ),
                       const SizedBox(width: 12),
                       CalorieGauge(
-                        progress: (log.calories /
-                                NutritionLogController.defaultCalorieTarget)
-                            .clamp(0.0, 1.0),
+                        progress: calorieTarget <= 0
+                            ? 0
+                            : (log.calories / calorieTarget).clamp(0.0, 1.0),
                         progressColor: Colors.white,
                         trackColor: Colors.white.withValues(alpha: 0.08),
                         knobColor: Colors.white,
@@ -333,21 +348,21 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                   _MacroDetailRow(
                     label: 'Protein',
                     value: log.protein,
-                    target: NutritionLogController.defaultProteinTarget,
+                    target: controller.proteinTarget,
                     barColor: const Color(0xFF22c55e),
                   ),
                   const SizedBox(height: 20),
                   _MacroDetailRow(
                     label: 'Carbs',
                     value: log.carbs,
-                    target: NutritionLogController.defaultCarbsTarget,
+                    target: controller.carbsTarget,
                     barColor: const Color(0xFF3b82f6),
                   ),
                   const SizedBox(height: 20),
                   _MacroDetailRow(
                     label: 'Fats',
                     value: log.fats,
-                    target: NutritionLogController.defaultFatsTarget,
+                    target: controller.fatsTarget,
                     barColor: const Color(0xFFf59e0b),
                   ),
                 ],
@@ -522,6 +537,49 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     return todayLogs.fold(0, (sum, log) => sum + log.caloriesRounded);
   }
 
+  bool _hasLogsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    return logs.any(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+  }
+
+  double _sumProteinToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs = logs.where(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+    return todayLogs.fold(0.0, (sum, log) => sum + log.protein);
+  }
+
+  double _sumCarbsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs = logs.where(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+    return todayLogs.fold(0.0, (sum, log) => sum + log.carbs);
+  }
+
+  double _sumFatsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs = logs.where(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+    return todayLogs.fold(0.0, (sum, log) => sum + log.fats);
+  }
+
   double _parseMacro(String value) {
     return double.tryParse(value.trim()) ?? 0;
   }
@@ -656,12 +714,14 @@ class _MacroProgressBar extends StatelessWidget {
 class _MacroLogCard extends StatelessWidget {
   final NutritionLogDto log;
   final bool isDarkMode;
+  final double calorieTarget;
   final Future<bool> Function() onDelete;
   final VoidCallback onTap;
 
   const _MacroLogCard({
     required this.log,
     required this.isDarkMode,
+    required this.calorieTarget,
     required this.onDelete,
     required this.onTap,
   });
@@ -669,9 +729,9 @@ class _MacroLogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeLabel = DateFormat('h:mm a').format(log.loggedAt);
-    final calorieProgress =
-        (log.calories / NutritionLogController.defaultCalorieTarget)
-            .clamp(0.0, 1.0);
+    final calorieProgress = calorieTarget <= 0
+        ? 0.0
+        : (log.calories / calorieTarget).clamp(0.0, 1.0);
     final iconData = _iconForHour(log.loggedAt.hour);
     final iconColor = _iconColorForHour(log.loggedAt.hour);
 
@@ -734,7 +794,7 @@ class _MacroLogCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${log.caloriesRounded} / ${NutritionLogController.defaultCalorieTarget.toStringAsFixed(0)} kcal',
+                            '${log.caloriesRounded} / ${calorieTarget.toStringAsFixed(0)} kcal',
                             style:
                                 Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: isDarkMode

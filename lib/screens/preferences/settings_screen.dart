@@ -111,9 +111,14 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     final nutritionController = context.watch<NutritionLogController>();
     final consumedCalories = _sumCaloriesToday(nutritionController.logs);
-    final goalCalories = NutritionLogController.defaultCalorieTarget.round();
-    final remainingCalories =
-        (goalCalories - consumedCalories).clamp(0, goalCalories);
+    final goalCalories = nutritionController.calorieTarget.round();
+    final hasLogsToday = _hasLogsToday(nutritionController.logs);
+    final remainingCalories = hasLogsToday && goalCalories > 0
+        ? (goalCalories - consumedCalories).clamp(0, goalCalories)
+        : 0;
+    final consumedProtein = _sumProteinToday(nutritionController.logs);
+    final consumedCarbs = _sumCarbsToday(nutritionController.logs);
+    final consumedFats = _sumFatsToday(nutritionController.logs);
 
     final userEmail =
         Supabase.instance.client.auth.currentUser?.email ?? "User";
@@ -231,30 +236,34 @@ class _SettingsScreenState extends State<SettingsScreen>
                     predictionInfo: predictionInfo,
                   ),
                   const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: CalorieTrackingCard(
-                      goalCalories: goalCalories,
-                      remainingCalories: remainingCalories,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          PageRouteBuilder(
-                            pageBuilder: (_, __, ___) =>
-                                const NutritionTrackerScreen(),
-                            transitionsBuilder: (_, animation, __, child) {
-                              final tween = Tween(
-                                begin: const Offset(0, 1),
-                                end: Offset.zero,
-                              ).chain(CurveTween(curve: Curves.easeOutCubic));
-                              return SlideTransition(
-                                position: animation.drive(tween),
-                                child: child,
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
+                  NutritionTrackingCarousel(
+                    goalCalories: goalCalories,
+                    remainingCalories: remainingCalories,
+                    proteinTarget: nutritionController.proteinTarget,
+                    carbsTarget: nutritionController.carbsTarget,
+                    fatsTarget: nutritionController.fatsTarget,
+                    consumedProtein: consumedProtein,
+                    consumedCarbs: consumedCarbs,
+                    consumedFats: consumedFats,
+                    hasLogsToday: hasLogsToday,
+                    onCardTap: () {
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) =>
+                              const NutritionTrackerScreen(),
+                          transitionsBuilder: (_, animation, __, child) {
+                            final tween = Tween(
+                              begin: const Offset(0, 1),
+                              end: Offset.zero,
+                            ).chain(CurveTween(curve: Curves.easeOutCubic));
+                            return SlideTransition(
+                              position: animation.drive(tween),
+                              child: child,
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   // Routine Plans section - edge-to-edge, no padding
@@ -701,6 +710,49 @@ class _SettingsScreenState extends State<SettingsScreen>
           log.loggedAt.day == now.day,
     );
     return todayLogs.fold(0, (sum, log) => sum + log.caloriesRounded);
+  }
+
+  bool _hasLogsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    return logs.any(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+  }
+
+  double _sumProteinToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs = logs.where(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+    return todayLogs.fold(0.0, (sum, log) => sum + log.protein);
+  }
+
+  double _sumCarbsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs = logs.where(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+    return todayLogs.fold(0.0, (sum, log) => sum + log.carbs);
+  }
+
+  double _sumFatsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs = logs.where(
+      (log) =>
+          log.loggedAt.year == now.year &&
+          log.loggedAt.month == now.month &&
+          log.loggedAt.day == now.day,
+    );
+    return todayLogs.fold(0.0, (sum, log) => sum + log.fats);
   }
 
   @override

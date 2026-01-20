@@ -3,34 +3,51 @@ import 'dart:collection';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
+import 'package:trainware/dtos/nutrition/nutrition_template_dto.dart';
 import 'package:trainware/offline_first/nutrition_log_offline_repository.dart';
+import 'package:trainware/offline_first/nutrition_template_offline_repository.dart';
 
 import '../logger.dart';
 import '../repositories/supabase/supabase_nutrition_log_repository.dart';
+import '../repositories/supabase/supabase_nutrition_template_repository.dart';
 
 class NutritionLogController extends ChangeNotifier {
-  static const double defaultProteinTarget = 0;
-  static const double defaultCarbsTarget = 0;
-  static const double defaultFatsTarget = 0;
-  static const double defaultCalorieTarget = 2060;
-
   bool isLoading = false;
   String errorMessage = '';
 
   final logger = getLogger(className: 'NutritionLogController');
 
   late OfflineNutritionLogRepository _offlineRepository;
+  late OfflineNutritionTemplateRepository _offlineTemplateRepository;
 
   NutritionLogController({
     SupabaseNutritionLogRepository? repository,
+    SupabaseNutritionTemplateRepository? templateRepository,
   }) {
     _offlineRepository = OfflineNutritionLogRepository(
       remoteRepository: repository ?? SupabaseNutritionLogRepository(),
+    );
+    _offlineTemplateRepository = OfflineNutritionTemplateRepository(
+      remoteRepository:
+          templateRepository ?? SupabaseNutritionTemplateRepository(),
     );
   }
 
   UnmodifiableListView<NutritionLogDto> get logs =>
       UnmodifiableListView(_offlineRepository.offlineLogs);
+
+  NutritionTemplateDto? get nutritionTemplate {
+    final templates = _offlineTemplateRepository.offlineTemplates;
+    if (templates.isEmpty) {
+      return null;
+    }
+    return templates.first;
+  }
+
+  double get proteinTarget => nutritionTemplate?.protein ?? 0;
+  double get carbsTarget => nutritionTemplate?.carbs ?? 0;
+  double get fatsTarget => nutritionTemplate?.fats ?? 0;
+  double get calorieTarget => nutritionTemplate?.calories ?? 0;
 
   Future<void> initialize() async {
     isLoading = true;
@@ -38,6 +55,7 @@ class NutritionLogController extends ChangeNotifier {
 
     try {
       await _offlineRepository.loadFromCache();
+      await _offlineTemplateRepository.loadFromCache();
       await syncNutritionLogs();
     } catch (e) {
       logger.e('Error initializing nutrition logs', error: e);
@@ -55,7 +73,10 @@ class NutritionLogController extends ChangeNotifier {
       return;
     }
 
-    await _offlineRepository.syncNow();
+    await Future.wait([
+      _offlineRepository.syncNow(),
+      _offlineTemplateRepository.syncNow(),
+    ]);
     notifyListeners();
   }
 
