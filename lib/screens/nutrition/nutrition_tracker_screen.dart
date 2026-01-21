@@ -92,14 +92,17 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                       else
                         ...logEntries.map(
                           (entry) => entry.isDivider
-                              ? _LogDateDivider(label: entry.label!)
+                              ? _LogDateDivider(
+                                  label: entry.label!,
+                                  totals: entry.totals ?? const _MacroTotals(),
+                                )
                               : _MacroLogCard(
-                                    log: entry.log!,
-                                    isDarkMode: isDarkMode,
-                                    calorieTarget: controller.calorieTarget,
-                                    onDelete: () => _confirmDelete(entry.log!),
-                                    onTap: () => _showMacroDetails(entry.log!),
-                                  ),
+                                  log: entry.log!,
+                                  isDarkMode: isDarkMode,
+                                  calorieTarget: controller.calorieTarget,
+                                  onDelete: () => _confirmDelete(entry.log!),
+                                  onTap: () => _showMacroDetails(entry.log!),
+                                ),
                         ),
                     ],
                   ),
@@ -242,8 +245,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: SizedBox(
-                          height: 140,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 140),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,6 +263,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                           fontWeight: FontWeight.w700,
                                         ),
                                     textAlign: TextAlign.start,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -574,11 +579,23 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   List<_LogListEntry> _buildLogEntries(List<NutritionLogDto> logs) {
     final entries = <_LogListEntry>[];
     String? lastLabel;
+    final totalsByLabel = <String, _MacroTotals>{};
+
+    for (final log in logs) {
+      final label = _dateBucketLabel(log.loggedAt.toLocal());
+      totalsByLabel[label] =
+          (totalsByLabel[label] ?? const _MacroTotals()).addLog(log);
+    }
 
     for (final log in logs) {
       final label = _dateBucketLabel(log.loggedAt.toLocal());
       if (label != lastLabel) {
-        entries.add(_LogListEntry.divider(label));
+        entries.add(
+          _LogListEntry.divider(
+            label,
+            totalsByLabel[label] ?? const _MacroTotals(),
+          ),
+        );
         lastLabel = label;
       }
       entries.add(_LogListEntry.log(log));
@@ -652,7 +669,8 @@ class _MacroInputField extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
               ],
@@ -924,37 +942,80 @@ class _MacroLogCard extends StatelessWidget {
 class _LogListEntry {
   final NutritionLogDto? log;
   final String? label;
+  final _MacroTotals? totals;
 
-  const _LogListEntry.log(this.log) : label = null;
-  const _LogListEntry.divider(this.label) : log = null;
+  const _LogListEntry.log(this.log)
+      : label = null,
+        totals = null;
+  const _LogListEntry.divider(this.label, this.totals) : log = null;
 
   bool get isDivider => label != null;
 }
 
+class _MacroTotals {
+  final double protein;
+  final double carbs;
+  final double fats;
+
+  const _MacroTotals({
+    this.protein = 0,
+    this.carbs = 0,
+    this.fats = 0,
+  });
+
+  _MacroTotals addLog(NutritionLogDto log) {
+    return _MacroTotals(
+      protein: protein + log.protein,
+      carbs: carbs + log.carbs,
+      fats: fats + log.fats,
+    );
+  }
+}
+
 class _LogDateDivider extends StatelessWidget {
   final String label;
+  final _MacroTotals totals;
 
-  const _LogDateDivider({required this.label});
+  const _LogDateDivider({
+    required this.label,
+    required this.totals,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final totalsLabel = 'Protein ${totals.protein.toStringAsFixed(1)}g • '
+        'Carbs ${totals.carbs.toStringAsFixed(1)}g • '
+        'Fats ${totals.fats.toStringAsFixed(1)}g';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.black.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.black.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            Text(
+              totalsLabel,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.65),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

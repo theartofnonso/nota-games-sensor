@@ -104,7 +104,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen> {
                               await routineController.loadClientData(
                                 clientId: client.id,
                                 clientName: client.name,
-                                clientEmail: client.email,
+                                clientEmail: null,
                               );
                               await nutritionController.loadClientData(
                                 clientId: client.id,
@@ -171,19 +171,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen> {
                                       ?.copyWith(fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  client.email,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: isDarkMode
-                                            ? Colors.white
-                                                .withValues(alpha: 0.6)
-                                            : Colors.black
-                                                .withValues(alpha: 0.6),
-                                      ),
-                                ),
+                                const SizedBox.shrink(),
                               ],
                             ),
                           ),

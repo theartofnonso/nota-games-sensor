@@ -329,15 +329,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                    
-                    if (showClientHeader && widget.clientEmail != null)
-                      Text(
-                        widget.clientEmail!,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.6)
-                              : Colors.black.withValues(alpha: 0.6),
-                        ),
-                      ),
+                    if (showClientHeader) const SizedBox.shrink(),
                   ],
                 ),
               ),

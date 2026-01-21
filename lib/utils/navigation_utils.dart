@@ -245,8 +245,7 @@ Future<void> navigateToChat({
       controller.isClientMode ? controller.clientOverrideId : null;
   final clientName =
       controller.isClientMode ? controller.clientOverrideName : null;
-  final clientEmail =
-      controller.isClientMode ? controller.clientOverrideEmail : null;
+  final clientEmail = null;
   await showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,

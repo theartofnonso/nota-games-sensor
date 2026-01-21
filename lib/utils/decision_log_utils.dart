@@ -172,7 +172,9 @@ class _DecisionLogSheetState extends State<_DecisionLogSheet> {
               textInputAction: TextInputAction.newline,
               decoration: const InputDecoration(
                 hintText: 'Summary',
-                border: OutlineInputBorder(),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
               ),
             ),
             const SizedBox(height: 24),

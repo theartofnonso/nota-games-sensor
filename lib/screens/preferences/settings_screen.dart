@@ -139,6 +139,14 @@ class _SettingsScreenState extends State<SettingsScreen>
         : Supabase.instance.client.auth.currentUser?.id;
     final decisionClientName =
         isClientMode ? controller.clientOverrideName : null;
+    final headerName = isClientMode
+        ? (controller.clientOverrideName?.trim().isNotEmpty ?? false
+            ? controller.clientOverrideName!.trim()
+            : 'Client')
+        : 'Settings';
+    final headerEmail = isClientMode ? '' : userEmail;
+    final headerInitials =
+        _initialsForName(headerName, isClientMode ? null : headerEmail);
     final nextSession = TrainingPredictionService.getNextPredictedSession(logs);
     final predictionInfo = nextSession != null
         ? _PredictionInfo(
@@ -218,6 +226,91 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                    child: Row(
+                      children: [
+                        if (headerInitials != null) ...[
+                          Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  (isDarkMode ? Colors.white : Colors.black)
+                                      .withValues(alpha: 0.18),
+                                  (isDarkMode ? Colors.white : Colors.black)
+                                      .withValues(alpha: 0.05),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              headerInitials,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    color:
+                                        isDarkMode ? Colors.white : Colors.black,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                headerName,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                              ),
+                              if (headerEmail.trim().isNotEmpty)
+                                Text(
+                                  headerEmail,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: isDarkMode
+                                            ? Colors.white
+                                                .withValues(alpha: 0.6)
+                                            : Colors.black
+                                                .withValues(alpha: 0.6),
+                                      ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (isCoach)
+                          IconButton(
+                            icon: FaIcon(
+                              FontAwesomeIcons.users,
+                              color: isDarkMode ? Colors.white70 : Colors.black,
+                              size: 18,
+                            ),
+                            onPressed: _goBackToCoachList,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          )
+                        else
+                          const SizedBox.shrink(),
+                      ],
+                    ),
+                  ),
                   // Calendar widget at top
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -459,25 +552,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                       title: Text("Account",
                           style: Theme.of(context).textTheme.titleMedium),
                       subtitle: Text(userEmail)),
-                  if (isCoach)
-                    ListTile(
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 30.0),
-                      onTap: () async {
-                        await routineController.clearClientOverride();
-                        await context
-                            .read<NutritionLogController>()
-                            .clearClientOverride();
-                        if (context.mounted) {
-                          context.go('/coach');
-                        }
-                      },
-                      leading: FaIcon(FontAwesomeIcons.users,
-                          color: isDarkMode ? Colors.white70 : Colors.black38),
-                      title: Text("Clients",
-                          style: Theme.of(context).textTheme.titleMedium),
-                      subtitle: const Text("Back to client list"),
-                    ),
                   Center(
                     child: Text(
                       _appVersion,
@@ -505,6 +579,16 @@ class _SettingsScreenState extends State<SettingsScreen>
       setState(() {
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _goBackToCoachList() async {
+    final routineController =
+        context.read<SupabaseExerciseAndRoutineController>();
+    await routineController.clearClientOverride();
+    await context.read<NutritionLogController>().clearClientOverride();
+    if (context.mounted) {
+      context.go('/coach');
     }
   }
 
@@ -780,6 +864,28 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String? _initialsForName(String name, String? email) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return _initialsFromEmail(email);
+    }
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
+
+  String? _initialsFromEmail(String? email) {
+    if (email == null || email.trim().isEmpty) return null;
+    final atIndex = email.indexOf('@');
+    if (atIndex <= 0) return email.substring(0, 1).toUpperCase();
+    final local = email.substring(0, atIndex);
+    if (local.isEmpty) return null;
+    return local.substring(0, 1).toUpperCase();
   }
 
   @override
