@@ -163,6 +163,14 @@ class _DecisionLogSheetState extends State<_DecisionLogSheet> {
               'Log decision',
               style: Theme.of(context).textTheme.titleLarge,
             ),
+            const SizedBox(height: 6),
+            Text(
+              'Summarize the decision so the client has clear context.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: (isDark ? Colors.white : Colors.black)
+                        .withValues(alpha: 0.6),
+                  ),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _summaryController,

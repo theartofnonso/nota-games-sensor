@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
+import 'package:trainware/dtos/nutrition/nutrition_template_dto.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/decision_log_utils.dart';
@@ -124,24 +127,28 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                 tooltip: 'Close',
               ),
             ),
-            if (!controller.isCoach)
-              Positioned(
-                top: 8,
-                right: 12,
-                child: IconButton(
-                  icon: FaIcon(
-                    FontAwesomeIcons.circlePlus,
-                    color: isDarkMode ? Colors.white : Colors.black,
-                    size: 24,
-                  ),
-                  onPressed: () {
-                    _showAddEntrySheet();
-                  },
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  tooltip: 'Add entry',
+            Positioned(
+              top: 8,
+              right: 12,
+              child: IconButton(
+                icon: FaIcon(
+                  FontAwesomeIcons.circlePlus,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  size: 24,
                 ),
+                onPressed: () {
+                  if (controller.isCoach) {
+                    _showNutritionTemplateSheet();
+                  } else {
+                    _showAddEntrySheet();
+                  }
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                tooltip:
+                    controller.isCoach ? 'Configure template' : 'Add entry',
               ),
+            ),
           ],
         ),
       ),
@@ -351,31 +358,32 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          _showAddEntrySheet(existingLog: log);
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: (isDarkMode ? Colors.white : Colors.black)
-                                .withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Icon(
-                            Icons.edit_rounded,
-                            color: isDarkMode ? Colors.white : Colors.black,
-                            size: 16,
+                  if (!controller.isCoach)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            _showAddEntrySheet(existingLog: log);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: (isDarkMode ? Colors.white : Colors.black)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Icon(
+                              Icons.edit_rounded,
+                              color: isDarkMode ? Colors.white : Colors.black,
+                              size: 16,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   const SizedBox(height: 16),
                   _MacroDetailRow(
                     label: 'Protein',
@@ -407,6 +415,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   }
 
   Future<void> _showAddEntrySheet({NutritionLogDto? existingLog}) async {
+    final nutritionController = context.read<NutritionLogController>();
     final titleController = TextEditingController(
       text: existingLog?.foodName ?? '',
     );
@@ -420,6 +429,15 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
       text: existingLog?.fats.toString() ?? '',
     );
     final isEditing = existingLog != null;
+    if (isEditing && nutritionController.isCoach) {
+      showSnackbar(
+        context: context,
+        message: 'Coaches cannot edit nutrition logs.',
+      );
+      return;
+    }
+
+    DateTime selectedLoggedAt = existingLog?.loggedAt ?? DateTime.now();
 
     await showAppBottomSheet<void>(
       context: context,
@@ -427,142 +445,202 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
       isDismissible: true,
       child: Builder(
         builder: (ctx) {
-          final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
-          final isDarkMode = Theme.of(ctx).brightness == Brightness.dark;
+          return StatefulBuilder(
+            builder: (context, setModalState) {
+              final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+              final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+              final loggedAtLabel =
+                  DateFormat('EEE, MMM d • h:mm a').format(selectedLoggedAt);
 
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 26,
-              right: 26,
-              top: 26,
-              bottom: 26 + bottomInset,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  isEditing ? 'Edit entry' : 'What did you eat?',
-                  style: Theme.of(ctx).textTheme.titleLarge,
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 26,
+                  right: 26,
+                  top: 26,
+                  bottom: 26 + bottomInset,
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.only(
-                    left: 20,
-                    top: 6,
-                    bottom: 6,
-                    right: 6,
-                  ),
-                  child: TextField(
-                    controller: titleController,
-                    textInputAction: TextInputAction.next,
-                    cursorColor: isDarkMode ? Colors.white : Colors.black,
-                    decoration: const InputDecoration(
-                      hintText: 'Food name',
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isEditing ? 'Edit entry' : 'What did you eat?',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    keyboardType: TextInputType.text,
-                    textCapitalization: TextCapitalization.words,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w400,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                      fontSize: 14,
+                    const SizedBox(height: 6),
+                    Text(
+                      isEditing
+                          ? 'Update the food name, macros, and time.'
+                          : 'Add a food name, macros, and time to log this meal.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: (isDarkMode ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.6),
+                          ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    children: [
-                      _MacroInputField(
-                        label: 'protein',
-                        controller: proteinController,
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        top: 6,
+                        bottom: 6,
+                        right: 6,
                       ),
-                      _MacroInputField(
-                        label: 'carbs',
-                        controller: carbsController,
+                      child: TextField(
+                        controller: titleController,
+                        textInputAction: TextInputAction.next,
+                        cursorColor: isDarkMode ? Colors.white : Colors.black,
+                        decoration: const InputDecoration(
+                          hintText: 'Food name',
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                        keyboardType: TextInputType.text,
+                        textCapitalization: TextCapitalization.words,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontSize: 14,
+                        ),
                       ),
-                      _MacroInputField(
-                        label: 'fats',
-                        controller: fatsController,
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        children: [
+                          _MacroInputField(
+                            label: 'protein',
+                            controller: proteinController,
+                          ),
+                          _MacroInputField(
+                            label: 'carbs',
+                            controller: carbsController,
+                          ),
+                          _MacroInputField(
+                            label: 'fats',
+                            controller: fatsController,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: () {
+                        showDateTimePicker(
+                          context: context,
+                          initialDateTime: selectedLoggedAt,
+                          mode: CupertinoDatePickerMode.dateAndTime,
+                          onChangedDateTime: (value) {
+                            setModalState(() => selectedLoggedAt = value);
+                          },
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.access_time,
+                              size: 16,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              loggedAtLabel,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OpacityButtonWidgetTwo(
+                        onPressed: () async {
+                          final nutritionController =
+                              context.read<NutritionLogController>();
+                          final userId = nutritionController.activeUserId;
+                          if (userId == null) {
+                            showSnackbar(
+                              context: context,
+                              message: 'Please sign in to log nutrition.',
+                            );
+                            return;
+                          }
+
+                          final name = titleController.text.trim();
+                          if (name.isEmpty) {
+                            showSnackbar(
+                              context: context,
+                              message: 'Please enter a food name.',
+                            );
+                            return;
+                          }
+
+                          final protein = _parseMacro(proteinController.text);
+                          final carbs = _parseMacro(carbsController.text);
+                          final fats = _parseMacro(fatsController.text);
+                          final now = DateTime.now();
+
+                          if (nutritionController.isClientMode) {
+                            final logged = await requireDecisionLog(
+                              context: context,
+                              clientId: userId,
+                            );
+                            if (!logged) {
+                              return;
+                            }
+                          }
+
+                          final log = NutritionLogDto(
+                            id: existingLog?.id ?? const Uuid().v4(),
+                            userId: userId,
+                            foodName: name,
+                            protein: protein,
+                            carbs: carbs,
+                            fats: fats,
+                            loggedAt: selectedLoggedAt,
+                            createdAt: existingLog?.createdAt ?? now,
+                            updatedAt: now,
+                          );
+
+                          await context
+                              .read<NutritionLogController>()
+                              .addLog(log: log);
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        label: isEditing ? 'Update log' : 'Log calories',
+                        buttonColor: Theme.of(context).colors.vibrantAccent,
+                        showArrowRight: false,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: OpacityButtonWidgetTwo(
-                    onPressed: () async {
-                      final nutritionController =
-                          context.read<NutritionLogController>();
-                      final userId = nutritionController.activeUserId;
-                      if (userId == null) {
-                        showSnackbar(
-                          context: ctx,
-                          message: 'Please sign in to log nutrition.',
-                        );
-                        return;
-                      }
-
-                      final name = titleController.text.trim();
-                      if (name.isEmpty) {
-                        showSnackbar(
-                          context: ctx,
-                          message: 'Please enter a food name.',
-                        );
-                        return;
-                      }
-
-                      final protein = _parseMacro(proteinController.text);
-                      final carbs = _parseMacro(carbsController.text);
-                      final fats = _parseMacro(fatsController.text);
-                      final now = DateTime.now();
-
-                      if (nutritionController.isClientMode) {
-                        final logged = await requireDecisionLog(
-                          context: ctx,
-                          clientId: userId,
-                        );
-                        if (!logged) {
-                          return;
-                        }
-                      }
-
-                      final log = NutritionLogDto(
-                        id: existingLog?.id ?? const Uuid().v4(),
-                        userId: userId,
-                        foodName: name,
-                        protein: protein,
-                        carbs: carbs,
-                        fats: fats,
-                        loggedAt: existingLog?.loggedAt ?? now,
-                        createdAt: existingLog?.createdAt ?? now,
-                        updatedAt: now,
-                      );
-
-                      await context
-                          .read<NutritionLogController>()
-                          .addLog(log: log);
-                      if (ctx.mounted) {
-                        Navigator.of(ctx).pop();
-                      }
-                    },
-                    label: isEditing ? 'Update log' : 'Log calories',
-                    buttonColor: Theme.of(ctx).colors.vibrantAccent,
-                    showArrowRight: false,
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
@@ -640,6 +718,183 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
   double _parseMacro(String value) {
     return double.tryParse(value.trim()) ?? 0;
+  }
+
+  Future<void> _showNutritionTemplateSheet() async {
+    final nutritionController = context.read<NutritionLogController>();
+    final template = nutritionController.nutritionTemplate;
+    final caloriesController = TextEditingController(
+      text: template?.calories.toStringAsFixed(0) ?? '',
+    );
+    final proteinController = TextEditingController(
+      text: template?.protein.toStringAsFixed(1) ?? '',
+    );
+    final carbsController = TextEditingController(
+      text: template?.carbs.toStringAsFixed(1) ?? '',
+    );
+    final fatsController = TextEditingController(
+      text: template?.fats.toStringAsFixed(1) ?? '',
+    );
+
+    await showAppBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      child: Builder(
+        builder: (ctx) {
+          final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+
+          Widget buildNumberField({
+            required String label,
+            required TextEditingController controller,
+          }) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: controller,
+                  cursorColor: isDark ? Colors.white : Colors.black,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d*\.?\d*$'),
+                    ),
+                  ],
+                  decoration: const InputDecoration(
+                    hintText: '0',
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            );
+          }
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 26,
+              right: 26,
+              top: 26,
+              bottom: 26 + bottomInset,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nutrition template',
+                  style: Theme.of(ctx)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Set target calories and macros for this client.',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: (isDark ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.6),
+                      ),
+                ),
+                const SizedBox(height: 16),
+                buildNumberField(
+                  label: 'Calories',
+                  controller: caloriesController,
+                ),
+                const SizedBox(height: 12),
+                buildNumberField(
+                  label: 'Protein (g)',
+                  controller: proteinController,
+                ),
+                const SizedBox(height: 12),
+                buildNumberField(
+                  label: 'Carbs (g)',
+                  controller: carbsController,
+                ),
+                const SizedBox(height: 12),
+                buildNumberField(
+                  label: 'Fats (g)',
+                  controller: fatsController,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: OpacityButtonWidgetTwo(
+                    buttonColor: Theme.of(ctx).colors.vibrantAccent,
+                    label: 'Save template',
+                    onPressed: () async {
+                      final ownerId =
+                          Supabase.instance.client.auth.currentUser?.id;
+                      final clientId = nutritionController.activeUserId;
+                      if (ownerId == null || clientId == null) {
+                        showSnackbar(
+                          context: ctx,
+                          message: 'Unable to save template.',
+                        );
+                        return;
+                      }
+
+                      final logged = await requireDecisionLogIfClientMode(
+                        context: ctx,
+                        isClientMode: nutritionController.isClientMode,
+                        clientId: clientId,
+                      );
+                      if (!logged) {
+                        return;
+                      }
+
+                      final calories =
+                          double.tryParse(caloriesController.text.trim()) ?? 0;
+                      final protein =
+                          double.tryParse(proteinController.text.trim()) ?? 0;
+                      final carbs =
+                          double.tryParse(carbsController.text.trim()) ?? 0;
+                      final fats =
+                          double.tryParse(fatsController.text.trim()) ?? 0;
+                      final now = DateTime.now();
+
+                      final updated = NutritionTemplateDto(
+                        id: template?.id ?? const Uuid().v4(),
+                        owner: ownerId,
+                        clientId: clientId,
+                        calories: calories,
+                        protein: protein,
+                        carbs: carbs,
+                        fats: fats,
+                        createdAt: template?.createdAt ?? now,
+                        updatedAt: now,
+                      );
+
+                      await nutritionController.upsertTemplate(
+                        template: updated,
+                      );
+                      if (ctx.mounted) {
+                        Navigator.of(ctx).pop();
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 

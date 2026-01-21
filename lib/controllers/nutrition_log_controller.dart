@@ -171,6 +171,23 @@ class NutritionLogController extends ChangeNotifier {
     }
   }
 
+  Future<void> upsertTemplate({required NutritionTemplateDto template}) async {
+    try {
+      if (_clientOverrideId == null) {
+        errorMessage = 'Client context is required to save nutrition template.';
+        notifyListeners();
+        return;
+      }
+      await _remoteTemplateRepository.upsertTemplate(template: template);
+      await _loadRemoteForClient(_clientOverrideId!);
+      notifyListeners();
+    } catch (e) {
+      logger.e('Error saving nutrition template', error: e);
+      errorMessage = 'Failed to save nutrition template.';
+      notifyListeners();
+    }
+  }
+
   Future<void> loadClientData({required String clientId}) async {
     _clientOverrideId = clientId;
     isLoading = true;

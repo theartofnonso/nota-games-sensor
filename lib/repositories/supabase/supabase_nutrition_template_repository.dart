@@ -39,4 +39,13 @@ class SupabaseNutritionTemplateRepository {
       rethrow;
     }
   }
+
+  Future<void> upsertTemplate({required NutritionTemplateDto template}) async {
+    try {
+      await _client.from('nutrition_templates').upsert(template.toJson());
+    } catch (e) {
+      logger.e('Error saving nutrition template: $e');
+      rethrow;
+    }
+  }
 }
