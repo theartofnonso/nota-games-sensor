@@ -21,6 +21,7 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
+import '../../controllers/access_controller.dart';
 import '../../config/chat_config.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
@@ -112,10 +113,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final nutritionController = context.watch<NutritionLogController>();
-    final routineController =
-        context.watch<SupabaseExerciseAndRoutineController>();
-    final isClientMode = routineController.isClientMode;
-    final isCoach = routineController.isCoach;
+    final accessController = context.watch<AccessController>();
+    final isClientMode = accessController.isClientMode;
+    final isCoach = accessController.isCoach;
     final consumedCalories = _sumCaloriesToday(nutritionController.logs);
     final goalCalories = nutritionController.calorieTarget;
     final hasLogsToday = _hasLogsToday(nutritionController.logs);
@@ -135,13 +135,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     final yearStats = _YearTrainingStats.fromLogs(logs);
     final yearHoursStats = _YearHoursStats.fromLogs(logs);
     final decisionClientId = isClientMode
-        ? controller.clientOverrideId
+        ? accessController.clientOverrideId
         : Supabase.instance.client.auth.currentUser?.id;
     final decisionClientName =
-        isClientMode ? controller.clientOverrideName : null;
+        isClientMode ? accessController.clientOverrideName : null;
     final headerName = isClientMode
-        ? (controller.clientOverrideName?.trim().isNotEmpty ?? false
-            ? controller.clientOverrideName!.trim()
+        ? (accessController.clientOverrideName?.trim().isNotEmpty ?? false
+            ? accessController.clientOverrideName!.trim()
             : 'Client')
         : 'Settings';
     final headerEmail = isClientMode ? '' : userEmail;
@@ -226,76 +226,77 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                    child: Row(
-                      children: [
-                        if (headerInitials != null) ...[
-                          Container(
-                            width: 36,
-                            height: 36,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  (isDarkMode ? Colors.white : Colors.black)
-                                      .withValues(alpha: 0.18),
-                                  (isDarkMode ? Colors.white : Colors.black)
-                                      .withValues(alpha: 0.05),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                  if (isCoach)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                      child: Row(
+                        children: [
+                          if (headerInitials != null) ...[
+                            Container(
+                              width: 36,
+                              height: 36,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    (isDarkMode ? Colors.white : Colors.black)
+                                        .withValues(alpha: 0.18),
+                                    (isDarkMode ? Colors.white : Colors.black)
+                                        .withValues(alpha: 0.05),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
                               ),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              headerInitials,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(
-                                    color:
-                                        isDarkMode ? Colors.white : Colors.black,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                        ],
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                headerName,
+                              child: Text(
+                                headerInitials,
                                 style: Theme.of(context)
                                     .textTheme
-                                    .titleMedium
+                                    .labelLarge
                                     ?.copyWith(
                                       color: isDarkMode
                                           ? Colors.white
                                           : Colors.black,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w700,
                                     ),
                               ),
-                              if (headerEmail.trim().isNotEmpty)
+                            ),
+                            const SizedBox(width: 12),
+                          ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  headerEmail,
+                                  headerName,
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodySmall
+                                      .titleMedium
                                       ?.copyWith(
                                         color: isDarkMode
                                             ? Colors.white
-                                                .withValues(alpha: 0.6)
-                                            : Colors.black
-                                                .withValues(alpha: 0.6),
+                                            : Colors.black,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                 ),
-                            ],
+                                if (headerEmail.trim().isNotEmpty)
+                                  Text(
+                                    headerEmail,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: isDarkMode
+                                              ? Colors.white
+                                                  .withValues(alpha: 0.6)
+                                              : Colors.black
+                                                  .withValues(alpha: 0.6),
+                                        ),
+                                  ),
+                              ],
+                            ),
                           ),
-                        ),
-                        if (isCoach)
                           IconButton(
                             icon: FaIcon(
                               FontAwesomeIcons.users,
@@ -305,12 +306,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                             onPressed: _goBackToCoachList,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
-                          )
-                        else
-                          const SizedBox.shrink(),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                   // Calendar widget at top
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -996,7 +995,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final controller = context.read<SupabaseExerciseAndRoutineController>();
     final logs = controller.whereLogsIsSameDay(dateTime: date).toList();
     final hasLogs = logs.isNotEmpty;
-    final isClientMode = controller.isClientMode;
+    final isClientMode = context.read<AccessController>().isClientMode;
 
     // Determine date label (Today, Yesterday, or full date)
     final now = DateTime.now();

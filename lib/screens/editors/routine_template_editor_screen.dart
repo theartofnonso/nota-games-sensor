@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/exercise_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
@@ -103,10 +104,11 @@ class _RoutineTemplateEditorScreenState
         exerciseTemplates: exercises,
         planId: widget.planId);
 
+    final accessController = context.read<AccessController>();
     final logged = await requireDecisionLogIfClientMode(
       context: context,
-      isClientMode: controller.isClientMode,
-      clientId: controller.clientOverrideId,
+      isClientMode: accessController.isClientMode,
+      clientId: accessController.clientOverrideId,
     );
     if (!logged) {
       return;
@@ -165,10 +167,11 @@ class _RoutineTemplateEditorScreenState
     final updatedRoutineTemplate =
         _getUpdatedRoutineTemplate(template: updatedTemplate);
 
+    final accessController = context.read<AccessController>();
     final logged = await requireDecisionLogIfClientMode(
       context: context,
-      isClientMode: templateProvider.isClientMode,
-      clientId: templateProvider.clientOverrideId,
+      isClientMode: accessController.isClientMode,
+      clientId: accessController.clientOverrideId,
     );
     if (!logged) {
       return false;

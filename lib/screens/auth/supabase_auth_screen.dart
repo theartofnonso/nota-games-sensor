@@ -242,65 +242,80 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           ),
 
           // ----------------- CONTENT --------------------
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Modern Email Input with integrated button
-                    if (!_otpSent)
-                      _ModernEmailInput(
-                        controller: _emailController,
-                        onSubmit: _sendOTP,
-                        isLoading: _isLoading,
-                        isDarkMode: isDarkMode,
+          GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            behavior: HitTestBehavior.translucent,
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Text(
+                          'Not Athletes',
+                          style: const TextStyle(
+                            fontFamily: 'GroutpixFlow',
+                            color: Colors.white70,
+                            fontSize: 18,
+                          ),
+                        ),
                       ),
+                      const SizedBox(height: 28),
+                      // Modern Email Input with integrated button
+                      if (!_otpSent)
+                        _ModernEmailInput(
+                          controller: _emailController,
+                          onSubmit: _sendOTP,
+                          isLoading: _isLoading,
+                          isDarkMode: isDarkMode,
+                        ),
 
-                    // OTP field (shown after email submitted)
-                    if (_otpSent) ...[
-                      _ModernOTPInput(
-                        controller: _otpController,
-                        onSubmit: _verifyOTP,
-                        isLoading: _isLoading,
-                        isDarkMode: isDarkMode,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Enter the 6-digit code sent to ${_emailController.text.trim()}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
+                      // OTP field (shown after email submitted)
+                      if (_otpSent) ...[
+                        _ModernOTPInput(
+                          controller: _otpController,
+                          onSubmit: _verifyOTP,
+                          isLoading: _isLoading,
+                          isDarkMode: isDarkMode,
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      TextButton(
-                        onPressed: _resetForm,
-                        child: Text(
-                          'Use different email',
+                        const SizedBox(height: 16),
+                        Text(
+                          'Enter the 6-digit code sent to ${_emailController.text.trim()}',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: theme.colorScheme.primary,
                             fontSize: 14,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
                           ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: _isLoading ? null : _sendOTP,
-                        child: Text(
-                          'Resend code',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.7),
-                            fontSize: 14,
+                        const SizedBox(height: 24),
+                        TextButton(
+                          onPressed: _resetForm,
+                          child: Text(
+                            'Use different email',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                      ),
+                        TextButton(
+                          onPressed: _isLoading ? null : _sendOTP,
+                          child: Text(
+                            'Resend code',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.7),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),

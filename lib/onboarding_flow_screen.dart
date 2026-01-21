@@ -106,6 +106,15 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Spacer(flex: 2),
+                          const Text(
+                            'Not Athletes',
+                            style: TextStyle(
+                              fontFamily: 'GroutpixFlow',
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
                           // Main heading text
                           RichText(
                             textAlign: TextAlign.left,

@@ -15,6 +15,7 @@ import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/decision_log_utils.dart';
+import '../../controllers/access_controller.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/notifications_utils.dart';
@@ -54,7 +55,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: true);
-    final isClientMode = exerciseAndRoutineController.isClientMode;
+    final accessController = context.watch<AccessController>();
+    final isClientMode = accessController.isClientMode;
 
     // Reload plan from controller on every build (in case it was updated)
     final plan = exerciseAndRoutineController.planWhere(id: widget.id);
@@ -251,7 +253,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       dateLabel = DateFormat('EEEE').format(date);
     }
 
-    final isClientMode = controller.isClientMode;
+    final isClientMode = context.read<AccessController>().isClientMode;
     showEditorBottomSheet(
       context: context,
       isDismissible:
@@ -360,10 +362,11 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
           Provider.of<SupabaseExerciseAndRoutineController>(context,
               listen: false);
 
+      final accessController = context.read<AccessController>();
       final logged = await requireDecisionLogIfClientMode(
         context: context,
-        isClientMode: exerciseAndRoutineController.isClientMode,
-        clientId: exerciseAndRoutineController.clientOverrideId,
+        isClientMode: accessController.isClientMode,
+        clientId: accessController.clientOverrideId,
       );
       if (!logged) {
         return;
@@ -415,10 +418,11 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       final exerciseAndRoutineController =
           Provider.of<SupabaseExerciseAndRoutineController>(context,
               listen: false);
+      final accessController = context.read<AccessController>();
       final logged = await requireDecisionLogIfClientMode(
         context: context,
-        isClientMode: exerciseAndRoutineController.isClientMode,
-        clientId: exerciseAndRoutineController.clientOverrideId,
+        isClientMode: accessController.isClientMode,
+        clientId: accessController.clientOverrideId,
       );
       if (!logged) {
         return;
@@ -457,7 +461,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (!plan.isSystemPlan ||
-                    exerciseAndRoutineController.isClientMode) ...[
+                    context.read<AccessController>().isClientMode) ...[
                   ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const FaIcon(

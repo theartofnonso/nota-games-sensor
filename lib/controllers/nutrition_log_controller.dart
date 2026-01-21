@@ -11,6 +11,7 @@ import 'package:trainware/offline_first/nutrition_template_offline_repository.da
 import '../logger.dart';
 import '../repositories/supabase/supabase_nutrition_log_repository.dart';
 import '../repositories/supabase/supabase_nutrition_template_repository.dart';
+import 'access_controller.dart';
 
 class NutritionLogController extends ChangeNotifier {
   bool isLoading = false;
@@ -24,13 +25,14 @@ class NutritionLogController extends ChangeNotifier {
   late SupabaseNutritionLogRepository _remoteRepository;
   late SupabaseNutritionTemplateRepository _remoteTemplateRepository;
 
-  String? _clientOverrideId;
   List<NutritionLogDto> _overrideLogs = const [];
   NutritionTemplateDto? _overrideTemplate;
+  final AccessController accessController;
 
   NutritionLogController({
     SupabaseNutritionLogRepository? repository,
     SupabaseNutritionTemplateRepository? templateRepository,
+    required this.accessController,
   }) {
     _remoteRepository = repository ?? SupabaseNutritionLogRepository();
     _remoteTemplateRepository =
@@ -44,7 +46,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   UnmodifiableListView<NutritionLogDto> get logs {
-    if (_clientOverrideId != null) {
+    if (accessController.isClientMode) {
       return UnmodifiableListView(_overrideLogs);
     }
     if (_isCoach) {
@@ -54,7 +56,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   NutritionTemplateDto? get nutritionTemplate {
-    if (_clientOverrideId != null) {
+    if (accessController.isClientMode) {
       return _overrideTemplate;
     }
     final templates = _isCoach
@@ -71,8 +73,8 @@ class NutritionLogController extends ChangeNotifier {
   double get fatsTarget => nutritionTemplate?.fats ?? 0;
   double get calorieTarget => nutritionTemplate?.calories ?? 0;
   String? get activeUserId =>
-      _clientOverrideId ?? Supabase.instance.client.auth.currentUser?.id;
-  bool get isClientMode => _clientOverrideId != null;
+      accessController.clientOverrideId ??
+      Supabase.instance.client.auth.currentUser?.id;
   bool get isCoach => _isCoach;
 
   void setCoachMode({required bool isCoach}) {
@@ -97,8 +99,9 @@ class NutritionLogController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (_clientOverrideId != null) {
-        await _loadRemoteForClient(_clientOverrideId!);
+      if (accessController.isClientMode &&
+          accessController.clientOverrideId != null) {
+        await _loadRemoteForClient(accessController.clientOverrideId!);
       } else if (_isCoach) {
         _overrideLogs = const [];
         _overrideTemplate = null;
@@ -117,7 +120,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   Future<void> syncNutritionLogs() async {
-    if (_clientOverrideId != null || _isCoach) {
+    if (accessController.isClientMode || _isCoach) {
       return;
     }
     final connectivity = await Connectivity().checkConnectivity();
@@ -135,9 +138,9 @@ class NutritionLogController extends ChangeNotifier {
 
   Future<void> addLog({required NutritionLogDto log}) async {
     try {
-      if (_clientOverrideId != null) {
+      if (accessController.isClientMode) {
         await _remoteRepository.upsertLog(log);
-        await _loadRemoteForClient(_clientOverrideId!);
+        await _loadRemoteForClient(accessController.clientOverrideId!);
         notifyListeners();
         return;
       }
@@ -154,9 +157,9 @@ class NutritionLogController extends ChangeNotifier {
 
   Future<void> removeLog({required String id}) async {
     try {
-      if (_clientOverrideId != null) {
+      if (accessController.isClientMode) {
         await _remoteRepository.deleteLog(id);
-        await _loadRemoteForClient(_clientOverrideId!);
+        await _loadRemoteForClient(accessController.clientOverrideId!);
         notifyListeners();
         return;
       }
@@ -173,13 +176,13 @@ class NutritionLogController extends ChangeNotifier {
 
   Future<void> upsertTemplate({required NutritionTemplateDto template}) async {
     try {
-      if (_clientOverrideId == null) {
+      if (accessController.clientOverrideId == null) {
         errorMessage = 'Client context is required to save nutrition template.';
         notifyListeners();
         return;
       }
       await _remoteTemplateRepository.upsertTemplate(template: template);
-      await _loadRemoteForClient(_clientOverrideId!);
+      await _loadRemoteForClient(accessController.clientOverrideId!);
       notifyListeners();
     } catch (e) {
       logger.e('Error saving nutrition template', error: e);
@@ -189,7 +192,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   Future<void> loadClientData({required String clientId}) async {
-    _clientOverrideId = clientId;
+    accessController.setClientOverride(clientId: clientId);
     isLoading = true;
     notifyListeners();
     try {
@@ -204,7 +207,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   Future<void> clearClientOverride() async {
-    _clientOverrideId = null;
+    accessController.clearClientOverride();
     _overrideLogs = const [];
     _overrideTemplate = null;
     await initialize();

@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
@@ -22,7 +23,6 @@ import 'package:trainware/repositories/supabase/supabase_exercise_repository.dar
 import 'package:trainware/repositories/supabase/supabase_routine_log_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_plan_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_template_repository.dart';
-import 'package:trainware/repositories/supabase/supabase_coach_repository.dart';
 import 'package:trainware/screens/auth/supabase_auth_screen.dart';
 import 'package:trainware/screens/coach/decision_logs_screen.dart';
 import 'package:trainware/screens/editors/exercise_editor_screen.dart';
@@ -178,6 +178,9 @@ void main() async {
     },
     appRunner: () {
       return runApp(MultiProvider(providers: [
+        ChangeNotifierProvider<AccessController>(
+          create: (BuildContext context) => AccessController()..initialize(),
+        ),
         // Provide main controller with Supabase repositories
         ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
           create: (BuildContext context) =>
@@ -186,10 +189,12 @@ void main() async {
             templateRepository: SupabaseRoutineTemplateRepository(),
             planRepository: SupabaseRoutinePlanRepository(),
             logRepository: SupabaseRoutineLogRepository(),
+            accessController: context.read<AccessController>(),
           ),
         ),
         ChangeNotifierProvider<NutritionLogController>(
-          create: (BuildContext context) => NutritionLogController(),
+          create: (BuildContext context) =>
+              NutritionLogController(accessController: context.read<AccessController>()),
         ),
         ChangeNotifierProvider<ExerciseLogController>(
             create: (BuildContext context) =>
@@ -199,34 +204,27 @@ void main() async {
   );
 }
 
-final _coachModeNotifier = ValueNotifier<bool>(false);
+GoRouter _createRouter(AccessController accessController) {
+  return GoRouter(
+    initialLocation: "/",
+    navigatorKey: navigatorKey,
+    observers: [appRouteObserver],
+    refreshListenable: accessController,
+    redirect: (context, state) {
+      if (!accessController.isCoach) {
+        if (state.matchedLocation == '/coach') {
+          return '/';
+        }
+        return null;
+      }
 
-final _router = GoRouter(
-  initialLocation: "/",
-  navigatorKey: navigatorKey,
-  observers: [appRouteObserver],
-  refreshListenable: _coachModeNotifier,
-  redirect: (context, state) {
-    if (!_coachModeNotifier.value) {
-      if (state.matchedLocation == '/coach') {
-        return '/';
+      if (!accessController.isClientMode &&
+          state.matchedLocation != '/coach') {
+        return '/coach';
       }
       return null;
-    }
-
-    SupabaseExerciseAndRoutineController? controller;
-    try {
-      controller = context.read<SupabaseExerciseAndRoutineController>();
-    } catch (_) {
-      return null;
-    }
-
-    if (!controller.isClientMode && state.matchedLocation != '/coach') {
-      return '/coach';
-    }
-    return null;
-  },
-  routes: [
+    },
+    routes: [
     GoRoute(
         path: "/", // Define the path for Home Screen
         builder: (context, state) => const Home()),
@@ -335,8 +333,9 @@ final _router = GoRouter(
       path: Home.routeName,
       builder: (context, state) => const Home(),
     ),
-  ],
-);
+    ],
+  );
+}
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -347,127 +346,62 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool _isFirstLaunch = SharedPrefs().firstLaunch;
-  bool _isAuthenticated = false;
-  bool _isCoach = false;
-  bool _isLoading = true;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  late final AccessController _accessController;
+  late final GoRouter _router;
+  bool _lastAuthenticated = false;
+  bool _lastCoach = false;
 
   @override
   void initState() {
     super.initState();
-    _checkAuthAndInitialize();
+    _accessController = context.read<AccessController>();
+    _router = _createRouter(_accessController);
+    _lastAuthenticated = _accessController.isAuthenticated;
+    _lastCoach = _accessController.isCoach;
+    _accessController.addListener(_handleAccessChanged);
     _listenToConnectivity();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _processPendingNotification();
     });
   }
 
-  Future<void> _checkAuthAndInitialize() async {
-    try {
-      // Check if user is already signed in
-      final session = Supabase.instance.client.auth.currentSession;
-      _isAuthenticated = session != null;
-
-      if (_isAuthenticated) {
-        await _refreshCoachStatus(userId: session!.user.id);
-        // Initialize data if user is authenticated after the build is complete
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          try {
-            final controller =
-                context.read<SupabaseExerciseAndRoutineController>();
-            controller.setCoachMode(isCoach: _isCoach);
-            context
-                .read<NutritionLogController>()
-                .setCoachMode(isCoach: _isCoach);
-            await controller.initialize();
-          } catch (e) {
-            debugPrint('[Auth] Error initializing data: $e');
-            // Continue anyway - user can still access cached workout data
-          }
-        });
-      }
-
-      // Listen to auth state changes with error handling
-      Supabase.instance.client.auth.onAuthStateChange.listen(
-        (data) async {
-          final session = data.session;
-          if (session != null) {
-            await _refreshCoachStatus(userId: session.user.id);
-          } else {
-            setState(() {
-              _isCoach = false;
-            });
-            _coachModeNotifier.value = false;
-          }
-          setState(() {
-            _isAuthenticated = session != null;
-          });
-
-          if (_isAuthenticated) {
-            // User just signed in, initialize data
-            try {
-              final controller =
-                  context.read<SupabaseExerciseAndRoutineController>();
-              controller.setCoachMode(isCoach: _isCoach);
-              context
-                  .read<NutritionLogController>()
-                  .setCoachMode(isCoach: _isCoach);
-              controller.initialize();
-            } catch (e) {
-              debugPrint('[Auth] Error loading data after sign in: $e');
-            }
-          } else {
-            // User signed out, clear data and show onboarding
-            try {
-              final controller =
-                  context.read<SupabaseExerciseAndRoutineController>();
-              controller.clear();
-              controller.setCoachMode(isCoach: false);
-              context
-                  .read<NutritionLogController>()
-                  .setCoachMode(isCoach: false);
-              // Reset to show onboarding screen on sign out
-              setState(() {
-                _isFirstLaunch = true;
-                SharedPrefs().firstLaunch = true;
-              });
-            } catch (e) {
-              debugPrint('[Auth] Error clearing data: $e');
-            }
-          }
-        },
-        onError: (error) {
-          debugPrint('[Auth] Auth state change error: $error');
-          // Don't log user out on network errors - keep them authenticated
-          // Only show error if it's not a retryable fetch exception
-          if (!error.toString().contains('AuthRetryableFetchException')) {
-            setState(() {
-              _isAuthenticated = false;
-            });
-          }
-        },
-      );
-    } catch (e) {
-      debugPrint('[Auth] Error during auth initialization: $e');
-      // If there's an error checking auth, assume not authenticated
-      setState(() {
-        _isAuthenticated = false;
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _refreshCoachStatus({required String userId}) async {
-    final repo = SupabaseCoachRepository();
-    final isCoach = await repo.isCoach(userId: userId);
+  void _handleAccessChanged() {
     if (!mounted) return;
-    setState(() {
-      _isCoach = isCoach;
-    });
-    _coachModeNotifier.value = isCoach;
+    final isAuthenticated = _accessController.isAuthenticated;
+    final isCoach = _accessController.isCoach;
+
+    if (isAuthenticated &&
+        (!_lastAuthenticated || isCoach != _lastCoach)) {
+      try {
+        final controller =
+            context.read<SupabaseExerciseAndRoutineController>();
+        controller.setCoachMode(isCoach: isCoach);
+        context.read<NutritionLogController>().setCoachMode(isCoach: isCoach);
+        controller.initialize();
+      } catch (e) {
+        debugPrint('[Auth] Error initializing data: $e');
+      }
+    }
+
+    if (!isAuthenticated && _lastAuthenticated) {
+      try {
+        final controller =
+            context.read<SupabaseExerciseAndRoutineController>();
+        controller.clear();
+        controller.setCoachMode(isCoach: false);
+        context.read<NutritionLogController>().setCoachMode(isCoach: false);
+        setState(() {
+          _isFirstLaunch = true;
+          SharedPrefs().firstLaunch = true;
+        });
+      } catch (e) {
+        debugPrint('[Auth] Error clearing data: $e');
+      }
+    }
+
+    _lastAuthenticated = isAuthenticated;
+    _lastCoach = isCoach;
   }
 
   void _completeIntro() {
@@ -484,7 +418,7 @@ class _MyAppState extends State<MyApp> {
       final current =
           results.isNotEmpty ? results.last : ConnectivityResult.none;
       final isOnline = current != ConnectivityResult.none;
-      if (!isOnline || !_isAuthenticated) return;
+      if (!isOnline || !_accessController.isAuthenticated) return;
 
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
@@ -498,6 +432,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    _accessController.removeListener(_handleAccessChanged);
     _connectivitySub?.cancel();
     super.dispose();
   }
@@ -505,7 +440,7 @@ class _MyAppState extends State<MyApp> {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (_accessController.isLoading) {
       return MaterialApp(
         themeMode: ThemeMode.dark,
         theme: TRKRTheme.darkTheme,
@@ -537,7 +472,7 @@ class _MyAppState extends State<MyApp> {
     }
 
     // Show auth screen if not authenticated
-    if (!_isAuthenticated) {
+    if (!_accessController.isAuthenticated) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         themeMode: ThemeMode.dark,

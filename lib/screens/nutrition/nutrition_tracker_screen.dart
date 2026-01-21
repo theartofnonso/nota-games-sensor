@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:trainware/dtos/nutrition/nutrition_template_dto.dart';
@@ -196,7 +197,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     }
 
     final nutritionController = context.read<NutritionLogController>();
-    if (nutritionController.isClientMode) {
+    final accessController = context.read<AccessController>();
+    if (accessController.isClientMode) {
       final clientId = nutritionController.activeUserId;
       if (clientId == null) {
         showSnackbar(
@@ -604,7 +606,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                           final fats = _parseMacro(fatsController.text);
                           final now = DateTime.now();
 
-                          if (nutritionController.isClientMode) {
+                          if (context.read<AccessController>().isClientMode) {
                             final logged = await requireDecisionLog(
                               context: context,
                               clientId: userId,
@@ -852,7 +854,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
                       final logged = await requireDecisionLogIfClientMode(
                         context: ctx,
-                        isClientMode: nutritionController.isClientMode,
+                        isClientMode:
+                            context.read<AccessController>().isClientMode,
                         clientId: clientId,
                       );
                       if (!logged) {
@@ -1078,6 +1081,7 @@ class _MacroLogCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       width: 28,
@@ -1245,34 +1249,32 @@ class _LogDateDivider extends StatelessWidget {
         'Fats ${totals.fats.toStringAsFixed(1)}g';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Text(
-                label,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.black.withValues(alpha: 0.8),
-                  fontWeight: FontWeight.w700,
-                ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.black.withValues(alpha: 0.8),
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: 8),
-            Text(
-              totalsLabel,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.65),
-                fontWeight: FontWeight.w600,
-              ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            totalsLabel,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.65),
+              fontWeight: FontWeight.w600,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

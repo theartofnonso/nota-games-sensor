@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
@@ -79,6 +80,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: true);
+    final accessController = context.watch<AccessController>();
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -109,7 +111,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     // Check if this template belongs to a system plan
     final isSystemTemplate = plan?.isSystemPlan ?? false;
-    final isClientMode = exerciseAndRoutineController.isClientMode;
+    final isClientMode = accessController.isClientMode;
 
     final allLogsForTemplate = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: template.id)
@@ -156,7 +158,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
 
     return Scaffold(
-        floatingActionButton: exerciseAndRoutineController.isClientMode
+        floatingActionButton: accessController.isClientMode
             ? null
             : FloatingActionButton(
                 heroTag: UniqueKey,
@@ -380,9 +382,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final isPredicted = (isToday || isFuture) &&
         predictedDates.contains(selectedDate) &&
         !hasLogs;
-    final isClientMode = context
-        .read<SupabaseExerciseAndRoutineController>()
-        .isClientMode;
+    final isClientMode = context.read<AccessController>().isClientMode;
 
     String dateLabel;
     if (isToday) {
@@ -497,10 +497,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
         listen: false);
+    final accessController = context.read<AccessController>();
     final logged = await requireDecisionLogIfClientMode(
       context: context,
-      isClientMode: controller.isClientMode,
-      clientId: controller.clientOverrideId,
+      isClientMode: accessController.isClientMode,
+      clientId: accessController.clientOverrideId,
     );
     if (!logged) {
       return;
@@ -532,10 +533,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       emptyNameMessage: 'Please provide a name for this workout',
     ).then((result) async {
       if (result == null) return;
+      final accessController = context.read<AccessController>();
       final logged = await requireDecisionLogIfClientMode(
         context: context,
-        isClientMode: controller.isClientMode,
-        clientId: controller.clientOverrideId,
+        isClientMode: accessController.isClientMode,
+        clientId: accessController.clientOverrideId,
       );
       if (!logged) {
         return;
@@ -590,10 +592,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         listen: false);
     final template = controller.templateWhere(id: widget.id);
     if (template != null) {
+      final accessController = context.read<AccessController>();
       final logged = await requireDecisionLogIfClientMode(
         context: context,
-        isClientMode: controller.isClientMode,
-        clientId: controller.clientOverrideId,
+        isClientMode: accessController.isClientMode,
+        clientId: accessController.clientOverrideId,
       );
       if (!logged) {
         return;
@@ -640,12 +643,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
+    final accessController = context.watch<AccessController>();
     final template = exerciseAndRoutineController.templateWhere(id: widget.id);
     final plan = template != null
         ? exerciseAndRoutineController.planWhere(id: template.planId)
         : null;
     final isSystemTemplate = plan?.isSystemPlan ?? false;
-    final isClientMode = exerciseAndRoutineController.isClientMode;
+    final isClientMode = accessController.isClientMode;
 
     showAppBottomSheet(
         context: context,

@@ -104,7 +104,6 @@ class _CoachClientsScreenState extends State<CoachClientsScreen> {
                               await routineController.loadClientData(
                                 clientId: client.id,
                                 clientName: client.name,
-                                clientEmail: null,
                               );
                               await nutritionController.loadClientData(
                                 clientId: client.id,

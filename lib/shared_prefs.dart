@@ -17,6 +17,7 @@ class SharedPrefs {
   void clear() {
     remove(key: _weightUnitKey);
     remove(key: routineLogKey);
+    remove(key: _coachModeKey);
   }
 
   void remove({required String key}) {
@@ -63,6 +64,15 @@ class SharedPrefs {
 
   void _bumpRoutineLogRevision() {
     _routineLogRevision.value++;
+  }
+
+  /// Coach mode cache (for faster startup)
+  final String _coachModeKey = "coach_mode_key";
+
+  bool? getCoachMode() => _sharedPrefs?.getBool(_coachModeKey);
+
+  void setCoachMode(bool value) {
+    _sharedPrefs?.setBool(_coachModeKey, value);
   }
 
 }

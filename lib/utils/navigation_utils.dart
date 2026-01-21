@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/screens/editors/exercise_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
@@ -76,10 +77,11 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
   if (details == null) return null;
 
   final controller = context.read<SupabaseExerciseAndRoutineController>();
+  final accessController = context.read<AccessController>();
   final logged = await requireDecisionLogIfClientMode(
     context: context,
-    isClientMode: controller.isClientMode,
-    clientId: controller.clientOverrideId,
+    isClientMode: accessController.isClientMode,
+    clientId: accessController.clientOverrideId,
   );
   if (!logged) return null;
 
@@ -240,11 +242,11 @@ Future<void> navigateToChat({
   String? adminUserId,
 }) async {
   final finalAdminUserId = adminUserId ?? ChatConfig.adminUserId;
-  final controller = context.read<SupabaseExerciseAndRoutineController>();
+  final accessController = context.read<AccessController>();
   final clientUserId =
-      controller.isClientMode ? controller.clientOverrideId : null;
+      accessController.isClientMode ? accessController.clientOverrideId : null;
   final clientName =
-      controller.isClientMode ? controller.clientOverrideName : null;
+      accessController.isClientMode ? accessController.clientOverrideName : null;
   final clientEmail = null;
   await showModalBottomSheet(
     context: context,
