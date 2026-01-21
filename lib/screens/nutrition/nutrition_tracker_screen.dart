@@ -448,7 +448,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
           return StatefulBuilder(
             builder: (context, setModalState) {
               final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-              final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+              final isDarkMode =
+                  Theme.of(context).brightness == Brightness.dark;
               final loggedAtLabel =
                   DateFormat('EEE, MMM d • h:mm a').format(selectedLoggedAt);
 
