@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:trainware/widgets/cards/frosted_card.dart';
 
 class CalorieTrackingCard extends StatelessWidget {
-  final int goalCalories;
-  final int remainingCalories;
+  final double goalCalories;
+  final double remainingCalories;
   final VoidCallback? onTap;
 
   const CalorieTrackingCard({
@@ -17,17 +17,17 @@ class CalorieTrackingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final consumedCalories = goalCalories > 0
-        ? (goalCalories - remainingCalories).clamp(0, goalCalories)
-        : 0;
+        ? (goalCalories - remainingCalories).clamp(0.0, goalCalories)
+        : 0.0;
     final progress = goalCalories > 0
-        ? (consumedCalories / goalCalories).clamp(0.0, 1.0).toDouble()
+        ? (consumedCalories / goalCalories).clamp(0.0, 1.0)
         : 0.0;
 
     final card = FrostedCard(
       gradientColors: const [
-        Color(0xFFc08a1d),
-        Color(0xFFa86f16),
-        Color(0xFF8f590f),
+        Color(0xFFFCD34D),
+        Color(0xFFFBBF24),
+        Color(0xFFF59E0B),
       ],
       child: SizedBox(
         height: 170,
@@ -47,7 +47,7 @@ class CalorieTrackingCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    remainingCalories.toString(),
+                    remainingCalories.toStringAsFixed(0),
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                               color: Colors.black,
                               fontWeight: FontWeight.w900,
@@ -64,7 +64,7 @@ class CalorieTrackingCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '$goalCalories kcal goal',
+                    '${goalCalories.toStringAsFixed(0)} kcal goal',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.black.withValues(alpha: 0.6),
                               fontWeight: FontWeight.w500,
@@ -97,8 +97,8 @@ class CalorieTrackingCard extends StatelessWidget {
 }
 
 class NutritionTrackingCarousel extends StatelessWidget {
-  final int goalCalories;
-  final int remainingCalories;
+  final double goalCalories;
+  final double remainingCalories;
   final double proteinTarget;
   final double carbsTarget;
   final double fatsTarget;
@@ -150,9 +150,9 @@ class NutritionTrackingCarousel extends StatelessWidget {
               consumed: consumedProtein,
               hasLogsToday: hasLogsToday,
               gradientColors: const [
-                Color(0xFF1f7a41),
-                Color(0xFF166534),
-                Color(0xFF14532d),
+                Color(0xFF4ADE80),
+                Color(0xFF22C55E),
+                Color(0xFF16A34A),
               ],
               progressColor: Colors.black,
               onTap: onCardTap,
@@ -167,9 +167,9 @@ class NutritionTrackingCarousel extends StatelessWidget {
               consumed: consumedCarbs,
               hasLogsToday: hasLogsToday,
               gradientColors: const [
-                Color(0xFF1e3a8a),
-                Color(0xFF1d4ed8),
-                Color(0xFF1e40af),
+                Color(0xFF60A5FA),
+                Color(0xFF3B82F6),
+                Color(0xFF2563EB),
               ],
               progressColor: Colors.black,
               onTap: onCardTap,
@@ -184,9 +184,9 @@ class NutritionTrackingCarousel extends StatelessWidget {
               consumed: consumedFats,
               hasLogsToday: hasLogsToday,
               gradientColors: const [
-                Color(0xFF92400e),
-                Color(0xFF7c2d12),
-                Color(0xFF9a3412),
+                Color(0xFFFCD34D),
+                Color(0xFFFBBF24),
+                Color(0xFFF59E0B),
               ],
               progressColor: Colors.black,
               onTap: onCardTap,
@@ -219,10 +219,10 @@ class _MacroTrackingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final remaining =
-        hasLogsToday && target > 0 ? (target - consumed).clamp(0, target) : 0.0;
-    final progress =
-        target > 0 ? (consumed / target).clamp(0.0, 1.0).toDouble() : 0.0;
+    final remaining = target > 0
+        ? (hasLogsToday ? (target - consumed).clamp(0.0, target) : target)
+        : 0.0;
+    final progress = target > 0 ? (consumed / target).clamp(0.0, 1.0) : 0.0;
 
     final card = FrostedCard(
       gradientColors: gradientColors,

@@ -22,6 +22,7 @@ import '../../utils/navigation_utils.dart';
 import '../../utils/editor_bottom_sheet.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
+import '../../utils/decision_log_utils.dart';
 import '../../extensions/duration_extension.dart';
 import '../../shared_prefs.dart';
 import '../../utils/string_utils.dart';
@@ -108,6 +109,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     // Check if this template belongs to a system plan
     final isSystemTemplate = plan?.isSystemPlan ?? false;
+    final isClientMode = exerciseAndRoutineController.isClientMode;
 
     final allLogsForTemplate = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: template.id)
@@ -154,12 +156,15 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
 
     return Scaffold(
-        floatingActionButton: FloatingActionButton(
-            heroTag: UniqueKey,
-            backgroundColor: themeGradient(context: context).colors.first,
-            elevation: 8.0,
-            onPressed: () => _launchRoutineLogEditor(),
-            child: const FaIcon(FontAwesomeIcons.play, size: 24)),
+        floatingActionButton: exerciseAndRoutineController.isClientMode
+            ? null
+            : FloatingActionButton(
+                heroTag: UniqueKey,
+                backgroundColor: themeGradient(context: context).colors.first,
+                elevation: 8.0,
+                onPressed: () => _launchRoutineLogEditor(),
+                child: const FaIcon(FontAwesomeIcons.play, size: 24),
+              ),
         body: Container(
           height: double.infinity,
           decoration: BoxDecoration(
@@ -209,7 +214,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                 ],
                               ),
                             ),
-                            if (!isSystemTemplate)
+                            if (!isSystemTemplate || isClientMode)
                               IconButton(
                                 onPressed: () =>
                                     _showMenuBottomSheet(planDto: plan),
@@ -375,6 +380,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final isPredicted = (isToday || isFuture) &&
         predictedDates.contains(selectedDate) &&
         !hasLogs;
+    final isClientMode = context
+        .read<SupabaseExerciseAndRoutineController>()
+        .isClientMode;
 
     String dateLabel;
     if (isToday) {
@@ -427,7 +435,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                     ),
                   ),
                   // Log workout button (only show for today)
-                  if (isToday)
+                  if (isToday && !isClientMode)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
@@ -486,10 +494,20 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _deleteRoutine({required RoutineTemplateDto template}) async {
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
+    final logged = await requireDecisionLogIfClientMode(
+      context: context,
+      isClientMode: controller.isClientMode,
+      clientId: controller.clientOverrideId,
+    );
+    if (!logged) {
+      return;
+    }
+
     try {
-      await Provider.of<SupabaseExerciseAndRoutineController>(context,
-              listen: false)
-          .removeTemplate(template: template);
+      await controller.removeTemplate(template: template);
     } catch (e) {
       if (mounted) {
         showSnackbar(context: context, message: "Unable to remove workout");
@@ -514,6 +532,14 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       emptyNameMessage: 'Please provide a name for this workout',
     ).then((result) async {
       if (result == null) return;
+      final logged = await requireDecisionLogIfClientMode(
+        context: context,
+        isClientMode: controller.isClientMode,
+        clientId: controller.clientOverrideId,
+      );
+      if (!logged) {
+        return;
+      }
       final updated = template.copyWith(
         name: result.name,
         notes: result.notes,
@@ -564,6 +590,15 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         listen: false);
     final template = controller.templateWhere(id: widget.id);
     if (template != null) {
+      final logged = await requireDecisionLogIfClientMode(
+        context: context,
+        isClientMode: controller.isClientMode,
+        clientId: controller.clientOverrideId,
+      );
+      if (!logged) {
+        return;
+      }
+
       _showLoadingScreen();
 
       try {
@@ -610,6 +645,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         ? exerciseAndRoutineController.planWhere(id: template.planId)
         : null;
     final isSystemTemplate = plan?.isSystemPlan ?? false;
+    final isClientMode = exerciseAndRoutineController.isClientMode;
 
     showAppBottomSheet(
         context: context,
@@ -620,7 +656,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (!isSystemTemplate) ...[
+                if (!isSystemTemplate || isClientMode) ...[
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(

@@ -34,6 +34,15 @@ on public.nutrition_logs
 for select
 using (auth.uid() = user_id);
 
+create policy "Nutrition logs are readable by coaches"
+on public.nutrition_logs
+for select
+using (exists (
+  select 1
+  from public.coaches
+  where id = auth.uid()
+));
+
 create policy "Nutrition logs are insertable by owner"
 on public.nutrition_logs
 for insert

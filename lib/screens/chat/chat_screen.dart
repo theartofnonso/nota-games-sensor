@@ -12,6 +12,9 @@ class ChatScreen extends StatefulWidget {
 
   /// Admin/Coach user ID for the one-to-one chat
   final String adminUserId;
+  final String? clientUserId;
+  final String? clientName;
+  final String? clientEmail;
 
   /// Optional scroll controller for bottom sheet integration
   final ScrollController? scrollController;
@@ -19,6 +22,9 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({
     super.key,
     required this.adminUserId,
+    this.clientUserId,
+    this.clientName,
+    this.clientEmail,
     this.scrollController,
   });
 
@@ -48,9 +54,20 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() => _isLoading = true);
 
       // Get or create conversation
-      await _chatService.getOrCreateConversation(
-        coachId: widget.adminUserId,
-      );
+      if (widget.clientUserId != null) {
+        final coachId = _chatService.currentUserId;
+        if (coachId == null) {
+          throw Exception('No coach ID available.');
+        }
+        await _chatService.getOrCreateConversation(
+          coachId: coachId,
+          userIdOverride: widget.clientUserId,
+        );
+      } else {
+        await _chatService.getOrCreateConversation(
+          coachId: widget.adminUserId,
+        );
+      }
 
       // Set up real-time message subscription
       _chatService.setupMessageSubscription();
@@ -187,6 +204,26 @@ class _ChatScreenState extends State<ChatScreen> {
     return message.senderId == currentUserId;
   }
 
+  String _initialsForName(String name, String? email) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return _initialsFromEmail(email);
+    }
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length == 1) {
+      return parts.first.characters.take(2).toString().toUpperCase();
+    }
+    final first = parts.first.characters.first.toString().toUpperCase();
+    final last = parts.last.characters.first.toString().toUpperCase();
+    return '$first$last';
+  }
+
+  String _initialsFromEmail(String? email) {
+    if (email == null || email.isEmpty) return '';
+    final namePart = email.split('@').first;
+    return namePart.characters.take(2).toString().toUpperCase();
+  }
+
   List<_ChatListEntry> _buildChatEntries() {
     final entries = <_ChatListEntry>[];
     String? lastLabel;
@@ -239,6 +276,12 @@ class _ChatScreenState extends State<ChatScreen> {
     final isDarkMode = theme.brightness == Brightness.dark;
     final colors = theme.extension<TRKRColors>();
 
+    final showClientHeader =
+        widget.clientUserId != null && widget.clientName != null;
+    final clientInitials = showClientHeader
+        ? _initialsForName(widget.clientName!, widget.clientEmail)
+        : null;
+
     return Column(
       children: [
         // Header
@@ -246,17 +289,55 @@ class _ChatScreenState extends State<ChatScreen> {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
           child: Row(
             children: [
+              if (showClientHeader && clientInitials != null) ...[
+                Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        (isDarkMode ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.18),
+                        (isDarkMode ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    clientInitials,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Check In',
-                      style: theme.textTheme.titleLarge?.copyWith(
+                      showClientHeader ? widget.clientName! : 'Check In',
+                      style: theme.textTheme.titleMedium?.copyWith(
                         color: isDarkMode ? Colors.white : Colors.black,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                   
+                    if (showClientHeader && widget.clientEmail != null)
+                      Text(
+                        widget.clientEmail!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.6)
+                              : Colors.black.withValues(alpha: 0.6),
+                        ),
+                      ),
                   ],
                 ),
               ),

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/dialog_utils.dart';
+import 'package:trainware/utils/decision_log_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
@@ -37,17 +38,21 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<NutritionLogController>();
+    final todayLogs = _logsForToday(controller.logs);
     final sortedLogs = controller.logs.toList()
       ..sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
-    final consumedCalories = _sumCaloriesToday(controller.logs);
-    final goalCalories = controller.calorieTarget.round();
-    final hasLogsToday = _hasLogsToday(controller.logs);
-    final remainingCalories = hasLogsToday && goalCalories > 0
-        ? (goalCalories - consumedCalories).clamp(0, goalCalories)
-        : 0;
-    final consumedProtein = _sumProteinToday(controller.logs);
-    final consumedCarbs = _sumCarbsToday(controller.logs);
-    final consumedFats = _sumFatsToday(controller.logs);
+    final logEntries = _buildLogEntries(sortedLogs);
+    final consumedCalories = _sumCaloriesToday(todayLogs);
+    final goalCalories = controller.calorieTarget;
+    final hasLogsToday = todayLogs.isNotEmpty;
+    final remainingCalories = goalCalories > 0
+        ? (hasLogsToday
+            ? (goalCalories - consumedCalories).clamp(0.0, goalCalories)
+            : goalCalories)
+        : 0.0;
+    final consumedProtein = _sumProteinToday(todayLogs);
+    final consumedCarbs = _sumCarbsToday(todayLogs);
+    final consumedFats = _sumFatsToday(todayLogs);
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
@@ -76,19 +81,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (sortedLogs.isNotEmpty) ...[
-                        Text(
-                          'Today',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
                       if (sortedLogs.isEmpty)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 50.0),
@@ -98,13 +90,17 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                           ),
                         )
                       else
-                        ...sortedLogs.map((log) => _MacroLogCard(
-                              log: log,
-                              isDarkMode: isDarkMode,
-                              calorieTarget: controller.calorieTarget,
-                              onDelete: () => _confirmDelete(log),
-                              onTap: () => _showMacroDetails(log),
-                            )),
+                        ...logEntries.map(
+                          (entry) => entry.isDivider
+                              ? _LogDateDivider(label: entry.label!)
+                              : _MacroLogCard(
+                                    log: entry.log!,
+                                    isDarkMode: isDarkMode,
+                                    calorieTarget: controller.calorieTarget,
+                                    onDelete: () => _confirmDelete(entry.log!),
+                                    onTap: () => _showMacroDetails(entry.log!),
+                                  ),
+                        ),
                     ],
                   ),
                 ),
@@ -125,23 +121,24 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                 tooltip: 'Close',
               ),
             ),
-            Positioned(
-              top: 8,
-              right: 12,
-              child: IconButton(
-                icon: FaIcon(
-                  FontAwesomeIcons.circlePlus,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                  size: 24,
+            if (!controller.isCoach)
+              Positioned(
+                top: 8,
+                right: 12,
+                child: IconButton(
+                  icon: FaIcon(
+                    FontAwesomeIcons.circlePlus,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    size: 24,
+                  ),
+                  onPressed: () {
+                    _showAddEntrySheet();
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Add entry',
                 ),
-                onPressed: () {
-                  _showAddEntrySheet();
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                tooltip: 'Add entry',
               ),
-            ),
           ],
         ),
       ),
@@ -186,6 +183,25 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
     if (shouldDelete != true) {
       return false;
+    }
+
+    final nutritionController = context.read<NutritionLogController>();
+    if (nutritionController.isClientMode) {
+      final clientId = nutritionController.activeUserId;
+      if (clientId == null) {
+        showSnackbar(
+          context: context,
+          message: 'Missing client context for decision log.',
+        );
+        return false;
+      }
+      final logged = await requireDecisionLog(
+        context: context,
+        clientId: clientId,
+      );
+      if (!logged) {
+        return false;
+      }
     }
 
     await context.read<NutritionLogController>().removeLog(id: log.id);
@@ -481,8 +497,9 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                   width: double.infinity,
                   child: OpacityButtonWidgetTwo(
                     onPressed: () async {
-                      final userId =
-                          Supabase.instance.client.auth.currentUser?.id;
+                      final nutritionController =
+                          context.read<NutritionLogController>();
+                      final userId = nutritionController.activeUserId;
                       if (userId == null) {
                         showSnackbar(
                           context: ctx,
@@ -504,6 +521,16 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                       final carbs = _parseMacro(carbsController.text);
                       final fats = _parseMacro(fatsController.text);
                       final now = DateTime.now();
+
+                      if (nutritionController.isClientMode) {
+                        final logged = await requireDecisionLog(
+                          context: ctx,
+                          clientId: userId,
+                        );
+                        if (!logged) {
+                          return;
+                        }
+                      }
 
                       final log = NutritionLogDto(
                         id: existingLog?.id ?? const Uuid().v4(),
@@ -537,58 +564,61 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     );
   }
 
-  int _sumCaloriesToday(List<NutritionLogDto> logs) {
+  List<NutritionLogDto> _logsForToday(List<NutritionLogDto> logs) {
     final now = DateTime.now();
-    final todayLogs = logs.where(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
-    return todayLogs.fold(0, (sum, log) => sum + log.caloriesRounded);
+    return logs
+        .where((log) => _isSameDay(log.loggedAt.toLocal(), now))
+        .toList();
   }
 
-  bool _hasLogsToday(List<NutritionLogDto> logs) {
+  List<_LogListEntry> _buildLogEntries(List<NutritionLogDto> logs) {
+    final entries = <_LogListEntry>[];
+    String? lastLabel;
+
+    for (final log in logs) {
+      final label = _dateBucketLabel(log.loggedAt.toLocal());
+      if (label != lastLabel) {
+        entries.add(_LogListEntry.divider(label));
+        lastLabel = label;
+      }
+      entries.add(_LogListEntry.log(log));
+    }
+
+    return entries;
+  }
+
+  String _dateBucketLabel(DateTime timestamp) {
     final now = DateTime.now();
-    return logs.any(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
+    final today = DateTime(now.year, now.month, now.day);
+    final logDate = DateTime(timestamp.year, timestamp.month, timestamp.day);
+
+    if (logDate == today) {
+      return 'Today';
+    }
+    if (logDate == today.subtract(const Duration(days: 1))) {
+      return 'Yesterday';
+    }
+    return DateFormat('EEEE, d MMM').format(logDate);
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  double _sumCaloriesToday(List<NutritionLogDto> logs) {
+    return logs.fold(0.0, (sum, log) => sum + log.calories);
   }
 
   double _sumProteinToday(List<NutritionLogDto> logs) {
-    final now = DateTime.now();
-    final todayLogs = logs.where(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
-    return todayLogs.fold(0.0, (sum, log) => sum + log.protein);
+    return logs.fold(0.0, (sum, log) => sum + log.protein);
   }
 
   double _sumCarbsToday(List<NutritionLogDto> logs) {
-    final now = DateTime.now();
-    final todayLogs = logs.where(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
-    return todayLogs.fold(0.0, (sum, log) => sum + log.carbs);
+    return logs.fold(0.0, (sum, log) => sum + log.carbs);
   }
 
   double _sumFatsToday(List<NutritionLogDto> logs) {
-    final now = DateTime.now();
-    final todayLogs = logs.where(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
-    return todayLogs.fold(0.0, (sum, log) => sum + log.fats);
+    return logs.fold(0.0, (sum, log) => sum + log.fats);
   }
 
   double _parseMacro(String value) {
@@ -622,7 +652,10 @@ class _MacroInputField extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+              ],
               cursorColor: Colors.white,
               decoration: const InputDecoration(
                 border: InputBorder.none,
@@ -885,5 +918,45 @@ class _MacroLogCard extends StatelessWidget {
       return const Color(0xFFf97316);
     }
     return const Color(0xFF6366f1);
+  }
+}
+
+class _LogListEntry {
+  final NutritionLogDto? log;
+  final String? label;
+
+  const _LogListEntry.log(this.log) : label = null;
+  const _LogListEntry.divider(this.label) : log = null;
+
+  bool get isDivider => label != null;
+}
+
+class _LogDateDivider extends StatelessWidget {
+  final String label;
+
+  const _LogDateDivider({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.black.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

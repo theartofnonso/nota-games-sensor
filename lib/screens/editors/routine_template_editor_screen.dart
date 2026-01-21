@@ -9,6 +9,7 @@ import 'package:trainware/dtos/appsync/exercise_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
 import 'package:trainware/utils/dialog_utils.dart';
+import 'package:trainware/utils/decision_log_utils.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -102,6 +103,15 @@ class _RoutineTemplateEditorScreenState
         exerciseTemplates: exercises,
         planId: widget.planId);
 
+    final logged = await requireDecisionLogIfClientMode(
+      context: context,
+      isClientMode: controller.isClientMode,
+      clientId: controller.clientOverrideId,
+    );
+    if (!logged) {
+      return;
+    }
+
     await Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false)
         .saveTemplate(templateDto: template);
@@ -116,12 +126,16 @@ class _RoutineTemplateEditorScreenState
           context: context,
           title: "Update workout",
           description: "Do you want to update workout?",
-          action: () {
+          action: () async {
             _closeDialog();
             final updatedTemplate =
                 _getUpdatedRoutineTemplate(template: template);
-            _doUpdateRoutineTemplate(updatedTemplate: updatedTemplate);
-            _navigateBack(template: updatedTemplate);
+            final didUpdate = await _doUpdateRoutineTemplate(
+              updatedTemplate: updatedTemplate,
+            );
+            if (didUpdate) {
+              _navigateBack(template: updatedTemplate);
+            }
           },
           actionLabel: 'Update',
           isDestructive: false);
@@ -142,7 +156,7 @@ class _RoutineTemplateEditorScreenState
     );
   }
 
-  void _doUpdateRoutineTemplate(
+  Future<bool> _doUpdateRoutineTemplate(
       {required RoutineTemplateDto updatedTemplate}) async {
     final templateProvider = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
@@ -151,7 +165,17 @@ class _RoutineTemplateEditorScreenState
     final updatedRoutineTemplate =
         _getUpdatedRoutineTemplate(template: updatedTemplate);
 
+    final logged = await requireDecisionLogIfClientMode(
+      context: context,
+      isClientMode: templateProvider.isClientMode,
+      clientId: templateProvider.clientOverrideId,
+    );
+    if (!logged) {
+      return false;
+    }
+
     await templateProvider.updateTemplate(template: updatedRoutineTemplate);
+    return true;
   }
 
   void _dismissKeyboard() {

@@ -30,6 +30,11 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         context,
         listen: false);
 
+    // If the user is a coach, don't load data from supabase, this will be done in the coach screen.
+    if (controller.isCoach) {
+      return;
+    }
+
     // Load data from Supabase
     await controller.loadUserData();
   }
@@ -50,6 +55,9 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       final controller = Provider.of<SupabaseExerciseAndRoutineController>(
           context,
           listen: false);
+      if (controller.isCoach) {
+        return;
+      }
       await controller.initialize();
     } catch (e, st) {
       debugPrint('[UserSetup] Error: $e');
@@ -69,7 +77,6 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _userSetup();
     });
-
   }
 
   @override

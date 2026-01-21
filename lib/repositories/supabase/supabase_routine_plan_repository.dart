@@ -16,22 +16,29 @@ class SupabaseRoutinePlanRepository {
       UnmodifiableListView(_plans);
 
   /// Load plans from Supabase (read-only; writes go through offline layer).
-  Future<void> loadPlans() async {
+  Future<void> loadPlans({
+    String? ownerIdOverride,
+    String? clientIdOverride,
+    bool requireOwnerAndClient = false,
+  }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
+      final authUserId = _client.auth.currentUser?.id;
+      final ownerId = ownerIdOverride ?? authUserId;
+      final clientId = clientIdOverride ?? authUserId;
+      if (ownerId == null || clientId == null) {
         logger.w('No user logged in');
         return;
       }
 
-      // Load plans where user is owner OR where user is the client (system-created plans)
-      // This query matches the RLS policy: auth.uid() = owner OR auth.uid() = "clientId"
-      // RLS will also enforce this, but the explicit filter makes intent clear and may improve performance
-      final response = await _client
-          .from('routine_plans')
-          .select()
-          .or('owner.eq.$userId,clientId.eq.$userId')
-          .order('createdAt', ascending: false);
+      final query = _client.from('routine_plans').select();
+      final response = requireOwnerAndClient
+          ? await query
+              .eq('owner', ownerId)
+              .eq('clientId', clientId)
+              .order('createdAt', ascending: false)
+          : await query
+              .or('owner.eq.$ownerId,clientId.eq.$clientId')
+              .order('createdAt', ascending: false);
 
       _plans = (response as List<dynamic>).map((item) {
         final data = Map<String, dynamic>.from(item);

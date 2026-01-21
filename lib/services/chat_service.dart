@@ -41,9 +41,10 @@ class ChatService {
   /// Returns the conversation ID
   Future<String> getOrCreateConversation({
     required String coachId,
+    String? userIdOverride,
   }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = userIdOverride ?? _client.auth.currentUser?.id;
       if (userId == null) {
         throw Exception('No user ID available. User must be authenticated.');
       }

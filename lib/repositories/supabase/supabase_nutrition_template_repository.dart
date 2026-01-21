@@ -14,9 +14,9 @@ class SupabaseNutritionTemplateRepository {
   UnmodifiableListView<NutritionTemplateDto> get templates =>
       UnmodifiableListView(_templates);
 
-  Future<void> loadTemplates() async {
+  Future<void> loadTemplates({String? userIdOverride}) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = userIdOverride ?? _client.auth.currentUser?.id;
       if (userId == null) {
         logger.w('No user logged in');
         return;

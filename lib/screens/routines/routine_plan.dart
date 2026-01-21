@@ -14,6 +14,7 @@ import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../utils/dialog_utils.dart';
+import '../../utils/decision_log_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/notifications_utils.dart';
@@ -53,6 +54,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: true);
+    final isClientMode = exerciseAndRoutineController.isClientMode;
 
     // Reload plan from controller on every build (in case it was updated)
     final plan = exerciseAndRoutineController.planWhere(id: widget.id);
@@ -113,7 +115,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            if (!plan.isSystemPlan)
+            if (!plan.isSystemPlan || isClientMode)
               IconButton(
                   onPressed: _showMenuBottomSheet,
                   icon:
@@ -249,6 +251,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       dateLabel = DateFormat('EEEE').format(date);
     }
 
+    final isClientMode = controller.isClientMode;
     showEditorBottomSheet(
       context: context,
       isDismissible:
@@ -293,7 +296,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                     ),
                   ),
                   // Log workout button (only show for today)
-                  if (isToday)
+                  if (isToday && !isClientMode)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
@@ -357,6 +360,15 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
           Provider.of<SupabaseExerciseAndRoutineController>(context,
               listen: false);
 
+      final logged = await requireDecisionLogIfClientMode(
+        context: context,
+        isClientMode: exerciseAndRoutineController.isClientMode,
+        clientId: exerciseAndRoutineController.clientOverrideId,
+      );
+      if (!logged) {
+        return;
+      }
+
       await exerciseAndRoutineController.removePlan(plan: plan);
 
       if (mounted) {
@@ -386,6 +398,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
   }
 
   void _toggleLoadingState() {
+    if (!mounted) return;
     setState(() {
       _loading = !_loading;
     });
@@ -399,6 +412,17 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       emptyNameMessage: 'Please provide a name for this workout',
     ).then((result) async {
       if (result == null) return;
+      final exerciseAndRoutineController =
+          Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false);
+      final logged = await requireDecisionLogIfClientMode(
+        context: context,
+        isClientMode: exerciseAndRoutineController.isClientMode,
+        clientId: exerciseAndRoutineController.clientOverrideId,
+      );
+      if (!logged) {
+        return;
+      }
 
       final template = RoutineTemplateDto(
         id: "",
@@ -408,9 +432,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
         planId: plan.id,
       );
 
-      await Provider.of<SupabaseExerciseAndRoutineController>(context,
-              listen: false)
-          .saveTemplate(templateDto: template);
+      await exerciseAndRoutineController.saveTemplate(templateDto: template);
     });
   }
 
@@ -434,7 +456,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (!plan.isSystemPlan) ...[
+                if (!plan.isSystemPlan ||
+                    exerciseAndRoutineController.isClientMode) ...[
                   ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const FaIcon(

@@ -22,7 +22,9 @@ import 'package:trainware/repositories/supabase/supabase_exercise_repository.dar
 import 'package:trainware/repositories/supabase/supabase_routine_log_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_plan_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_template_repository.dart';
+import 'package:trainware/repositories/supabase/supabase_coach_repository.dart';
 import 'package:trainware/screens/auth/supabase_auth_screen.dart';
+import 'package:trainware/screens/coach/decision_logs_screen.dart';
 import 'package:trainware/screens/editors/exercise_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_plan_editor_screen.dart';
@@ -30,6 +32,7 @@ import 'package:trainware/screens/editors/routine_template_editor_screen.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/logs/routine_log_screen.dart';
 import 'package:trainware/onboarding_flow_screen.dart';
+import 'package:trainware/screens/coach/coach_clients_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
@@ -196,14 +199,43 @@ void main() async {
   );
 }
 
+final _coachModeNotifier = ValueNotifier<bool>(false);
+
 final _router = GoRouter(
   initialLocation: "/",
   navigatorKey: navigatorKey,
   observers: [appRouteObserver],
+  refreshListenable: _coachModeNotifier,
+  redirect: (context, state) {
+    if (!_coachModeNotifier.value) {
+      if (state.matchedLocation == '/coach') {
+        return '/';
+      }
+      return null;
+    }
+
+    SupabaseExerciseAndRoutineController? controller;
+    try {
+      controller = context.read<SupabaseExerciseAndRoutineController>();
+    } catch (_) {
+      return null;
+    }
+
+    if (!controller.isClientMode && state.matchedLocation != '/coach') {
+      return '/coach';
+    }
+    return null;
+  },
   routes: [
     GoRoute(
         path: "/", // Define the path for Home Screen
         builder: (context, state) => const Home()),
+    GoRoute(
+      path: '/coach',
+      builder: (context, state) => const CoachClientsScreen(
+        navigateToOverviewOnSelect: true,
+      ),
+    ),
     GoRoute(
       path: RoutineLogEditorScreen.routeName,
       builder: (context, state) {
@@ -284,11 +316,18 @@ final _router = GoRouter(
       builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(
+      path: DecisionLogsScreen.routeName,
+      builder: (context, state) {
+        final clientId = state.extra as String?;
+        return DecisionLogsScreen(clientId: clientId ?? '');
+      },
+    ),
+    GoRoute(
       path: ChatScreen.routeName,
       builder: (context, state) {
         // Get adminUserId from state params or use default from config
-        final adminUserId = state.uri.queryParameters['adminUserId'] ??
-            ChatConfig.adminUserId;
+        final adminUserId =
+            state.uri.queryParameters['adminUserId'] ?? ChatConfig.adminUserId;
         return ChatScreen(adminUserId: adminUserId);
       },
     ),
@@ -309,6 +348,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _isFirstLaunch = SharedPrefs().firstLaunch;
   bool _isAuthenticated = false;
+  bool _isCoach = false;
   bool _isLoading = true;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
@@ -329,11 +369,16 @@ class _MyAppState extends State<MyApp> {
       _isAuthenticated = session != null;
 
       if (_isAuthenticated) {
+        await _refreshCoachStatus(userId: session!.user.id);
         // Initialize data if user is authenticated after the build is complete
         WidgetsBinding.instance.addPostFrameCallback((_) async {
           try {
             final controller =
                 context.read<SupabaseExerciseAndRoutineController>();
+            controller.setCoachMode(isCoach: _isCoach);
+            context
+                .read<NutritionLogController>()
+                .setCoachMode(isCoach: _isCoach);
             await controller.initialize();
           } catch (e) {
             debugPrint('[Auth] Error initializing data: $e');
@@ -344,8 +389,16 @@ class _MyAppState extends State<MyApp> {
 
       // Listen to auth state changes with error handling
       Supabase.instance.client.auth.onAuthStateChange.listen(
-        (data) {
+        (data) async {
           final session = data.session;
+          if (session != null) {
+            await _refreshCoachStatus(userId: session.user.id);
+          } else {
+            setState(() {
+              _isCoach = false;
+            });
+            _coachModeNotifier.value = false;
+          }
           setState(() {
             _isAuthenticated = session != null;
           });
@@ -355,6 +408,10 @@ class _MyAppState extends State<MyApp> {
             try {
               final controller =
                   context.read<SupabaseExerciseAndRoutineController>();
+              controller.setCoachMode(isCoach: _isCoach);
+              context
+                  .read<NutritionLogController>()
+                  .setCoachMode(isCoach: _isCoach);
               controller.initialize();
             } catch (e) {
               debugPrint('[Auth] Error loading data after sign in: $e');
@@ -365,6 +422,10 @@ class _MyAppState extends State<MyApp> {
               final controller =
                   context.read<SupabaseExerciseAndRoutineController>();
               controller.clear();
+              controller.setCoachMode(isCoach: false);
+              context
+                  .read<NutritionLogController>()
+                  .setCoachMode(isCoach: false);
               // Reset to show onboarding screen on sign out
               setState(() {
                 _isFirstLaunch = true;
@@ -397,6 +458,16 @@ class _MyAppState extends State<MyApp> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _refreshCoachStatus({required String userId}) async {
+    final repo = SupabaseCoachRepository();
+    final isCoach = await repo.isCoach(userId: userId);
+    if (!mounted) return;
+    setState(() {
+      _isCoach = isCoach;
+    });
+    _coachModeNotifier.value = isCoach;
   }
 
   void _completeIntro() {

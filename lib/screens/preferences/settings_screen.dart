@@ -28,6 +28,7 @@ import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
+import '../../utils/decision_log_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../services/training_prediction_service.dart';
 import '../../utils/navigation_utils.dart';
@@ -37,6 +38,7 @@ import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
+import '../../widgets/decision_logs/decision_logs_list.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
@@ -110,12 +112,18 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
     final nutritionController = context.watch<NutritionLogController>();
+    final routineController =
+        context.watch<SupabaseExerciseAndRoutineController>();
+    final isClientMode = routineController.isClientMode;
+    final isCoach = routineController.isCoach;
     final consumedCalories = _sumCaloriesToday(nutritionController.logs);
-    final goalCalories = nutritionController.calorieTarget.round();
+    final goalCalories = nutritionController.calorieTarget;
     final hasLogsToday = _hasLogsToday(nutritionController.logs);
-    final remainingCalories = hasLogsToday && goalCalories > 0
-        ? (goalCalories - consumedCalories).clamp(0, goalCalories)
-        : 0;
+    final remainingCalories = goalCalories > 0
+        ? (hasLogsToday
+            ? (goalCalories - consumedCalories).clamp(0.0, goalCalories)
+            : goalCalories)
+        : 0.0;
     final consumedProtein = _sumProteinToday(nutritionController.logs);
     final consumedCarbs = _sumCarbsToday(nutritionController.logs);
     final consumedFats = _sumFatsToday(nutritionController.logs);
@@ -126,6 +134,11 @@ class _SettingsScreenState extends State<SettingsScreen>
     final logs = controller.logs;
     final yearStats = _YearTrainingStats.fromLogs(logs);
     final yearHoursStats = _YearHoursStats.fromLogs(logs);
+    final decisionClientId = isClientMode
+        ? controller.clientOverrideId
+        : Supabase.instance.client.auth.currentUser?.id;
+    final decisionClientName =
+        isClientMode ? controller.clientOverrideName : null;
     final nextSession = TrainingPredictionService.getNextPredictedSession(logs);
     final predictionInfo = nextSession != null
         ? _PredictionInfo(
@@ -266,24 +279,36 @@ class _SettingsScreenState extends State<SettingsScreen>
                     },
                   ),
                   const SizedBox(height: 16),
+                  if (decisionClientId != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: _DecisionLogSection(
+                        clientId: decisionClientId,
+                        clientName: decisionClientName,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   // Routine Plans section - edge-to-edge, no padding
                   _RoutinePlansSection(),
                   const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: InformationContainerWithBackgroundImage(
-                      image: 'images/background.jpg',
-                      subtitle:
-                          "Loving the app? Learn more about us and our mission.",
-                      color: Colors.black,
-                      onTap: _openWebpage,
-                      alignmentGeometry: Alignment.center,
+                  if (!isClientMode) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: InformationContainerWithBackgroundImage(
+                        image: 'images/background.jpg',
+                        subtitle:
+                            "Loving the app? Learn more about us and our mission.",
+                        color: Colors.black,
+                        onTap: _openWebpage,
+                        alignmentGeometry: Alignment.center,
+                      ),
                     ),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  if (Platform.isIOS)
+                    const SizedBox(
+                      height: 20,
+                    ),
+                  ],
+                  if (Platform.isIOS && !isClientMode)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -434,6 +459,25 @@ class _SettingsScreenState extends State<SettingsScreen>
                       title: Text("Account",
                           style: Theme.of(context).textTheme.titleMedium),
                       subtitle: Text(userEmail)),
+                  if (isCoach)
+                    ListTile(
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 30.0),
+                      onTap: () async {
+                        await routineController.clearClientOverride();
+                        await context
+                            .read<NutritionLogController>()
+                            .clearClientOverride();
+                        if (context.mounted) {
+                          context.go('/coach');
+                        }
+                      },
+                      leading: FaIcon(FontAwesomeIcons.users,
+                          color: isDarkMode ? Colors.white70 : Colors.black38),
+                      title: Text("Clients",
+                          style: Theme.of(context).textTheme.titleMedium),
+                      subtitle: const Text("Back to client list"),
+                    ),
                   Center(
                     child: Text(
                       _appVersion,
@@ -701,58 +745,41 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
-  int _sumCaloriesToday(List<NutritionLogDto> logs) {
+  double _sumCaloriesToday(List<NutritionLogDto> logs) {
     final now = DateTime.now();
-    final todayLogs = logs.where(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
-    return todayLogs.fold(0, (sum, log) => sum + log.caloriesRounded);
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
+    return todayLogs.fold(0.0, (sum, log) => sum + log.calories);
   }
 
   bool _hasLogsToday(List<NutritionLogDto> logs) {
     final now = DateTime.now();
-    return logs.any(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
+    return logs.any((log) => _isSameDay(log.loggedAt.toLocal(), now));
   }
 
   double _sumProteinToday(List<NutritionLogDto> logs) {
     final now = DateTime.now();
-    final todayLogs = logs.where(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
     return todayLogs.fold(0.0, (sum, log) => sum + log.protein);
   }
 
   double _sumCarbsToday(List<NutritionLogDto> logs) {
     final now = DateTime.now();
-    final todayLogs = logs.where(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
     return todayLogs.fold(0.0, (sum, log) => sum + log.carbs);
   }
 
   double _sumFatsToday(List<NutritionLogDto> logs) {
     final now = DateTime.now();
-    final todayLogs = logs.where(
-      (log) =>
-          log.loggedAt.year == now.year &&
-          log.loggedAt.month == now.month &&
-          log.loggedAt.day == now.day,
-    );
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
     return todayLogs.fold(0.0, (sum, log) => sum + log.fats);
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   @override
@@ -863,6 +890,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final controller = context.read<SupabaseExerciseAndRoutineController>();
     final logs = controller.whereLogsIsSameDay(dateTime: date).toList();
     final hasLogs = logs.isNotEmpty;
+    final isClientMode = controller.isClientMode;
 
     // Determine date label (Today, Yesterday, or full date)
     final now = DateTime.now();
@@ -941,7 +969,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ),
                   // Log workout button (only show for today)
-                  if (isToday)
+                  if (isToday && !isClientMode)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
@@ -2425,6 +2453,34 @@ class _CreatePlanCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DecisionLogSection extends StatelessWidget {
+  final String clientId;
+  final String? clientName;
+
+  const _DecisionLogSection({
+    required this.clientId,
+    this.clientName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DecisionLogsList(
+      clientId: clientId,
+      clientName: clientName,
+      limit: 3,
+      showTitle: true,
+      showViewAll: true,
+      onViewAll: () {
+        showDecisionLogsBottomSheet(
+          context: context,
+          clientId: clientId,
+          clientName: clientName,
+        );
+      },
     );
   }
 }

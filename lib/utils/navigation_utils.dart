@@ -12,6 +12,7 @@ import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/utils/dialog_utils.dart';
+import 'package:trainware/utils/decision_log_utils.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
@@ -75,6 +76,12 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
   if (details == null) return null;
 
   final controller = context.read<SupabaseExerciseAndRoutineController>();
+  final logged = await requireDecisionLogIfClientMode(
+    context: context,
+    isClientMode: controller.isClientMode,
+    clientId: controller.clientOverrideId,
+  );
+  if (!logged) return null;
 
   if (isEditing) {
     final updated = initialPlan.copyWith(
@@ -233,6 +240,13 @@ Future<void> navigateToChat({
   String? adminUserId,
 }) async {
   final finalAdminUserId = adminUserId ?? ChatConfig.adminUserId;
+  final controller = context.read<SupabaseExerciseAndRoutineController>();
+  final clientUserId =
+      controller.isClientMode ? controller.clientOverrideId : null;
+  final clientName =
+      controller.isClientMode ? controller.clientOverrideName : null;
+  final clientEmail =
+      controller.isClientMode ? controller.clientOverrideEmail : null;
   await showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -262,6 +276,9 @@ Future<void> navigateToChat({
           isDismissible: true,
           child: ChatScreen(
             adminUserId: finalAdminUserId,
+            clientUserId: clientUserId,
+            clientName: clientName,
+            clientEmail: clientEmail,
             scrollController: null,
           ),
         ),

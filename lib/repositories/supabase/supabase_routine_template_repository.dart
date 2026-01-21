@@ -16,22 +16,29 @@ class SupabaseRoutineTemplateRepository {
       UnmodifiableListView(_templates);
 
   /// Load templates from Supabase (read-only; writes go through offline layer).
-  Future<void> loadTemplates() async {
+  Future<void> loadTemplates({
+    String? ownerIdOverride,
+    String? clientIdOverride,
+    bool requireOwnerAndClient = false,
+  }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) {
+      final authUserId = _client.auth.currentUser?.id;
+      final ownerId = ownerIdOverride ?? authUserId;
+      final clientId = clientIdOverride ?? authUserId;
+      if (ownerId == null || clientId == null) {
         logger.w('No user logged in');
         return;
       }
 
-      // Load templates where user is owner OR where user is the client (system-created templates)
-      // This query matches the RLS policy: auth.uid() = owner OR auth.uid() = "clientId"
-      // RLS will also enforce this, but the explicit filter makes intent clear and may improve performance
-      final response = await _client
-          .from('routine_templates')
-          .select()
-          .or('owner.eq.$userId,clientId.eq.$userId')
-          .order('createdAt', ascending: true);
+      final query = _client.from('routine_templates').select();
+      final response = requireOwnerAndClient
+          ? await query
+              .eq('owner', ownerId)
+              .eq('clientId', clientId)
+              .order('createdAt', ascending: true)
+          : await query
+              .or('owner.eq.$ownerId,clientId.eq.$clientId')
+              .order('createdAt', ascending: true);
 
       final rawItems = response as List;
       _templates = rawItems

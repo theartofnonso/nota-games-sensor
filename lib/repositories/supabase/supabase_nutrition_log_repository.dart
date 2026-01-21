@@ -13,9 +13,9 @@ class SupabaseNutritionLogRepository {
 
   UnmodifiableListView<NutritionLogDto> get logs => UnmodifiableListView(_logs);
 
-  Future<void> loadLogs() async {
+  Future<void> loadLogs({String? userIdOverride}) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = userIdOverride ?? _client.auth.currentUser?.id;
       if (userId == null) {
         logger.w('No user logged in');
         return;
@@ -37,5 +37,13 @@ class SupabaseNutritionLogRepository {
       logger.e('Error loading nutrition logs: $e');
       rethrow;
     }
+  }
+
+  Future<void> upsertLog(NutritionLogDto log) async {
+    await _client.from('nutrition_logs').upsert(log.toJson());
+  }
+
+  Future<void> deleteLog(String id) async {
+    await _client.from('nutrition_logs').delete().eq('id', id);
   }
 }
