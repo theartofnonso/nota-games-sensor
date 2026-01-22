@@ -481,6 +481,16 @@ class _MyAppState extends State<MyApp> {
       );
     }
 
+    if (!_accessController.isRoleResolved) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.dark,
+        theme: TRKRTheme.darkTheme,
+        darkTheme: TRKRTheme.darkTheme,
+        home: const TRKRLoadingScreen(),
+      );
+    }
+
     // Show main app if authenticated
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,

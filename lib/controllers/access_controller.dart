@@ -21,6 +21,8 @@ class AccessController extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isCoach = false;
   bool _didHydrateCache = false;
+  bool _isRoleResolved = false;
+  bool _hasCachedRole = false;
   String? _hydratedUserId;
   String? _userId;
   String? _clientOverrideId;
@@ -31,6 +33,7 @@ class AccessController extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   bool get isCoach => _isCoach;
   bool get didHydrateCache => _didHydrateCache;
+  bool get isRoleResolved => _isRoleResolved;
   String? get userId => _userId;
   bool get isClientMode => _clientOverrideId != null;
   String? get clientOverrideId => _clientOverrideId;
@@ -45,10 +48,11 @@ class AccessController extends ChangeNotifier {
     final session = _client.auth.currentSession;
     _isAuthenticated = session != null;
     _userId = session?.user.id;
-    _hydrateCoachCache(userId: _userId);
+    _isRoleResolved = false;
+    _hasCachedRole = _hydrateCoachCache(userId: _userId);
     _isLoading = false;
     notifyListeners();
-    if (_isAuthenticated && _userId != null) {
+    if (_isAuthenticated && _userId != null && !_hasCachedRole) {
       _refreshCoachStatusAsync(userId: _userId!);
     }
 
@@ -58,13 +62,15 @@ class AccessController extends ChangeNotifier {
         _isAuthenticated = session != null;
         _userId = session?.user.id;
         _isCoach = false;
-        _hydrateCoachCache(userId: _userId);
+        _isRoleResolved = false;
+        _hasCachedRole = _hydrateCoachCache(userId: _userId);
         if (!_isAuthenticated) {
           _clientOverrideId = null;
           _clientOverrideName = null;
+          _isRoleResolved = false;
         }
         notifyListeners();
-        if (_isAuthenticated && _userId != null) {
+        if (_isAuthenticated && _userId != null && !_hasCachedRole) {
           _refreshCoachStatusAsync(userId: _userId!);
         }
       },
@@ -97,8 +103,10 @@ class AccessController extends ChangeNotifier {
           .isCoach(userId: userId)
           .timeout(const Duration(seconds: 5));
       _saveCoachCache(isCoach: _isCoach, userId: userId);
+      _isRoleResolved = true;
     } catch (_) {
       _isCoach = false;
+      _isRoleResolved = true;
     }
   }
 
@@ -109,16 +117,19 @@ class AccessController extends ChangeNotifier {
     });
   }
 
-  void _hydrateCoachCache({required String? userId}) {
-    if (_didHydrateCache && _hydratedUserId == userId) return;
-    if (userId == null || userId.isEmpty) return;
+  bool _hydrateCoachCache({required String? userId}) {
+    if (_didHydrateCache && _hydratedUserId == userId) return _hasCachedRole;
+    if (userId == null || userId.isEmpty) return false;
     _didHydrateCache = true;
     _hydratedUserId = userId;
     final cachedUserId = SharedPrefs().getCoachModeUserId();
     final cached = SharedPrefs().getCoachMode();
     if (cached != null && cachedUserId == userId) {
       _isCoach = cached;
+      _isRoleResolved = true;
+      return true;
     }
+    return false;
   }
 
   void _saveCoachCache({required bool isCoach, required String userId}) {

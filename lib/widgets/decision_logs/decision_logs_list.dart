@@ -108,6 +108,19 @@ class _DecisionLogsListState extends State<DecisionLogsList> {
                   if (widget.showViewAll && widget.onViewAll != null)
                     TextButton(
                       onPressed: widget.onViewAll,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        backgroundColor: Colors.white.withValues(alpha: 0.06),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.12),
+                          ),
+                        ),
+                      ),
                       child: const Text('View all updates'),
                     ),
                   const Spacer(),
@@ -125,7 +138,7 @@ class _DecisionLogsListState extends State<DecisionLogsList> {
               )
             else if (decisions.isEmpty)
               Text(
-                'No decisions logged yet.',
+                'No updates yet.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: Colors.grey.shade500,
                 ),

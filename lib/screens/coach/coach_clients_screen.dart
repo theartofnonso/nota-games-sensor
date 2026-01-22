@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
@@ -48,16 +49,6 @@ class _CoachClientsScreenState extends State<CoachClientsScreen> {
     final nutritionController = context.read<NutritionLogController>();
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: appBarBackgroundColor(context: context),
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        title: Text(
-          'Clients'.toUpperCase(),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        centerTitle: true,
-      ),
       body: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -65,10 +56,11 @@ class _CoachClientsScreenState extends State<CoachClientsScreen> {
         ),
         child: SafeArea(
           bottom: false,
-          minimum: const EdgeInsets.all(16),
+          minimum: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: FutureBuilder<List<_CoachClient>>(
             future: _clientsFuture,
             builder: (context, snapshot) {
+              final theme = Theme.of(context);
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -76,115 +68,158 @@ class _CoachClientsScreenState extends State<CoachClientsScreen> {
                 return Center(
                   child: Text(
                     'Failed to load clients.',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: theme.textTheme.bodyMedium,
                   ),
                 );
               }
 
               final clients = snapshot.data ?? const [];
-              if (clients.isEmpty) {
-                return const ListEmptyState(
-                  message:
-                      'No clients found yet. Once clients are added, they’ll appear here.',
-                );
-              }
-
-              return ListView.separated(
-                itemCount: clients.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final client = clients[index];
-                  final isLoadingClient = _loadingClientId == client.id;
-                  return InkWell(
-                    onTap: isLoadingClient
-                        ? null
-                        : () async {
-                            setState(() => _loadingClientId = client.id);
-                            try {
-                              await routineController.loadClientData(
-                                clientId: client.id,
-                                clientName: client.name,
-                              );
-                              await nutritionController.loadClientData(
-                                clientId: client.id,
-                              );
-                              if (context.mounted) {
-                                if (widget.navigateToOverviewOnSelect) {
-                                  context.go('/');
-                                } else {
-                                  Navigator.of(context).pop();
-                                }
-                              }
-                            } finally {
-                              if (mounted) {
-                                setState(() => _loadingClientId = null);
-                              }
-                            }
-                          },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 6),
+                  Text(
+                    'Clients',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Select a client to view their training experience.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  if (clients.isEmpty)
+                    const Expanded(
+                      child: ListEmptyState(
+                        message:
+                            'No clients found yet. Once clients are added, they’ll appear here.',
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  (isDarkMode ? Colors.white : Colors.black)
-                                      .withValues(alpha: 0.18),
-                                  (isDarkMode ? Colors.white : Colors.black)
-                                      .withValues(alpha: 0.05),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                    )
+                  else
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: clients.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final client = clients[index];
+                          final isLoadingClient = _loadingClientId == client.id;
+                          final joinedLabel = DateFormat('MMM yyyy')
+                              .format(client.createdAt.toLocal());
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(18),
+                            onTap: isLoadingClient
+                                ? null
+                                : () async {
+                                    setState(
+                                        () => _loadingClientId = client.id);
+                                    try {
+                                      await routineController.loadClientData(
+                                        clientId: client.id,
+                                        clientName: client.name,
+                                      );
+                                      await nutritionController.loadClientData(
+                                        clientId: client.id,
+                                      );
+                                      if (context.mounted) {
+                                        if (widget.navigateToOverviewOnSelect) {
+                                          context.go('/');
+                                        } else {
+                                          Navigator.of(context).pop();
+                                        }
+                                      }
+                                    } finally {
+                                      if (mounted) {
+                                        setState(
+                                            () => _loadingClientId = null);
+                                      }
+                                    }
+                                  },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
                               ),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              client.initials,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: isDarkMode
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  client.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w600),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.08),
                                 ),
-                                const SizedBox(height: 4),
-                                const SizedBox.shrink(),
-                              ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 42,
+                                    height: 42,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Text(
+                                      client.initials,
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          client.name,
+                                          style: theme.textTheme.titleMedium
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Client since $joinedLabel',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (isLoadingClient)
+                                    const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  else
+                                    Icon(
+                                      Icons.chevron_right_rounded,
+                                      color:
+                                          Colors.white.withValues(alpha: 0.7),
+                                      size: 22,
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                          if (isLoadingClient)
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                        ],
+                          );
+                        },
                       ),
                     ),
-                  );
-                },
+                ],
               );
             },
           ),
