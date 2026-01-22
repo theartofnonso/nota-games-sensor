@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
-import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
-import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -20,7 +17,6 @@ class SupabaseAuthScreen extends StatefulWidget {
 class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   bool _isLoading = false;
   bool _otpSent = false;
-  bool _isResolvingRole = false;
   final _emailController = TextEditingController();
   final _otpController = TextEditingController();
   late final VideoPlayerController _videoController;
@@ -81,10 +77,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           password: 'testaccount123',
         );
 
-        if (mounted) {
-          setState(() => _isResolvingRole = true);
-        }
-        await context.read<AccessController>().refreshCoachRole();
+        // Success! User will be automatically navigated by the auth state listener
       } catch (error) {
         // If login fails, show error but don't fall back to OTP
         debugPrint('[Test Account] Login failed: $error');
@@ -100,7 +93,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         if (mounted) {
           setState(() {
             _isLoading = false;
-            _isResolvingRole = false;
           });
         }
       }
@@ -146,7 +138,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _isResolvingRole = false;
         });
       }
     }
@@ -175,10 +166,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         token: otp,
         type: OtpType.email,
       );
-      if (mounted) {
-        setState(() => _isResolvingRole = true);
-      }
-      await context.read<AccessController>().refreshCoachRole();
+      // Success! User will be automatically navigated by the auth state listener
     } on AuthException catch (error) {
       if (mounted) {
         showSnackbar(
@@ -211,9 +199,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isResolvingRole) {
-      return const TRKRLoadingScreen();
-    }
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 

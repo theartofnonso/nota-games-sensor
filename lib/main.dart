@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
@@ -122,7 +123,12 @@ void _processPendingNotification() {
   _notificationRetryCount = 0;
 }
 
-void main() async {
+Future<void> main() async {
+  await mainCommon(AppFlavor.client);
+}
+
+Future<void> mainCommon(AppFlavor flavor) async {
+  AppConfig.setFlavor(flavor);
   final logger = getLogger(className: "main");
 
   logger.i("Application starting...");

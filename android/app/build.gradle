@@ -55,6 +55,20 @@ android {
         multiDexEnabled true
     }
 
+    flavorDimensions "app"
+    productFlavors {
+        coach {
+            dimension "app"
+            applicationIdSuffix ".coach"
+            resValue "string", "app_name", "Not Athletes Coach"
+        }
+        client {
+            dimension "app"
+            applicationIdSuffix ".client"
+            resValue "string", "app_name", "Not Athletes"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
