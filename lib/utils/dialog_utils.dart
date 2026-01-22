@@ -143,6 +143,7 @@ void showDateTimePicker(
     {required BuildContext context,
     DateTime? initialDateTime,
     required void Function(DateTime datetime) onChangedDateTime,
+    bool closeOnSelect = true,
     CupertinoDatePickerMode? mode}) {
   FocusScope.of(context).unfocus();
   showAppBottomSheet(
@@ -153,7 +154,12 @@ void showDateTimePicker(
         child: SizedBox(
           height: 240,
           child: DatetimePicker(
-              onSelect: onChangedDateTime,
+              onSelect: (value) {
+                onChangedDateTime(value);
+                if (closeOnSelect) {
+                  Navigator.of(context).pop();
+                }
+              },
               initialDateTime: initialDateTime,
               mode: mode),
         ),

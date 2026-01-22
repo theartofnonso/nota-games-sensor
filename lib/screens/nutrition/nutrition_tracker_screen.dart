@@ -61,97 +61,89 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: appBarBackgroundColor(context: context),
-      body: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [
-            ListView(
-              padding: const EdgeInsets.fromLTRB(0, 56, 0, 24),
+      appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: FaIcon(
+            FontAwesomeIcons.solidCircleXmark,
+            color: isDarkMode ? Colors.white : Colors.black,
+            size: 24,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+          tooltip: 'Close',
+        ),
+        actions: [
+          IconButton(
+            icon: FaIcon(
+              FontAwesomeIcons.circlePlus,
+              color: isDarkMode ? Colors.white : Colors.black,
+              size: 24,
+            ),
+            onPressed: () {
+              if (controller.isCoach) {
+                _showNutritionTemplateSheet();
+              } else {
+                _showAddEntrySheet();
+              }
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: controller.isCoach ? 'Configure template' : 'Add entry',
+          ),
+          const SizedBox(width: 6),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+        children: [
+          NutritionTrackingCarousel(
+            goalCalories: goalCalories,
+            remainingCalories: remainingCalories,
+            proteinTarget: controller.proteinTarget,
+            carbsTarget: controller.carbsTarget,
+            fatsTarget: controller.fatsTarget,
+            consumedProtein: consumedProtein,
+            consumedCarbs: consumedCarbs,
+            consumedFats: consumedFats,
+            hasLogsToday: hasLogsToday,
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                NutritionTrackingCarousel(
-                  goalCalories: goalCalories,
-                  remainingCalories: remainingCalories,
-                  proteinTarget: controller.proteinTarget,
-                  carbsTarget: controller.carbsTarget,
-                  fatsTarget: controller.fatsTarget,
-                  consumedProtein: consumedProtein,
-                  consumedCarbs: consumedCarbs,
-                  consumedFats: consumedFats,
-                  hasLogsToday: hasLogsToday,
-                ),
-                const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (sortedLogs.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 50.0),
-                          child: ListEmptyState(
-                            message:
-                                "It might feel quiet now, but your nutrition logs will soon appear here.",
+                if (sortedLogs.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 50.0),
+                    child: ListEmptyState(
+                      message:
+                          "It might feel quiet now, but your nutrition logs will soon appear here.",
+                    ),
+                  )
+                else
+                  ...logEntries.map(
+                    (entry) => entry.isDivider
+                        ? _LogDateDivider(
+                            label: entry.label!,
+                            totals: entry.totals ?? const _MacroTotals(),
+                          )
+                        : _MacroLogCard(
+                            log: entry.log!,
+                            isDarkMode: isDarkMode,
+                            calorieTarget: controller.calorieTarget,
+                            onDelete: () => _confirmDelete(entry.log!),
+                            onTap: () => _showMacroDetails(entry.log!),
                           ),
-                        )
-                      else
-                        ...logEntries.map(
-                          (entry) => entry.isDivider
-                              ? _LogDateDivider(
-                                  label: entry.label!,
-                                  totals: entry.totals ?? const _MacroTotals(),
-                                )
-                              : _MacroLogCard(
-                                  log: entry.log!,
-                                  isDarkMode: isDarkMode,
-                                  calorieTarget: controller.calorieTarget,
-                                  onDelete: () => _confirmDelete(entry.log!),
-                                  onTap: () => _showMacroDetails(entry.log!),
-                                ),
-                        ),
-                    ],
                   ),
-                ),
               ],
             ),
-            Positioned(
-              top: 8,
-              left: 12,
-              child: IconButton(
-                icon: FaIcon(
-                  FontAwesomeIcons.solidCircleXmark,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                  size: 24,
-                ),
-                onPressed: () => Navigator.of(context).pop(),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                tooltip: 'Close',
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 12,
-              child: IconButton(
-                icon: FaIcon(
-                  FontAwesomeIcons.circlePlus,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                  size: 24,
-                ),
-                onPressed: () {
-                  if (controller.isCoach) {
-                    _showNutritionTemplateSheet();
-                  } else {
-                    _showAddEntrySheet();
-                  }
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                tooltip:
-                    controller.isCoach ? 'Configure template' : 'Add entry',
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1216,11 +1208,13 @@ class _MacroTotals {
   final double protein;
   final double carbs;
   final double fats;
+  final double calories;
 
   const _MacroTotals({
     this.protein = 0,
     this.carbs = 0,
     this.fats = 0,
+    this.calories = 0,
   });
 
   _MacroTotals addLog(NutritionLogDto log) {
@@ -1228,6 +1222,7 @@ class _MacroTotals {
       protein: protein + log.protein,
       carbs: carbs + log.carbs,
       fats: fats + log.fats,
+      calories: calories + log.calories,
     );
   }
 }
@@ -1244,13 +1239,14 @@ class _LogDateDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final totalsLabel = 'Protein ${totals.protein.toStringAsFixed(1)}g • '
+    final totalsLabel = 'Calories ${totals.calories.toStringAsFixed(0)} • '
+        'Protein ${totals.protein.toStringAsFixed(1)}g • '
         'Carbs ${totals.carbs.toStringAsFixed(1)}g • '
         'Fats ${totals.fats.toStringAsFixed(1)}g';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1267,11 +1263,13 @@ class _LogDateDivider extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            totalsLabel,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.65),
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              totalsLabel,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.65),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
