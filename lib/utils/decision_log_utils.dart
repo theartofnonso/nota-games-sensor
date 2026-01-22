@@ -102,18 +102,43 @@ Future<void> showDecisionLogsBottomSheet({
   await showAppBottomSheet<void>(
     context: sheetContext,
     isScrollControlled: true,
-    isDismissible: true,
+    isDismissible: false,
     useRootNavigator: true,
     child: SafeArea(
       bottom: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        child: DecisionLogsList(
-          clientId: clientId,
-          clientName: clientName,
-          limit: 100,
-          showTitle: true,
-          showViewAll: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Updates',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  color: Colors.white.withValues(alpha: 0.8),
+                  onPressed: () => Navigator.of(context).pop(),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            DecisionLogsList(
+              clientId: clientId,
+              clientName: clientName,
+              limit: 100,
+              showTitle: false,
+              showViewAll: false,
+            ),
+          ],
         ),
       ),
     ),

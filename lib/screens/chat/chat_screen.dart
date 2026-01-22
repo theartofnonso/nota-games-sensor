@@ -325,7 +325,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       showClientHeader ? widget.clientName! : 'Check In',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: isDarkMode ? Colors.white : Colors.black,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 17,
                       ),
                     ),
                    
@@ -367,6 +368,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           'No messages yet',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: Colors.grey.withValues(alpha: 0.7),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -374,24 +377,24 @@ class _ChatScreenState extends State<ChatScreen> {
                           'Start a conversation with support',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.grey.withValues(alpha: 0.5),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
                     ),
                   ),
                 )
-              : GestureDetector(
-                  onTap: () => FocusScope.of(context).unfocus(),
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    itemCount: _buildChatEntries().length,
-                    itemBuilder: (context, index) {
-                      final entries = _buildChatEntries();
-                      final entry = entries[index];
+              : ListView.builder(
+                  controller: _scrollController,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.manual,
+                  itemCount: _buildChatEntries().length,
+                  itemBuilder: (context, index) {
+                    final entries = _buildChatEntries();
+                    final entry = entries[index];
 
                       if (entry.isDivider) {
                         return _ChatDateDivider(label: entry.label!);
@@ -407,8 +410,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         isDarkMode: isDarkMode,
                         vibrantAccent: colors?.vibrantAccent ?? Colors.green,
                       );
-                    },
-                  ),
+                  },
                 ),
         ),
 
@@ -430,18 +432,22 @@ class _ChatScreenState extends State<ChatScreen> {
                     enabled: !_isSending,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: isDarkMode ? Colors.white : Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Type a message...',
                       hintStyle: TextStyle(
                         color: Colors.grey.withValues(alpha: 0.5),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
                       ),
                       filled: true,
                       fillColor: isDarkMode
                           ? Colors.white.withValues(alpha: 0.1)
                           : Colors.black.withValues(alpha: 0.05),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
+                        borderRadius: BorderRadius.circular(999),
                         borderSide: BorderSide(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.2)
@@ -450,7 +456,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
+                        borderRadius: BorderRadius.circular(999),
                         borderSide: BorderSide(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.2)
@@ -459,7 +465,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
+                        borderRadius: BorderRadius.circular(999),
                         borderSide: BorderSide(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.4)
@@ -566,8 +572,8 @@ class _ChatMessageBubble extends StatelessWidget {
                           message.content,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: isCurrentUser ? Colors.black : Colors.white,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -625,7 +631,8 @@ class _ChatDateDivider extends StatelessWidget {
             label,
             style: theme.textTheme.bodySmall?.copyWith(
               color: Colors.black.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
           ),
         ),

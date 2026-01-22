@@ -43,6 +43,7 @@ void showExerciseLogEditor({
   required RoutineEditorMode editorType,
   bool showSetCheck = true,
 }) {
+  final timerRunningNotifier = ValueNotifier<bool>(false);
   // Check if exercise type is duration (DR) to prevent closing without confirmation
   final exerciseLogController =
       Provider.of<ExerciseLogController>(context, listen: false);
@@ -54,6 +55,9 @@ void showExerciseLogEditor({
   Future<bool> Function()? onBarrierTap;
   if (isDurationExercise) {
     onBarrierTap = () async {
+      if (!timerRunningNotifier.value) {
+        return true;
+      }
       return await confirmDiscardChangesBottomSheet(
         context: context,
         title: 'Leave exercise?',
@@ -75,6 +79,7 @@ void showExerciseLogEditor({
         exerciseLogId: exerciseLogId,
         editorType: editorType,
         showSetCheck: showSetCheck,
+        timerRunningNotifier: timerRunningNotifier,
       );
 
       // Wrap with PopScope to handle back button for duration exercises
@@ -84,6 +89,12 @@ void showExerciseLogEditor({
           onPopInvokedWithResult: (bool didPop, dynamic result) async {
             if (didPop) return;
 
+            if (!timerRunningNotifier.value) {
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
+              return;
+            }
             final shouldPop = await confirmDiscardChangesBottomSheet(
               context: context,
               title: 'Leave exercise?',

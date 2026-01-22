@@ -6,10 +6,12 @@ import 'package:trainware/utils/theme/color_extensions.dart';
 
 class DurationStopwatchWidget extends StatefulWidget {
   final VoidCallback onLogSet;
+  final ValueChanged<bool>? onRunningChanged;
 
   const DurationStopwatchWidget({
     super.key,
     required this.onLogSet,
+    this.onRunningChanged,
   });
 
   @override
@@ -29,12 +31,14 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
       _isRunning = true;
       _startTime = DateTime.now().subtract(_currentDuration);
     });
+    widget.onRunningChanged?.call(true);
   }
 
   void _pauseStopwatch() {
     setState(() {
       _isRunning = false;
     });
+    widget.onRunningChanged?.call(false);
   }
 
   void _stopAndLogSet() {
@@ -49,6 +53,7 @@ class DurationStopwatchWidgetState extends State<DurationStopwatchWidget> {
       _isRunning = false;
       _startTime = null;
     });
+    widget.onRunningChanged?.call(false);
   }
 
   void _updateDuration() {

@@ -11,6 +11,8 @@ class DecisionLogsList extends StatefulWidget {
   final bool showTitle;
   final bool showViewAll;
   final VoidCallback? onViewAll;
+  final Color? primaryTextColor;
+  final Color? secondaryTextColor;
 
   const DecisionLogsList({
     super.key,
@@ -20,6 +22,8 @@ class DecisionLogsList extends StatefulWidget {
     this.showTitle = true,
     this.showViewAll = true,
     this.onViewAll,
+    this.primaryTextColor,
+    this.secondaryTextColor,
   });
 
   @override
@@ -30,6 +34,15 @@ class _DecisionLogsListState extends State<DecisionLogsList> {
   final SupabaseCoachDecisionRepository _repo =
       SupabaseCoachDecisionRepository();
   late Future<List<CoachDecisionDto>> _decisionsFuture;
+
+  String _capitalizeFirstSentence(String value) {
+    final trimmed = value.trimLeft();
+    if (trimmed.isEmpty) {
+      return value.trim();
+    }
+    final first = trimmed.characters.first.toUpperCase();
+    return '$first${trimmed.characters.skip(1).toString()}';
+  }
 
   @override
   void initState() {
@@ -51,6 +64,9 @@ class _DecisionLogsListState extends State<DecisionLogsList> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final primaryText = widget.primaryTextColor ?? theme.colorScheme.onSurface;
+    final secondaryText = widget.secondaryTextColor ??
+        theme.colorScheme.onSurface.withValues(alpha: 0.6);
 
     void showDecisionDetails(CoachDecisionDto decision) {
       final timeLabel =
@@ -77,15 +93,17 @@ class _DecisionLogsListState extends State<DecisionLogsList> {
                 Text(
                   timeLabel,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: secondaryText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  decision.summary,
+                  _capitalizeFirstSentence(decision.summary),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     height: 1.5,
+                    fontWeight: FontWeight.w400,
+                    color: primaryText,
                   ),
                 ),
               ],
@@ -106,22 +124,26 @@ class _DecisionLogsListState extends State<DecisionLogsList> {
               Row(
                 children: [
                   if (widget.showViewAll && widget.onViewAll != null)
-                    TextButton(
-                      onPressed: widget.onViewAll,
-                      style: TextButton.styleFrom(
+                    InkWell(
+                      onTap: widget.onViewAll,
+                      borderRadius: BorderRadius.circular(5),
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                        backgroundColor: Colors.white.withValues(alpha: 0.06),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          'View all updates',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.black.withValues(alpha: 0.8),
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-                      child: const Text('View all updates'),
                     ),
                   const Spacer(),
                 ],
@@ -181,17 +203,18 @@ class _DecisionLogsListState extends State<DecisionLogsList> {
                                 Text(
                                   timeLabel,
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.6),
+                                    color: secondaryText,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  decision.summary,
+                                  _capitalizeFirstSentence(decision.summary),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
+                                    color: primaryText,
                                   ),
                                 ),
                                 if (!isLast) ...[

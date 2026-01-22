@@ -39,6 +39,18 @@ class AccessController extends ChangeNotifier {
   String? get clientOverrideId => _clientOverrideId;
   String? get clientOverrideName => _clientOverrideName;
 
+  Future<void> refreshCoachRole() async {
+    final currentUserId = _userId ?? _client.auth.currentUser?.id;
+    if (currentUserId == null || currentUserId.isEmpty) {
+      return;
+    }
+    _isRoleResolved = false;
+    notifyListeners();
+    await _refreshCoachStatus(userId: currentUserId);
+    _hasCachedRole = true;
+    notifyListeners();
+  }
+
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
@@ -118,7 +130,12 @@ class AccessController extends ChangeNotifier {
   }
 
   bool _hydrateCoachCache({required String? userId}) {
-    if (_didHydrateCache && _hydratedUserId == userId) return _hasCachedRole;
+    if (_didHydrateCache && _hydratedUserId == userId) {
+      if (_hasCachedRole) {
+        _isRoleResolved = true;
+      }
+      return _hasCachedRole;
+    }
     if (userId == null || userId.isEmpty) return false;
     _didHydrateCache = true;
     _hydratedUserId = userId;

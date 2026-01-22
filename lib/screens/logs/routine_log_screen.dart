@@ -11,6 +11,7 @@ import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/share/routine_share_service.dart';
 import 'package:trainware/share/shareable_routine_renderer.dart';
@@ -118,6 +119,9 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     logs.map((log) => log.volume).toList();
 
+    final accessController = context.read<AccessController>();
+    final isCoach = accessController.isCoach;
+
     return Scaffold(
         appBar: AppBar(
             backgroundColor: appBarBackgroundColor(context: context),
@@ -127,7 +131,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
               onPressed: context.pop,
             ),
-            actions: widget.isEditable
+            actions: widget.isEditable && !isCoach
                 ? [
                     IconButton(
                         onPressed: _showBottomSheet,
@@ -293,8 +297,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading:
-                  const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
+              leading: const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
               horizontalTitleGap: 6,
               title: Text("Edit Log"),
               onTap: _editLog,

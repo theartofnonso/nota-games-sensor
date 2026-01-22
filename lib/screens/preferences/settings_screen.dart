@@ -370,7 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   if (decisionClientId != null) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -2579,6 +2579,8 @@ class _DecisionLogSection extends StatelessWidget {
       limit: 3,
       showTitle: true,
       showViewAll: true,
+      primaryTextColor: Colors.grey.shade500,
+      secondaryTextColor: Colors.grey.shade300,
       onViewAll: () {
         showDecisionLogsBottomSheet(
           context: context,

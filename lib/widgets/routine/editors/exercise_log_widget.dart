@@ -36,12 +36,14 @@ class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
   final String exerciseLogId;
   final bool showSetCheck;
+  final ValueNotifier<bool>? timerRunningNotifier;
 
   const ExerciseLogWidget(
       {super.key,
       this.editorType = RoutineEditorMode.edit,
       required this.exerciseLogId,
-      this.showSetCheck = true});
+      this.showSetCheck = true,
+      this.timerRunningNotifier});
 
   @override
   State<ExerciseLogWidget> createState() => _ExerciseLogWidgetState();
@@ -916,6 +918,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                 DurationStopwatchWidget(
                                   key: _durationStopwatchKey,
                                   onLogSet: _onLogDurationSet,
+                                  onRunningChanged: (isRunning) {
+                                    widget.timerRunningNotifier?.value =
+                                        isRunning;
+                                  },
                                 ),
                               // For duration exercises in the template editor, we
                               // don't allow pre-configuring sets. Instead, show a

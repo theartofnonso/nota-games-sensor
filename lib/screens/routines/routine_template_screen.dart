@@ -80,7 +80,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: true);
-    final accessController = context.watch<AccessController>();
+    final accessController = context.read<AccessController>();
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -643,7 +643,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
-    final accessController = context.watch<AccessController>();
+    final accessController = context.read<AccessController>();
     final template = exerciseAndRoutineController.templateWhere(id: widget.id);
     final plan = template != null
         ? exerciseAndRoutineController.planWhere(id: template.planId)
