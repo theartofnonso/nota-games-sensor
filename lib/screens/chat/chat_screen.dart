@@ -541,6 +541,10 @@ class _ChatMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final outgoingColor = Colors.white;
+    final incomingColor = Colors.black;
+    final bubbleColor = isCurrentUser ? outgoingColor : incomingColor;
+    final textColor = isCurrentUser ? Colors.black : Colors.white;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -560,10 +564,17 @@ class _ChatMessageBubble extends StatelessWidget {
                   ),
                   child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isCurrentUser ? Colors.white : Colors.black,
-                      borderRadius: BorderRadius.circular(5),
+                      color: bubbleColor,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(18),
+                        topRight: const Radius.circular(18),
+                        bottomLeft:
+                            Radius.circular(isCurrentUser ? 18 : 4),
+                        bottomRight:
+                            Radius.circular(isCurrentUser ? 4 : 18),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,7 +582,7 @@ class _ChatMessageBubble extends StatelessWidget {
                         Text(
                           message.content,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: isCurrentUser ? Colors.black : Colors.white,
+                            color: textColor,
                             fontWeight: FontWeight.w400,
                             fontSize: 16,
                           ),
@@ -580,9 +591,7 @@ class _ChatMessageBubble extends StatelessWidget {
                         Text(
                           timestamp,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: isCurrentUser
-                                ? Colors.black.withValues(alpha: 0.7)
-                                : Colors.white.withValues(alpha: 0.7),
+                            color: textColor.withValues(alpha: 0.7),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -599,6 +608,7 @@ class _ChatMessageBubble extends StatelessWidget {
     );
   }
 }
+
 
 class _ChatListEntry {
   final ChatMessageDto? message;
