@@ -18,6 +18,7 @@ class SharedPrefs {
     remove(key: _weightUnitKey);
     remove(key: routineLogKey);
     remove(key: _coachModeKey);
+    remove(key: _coachModeUserIdKey);
   }
 
   void remove({required String key}) {
@@ -68,11 +69,18 @@ class SharedPrefs {
 
   /// Coach mode cache (for faster startup)
   final String _coachModeKey = "coach_mode_key";
+  final String _coachModeUserIdKey = "coach_mode_user_id_key";
 
   bool? getCoachMode() => _sharedPrefs?.getBool(_coachModeKey);
 
   void setCoachMode(bool value) {
     _sharedPrefs?.setBool(_coachModeKey, value);
+  }
+
+  String? getCoachModeUserId() => _sharedPrefs?.getString(_coachModeUserIdKey);
+
+  void setCoachModeUserId(String value) {
+    _sharedPrefs?.setString(_coachModeUserIdKey, value);
   }
 
 }

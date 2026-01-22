@@ -21,6 +21,7 @@ class AccessController extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isCoach = false;
   bool _didHydrateCache = false;
+  String? _hydratedUserId;
   String? _userId;
   String? _clientOverrideId;
   String? _clientOverrideName;
@@ -44,7 +45,7 @@ class AccessController extends ChangeNotifier {
     final session = _client.auth.currentSession;
     _isAuthenticated = session != null;
     _userId = session?.user.id;
-    _hydrateCoachCache();
+    _hydrateCoachCache(userId: _userId);
     _isLoading = false;
     notifyListeners();
     if (_isAuthenticated && _userId != null) {
@@ -57,7 +58,7 @@ class AccessController extends ChangeNotifier {
         _isAuthenticated = session != null;
         _userId = session?.user.id;
         _isCoach = false;
-        _hydrateCoachCache();
+        _hydrateCoachCache(userId: _userId);
         if (!_isAuthenticated) {
           _clientOverrideId = null;
           _clientOverrideName = null;
@@ -95,7 +96,7 @@ class AccessController extends ChangeNotifier {
       _isCoach = await _coachRepository
           .isCoach(userId: userId)
           .timeout(const Duration(seconds: 5));
-      _saveCoachCache(_isCoach);
+      _saveCoachCache(isCoach: _isCoach, userId: userId);
     } catch (_) {
       _isCoach = false;
     }
@@ -108,17 +109,21 @@ class AccessController extends ChangeNotifier {
     });
   }
 
-  void _hydrateCoachCache() {
-    if (_didHydrateCache) return;
+  void _hydrateCoachCache({required String? userId}) {
+    if (_didHydrateCache && _hydratedUserId == userId) return;
+    if (userId == null || userId.isEmpty) return;
     _didHydrateCache = true;
+    _hydratedUserId = userId;
+    final cachedUserId = SharedPrefs().getCoachModeUserId();
     final cached = SharedPrefs().getCoachMode();
-    if (cached != null) {
+    if (cached != null && cachedUserId == userId) {
       _isCoach = cached;
     }
   }
 
-  void _saveCoachCache(bool isCoach) {
+  void _saveCoachCache({required bool isCoach, required String userId}) {
     SharedPrefs().setCoachMode(isCoach);
+    SharedPrefs().setCoachModeUserId(userId);
   }
 
   @override

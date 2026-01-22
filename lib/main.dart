@@ -43,6 +43,7 @@ import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
+import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
 import 'dtos/appsync/routine_plan_dto.dart';
 import 'dtos/viewmodels/routine_log_arguments.dart';
@@ -193,8 +194,8 @@ void main() async {
           ),
         ),
         ChangeNotifierProvider<NutritionLogController>(
-          create: (BuildContext context) =>
-              NutritionLogController(accessController: context.read<AccessController>()),
+          create: (BuildContext context) => NutritionLogController(
+              accessController: context.read<AccessController>()),
         ),
         ChangeNotifierProvider<ExerciseLogController>(
             create: (BuildContext context) =>
@@ -218,121 +219,120 @@ GoRouter _createRouter(AccessController accessController) {
         return null;
       }
 
-      if (!accessController.isClientMode &&
-          state.matchedLocation != '/coach') {
+      if (!accessController.isClientMode && state.matchedLocation != '/coach') {
         return '/coach';
       }
       return null;
     },
     routes: [
-    GoRoute(
-        path: "/", // Define the path for Home Screen
-        builder: (context, state) => const Home()),
-    GoRoute(
-      path: '/coach',
-      builder: (context, state) => const CoachClientsScreen(
-        navigateToOverviewOnSelect: true,
+      GoRoute(
+          path: "/", // Define the path for Home Screen
+          builder: (context, state) => const Home()),
+      GoRoute(
+        path: '/coach',
+        builder: (context, state) => const CoachClientsScreen(
+          navigateToOverviewOnSelect: true,
+        ),
       ),
-    ),
-    GoRoute(
-      path: RoutineLogEditorScreen.routeName,
-      builder: (context, state) {
-        final args = state.extra as RoutineLogArguments;
-        return RoutineLogEditorScreen(
-          log: args.log,
-          mode: args.editorMode,
-          cached: args.cached,
-        );
-      },
-    ),
-    GoRoute(
-      path: RoutineTemplateEditorScreen.routeName,
-      builder: (context, state) {
-        final args = state.extra as RoutineTemplateArguments;
-        return RoutineTemplateEditorScreen(
-            template: args.template, planId: args.planId);
-      },
-    ),
-    GoRoute(
-      path: RoutinePlanEditorScreen.routeName,
-      builder: (context, state) {
-        final args = state.extra as RoutinePlanArguments?;
-        return RoutinePlanEditorScreen(plan: args?.plan);
-      },
-    ),
-    GoRoute(
-      path: ExerciseEditorScreen.routeName,
-      builder: (context, state) {
-        final args = state.extra as ExerciseEditorArguments?;
-        return ExerciseEditorScreen(exercise: args?.exercise);
-      },
-    ),
-    GoRoute(
-      path: RoutineTemplateScreen.routeName,
-      builder: (context, state) {
-        final template = state.extra as RoutineTemplateDto?;
-        return RoutineTemplateScreen(id: template?.id ?? "");
-      },
-    ),
-    GoRoute(
-      path: RoutinePlanScreen.routeName,
-      builder: (context, state) {
-        final plan = state.extra as RoutinePlanDto?;
-        return RoutinePlanScreen(id: plan?.id ?? "");
-      },
-    ),
-    GoRoute(
-      path: RoutineLogScreen.routeName,
-      pageBuilder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
-        final log = extra["log"] as RoutineLogDto?;
-        final isEditable = extra['isEditable'] as bool;
-        final showShareOnLoad = (extra['showShareOnLoad'] as bool?) ?? false;
+      GoRoute(
+        path: RoutineLogEditorScreen.routeName,
+        builder: (context, state) {
+          final args = state.extra as RoutineLogArguments;
+          return RoutineLogEditorScreen(
+            log: args.log,
+            mode: args.editorMode,
+            cached: args.cached,
+          );
+        },
+      ),
+      GoRoute(
+        path: RoutineTemplateEditorScreen.routeName,
+        builder: (context, state) {
+          final args = state.extra as RoutineTemplateArguments;
+          return RoutineTemplateEditorScreen(
+              template: args.template, planId: args.planId);
+        },
+      ),
+      GoRoute(
+        path: RoutinePlanEditorScreen.routeName,
+        builder: (context, state) {
+          final args = state.extra as RoutinePlanArguments?;
+          return RoutinePlanEditorScreen(plan: args?.plan);
+        },
+      ),
+      GoRoute(
+        path: ExerciseEditorScreen.routeName,
+        builder: (context, state) {
+          final args = state.extra as ExerciseEditorArguments?;
+          return ExerciseEditorScreen(exercise: args?.exercise);
+        },
+      ),
+      GoRoute(
+        path: RoutineTemplateScreen.routeName,
+        builder: (context, state) {
+          final template = state.extra as RoutineTemplateDto?;
+          return RoutineTemplateScreen(id: template?.id ?? "");
+        },
+      ),
+      GoRoute(
+        path: RoutinePlanScreen.routeName,
+        builder: (context, state) {
+          final plan = state.extra as RoutinePlanDto?;
+          return RoutinePlanScreen(id: plan?.id ?? "");
+        },
+      ),
+      GoRoute(
+        path: RoutineLogScreen.routeName,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final log = extra["log"] as RoutineLogDto?;
+          final isEditable = extra['isEditable'] as bool;
+          final showShareOnLoad = (extra['showShareOnLoad'] as bool?) ?? false;
 
-        return CustomTransitionPage(
-            child: RoutineLogScreen(
-                id: log?.id ?? "",
-                isEditable: isEditable,
-                showShareOnLoad: showShareOnLoad),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              const begin = Offset(0.0, 1.0);
-              const end = Offset.zero;
-              const curve = Curves.ease;
-              final tween =
-                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              final offsetAnimation = animation.drive(tween);
-              return SlideTransition(
-                position: offsetAnimation,
-                child: child,
-              );
-            });
-      },
-    ),
-    GoRoute(
-      path: SettingsScreen.routeName,
-      builder: (context, state) => const SettingsScreen(),
-    ),
-    GoRoute(
-      path: DecisionLogsScreen.routeName,
-      builder: (context, state) {
-        final clientId = state.extra as String?;
-        return DecisionLogsScreen(clientId: clientId ?? '');
-      },
-    ),
-    GoRoute(
-      path: ChatScreen.routeName,
-      builder: (context, state) {
-        // Get adminUserId from state params or use default from config
-        final adminUserId =
-            state.uri.queryParameters['adminUserId'] ?? ChatConfig.adminUserId;
-        return ChatScreen(adminUserId: adminUserId);
-      },
-    ),
-    GoRoute(
-      path: Home.routeName,
-      builder: (context, state) => const Home(),
-    ),
+          return CustomTransitionPage(
+              child: RoutineLogScreen(
+                  id: log?.id ?? "",
+                  isEditable: isEditable,
+                  showShareOnLoad: showShareOnLoad),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                const begin = Offset(0.0, 1.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+                final tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
+                final offsetAnimation = animation.drive(tween);
+                return SlideTransition(
+                  position: offsetAnimation,
+                  child: child,
+                );
+              });
+        },
+      ),
+      GoRoute(
+        path: SettingsScreen.routeName,
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: DecisionLogsScreen.routeName,
+        builder: (context, state) {
+          final clientId = state.extra as String?;
+          return DecisionLogsScreen(clientId: clientId ?? '');
+        },
+      ),
+      GoRoute(
+        path: ChatScreen.routeName,
+        builder: (context, state) {
+          // Get adminUserId from state params or use default from config
+          final adminUserId = state.uri.queryParameters['adminUserId'] ??
+              ChatConfig.adminUserId;
+          return ChatScreen(adminUserId: adminUserId);
+        },
+      ),
+      GoRoute(
+        path: Home.routeName,
+        builder: (context, state) => const Home(),
+      ),
     ],
   );
 }
@@ -370,12 +370,12 @@ class _MyAppState extends State<MyApp> {
     if (!mounted) return;
     final isAuthenticated = _accessController.isAuthenticated;
     final isCoach = _accessController.isCoach;
+    final shouldRebuild =
+        isAuthenticated != _lastAuthenticated || isCoach != _lastCoach;
 
-    if (isAuthenticated &&
-        (!_lastAuthenticated || isCoach != _lastCoach)) {
+    if (isAuthenticated && (!_lastAuthenticated || isCoach != _lastCoach)) {
       try {
-        final controller =
-            context.read<SupabaseExerciseAndRoutineController>();
+        final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.setCoachMode(isCoach: isCoach);
         context.read<NutritionLogController>().setCoachMode(isCoach: isCoach);
         controller.initialize();
@@ -386,8 +386,7 @@ class _MyAppState extends State<MyApp> {
 
     if (!isAuthenticated && _lastAuthenticated) {
       try {
-        final controller =
-            context.read<SupabaseExerciseAndRoutineController>();
+        final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();
         controller.setCoachMode(isCoach: false);
         context.read<NutritionLogController>().setCoachMode(isCoach: false);
@@ -398,6 +397,10 @@ class _MyAppState extends State<MyApp> {
       } catch (e) {
         debugPrint('[Auth] Error clearing data: $e');
       }
+    }
+
+    if (shouldRebuild) {
+      setState(() {});
     }
 
     _lastAuthenticated = isAuthenticated;
@@ -445,11 +448,7 @@ class _MyAppState extends State<MyApp> {
         themeMode: ThemeMode.dark,
         theme: TRKRTheme.darkTheme,
         darkTheme: TRKRTheme.darkTheme,
-        home: Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
+        home: const TRKRLoadingScreen(),
       );
     }
 

@@ -228,7 +228,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 children: [
                   if (isCoach)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       child: Row(
                         children: [
                           if (headerInitials != null) ...[
