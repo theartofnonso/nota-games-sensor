@@ -461,97 +461,95 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           ),
           child: SafeArea(
             top: false,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    enabled: !_isSending,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDarkMode ? Colors.white : Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.withValues(alpha: 0.5),
+            child: GestureDetector(
+              onVerticalDragUpdate: (details) {
+                if (details.delta.dy > 6) {
+                  FocusScope.of(context).unfocus();
+                }
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.black.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    TextField(
+                      controller: _messageController,
+                      enabled: !_isSending,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isDarkMode ? Colors.white : Colors.black,
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
                       ),
-                      filled: true,
-                      fillColor: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.05),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.2)
-                              : Colors.black.withValues(alpha: 0.2),
-                          width: 1,
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        hintStyle: TextStyle(
+                          color: Colors.grey.withValues(alpha: 0.5),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          20,
+                          12,
+                          60,
+                          12,
                         ),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.2)
-                              : Colors.black.withValues(alpha: 0.2),
-                          width: 1,
+                      maxLines: null,
+                      textCapitalization: TextCapitalization.sentences,
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: _isSending ? null : _sendMessage,
+                            child: Container(
+                              alignment: Alignment.center,
+                              child: _isSending
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                      ),
+                                    )
+                                  : FaIcon(
+                                      FontAwesomeIcons.arrowUp,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                      size: 16,
+                                    ),
+                            ),
+                          ),
                         ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.4)
-                              : Colors.black.withValues(alpha: 0.4),
-                          width: 1,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
                       ),
                     ),
-                    maxLines: null,
-                    textCapitalization: TextCapitalization.sentences,
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                // Send button - no background, with border
-                SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap: _isSending ? null : _sendMessage,
-                      child: Container(
-                        alignment: Alignment.center,
-                        child: _isSending
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
-                                ),
-                              )
-                            : FaIcon(
-                                FontAwesomeIcons.arrowUp,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                                size: 18,
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
