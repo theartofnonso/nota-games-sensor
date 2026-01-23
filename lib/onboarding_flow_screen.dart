@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
+import 'app_flavor.dart';
 import 'utils/general_utils.dart';
 import 'utils/theme/color_extensions.dart';
 import 'utils/theme/theme.dart';
@@ -51,6 +52,34 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
       home: Builder(
         builder: (context) {
           final colors = Theme.of(context).extension<TRKRColors>()!;
+          final isCoach = AppConfig.isCoach;
+          final headingSpans = isCoach
+              ? const [
+                  TextSpan(text: 'personal coaching\n'),
+                  TextSpan(
+                    text: 'that keeps clients\n',
+                    style: TextStyle(
+                      fontSize: 42,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  TextSpan(
+                    text: 'on the right track.',
+                  ),
+                ]
+              : const [
+                  TextSpan(text: 'adaptive training\n'),
+                  TextSpan(
+                    text: 'that nudges you\n',
+                    style: TextStyle(
+                      fontSize: 42,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  TextSpan(
+                    text: 'in the right direction.',
+                  ),
+                ];
 
           return AnnotatedRegion<SystemUiOverlayStyle>(
             value: const SystemUiOverlayStyle(
@@ -106,9 +135,9 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Spacer(flex: 2),
-                          const Text(
-                            'Not Athletes',
-                            style: TextStyle(
+                          Text(
+                            isCoach ? 'Not Athletes Coach' : 'Not Athletes',
+                            style: const TextStyle(
                               fontFamily: 'GroutpixFlow',
                               color: Colors.white70,
                               fontSize: 16,
@@ -118,7 +147,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                           // Main heading text
                           RichText(
                             textAlign: TextAlign.left,
-                            text: const TextSpan(
+                            text: TextSpan(
                               style: TextStyle(
                                 fontFamily: 'Grift',
                                 color: Colors.white,
@@ -126,19 +155,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                                 fontWeight: FontWeight.bold,
                                 height: 1.2,
                               ),
-                              children: [
-                                TextSpan(text: 'adaptive training\n'),
-                                TextSpan(
-                                  text: 'that nudges you\n',
-                                  style: TextStyle(
-                                    fontSize: 42,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: 'in the right direction.',
-                                ),
-                              ],
+                              children: headingSpans,
                             ),
                           ),
                           const SizedBox(height: 60),
@@ -147,7 +164,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                             width: double.infinity,
                             height: 50,
                             child: OpacityButtonWidgetTwo(
-                              label: "Start Training",
+                              label: isCoach ? "Start Coaching" : "Start Training",
                               onPressed: widget.onPressed,
                               buttonColor: colors.vibrantAccent,
                             ),
