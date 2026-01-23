@@ -6,6 +6,7 @@ import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
+import 'package:trainware/app_flavor.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -255,7 +256,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                     children: [
                       Center(
                         child: Text(
-                          'Not Athletes',
+                          AppConfig.appName,
                           style: const TextStyle(
                             fontFamily: 'GroutpixFlow',
                             color: Colors.white70,
@@ -263,6 +264,19 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                           ),
                         ),
                       ),
+                      if (AppConfig.isCoach) ...[
+                        const SizedBox(height: 6),
+                        const Center(
+                          child: Text(
+                            'Coach sign-in',
+                            style: TextStyle(
+                              fontFamily: 'GroutpixFlow',
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 28),
                       // Modern Email Input with integrated button
                       if (!_otpSent)

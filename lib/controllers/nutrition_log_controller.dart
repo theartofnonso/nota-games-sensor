@@ -9,6 +9,7 @@ import 'package:trainware/offline_first/nutrition_log_offline_repository.dart';
 import 'package:trainware/offline_first/nutrition_template_offline_repository.dart';
 
 import '../logger.dart';
+import '../app_flavor.dart';
 import '../repositories/supabase/supabase_nutrition_log_repository.dart';
 import '../repositories/supabase/supabase_nutrition_template_repository.dart';
 import 'access_controller.dart';
@@ -16,8 +17,6 @@ import 'access_controller.dart';
 class NutritionLogController extends ChangeNotifier {
   bool isLoading = false;
   String errorMessage = '';
-  bool _isCoach = false;
-
   final logger = getLogger(className: 'NutritionLogController');
 
   late OfflineNutritionLogRepository _offlineRepository;
@@ -49,7 +48,7 @@ class NutritionLogController extends ChangeNotifier {
     if (accessController.isClientMode) {
       return UnmodifiableListView(_overrideLogs);
     }
-    if (_isCoach) {
+    if (AppConfig.isCoach) {
       return UnmodifiableListView(const []);
     }
     return UnmodifiableListView(_offlineRepository.offlineLogs);
@@ -59,7 +58,7 @@ class NutritionLogController extends ChangeNotifier {
     if (accessController.isClientMode) {
       return _overrideTemplate;
     }
-    final templates = _isCoach
+    final templates = AppConfig.isCoach
         ? const <NutritionTemplateDto>[]
         : _offlineTemplateRepository.offlineTemplates;
     if (templates.isEmpty) {
@@ -75,24 +74,7 @@ class NutritionLogController extends ChangeNotifier {
   String? get activeUserId =>
       accessController.clientOverrideId ??
       Supabase.instance.client.auth.currentUser?.id;
-  bool get isCoach => _isCoach;
-
-  void setCoachMode({required bool isCoach}) {
-    if (_isCoach == isCoach) return;
-    _isCoach = isCoach;
-    if (_isCoach) {
-      // ignore: discarded_futures
-      _clearOfflineCaches();
-    }
-    notifyListeners();
-  }
-
-  Future<void> _clearOfflineCaches() async {
-    await Future.wait([
-      _offlineRepository.clearCache(),
-      _offlineTemplateRepository.clearCache(),
-    ]);
-  }
+  bool get isCoach => AppConfig.isCoach;
 
   Future<void> initialize() async {
     isLoading = true;
@@ -102,7 +84,7 @@ class NutritionLogController extends ChangeNotifier {
       if (accessController.isClientMode &&
           accessController.clientOverrideId != null) {
         await _loadRemoteForClient(accessController.clientOverrideId!);
-      } else if (_isCoach) {
+      } else if (AppConfig.isCoach) {
         _overrideLogs = const [];
         _overrideTemplate = null;
       } else {
@@ -120,7 +102,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   Future<void> syncNutritionLogs() async {
-    if (accessController.isClientMode || _isCoach) {
+    if (accessController.isClientMode || AppConfig.isCoach) {
       return;
     }
     final connectivity = await Connectivity().checkConnectivity();

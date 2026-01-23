@@ -18,6 +18,7 @@ import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 import 'package:trainware/widgets/nutrition/calorie_tracking_card.dart';
+import 'package:trainware/app_flavor.dart';
 
 class NutritionTrackerScreen extends StatefulWidget {
   const NutritionTrackerScreen({super.key});
@@ -84,7 +85,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
               size: 24,
             ),
             onPressed: () {
-              if (controller.isCoach) {
+              if (AppConfig.isCoach) {
                 _showNutritionTemplateSheet();
               } else {
                 _showAddEntrySheet();
@@ -92,7 +93,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            tooltip: controller.isCoach ? 'Configure template' : 'Add entry',
+            tooltip: AppConfig.isCoach ? 'Configure template' : 'Add entry',
           ),
           const SizedBox(width: 6),
         ],
@@ -352,7 +353,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  if (!controller.isCoach)
+                  if (!AppConfig.isCoach)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -409,7 +410,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   }
 
   Future<void> _showAddEntrySheet({NutritionLogDto? existingLog}) async {
-    final nutritionController = context.read<NutritionLogController>();
     final titleController = TextEditingController(
       text: existingLog?.foodName ?? '',
     );
@@ -423,7 +423,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
       text: existingLog?.fats.toString() ?? '',
     );
     final isEditing = existingLog != null;
-    if (isEditing && nutritionController.isCoach) {
+    if (isEditing && AppConfig.isCoach) {
       showSnackbar(
         context: context,
         message: 'Coaches cannot edit nutrition logs.',
@@ -573,9 +573,9 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                       width: double.infinity,
                       child: OpacityButtonWidgetTwo(
                         onPressed: () async {
-                          final nutritionController =
-                              context.read<NutritionLogController>();
-                          final userId = nutritionController.activeUserId;
+                          final userId = context
+                              .read<NutritionLogController>()
+                              .activeUserId;
                           if (userId == null) {
                             showSnackbar(
                               context: context,

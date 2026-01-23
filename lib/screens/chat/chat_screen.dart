@@ -32,7 +32,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final ChatService _chatService = ChatService();
   final TextEditingController _messageController = TextEditingController();
   late final ScrollController _scrollController;
@@ -45,12 +45,14 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController = widget.scrollController ?? ScrollController();
     _initializeChat();
   }
 
   Future<void> _initializeChat() async {
     try {
+      if (!mounted) return;
       setState(() => _isLoading = true);
 
       // Get or create conversation
@@ -75,6 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
       // Load previous messages
       final previousMessages =
           await _chatService.loadPreviousMessages(limit: 50);
+      if (!mounted) return;
       setState(() {
         _messages.addAll(previousMessages);
         // Sort messages by timestamp in ascending order (oldest first, newest last)
@@ -114,6 +117,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       });
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -130,6 +134,24 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _refreshMessages() async {
+    try {
+      final previousMessages =
+          await _chatService.loadPreviousMessages(limit: 50);
+      if (!mounted) return;
+      setState(() {
+        for (final message in previousMessages) {
+          if (_messages.any((m) => m.id == message.id)) continue;
+          _messages.add(message);
+        }
+        _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      });
+      _scrollToBottom();
+    } catch (e) {
+      debugPrint('Error refreshing chat messages: $e');
     }
   }
 
@@ -150,12 +172,14 @@ class _ChatScreenState extends State<ChatScreen> {
     final messageText = _messageController.text.trim();
     if (messageText.isEmpty || _isSending) return;
 
+    if (!mounted) return;
     setState(() => _isSending = true);
     _messageController.clear();
 
     try {
       final sentMessage = await _chatService.sendMessage(messageText);
       // Add to local list if not already added by stream
+      if (!mounted) return;
       setState(() {
         final isDuplicate = _messages.any((m) => m.id == sentMessage.id);
         if (!isDuplicate) {
@@ -183,6 +207,31 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() => _isSending = false);
       }
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (_chatService.currentConversationId == null) {
+        _initializeChat();
+        return;
+      }
+      _chatService.refreshMessageSubscription();
+      _refreshMessages();
+      _chatService.markConversationAsRead();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _messageSubscription?.cancel();
+    _messageController.dispose();
+    // Only dispose if we created the controller ourselves
+    if (widget.scrollController == null) {
+      _scrollController.dispose();
+    }
+    super.dispose();
   }
 
   String _formatTimestamp(DateTime dateTime) {
@@ -253,17 +302,6 @@ class _ChatScreenState extends State<ChatScreen> {
       return 'Yesterday';
     }
     return DateFormat('EEEE, d MMM').format(messageDate);
-  }
-
-  @override
-  void dispose() {
-    _messageSubscription?.cancel();
-    _messageController.dispose();
-    // Only dispose if we created the controller ourselves
-    if (widget.scrollController == null) {
-      _scrollController.dispose();
-    }
-    super.dispose();
   }
 
   @override

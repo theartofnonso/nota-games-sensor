@@ -11,7 +11,6 @@ import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
-import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/share/routine_share_service.dart';
 import 'package:trainware/share/shareable_routine_renderer.dart';
@@ -27,6 +26,7 @@ import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
+import '../../app_flavor.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/personal_bests_utils.dart';
@@ -119,8 +119,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     logs.map((log) => log.volume).toList();
 
-    final accessController = context.read<AccessController>();
-    final isCoach = accessController.isCoach;
+    final isCoach = AppConfig.isCoach;
 
     return Scaffold(
         appBar: AppBar(
@@ -159,18 +158,20 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                         children: [
                           Builder(
                             builder: (context) {
-                              if (updatedLog.templateId.isEmpty) {
-                                return const SizedBox.shrink();
+                              String? attribution;
+                              if (updatedLog.templateId.isNotEmpty) {
+                                final template = exerciseAndRoutineController
+                                    .templateWhere(id: updatedLog.templateId);
+                                if (template != null) {
+                                  final plan = exerciseAndRoutineController
+                                      .planWhere(id: template.planId);
+                                  final isSystemTemplate =
+                                      plan?.isSystemPlan ?? false;
+                                  attribution = isSystemTemplate
+                                      ? 'Not Athletes'
+                                      : 'Created by you';
+                                }
                               }
-                              final template = exerciseAndRoutineController
-                                  .templateWhere(id: updatedLog.templateId);
-                              if (template == null) {
-                                return const SizedBox.shrink();
-                              }
-                              final plan = exerciseAndRoutineController
-                                  .planWhere(id: template.planId);
-                              final isSystemTemplate =
-                                  plan?.isSystemPlan ?? false;
 
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,16 +184,15 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
-                                  Text(
-                                    isSystemTemplate
-                                        ? 'Not Athletes'
-                                        : 'Created by you',
-                                    style: TextStyle(
-                                      fontFamily: 'GroutpixFlow',
-                                      color: Colors.blueGrey.shade400,
-                                      fontSize: 14,
+                                  if (attribution != null)
+                                    Text(
+                                      attribution,
+                                      style: TextStyle(
+                                        fontFamily: 'GroutpixFlow',
+                                        color: Colors.blueGrey.shade400,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               );
                             },

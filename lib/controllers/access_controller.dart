@@ -15,7 +15,6 @@ class AccessController extends ChangeNotifier {
   bool _initialized = false;
   bool _isLoading = true;
   bool _isAuthenticated = false;
-  bool _isCoach = AppConfig.isCoach;
   bool _isRoleResolved = true;
   String? _userId;
   String? _clientOverrideId;
@@ -24,7 +23,7 @@ class AccessController extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _isAuthenticated;
-  bool get isCoach => _isCoach;
+  bool get isCoach => AppConfig.isCoach;
   bool get isRoleResolved => _isRoleResolved;
   String? get userId => _userId;
   bool get isClientMode => _clientOverrideId != null;
@@ -40,7 +39,6 @@ class AccessController extends ChangeNotifier {
     final session = _client.auth.currentSession;
     _isAuthenticated = session != null;
     _userId = session?.user.id;
-    _isCoach = AppConfig.isCoach;
     _isRoleResolved = true;
     _isLoading = false;
     notifyListeners();
@@ -50,7 +48,6 @@ class AccessController extends ChangeNotifier {
         final session = data.session;
         _isAuthenticated = session != null;
         _userId = session?.user.id;
-        _isCoach = AppConfig.isCoach;
         _isRoleResolved = true;
         if (!_isAuthenticated) {
           _clientOverrideId = null;
@@ -62,7 +59,6 @@ class AccessController extends ChangeNotifier {
       onError: (_) {
         _isAuthenticated = false;
         _userId = null;
-        _isCoach = AppConfig.isCoach;
         _clientOverrideId = null;
         _clientOverrideName = null;
         _isRoleResolved = true;

@@ -17,12 +17,13 @@ import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/screens/request_screens/notifications_request.dart';
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/shared_prefs.dart';
+import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../controllers/access_controller.dart';
-import '../../config/chat_config.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
@@ -102,8 +103,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _hasCachedSession = false;
 
   int _chatUnreadCount = 0;
-  RealtimeChannel? _chatUnreadChannel;
-  String? _chatConversationId;
   bool _nutritionInitialized = false;
 
   @override
@@ -115,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final nutritionController = context.watch<NutritionLogController>();
     final accessController = context.watch<AccessController>();
     final isClientMode = accessController.isClientMode;
-    final isCoach = accessController.isCoach;
+    final isCoach = AppConfig.isCoach;
     final consumedCalories = _sumCaloriesToday(nutritionController.logs);
     final goalCalories = nutritionController.calorieTarget;
     final hasLogsToday = _hasLogsToday(nutritionController.logs);
@@ -181,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: InkWell(
                     onTap: () async {
                       await navigateToChat(context: context);
-                      await _refreshChatUnreadCount();
+                      await ChatUnreadService().refreshUnreadCount();
                     },
                     borderRadius: BorderRadius.circular(28),
                     child: Center(
@@ -582,13 +581,14 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _goBackToCoachList() async {
+    if (!mounted) return;
     final routineController =
         context.read<SupabaseExerciseAndRoutineController>();
+    final nutritionController = context.read<NutritionLogController>();
     await routineController.clearClientOverride();
-    await context.read<NutritionLogController>().clearClientOverride();
-    if (context.mounted) {
-      context.go('/coach');
-    }
+    await nutritionController.clearClientOverride();
+    if (!mounted) return;
+    context.go('/coach');
   }
 
   void _openWebpage() {
@@ -661,6 +661,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           context: context,
           child: NotificationsRequestScreen(onRequest: () {
             requestNotificationPermission().then((status) {
+              if (!mounted) return;
               setState(() {
                 _notificationEnabled = status;
               });
@@ -674,6 +675,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _checkNotificationPermission() async {
     final result = await checkIosNotificationPermission();
+    if (!mounted) return;
     setState(() {
       _notificationEnabled = result.isEnabled;
     });
@@ -809,6 +811,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     final version = packageInfo.version;
     final buildNumber = packageInfo.buildNumber;
+    if (!mounted) return;
     setState(() {
       _appVersion = "APP VERSION: $version (BUILD $buildNumber)";
     });
@@ -896,7 +899,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     _checkNotificationPermission();
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
-    _initChatUnread();
+    _chatUnreadCount = ChatUnreadService().unreadCount.value;
+    ChatUnreadService().unreadCount.addListener(_handleChatUnreadChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _nutritionInitialized) return;
       _nutritionInitialized = true;
@@ -904,80 +908,18 @@ class _SettingsScreenState extends State<SettingsScreen>
     });
   }
 
-  Future<void> _initChatUnread() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
-
-    final conversation = await Supabase.instance.client
-        .from('chat_conversations')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('coach_id', ChatConfig.adminUserId)
-        .maybeSingle();
-
-    if (conversation == null) {
-      if (mounted) {
-        setState(() => _chatUnreadCount = 0);
-      }
-      return;
-    }
-
-    _chatConversationId = conversation['id'] as String;
-    await _refreshChatUnreadCount();
-    _subscribeChatUnread();
-  }
-
-  Future<void> _refreshChatUnreadCount() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    final conversationId = _chatConversationId;
-    if (userId == null || conversationId == null) return;
-
-    final response = await Supabase.instance.client
-        .from('chat_messages')
-        .select()
-        .eq('conversation_id', conversationId)
-        .neq('sender_id', userId)
-        .eq('is_read', false);
-
-    if (mounted) {
-      setState(() => _chatUnreadCount = (response as List).length);
-    }
-  }
-
-  void _subscribeChatUnread() {
-    final conversationId = _chatConversationId;
-    if (conversationId == null) return;
-
-    if (_chatUnreadChannel != null) {
-      Supabase.instance.client.removeChannel(_chatUnreadChannel!);
-    }
-
-    _chatUnreadChannel = Supabase.instance.client
-        .channel('chat_messages_unread_$conversationId')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'chat_messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'conversation_id',
-            value: conversationId,
-          ),
-          callback: (_) {
-            _refreshChatUnreadCount();
-          },
-        )
-        .subscribe();
+  void _handleChatUnreadChange() {
+    if (!mounted) return;
+    setState(() {
+      _chatUnreadCount = ChatUnreadService().unreadCount.value;
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     SharedPrefs().routineLogRevision.removeListener(_checkCachedSession);
-    if (_chatUnreadChannel != null) {
-      Supabase.instance.client.removeChannel(_chatUnreadChannel!);
-      _chatUnreadChannel = null;
-    }
+    ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
     super.dispose();
   }
 
@@ -987,6 +929,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (state == AppLifecycleState.resumed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkNotificationPermission();
+        ChatUnreadService().refreshSubscription();
+        ChatUnreadService().refreshUnreadCount();
       });
     }
   }

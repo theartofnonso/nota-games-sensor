@@ -24,12 +24,11 @@ import '../repositories/supabase/supabase_routine_template_repository.dart';
 import '../utils/notifications_utils.dart';
 import '../utils/routine_utils.dart';
 import 'access_controller.dart';
+import '../app_flavor.dart';
 
 class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   bool isLoading = false;
   String errorMessage = '';
-  bool _isCoach = false;
-
   final logger = getLogger(className: "SupabaseExerciseAndRoutineController");
 
   late SupabaseExerciseRepository _exerciseRepository;
@@ -70,7 +69,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   UnmodifiableListView<ExerciseDto> get exercises => UnmodifiableListView(
         accessController.isClientMode
             ? _overrideExercises
-            : (_isCoach
+            : (AppConfig.isCoach
                 ? const []
                 : _offlineExerciseRepository.offlineExercises),
       );
@@ -79,7 +78,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       UnmodifiableListView(
         accessController.isClientMode
             ? _overrideTemplates
-            : (_isCoach
+            : (AppConfig.isCoach
                 ? const []
                 : _offlineTemplateRepository.offlineTemplates),
       );
@@ -87,39 +86,24 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   UnmodifiableListView<RoutinePlanDto> get plans => UnmodifiableListView(
         accessController.isClientMode
             ? _overridePlans
-            : (_isCoach ? const [] : _offlinePlanRepository.offlinePlans),
+            : (AppConfig.isCoach
+                ? const []
+                : _offlinePlanRepository.offlinePlans),
       );
 
   /// Offline-first view of routine logs backed by local cache and sync engine.
   UnmodifiableListView<RoutineLogDto> get logs => UnmodifiableListView(
         accessController.isClientMode
             ? _overrideLogs
-            : (_isCoach ? const [] : _offlineLogRepository.offlineLogs),
+            : (AppConfig.isCoach
+                ? const []
+                : _offlineLogRepository.offlineLogs),
       );
 
   /// Direct view of logs loaded from Supabase (used internally by the
   /// offline sync engine and for debugging; prefer [logs] in the UI).
   UnmodifiableListView<RoutineLogDto> get remoteLogs => _logRepository.logs;
-  bool get isCoach => _isCoach;
-
-  void setCoachMode({required bool isCoach}) {
-    if (_isCoach == isCoach) return;
-    _isCoach = isCoach;
-    if (_isCoach) {
-      // ignore: discarded_futures
-      _clearOfflineCaches();
-    }
-    notifyListeners();
-  }
-
-  Future<void> _clearOfflineCaches() async {
-    await Future.wait([
-      _offlineExerciseRepository.clearCache(),
-      _offlineTemplateRepository.clearCache(),
-      _offlinePlanRepository.clearCache(),
-      _offlineLogRepository.clearCache(),
-    ]);
-  }
+  bool get isCoach => AppConfig.isCoach;
 
   UnmodifiableMapView<String, List<ExerciseLogDto>>
       get exerciseLogsByExerciseId =>
@@ -158,7 +142,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         notifyListeners();
         return;
       }
-      if (_isCoach) {
+      if (AppConfig.isCoach) {
         _overrideExercises = const [];
         _overrideTemplates = const [];
         _overridePlans = const [];
@@ -189,7 +173,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Manually trigger a routine log sync (e.g. on pull-to-refresh or
   /// connectivity change).
   Future<void> syncRoutineLogs() async {
-    if (accessController.isClientMode || _isCoach) {
+    if (accessController.isClientMode || AppConfig.isCoach) {
       return;
     }
     final connectivity = await Connectivity().checkConnectivity();
@@ -935,7 +919,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> _loadRemoteForClient(String clientId) async {
     final ownerId = Supabase.instance.client.auth.currentUser?.id;
-    if (_isCoach) {
+    if (AppConfig.isCoach) {
       _overrideExercises = const [];
     } else {
       await _exerciseRepository.loadUserExercises(userIdOverride: clientId);

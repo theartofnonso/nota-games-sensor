@@ -4,6 +4,7 @@ import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:trainware/app_flavor.dart';
 
 import 'overview_screen.dart';
 
@@ -31,7 +32,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         listen: false);
 
     // If the user is a coach, don't load data from supabase, this will be done in the coach screen.
-    if (controller.isCoach) {
+    if (AppConfig.isCoach) {
       return;
     }
 
@@ -55,7 +56,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       final controller = Provider.of<SupabaseExerciseAndRoutineController>(
           context,
           listen: false);
-      if (controller.isCoach) {
+      if (AppConfig.isCoach) {
         return;
       }
       await controller.initialize();

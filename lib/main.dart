@@ -41,6 +41,7 @@ import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
+import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -218,7 +219,7 @@ GoRouter _createRouter(AccessController accessController) {
     observers: [appRouteObserver],
     refreshListenable: accessController,
     redirect: (context, state) {
-      if (!accessController.isCoach) {
+      if (!AppConfig.isCoach) {
         if (state.matchedLocation == '/coach') {
           return '/';
         }
@@ -364,7 +365,7 @@ class _MyAppState extends State<MyApp> {
     _accessController = context.read<AccessController>();
     _router = _createRouter(_accessController);
     _lastAuthenticated = _accessController.isAuthenticated;
-    _lastCoach = _accessController.isCoach;
+    _lastCoach = AppConfig.isCoach;
     _accessController.addListener(_handleAccessChanged);
     _listenToConnectivity();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -375,15 +376,13 @@ class _MyAppState extends State<MyApp> {
   void _handleAccessChanged() {
     if (!mounted) return;
     final isAuthenticated = _accessController.isAuthenticated;
-    final isCoach = _accessController.isCoach;
+    final isCoach = AppConfig.isCoach;
     final shouldRebuild =
         isAuthenticated != _lastAuthenticated || isCoach != _lastCoach;
 
     if (isAuthenticated && (!_lastAuthenticated || isCoach != _lastCoach)) {
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
-        controller.setCoachMode(isCoach: isCoach);
-        context.read<NutritionLogController>().setCoachMode(isCoach: isCoach);
         controller.initialize();
       } catch (e) {
         debugPrint('[Auth] Error initializing data: $e');
@@ -394,15 +393,23 @@ class _MyAppState extends State<MyApp> {
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();
-        controller.setCoachMode(isCoach: false);
-        context.read<NutritionLogController>().setCoachMode(isCoach: false);
         setState(() {
           _isFirstLaunch = true;
           SharedPrefs().firstLaunch = true;
         });
+        ChatUnreadService().clear();
       } catch (e) {
         debugPrint('[Auth] Error clearing data: $e');
       }
+    }
+
+    if (isAuthenticated) {
+      final accessController = _accessController;
+      ChatUnreadService().updateContext(
+        userId: accessController.userId,
+        coachId: ChatConfig.adminUserId,
+        userIdOverride: accessController.clientOverrideId,
+      );
     }
 
     if (shouldRebuild) {

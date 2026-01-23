@@ -237,6 +237,15 @@ class ChatService {
     }
   }
 
+  /// Re-subscribe after app resumes or connection drops.
+  void refreshMessageSubscription() {
+    if (_currentConversationId == null) {
+      logger.w('Cannot refresh subscription: no active conversation');
+      return;
+    }
+    setupMessageSubscription();
+  }
+
   /// Get current conversation ID
   String? get currentConversationId => _currentConversationId;
 
