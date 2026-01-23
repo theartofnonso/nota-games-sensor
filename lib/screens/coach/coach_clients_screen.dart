@@ -8,6 +8,7 @@ import 'package:trainware/controllers/supabase_exercise_and_routine_controller.d
 import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/widgets/badges/unread_badge.dart';
+import 'package:trainware/widgets/search_bar.dart';
 import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 
 class CoachClientsScreen extends StatefulWidget {
@@ -27,12 +28,15 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
   late Future<List<_CoachClient>> _clientsFuture;
   String? _loadingClientId;
   Map<String, int> _unreadByClientId = const {};
+  late final TextEditingController _searchController;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _clientsFuture = _loadClients();
+    _searchController = TextEditingController();
     _unreadByClientId = ChatUnreadCountsService().unreadByClientId.value;
     ChatUnreadCountsService().unreadByClientId.addListener(_handleUnreadChange);
     ChatUnreadCountsService()
@@ -45,6 +49,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     ChatUnreadCountsService()
         .unreadByClientId
         .removeListener(_handleUnreadChange);
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -72,6 +77,27 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     }
     await next;
     await ChatUnreadCountsService().refreshUnreadCounts();
+  }
+
+  void _updateSearch(String value) {
+    if (!mounted) return;
+    setState(() {
+      _searchQuery = value.trim();
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _updateSearch('');
+  }
+
+  List<_CoachClient> _filterClients(List<_CoachClient> clients) {
+    final query = _searchQuery.toLowerCase();
+    if (query.isEmpty) return clients;
+    return clients.where((client) {
+      final name = client.name.toLowerCase();
+      return name.contains(query);
+    }).toList();
   }
 
   Future<List<_CoachClient>> _loadClients() async {
@@ -117,7 +143,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                 );
               }
 
-              final clients = snapshot.data ?? const [];
+              final clients = _filterClients(snapshot.data ?? const []);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -137,6 +163,16 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                     ),
                   ),
                   const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
+                    child: CSearchBar(
+                      hintText: 'Search clients',
+                      onChanged: _updateSearch,
+                      onClear: _clearSearch,
+                      controller: _searchController,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   if (clients.isEmpty)
                     const Expanded(
                       child: ListEmptyState(
