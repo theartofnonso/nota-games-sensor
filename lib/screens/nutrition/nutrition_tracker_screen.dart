@@ -6,13 +6,11 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:trainware/dtos/nutrition/nutrition_template_dto.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/dialog_utils.dart';
-import 'package:trainware/utils/decision_log_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
@@ -187,26 +185,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
     if (shouldDelete != true) {
       return false;
-    }
-
-    final nutritionController = context.read<NutritionLogController>();
-    final accessController = context.read<AccessController>();
-    if (accessController.isClientMode) {
-      final clientId = nutritionController.activeUserId;
-      if (clientId == null) {
-        showSnackbar(
-          context: context,
-          message: 'Missing client context for decision log.',
-        );
-        return false;
-      }
-      final logged = await requireDecisionLog(
-        context: context,
-        clientId: clientId,
-      );
-      if (!logged) {
-        return false;
-      }
     }
 
     await context.read<NutritionLogController>().removeLog(id: log.id);
@@ -598,16 +576,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                           final fats = _parseMacro(fatsController.text);
                           final now = DateTime.now();
 
-                          if (context.read<AccessController>().isClientMode) {
-                            final logged = await requireDecisionLog(
-                              context: context,
-                              clientId: userId,
-                            );
-                            if (!logged) {
-                              return;
-                            }
-                          }
-
                           final log = NutritionLogDto(
                             id: existingLog?.id ?? const Uuid().v4(),
                             userId: userId,
@@ -841,16 +809,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                           context: ctx,
                           message: 'Unable to save template.',
                         );
-                        return;
-                      }
-
-                      final logged = await requireDecisionLogIfClientMode(
-                        context: ctx,
-                        isClientMode:
-                            context.read<AccessController>().isClientMode,
-                        clientId: clientId,
-                      );
-                      if (!logged) {
                         return;
                       }
 

@@ -25,7 +25,6 @@ import 'package:trainware/repositories/supabase/supabase_routine_log_repository.
 import 'package:trainware/repositories/supabase/supabase_routine_plan_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_template_repository.dart';
 import 'package:trainware/screens/auth/supabase_auth_screen.dart';
-import 'package:trainware/screens/coach/decision_logs_screen.dart';
 import 'package:trainware/screens/editors/exercise_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_plan_editor_screen.dart';
@@ -42,6 +41,7 @@ import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/services/chat_unread_service.dart';
+import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -233,13 +233,38 @@ GoRouter _createRouter(AccessController accessController) {
     },
     routes: [
       GoRoute(
-          path: "/", // Define the path for Home Screen
-          builder: (context, state) => const Home()),
+        path: "/", // Define the path for Home Screen
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const Home(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+          );
+        },
+      ),
       GoRoute(
         path: '/coach',
-        builder: (context, state) => const CoachClientsScreen(
-          navigateToOverviewOnSelect: true,
-        ),
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const CoachClientsScreen(
+              navigateToOverviewOnSelect: true,
+            ),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+          );
+        },
       ),
       GoRoute(
         path: RoutineLogEditorScreen.routeName,
@@ -321,13 +346,6 @@ GoRouter _createRouter(AccessController accessController) {
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
-        path: DecisionLogsScreen.routeName,
-        builder: (context, state) {
-          final clientId = state.extra as String?;
-          return DecisionLogsScreen(clientId: clientId ?? '');
-        },
-      ),
-      GoRoute(
         path: ChatScreen.routeName,
         builder: (context, state) {
           // Get adminUserId from state params or use default from config
@@ -398,6 +416,7 @@ class _MyAppState extends State<MyApp> {
           SharedPrefs().firstLaunch = true;
         });
         ChatUnreadService().clear();
+        ChatUnreadCountsService().clear();
       } catch (e) {
         debugPrint('[Auth] Error clearing data: $e');
       }
@@ -405,11 +424,16 @@ class _MyAppState extends State<MyApp> {
 
     if (isAuthenticated) {
       final accessController = _accessController;
-      ChatUnreadService().updateContext(
-        userId: accessController.userId,
-        coachId: ChatConfig.adminUserId,
-        userIdOverride: accessController.clientOverrideId,
-      );
+      if (AppConfig.isCoach) {
+        ChatUnreadCountsService()
+            .updateContext(coachId: accessController.userId);
+      } else {
+        ChatUnreadService().updateContext(
+          userId: accessController.userId,
+          coachId: ChatConfig.adminUserId,
+          userIdOverride: accessController.clientOverrideId,
+        );
+      }
     }
 
     if (shouldRebuild) {

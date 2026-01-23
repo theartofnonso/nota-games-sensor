@@ -55,26 +55,18 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
           final isCoach = AppConfig.isCoach;
           final headingSpans = isCoach
               ? const [
-                  TextSpan(text: 'personal coaching\n'),
+                  TextSpan(text: 'personal training\n'),
                   TextSpan(
-                    text: 'that keeps clients\n',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    text: 'that nudges clients\n',
                   ),
                   TextSpan(
-                    text: 'on the right track.',
+                    text: 'in the right direction.',
                   ),
                 ]
               : const [
                   TextSpan(text: 'adaptive training\n'),
                   TextSpan(
                     text: 'that nudges you\n',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.w600,
-                    ),
                   ),
                   TextSpan(
                     text: 'in the right direction.',
@@ -164,7 +156,8 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                             width: double.infinity,
                             height: 50,
                             child: OpacityButtonWidgetTwo(
-                              label: isCoach ? "Start Coaching" : "Start Training",
+                              label:
+                                  isCoach ? "Start Coaching" : "Start Training",
                               onPressed: widget.onPressed,
                               buttonColor: colors.vibrantAccent,
                             ),

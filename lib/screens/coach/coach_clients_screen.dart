@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/general_utils.dart';
+import 'package:trainware/widgets/badges/unread_badge.dart';
 import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 
 class CoachClientsScreen extends StatefulWidget {
@@ -20,14 +22,56 @@ class CoachClientsScreen extends StatefulWidget {
   State<CoachClientsScreen> createState() => _CoachClientsScreenState();
 }
 
-class _CoachClientsScreenState extends State<CoachClientsScreen> {
-  late final Future<List<_CoachClient>> _clientsFuture;
+class _CoachClientsScreenState extends State<CoachClientsScreen>
+    with WidgetsBindingObserver {
+  late Future<List<_CoachClient>> _clientsFuture;
   String? _loadingClientId;
+  Map<String, int> _unreadByClientId = const {};
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _clientsFuture = _loadClients();
+    _unreadByClientId = ChatUnreadCountsService().unreadByClientId.value;
+    ChatUnreadCountsService().unreadByClientId.addListener(_handleUnreadChange);
+    ChatUnreadCountsService()
+        .updateContext(coachId: Supabase.instance.client.auth.currentUser?.id);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    ChatUnreadCountsService()
+        .unreadByClientId
+        .removeListener(_handleUnreadChange);
+    super.dispose();
+  }
+
+  void _handleUnreadChange() {
+    if (!mounted) return;
+    setState(() {
+      _unreadByClientId = ChatUnreadCountsService().unreadByClientId.value;
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ChatUnreadCountsService().refreshSubscription();
+      ChatUnreadCountsService().refreshUnreadCounts();
+    }
+  }
+
+  Future<void> _refreshClientsAndUnread() async {
+    final next = _loadClients();
+    if (mounted) {
+      setState(() {
+        _clientsFuture = next;
+      });
+    }
+    await next;
+    await ChatUnreadCountsService().refreshUnreadCounts();
   }
 
   Future<List<_CoachClient>> _loadClients() async {
@@ -102,12 +146,16 @@ class _CoachClientsScreenState extends State<CoachClientsScreen> {
                     )
                   else
                     Expanded(
-                      child: ListView.separated(
+                      child: RefreshIndicator(
+                        onRefresh: _refreshClientsAndUnread,
+                        child: ListView.separated(
                         itemCount: clients.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final client = clients[index];
                           final isLoadingClient = _loadingClientId == client.id;
+                          final unreadCount =
+                              _unreadByClientId[client.id] ?? 0;
                           final joinedLabel = DateFormat('MMM yyyy')
                               .format(client.createdAt.toLocal());
                           return InkWell(
@@ -206,17 +254,31 @@ class _CoachClientsScreenState extends State<CoachClientsScreen> {
                                           strokeWidth: 2),
                                     )
                                   else
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      color:
-                                          Colors.white.withValues(alpha: 0.7),
-                                      size: 22,
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        UnreadBadge(
+                                          count: unreadCount,
+                                          fontSize: 11,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                        ),
+                                        if (unreadCount > 0)
+                                          const SizedBox(width: 8),
+                                        Icon(
+                                          Icons.chevron_right_rounded,
+                                          color: Colors.white
+                                              .withValues(alpha: 0.7),
+                                          size: 22,
+                                        ),
+                                      ],
                                     ),
                                 ],
                               ),
                             ),
                           );
                         },
+                      ),
                       ),
                     ),
                 ],

@@ -4,13 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/exercise_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
 import 'package:trainware/utils/dialog_utils.dart';
-import 'package:trainware/utils/decision_log_utils.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -104,16 +102,6 @@ class _RoutineTemplateEditorScreenState
         exerciseTemplates: exercises,
         planId: widget.planId);
 
-    final accessController = context.read<AccessController>();
-    final logged = await requireDecisionLogIfClientMode(
-      context: context,
-      isClientMode: accessController.isClientMode,
-      clientId: accessController.clientOverrideId,
-    );
-    if (!logged) {
-      return;
-    }
-
     await Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false)
         .saveTemplate(templateDto: template);
@@ -166,16 +154,6 @@ class _RoutineTemplateEditorScreenState
 
     final updatedRoutineTemplate =
         _getUpdatedRoutineTemplate(template: updatedTemplate);
-
-    final accessController = context.read<AccessController>();
-    final logged = await requireDecisionLogIfClientMode(
-      context: context,
-      isClientMode: accessController.isClientMode,
-      clientId: accessController.clientOverrideId,
-    );
-    if (!logged) {
-      return false;
-    }
 
     await templateProvider.updateTemplate(template: updatedRoutineTemplate);
     return true;

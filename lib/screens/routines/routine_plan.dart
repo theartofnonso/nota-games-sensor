@@ -14,7 +14,6 @@ import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../utils/dialog_utils.dart';
-import '../../utils/decision_log_utils.dart';
 import '../../controllers/access_controller.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
@@ -362,16 +361,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
           Provider.of<SupabaseExerciseAndRoutineController>(context,
               listen: false);
 
-      final accessController = context.read<AccessController>();
-      final logged = await requireDecisionLogIfClientMode(
-        context: context,
-        isClientMode: accessController.isClientMode,
-        clientId: accessController.clientOverrideId,
-      );
-      if (!logged) {
-        return;
-      }
-
       await exerciseAndRoutineController.removePlan(plan: plan);
 
       if (mounted) {
@@ -418,16 +407,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       final exerciseAndRoutineController =
           Provider.of<SupabaseExerciseAndRoutineController>(context,
               listen: false);
-      final accessController = context.read<AccessController>();
-      final logged = await requireDecisionLogIfClientMode(
-        context: context,
-        isClientMode: accessController.isClientMode,
-        clientId: accessController.clientOverrideId,
-      );
-      if (!logged) {
-        return;
-      }
-
       final template = RoutineTemplateDto(
         id: "",
         name: result.name,

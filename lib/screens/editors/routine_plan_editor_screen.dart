@@ -3,10 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
-import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/utils/dialog_utils.dart';
-import 'package:trainware/utils/decision_log_utils.dart';
 
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../utils/general_utils.dart';
@@ -53,16 +51,6 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
 
-    final accessController = context.read<AccessController>();
-    final logged = await requireDecisionLogIfClientMode(
-      context: context,
-      isClientMode: accessController.isClientMode,
-      clientId: accessController.clientOverrideId,
-    );
-    if (!logged) {
-      return;
-    }
-
     final createdPlan = await templateController.savePlan(planDto: newPlan);
 
     _navigateBack(plan: createdPlan);
@@ -104,17 +92,6 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
     final planProvider = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
         listen: false);
-    final accessController = context.read<AccessController>();
-
-    final logged = await requireDecisionLogIfClientMode(
-      context: context,
-      isClientMode: accessController.isClientMode,
-      clientId: accessController.clientOverrideId,
-    );
-    if (!logged) {
-      return false;
-    }
-
     await planProvider.updatePlan(plan: planToBeUpdated);
     return true;
   }

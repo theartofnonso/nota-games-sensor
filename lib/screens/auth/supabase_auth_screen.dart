@@ -113,11 +113,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           _otpSent = true;
           _isLoading = false;
         });
-        showSnackbar(
-          context: context,
-          message: 'Check your email for the verification code',
-          backgroundColor: Theme.of(context).colors.vibrantAccent,
-        );
       }
     } on AuthException catch (error) {
       if (mounted) {
@@ -264,19 +259,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                           ),
                         ),
                       ),
-                      if (AppConfig.isCoach) ...[
-                        const SizedBox(height: 6),
-                        const Center(
-                          child: Text(
-                            'Coach sign-in',
-                            style: TextStyle(
-                              fontFamily: 'GroutpixFlow',
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
                       const SizedBox(height: 28),
                       // Modern Email Input with integrated button
                       if (!_otpSent)

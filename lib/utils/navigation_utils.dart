@@ -13,7 +13,6 @@ import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/utils/dialog_utils.dart';
-import 'package:trainware/utils/decision_log_utils.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
@@ -77,14 +76,6 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
   if (details == null) return null;
 
   final controller = context.read<SupabaseExerciseAndRoutineController>();
-  final accessController = context.read<AccessController>();
-  final logged = await requireDecisionLogIfClientMode(
-    context: context,
-    isClientMode: accessController.isClientMode,
-    clientId: accessController.clientOverrideId,
-  );
-  if (!logged) return null;
-
   if (isEditing) {
     final updated = initialPlan.copyWith(
       name: details.name,

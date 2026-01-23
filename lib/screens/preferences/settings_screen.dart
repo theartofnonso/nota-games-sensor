@@ -20,6 +20,7 @@ import 'package:trainware/screens/request_screens/notifications_request.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/services/chat_unread_service.dart';
+import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
@@ -30,7 +31,6 @@ import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
-import '../../utils/decision_log_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../services/training_prediction_service.dart';
 import '../../utils/navigation_utils.dart';
@@ -38,9 +38,9 @@ import '../../utils/uri_utils.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../widgets/badges/unread_badge.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
-import '../../widgets/decision_logs/decision_logs_list.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
@@ -133,11 +133,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     final logs = controller.logs;
     final yearStats = _YearTrainingStats.fromLogs(logs);
     final yearHoursStats = _YearHoursStats.fromLogs(logs);
-    final decisionClientId = isClientMode
-        ? accessController.clientOverrideId
-        : Supabase.instance.client.auth.currentUser?.id;
-    final decisionClientName =
-        isClientMode ? accessController.clientOverrideName : null;
     final headerName = isClientMode
         ? (accessController.clientOverrideName?.trim().isNotEmpty ?? false
             ? accessController.clientOverrideName!.trim()
@@ -199,21 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Positioned(
               top: -1,
               right: -1,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.amber,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  _chatUnreadCount > 99 ? '99+' : '$_chatUnreadCount+',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
+              child: UnreadBadge(count: _chatUnreadCount),
             ),
         ],
       ),
@@ -370,16 +351,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                     },
                   ),
                   const SizedBox(height: 20),
-                  if (decisionClientId != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: _DecisionLogSection(
-                        clientId: decisionClientId,
-                        clientName: decisionClientName,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
                   // Routine Plans section - edge-to-edge, no padding
                   _RoutinePlansSection(),
                   const SizedBox(height: 16),
@@ -899,8 +870,15 @@ class _SettingsScreenState extends State<SettingsScreen>
     _checkNotificationPermission();
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
-    _chatUnreadCount = ChatUnreadService().unreadCount.value;
-    ChatUnreadService().unreadCount.addListener(_handleChatUnreadChange);
+    if (AppConfig.isCoach) {
+      _chatUnreadCount = ChatUnreadCountsService().totalUnreadCount.value;
+      ChatUnreadCountsService()
+          .totalUnreadCount
+          .addListener(_handleChatUnreadChange);
+    } else {
+      _chatUnreadCount = ChatUnreadService().unreadCount.value;
+      ChatUnreadService().unreadCount.addListener(_handleChatUnreadChange);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _nutritionInitialized) return;
       _nutritionInitialized = true;
@@ -911,7 +889,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _handleChatUnreadChange() {
     if (!mounted) return;
     setState(() {
-      _chatUnreadCount = ChatUnreadService().unreadCount.value;
+      _chatUnreadCount = AppConfig.isCoach
+          ? ChatUnreadCountsService().totalUnreadCount.value
+          : ChatUnreadService().unreadCount.value;
     });
   }
 
@@ -919,7 +899,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     SharedPrefs().routineLogRevision.removeListener(_checkCachedSession);
-    ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
+    if (AppConfig.isCoach) {
+      ChatUnreadCountsService()
+          .totalUnreadCount
+          .removeListener(_handleChatUnreadChange);
+    } else {
+      ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
+    }
     super.dispose();
   }
 
@@ -2506,32 +2492,3 @@ class _CreatePlanCard extends StatelessWidget {
   }
 }
 
-class _DecisionLogSection extends StatelessWidget {
-  final String clientId;
-  final String? clientName;
-
-  const _DecisionLogSection({
-    required this.clientId,
-    this.clientName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DecisionLogsList(
-      clientId: clientId,
-      clientName: clientName,
-      limit: 3,
-      showTitle: true,
-      showViewAll: true,
-      primaryTextColor: Colors.grey.shade500,
-      secondaryTextColor: Colors.grey.shade300,
-      onViewAll: () {
-        showDecisionLogsBottomSheet(
-          context: context,
-          clientId: clientId,
-          clientName: clientName,
-        );
-      },
-    );
-  }
-}
