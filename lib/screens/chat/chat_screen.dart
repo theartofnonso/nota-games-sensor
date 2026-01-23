@@ -348,9 +348,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   child: Text(
                     clientInitials,
                     style: theme.textTheme.labelLarge?.copyWith(
-                          color: isDarkMode ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: isDarkMode ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -367,7 +367,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         fontSize: 17,
                       ),
                     ),
-                   
                     if (showClientHeader) const SizedBox.shrink(),
                   ],
                 ),
@@ -434,20 +433,20 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     final entries = _buildChatEntries();
                     final entry = entries[index];
 
-                      if (entry.isDivider) {
-                        return _ChatDateDivider(label: entry.label!);
-                      }
+                    if (entry.isDivider) {
+                      return _ChatDateDivider(label: entry.label!);
+                    }
 
-                      final message = entry.message!;
-                      final isCurrentUser = _isCurrentUserMessage(message);
+                    final message = entry.message!;
+                    final isCurrentUser = _isCurrentUserMessage(message);
 
-                      return _ChatMessageBubble(
-                        message: message,
-                        isCurrentUser: isCurrentUser,
-                        timestamp: _formatTimestamp(message.createdAt),
-                        isDarkMode: isDarkMode,
-                        vibrantAccent: colors?.vibrantAccent ?? Colors.green,
-                      );
+                    return _ChatMessageBubble(
+                      message: message,
+                      isCurrentUser: isCurrentUser,
+                      timestamp: _formatTimestamp(message.createdAt),
+                      isDarkMode: isDarkMode,
+                      vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+                    );
                   },
                 ),
         ),
@@ -485,7 +484,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                           ? Colors.white.withValues(alpha: 0.1)
                           : Colors.black.withValues(alpha: 0.05),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.2)
@@ -494,7 +493,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.2)
@@ -503,7 +502,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
                           color: isDarkMode
                               ? Colors.white.withValues(alpha: 0.4)
@@ -601,17 +600,15 @@ class _ChatMessageBubble extends StatelessWidget {
                     maxWidth: maxBubbleWidth,
                   ),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
                       color: bubbleColor,
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(18),
                         topRight: const Radius.circular(18),
-                        bottomLeft:
-                            Radius.circular(isCurrentUser ? 18 : 4),
-                        bottomRight:
-                            Radius.circular(isCurrentUser ? 4 : 18),
+                        bottomLeft: Radius.circular(isCurrentUser ? 18 : 4),
+                        bottomRight: Radius.circular(isCurrentUser ? 4 : 18),
                       ),
                     ),
                     child: Column(
@@ -646,7 +643,6 @@ class _ChatMessageBubble extends StatelessWidget {
     );
   }
 }
-
 
 class _ChatListEntry {
   final ChatMessageDto? message;
