@@ -172,7 +172,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                       controller: _searchController,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
                   if (clients.isEmpty)
                     const Expanded(
                       child: ListEmptyState(
@@ -185,136 +185,140 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                       child: RefreshIndicator(
                         onRefresh: _refreshClientsAndUnread,
                         child: ListView.separated(
-                        itemCount: clients.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final client = clients[index];
-                          final isLoadingClient = _loadingClientId == client.id;
-                          final unreadCount =
-                              _unreadByClientId[client.id] ?? 0;
-                          final joinedLabel = DateFormat('MMM yyyy')
-                              .format(client.createdAt.toLocal());
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(18),
-                            onTap: isLoadingClient
-                                ? null
-                                : () async {
-                                    setState(
-                                        () => _loadingClientId = client.id);
-                                    try {
-                                      await routineController.loadClientData(
-                                        clientId: client.id,
-                                        clientName: client.name,
-                                      );
-                                      await nutritionController.loadClientData(
-                                        clientId: client.id,
-                                      );
-                                      if (context.mounted) {
-                                        if (widget.navigateToOverviewOnSelect) {
-                                          context.go('/');
-                                        } else {
-                                          Navigator.of(context).pop();
+                          itemCount: clients.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final client = clients[index];
+                            final isLoadingClient =
+                                _loadingClientId == client.id;
+                            final unreadCount =
+                                _unreadByClientId[client.id] ?? 0;
+                            final joinedLabel = DateFormat('MMM yyyy')
+                                .format(client.createdAt.toLocal());
+                            return InkWell(
+                              borderRadius: BorderRadius.circular(18),
+                              onTap: isLoadingClient
+                                  ? null
+                                  : () async {
+                                      setState(
+                                          () => _loadingClientId = client.id);
+                                      try {
+                                        await routineController.loadClientData(
+                                          clientId: client.id,
+                                          clientName: client.name,
+                                        );
+                                        await nutritionController
+                                            .loadClientData(
+                                          clientId: client.id,
+                                        );
+                                        if (context.mounted) {
+                                          if (widget
+                                              .navigateToOverviewOnSelect) {
+                                            context.go('/');
+                                          } else {
+                                            Navigator.of(context).pop();
+                                          }
+                                        }
+                                      } finally {
+                                        if (mounted) {
+                                          setState(
+                                              () => _loadingClientId = null);
                                         }
                                       }
-                                    } finally {
-                                      if (mounted) {
-                                        setState(
-                                            () => _loadingClientId = null);
-                                      }
-                                    }
-                                  },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.08),
+                                    },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
                                 ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 42,
-                                    height: 42,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: Text(
-                                      client.initials,
-                                      style: theme.textTheme.titleSmall
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 42,
+                                      height: 42,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: Text(
+                                        client.initials,
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: isDarkMode
+                                              ? Colors.white
+                                              : Colors.black,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          client.name,
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.w600,
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            client.name,
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'Client since $joinedLabel',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            'Client since $joinedLabel',
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.6),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (isLoadingClient)
+                                      const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      )
+                                    else
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          UnreadBadge(
+                                            count: unreadCount,
+                                            fontSize: 11,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 4),
+                                          ),
+                                          if (unreadCount > 0)
+                                            const SizedBox(width: 8),
+                                          Icon(
+                                            Icons.chevron_right_rounded,
                                             color: Colors.white
-                                                .withValues(alpha: 0.6),
+                                                .withValues(alpha: 0.7),
+                                            size: 22,
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (isLoadingClient)
-                                    const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2),
-                                    )
-                                  else
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        UnreadBadge(
-                                          count: unreadCount,
-                                          fontSize: 11,
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                        ),
-                                        if (unreadCount > 0)
-                                          const SizedBox(width: 8),
-                                        Icon(
-                                          Icons.chevron_right_rounded,
-                                          color: Colors.white
-                                              .withValues(alpha: 0.7),
-                                          size: 22,
-                                        ),
-                                      ],
-                                    ),
-                                ],
+                                        ],
+                                      ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                 ],
