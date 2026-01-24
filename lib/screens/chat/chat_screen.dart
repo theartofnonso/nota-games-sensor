@@ -56,6 +56,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   String? _currentAgoraUserId;
   String? _targetAgoraUserId;
   late final String _messageHandlerId;
+  final Set<String> _attachmentDownloadsInFlight = {};
 
   bool _isLoading = true;
   bool _isSending = false;
@@ -188,6 +189,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     setState(() {
       for (final message in messages) {
         _mergeMessage(message);
+        _ensureAttachmentAvailable(message);
       }
       _sortMessages();
     });
@@ -204,6 +206,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           setState(() {
             for (final message in messages) {
               _mergeMessage(message);
+              _ensureAttachmentAvailable(message);
             }
             _sortMessages();
           });
@@ -214,8 +217,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   void _sortMessages() {
-    _messages
-        .sort((a, b) => _messageTimestamp(a).compareTo(_messageTimestamp(b)));
+    _messages.sort(
+      (a, b) => _messageTimestamp(a).compareTo(_messageTimestamp(b)),
+    );
   }
 
   void _mergeMessage(ChatMessage message) {
@@ -227,14 +231,42 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         return;
       }
     }
-    final index = _messages.indexWhere(
-      (m) => _isLikelyDuplicate(m, message),
-    );
+    final index = _messages.indexWhere((m) => _isLikelyDuplicate(m, message));
     if (index != -1) {
       _messages[index] = message;
       return;
     }
     _messages.add(message);
+  }
+
+  void _ensureAttachmentAvailable(ChatMessage message) {
+    final msgId = message.msgId;
+    if (msgId.isEmpty) return;
+    if (_attachmentDownloadsInFlight.contains(msgId)) return;
+
+    final body = message.body;
+    if (body is ChatImageMessageBody) {
+      if (_attachmentImage(body) != null) return;
+      _attachmentDownloadsInFlight.add(msgId);
+      ChatClient.getInstance.chatManager
+          .downloadThumbnail(message)
+          .whenComplete(() {
+        _attachmentDownloadsInFlight.remove(msgId);
+        _refreshMessages();
+      });
+      return;
+    }
+
+    if (body is ChatVideoMessageBody) {
+      if (_videoThumbnail(body) != null) return;
+      _attachmentDownloadsInFlight.add(msgId);
+      ChatClient.getInstance.chatManager
+          .downloadThumbnail(message)
+          .whenComplete(() {
+        _attachmentDownloadsInFlight.remove(msgId);
+        _refreshMessages();
+      });
+    }
   }
 
   bool _isLikelyDuplicate(ChatMessage existing, ChatMessage incoming) {
@@ -245,17 +277,19 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
     if (existing.from != incoming.from) return false;
     if (_messageContent(existing) != _messageContent(incoming)) return false;
-    final delta = (_messageTimestamp(existing).millisecondsSinceEpoch -
-            _messageTimestamp(incoming).millisecondsSinceEpoch)
-        .abs();
+    final delta =
+        (_messageTimestamp(existing).millisecondsSinceEpoch -
+                _messageTimestamp(incoming).millisecondsSinceEpoch)
+            .abs();
     return delta <= 2000;
   }
 
   DateTime _messageTimestamp(ChatMessage message) {
     final serverTime = message.serverTime;
     final localTime = message.localTime;
-    final time =
-        serverTime != 0 ? serverTime : (localTime != 0 ? localTime : 0);
+    final time = serverTime != 0
+        ? serverTime
+        : (localTime != 0 ? localTime : 0);
     if (time == 0) {
       return DateTime.now();
     }
@@ -351,9 +385,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           children: [
             Text(
               'Share',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
             ListTile(
@@ -582,8 +616,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   String _dateBucketLabel(DateTime timestamp) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final messageDate =
-        DateTime(timestamp.year, timestamp.month, timestamp.day);
+    final messageDate = DateTime(
+      timestamp.year,
+      timestamp.month,
+      timestamp.day,
+    );
 
     if (messageDate == today) {
       return 'Today';
@@ -625,10 +662,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        (isDarkMode ? Colors.white : Colors.black)
-                            .withValues(alpha: 0.18),
-                        (isDarkMode ? Colors.white : Colors.black)
-                            .withValues(alpha: 0.05),
+                        (isDarkMode ? Colors.white : Colors.black).withValues(
+                          alpha: 0.18,
+                        ),
+                        (isDarkMode ? Colors.white : Colors.black).withValues(
+                          alpha: 0.05,
+                        ),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -714,8 +753,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 )
               : ListView.builder(
                   controller: _scrollController,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.manual,
                   itemCount: _buildChatEntries().length,
@@ -814,9 +855,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             onTap: _showAttachmentSheet,
                             child: Icon(
                               Icons.add,
-                              color: isDarkMode
-                                  ? Colors.white
-                                  : Colors.black,
+                              color: isDarkMode ? Colors.white : Colors.black,
                               size: 20,
                             ),
                           ),
@@ -844,7 +883,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                                         strokeWidth: 2,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
+                                              Colors.white,
+                                            ),
                                       ),
                                     )
                                   : FaIcon(
@@ -896,8 +936,9 @@ class _ChatMessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment:
-            isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isCurrentUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
@@ -911,7 +952,9 @@ class _ChatMessageBubble extends StatelessWidget {
                   ),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: bubbleColor,
                       borderRadius: BorderRadius.only(
@@ -924,10 +967,7 @@ class _ChatMessageBubble extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _MessageBody(
-                          message: message,
-                          textColor: textColor,
-                        ),
+                        _MessageBody(message: message, textColor: textColor),
                         const SizedBox(height: 4),
                         Text(
                           timestamp,
@@ -954,10 +994,7 @@ class _MessageBody extends StatelessWidget {
   final ChatMessage message;
   final Color textColor;
 
-  const _MessageBody({
-    required this.message,
-    required this.textColor,
-  });
+  const _MessageBody({required this.message, required this.textColor});
 
   @override
   Widget build(BuildContext context) {
@@ -975,23 +1012,22 @@ class _MessageBody extends StatelessWidget {
     }
 
     if (body is ChatImageMessageBody) {
-      final path = body.localPath;
-      final remote = body.remotePath;
-      final imageWidget = _attachmentImage(path, remote);
+      final imageWidget = _attachmentImage(body);
       if (imageWidget == null) {
         return _AttachmentFallback(label: 'Image', textColor: textColor);
       }
       return GestureDetector(
-        onTap: () => _openImageViewer(context, path, remote),
+        onTap: () => _openImageViewer(
+          context,
+          body.localPath,
+          body.remotePath,
+        ),
         child: imageWidget,
       );
     }
 
     if (body is ChatVideoMessageBody) {
-      return _VideoAttachment(
-        body: body,
-        textColor: textColor,
-      );
+      return _VideoAttachment(body: body, textColor: textColor);
     }
 
     if (body is ChatFileMessageBody) {
@@ -1014,9 +1050,19 @@ class _MessageBody extends StatelessWidget {
   }
 }
 
-Widget? _attachmentImage(String? localPath, String? remotePath) {
-  if (localPath != null && localPath.isNotEmpty) {
-    final file = File(localPath);
+Widget? _attachmentImage(ChatImageMessageBody body) {
+  if (body.localPath.isNotEmpty) {
+    final file = File(body.localPath);
+    if (file.existsSync()) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.file(file, width: 220, height: 160, fit: BoxFit.cover),
+      );
+    }
+  }
+  final thumbLocal = body.thumbnailLocalPath;
+  if (thumbLocal != null && thumbLocal.isNotEmpty) {
+    final file = File(thumbLocal);
     if (file.existsSync()) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -1029,11 +1075,23 @@ Widget? _attachmentImage(String? localPath, String? remotePath) {
       );
     }
   }
-  if (remotePath != null && remotePath.isNotEmpty) {
+  if (body.thumbnailRemotePath != null &&
+      body.thumbnailRemotePath!.isNotEmpty) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Image.network(
-        remotePath,
+        body.thumbnailRemotePath!,
+        width: 220,
+        height: 160,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+  if (body.remotePath != null && body.remotePath!.isNotEmpty) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.network(
+        body.remotePath!,
         width: 220,
         height: 160,
         fit: BoxFit.cover,
@@ -1063,10 +1121,7 @@ Future<void> _openImageViewer(
     context: context,
     barrierDismissible: true,
     builder: (_) {
-      return _ImageViewerDialog(
-        localPath: localPath,
-        remotePath: remotePath,
-      );
+      return _ImageViewerDialog(localPath: localPath, remotePath: remotePath);
     },
   );
 }
@@ -1097,9 +1152,9 @@ class _AttachmentTile extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+                color: textColor,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -1112,19 +1167,16 @@ class _AttachmentFallback extends StatelessWidget {
   final String label;
   final Color textColor;
 
-  const _AttachmentFallback({
-    required this.label,
-    required this.textColor,
-  });
+  const _AttachmentFallback({required this.label, required this.textColor});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       label,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: textColor,
-            fontWeight: FontWeight.w500,
-          ),
+        color: textColor,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 }
@@ -1133,10 +1185,7 @@ class _ImageViewerDialog extends StatelessWidget {
   final String? localPath;
   final String? remotePath;
 
-  const _ImageViewerDialog({
-    required this.localPath,
-    required this.remotePath,
-  });
+  const _ImageViewerDialog({required this.localPath, required this.remotePath});
 
   @override
   Widget build(BuildContext context) {
@@ -1150,9 +1199,7 @@ class _ImageViewerDialog extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(
-              child: InteractiveViewer(
-                child: Center(child: image),
-              ),
+              child: InteractiveViewer(child: Center(child: image)),
             ),
             Positioned(
               top: 12,
@@ -1173,10 +1220,7 @@ class _VideoAttachment extends StatefulWidget {
   final ChatVideoMessageBody body;
   final Color textColor;
 
-  const _VideoAttachment({
-    required this.body,
-    required this.textColor,
-  });
+  const _VideoAttachment({required this.body, required this.textColor});
 
   @override
   State<_VideoAttachment> createState() => _VideoAttachmentState();
@@ -1245,9 +1289,7 @@ class _VideoAttachmentState extends State<_VideoAttachment> {
           Positioned.fill(
             child: Material(
               color: Colors.transparent,
-              child: InkWell(
-                onTap: _openFullScreen,
-              ),
+              child: InkWell(onTap: _openFullScreen),
             ),
           ),
         ],
@@ -1273,10 +1315,7 @@ class _VideoAttachmentState extends State<_VideoAttachment> {
       context: context,
       barrierDismissible: true,
       builder: (_) {
-        return _VideoViewerDialog(
-          localPath: localPath,
-          remotePath: remotePath,
-        );
+        return _VideoViewerDialog(localPath: localPath, remotePath: remotePath);
       },
     );
   }
@@ -1332,10 +1371,7 @@ class _PlayOverlay extends StatelessWidget {
   final bool isPlaying;
   final VoidCallback onTap;
 
-  const _PlayOverlay({
-    required this.isPlaying,
-    required this.onTap,
-  });
+  const _PlayOverlay({required this.isPlaying, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1361,10 +1397,7 @@ class _VideoViewerDialog extends StatefulWidget {
   final String? localPath;
   final String? remotePath;
 
-  const _VideoViewerDialog({
-    required this.localPath,
-    required this.remotePath,
-  });
+  const _VideoViewerDialog({required this.localPath, required this.remotePath});
 
   @override
   State<_VideoViewerDialog> createState() => _VideoViewerDialogState();
@@ -1384,8 +1417,9 @@ class _VideoViewerDialogState extends State<_VideoViewerDialog> {
     if (widget.localPath != null && widget.localPath!.isNotEmpty) {
       _controller = VideoPlayerController.file(File(widget.localPath!));
     } else if (widget.remotePath != null && widget.remotePath!.isNotEmpty) {
-      _controller =
-          VideoPlayerController.networkUrl(Uri.parse(widget.remotePath!));
+      _controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.remotePath!),
+      );
     }
     if (_controller == null) return;
     await _controller!.initialize();
