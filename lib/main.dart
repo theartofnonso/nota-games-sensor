@@ -37,7 +37,6 @@ import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
-import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
@@ -346,9 +345,7 @@ GoRouter _createRouter(AccessController accessController) {
       GoRoute(
         path: ChatScreen.routeName,
         builder: (context, state) {
-          // Get adminUserId from state params or use default from config
-          final adminUserId = state.uri.queryParameters['adminUserId'] ??
-              ChatConfig.adminUserId;
+          final adminUserId = state.uri.queryParameters['adminUserId'] ?? '';
           return ChatScreen(adminUserId: adminUserId);
         },
       ),

@@ -265,6 +265,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _attachmentDownloadsInFlight.add(msgId);
       Future<void>(() async {
         await ChatClient.getInstance.chatManager.downloadThumbnail(message);
+        if (body.localPath.isEmpty) {
+          await ChatClient.getInstance.chatManager.downloadAttachment(message);
+        }
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
         _refreshMessages();

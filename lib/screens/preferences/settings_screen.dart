@@ -5,12 +5,10 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
@@ -19,8 +17,8 @@ import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/screens/request_screens/notifications_request.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/urls.dart';
+import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
 
@@ -30,7 +28,6 @@ import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../extensions/duration_extension.dart';
-import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../services/training_prediction_service.dart';
@@ -49,11 +46,6 @@ import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../screens/routines/routine_plan.dart';
-import '../../logger.dart';
-import '../../offline_first/exercise_local_store.dart';
-import '../../offline_first/routine_log_local_store.dart';
-import '../../offline_first/routine_plan_local_store.dart';
-import '../../offline_first/routine_template_local_store.dart';
 
 enum WeightUnit {
   kg("kg"),
@@ -110,7 +102,17 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget build(BuildContext context) {
     Brightness systemBrightness = Theme.of(context).brightness;
     final isDarkMode = systemBrightness == Brightness.dark;
-    if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
+    if (_loading) {
+      return TRKRLoadingScreen(
+        action: () {
+          if (mounted) {
+            setState(() {
+              _loading = false;
+            });
+          }
+        },
+      );
+    }
 
     final nutritionController = context.watch<NutritionLogController>();
     final accessController = context.watch<AccessController>();
@@ -512,22 +514,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                       },
                     ),
                   ),
-                  ListTile(
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 30.0),
-                      onTap: _showAccountOptionsBottomSheet,
-                      leading: FaIcon(FontAwesomeIcons.user,
-                          color: isDarkMode ? Colors.white70 : Colors.black38),
-                      title: Text("Account",
-                          style: Theme.of(context).textTheme.titleMedium),
-                      subtitle: Text(userEmail)),
-                  Center(
-                    child: Text(
-                      _appVersion,
-                      style: Theme.of(context).textTheme.bodySmall,
+                  if (!isCoach) ...[
+                    Center(
+                      child: Text(
+                        _appVersion,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                  ],
                 ],
               ),
             ),
@@ -537,19 +532,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  void _showLoadingScreen() {
-    setState(() {
-      _loading = true;
-    });
-  }
-
-  void _hideLoadingScreen() {
-    if (mounted) {
-      setState(() {
-        _loading = false;
-      });
-    }
-  }
 
   Future<void> _goBackToCoachList() async {
     if (!mounted) return;
@@ -567,64 +549,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     openUrl(url: url, context: context);
   }
 
-  void _clearAppData() async {
-    try {
-      // Clear analytics
-      Posthog().reset();
-
-      // Clear SharedPreferences
-      SharedPrefs().clear();
-
-      // Cancel all notifications
-      await FlutterLocalNotificationsPlugin().cancelAll();
-
-      // Delete all local cache files
-      final exerciseStore = ExerciseLocalStore();
-      final routineLogStore = RoutineLogLocalStore();
-      final routinePlanStore = RoutinePlanLocalStore();
-      final routineTemplateStore = RoutineTemplateLocalStore();
-
-      await Future.wait([
-        exerciseStore.deleteAll(),
-        routineLogStore.deleteAll(),
-        routinePlanStore.deleteAll(),
-        routineTemplateStore.deleteAll(),
-      ]);
-
-      // Delete all Supabase database data
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId != null) {
-        await Future.wait([
-          Supabase.instance.client
-              .from('exercises')
-              .delete()
-              .eq('owner', userId),
-          Supabase.instance.client
-              .from('routine_templates')
-              .delete()
-              .eq('owner', userId),
-          Supabase.instance.client
-              .from('routine_plans')
-              .delete()
-              .eq('owner', userId),
-          Supabase.instance.client
-              .from('routine_logs')
-              .delete()
-              .eq('owner', userId),
-        ]);
-      }
-
-      // Clear controller state
-      if (mounted) {
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-                listen: false)
-            .clear();
-      }
-    } catch (e) {
-      // Log error but don't throw - we still want to sign out even if cleanup fails
-      getLogger(className: 'SettingsScreen').e('Error clearing app data: $e');
-    }
-  }
 
   void _turnOnNotification() async {
     if (!_notificationEnabled) {
@@ -650,132 +574,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     setState(() {
       _notificationEnabled = result.isEnabled;
     });
-  }
-
-  void _showAccountOptionsBottomSheet() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final userEmail =
-        Supabase.instance.client.auth.currentUser?.email ?? "User";
-    showAppBottomSheet(
-      context: context,
-      isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: FaIcon(
-                FontAwesomeIcons.arrowRightFromBracket,
-                size: 18,
-                color: isDarkMode ? Colors.white70 : Colors.black38,
-              ),
-              horizontalTitleGap: 10,
-              title:
-                  Text("Logout", style: Theme.of(context).textTheme.bodyLarge),
-              subtitle: Text(userEmail),
-              onTap: () {
-                Navigator.of(context).pop();
-                _logout();
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: FaIcon(
-                FontAwesomeIcons.solidCircleXmark,
-                size: 18,
-                color: isDarkMode ? Colors.white70 : Colors.black38,
-              ),
-              horizontalTitleGap: 10,
-              title: Text("Delete Account",
-                  style: Theme.of(context).textTheme.bodyLarge),
-              subtitle: Text(userEmail),
-              onTap: () {
-                Navigator.of(context).pop();
-                _delete();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _logout() async {
-    showBottomSheetWithSingleAction(
-        context: context,
-        title: "Log out?",
-        description: "Are you sure you want to log out?",
-        action: () async {
-          Navigator.of(context).pop();
-          _showLoadingScreen();
-          _clearAppData();
-          await Supabase.instance.client.auth.signOut();
-          if (mounted) {
-            context.go('/'); // Navigate to auth screen
-          }
-        },
-        actionLabel: 'Logout',
-        isDestructive: true);
-  }
-
-  void _delete() async {
-    showBottomSheetWithSingleAction(
-        context: context,
-        title: "Delete account?",
-        description:
-            "Are you sure you want to delete your account? This action cannot be undone.",
-        action: () async {
-          Navigator.of(context).pop();
-          _showLoadingScreen();
-
-          try {
-            final userId = Supabase.instance.client.auth.currentUser?.id;
-            if (userId == null) {
-              throw Exception('User not authenticated');
-            }
-
-            // Delete all user data from Supabase
-            await Supabase.instance.client
-                .from('exercises')
-                .delete()
-                .eq('owner', userId);
-            await Supabase.instance.client
-                .from('routine_templates')
-                .delete()
-                .eq('owner', userId);
-            await Supabase.instance.client
-                .from('routine_plans')
-                .delete()
-                .eq('owner', userId);
-            await Supabase.instance.client
-                .from('routine_logs')
-                .delete()
-                .eq('owner', userId);
-
-            _hideLoadingScreen();
-            _clearAppData();
-
-            // Sign out the user (Supabase doesn't have deleteUser on client,
-            // user deletion should be done via dashboard or admin API)
-            await Supabase.instance.client.auth.signOut();
-
-            if (mounted) {
-              context.go('/'); // Navigate to auth screen
-            }
-          } catch (e) {
-            _hideLoadingScreen();
-            if (mounted) {
-              showSnackbar(
-                  context: context,
-                  message: "Something went wrong. Please try again.");
-            }
-          }
-        },
-        actionLabel: 'Delete',
-        isDestructive: true);
   }
 
   void _getAppVersion() async {
@@ -882,15 +680,19 @@ class _SettingsScreenState extends State<SettingsScreen>
       _chatUnreadCount = ChatUnreadService().unreadCount.value;
       ChatUnreadService().unreadCount.addListener(_handleChatUnreadChange);
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final accessController = context.read<AccessController>();
       if (AppConfig.isCoach) {
         ChatUnreadCountsService().refreshTotalUnreadCount();
       } else {
+        final userId = accessController.userId;
+        if (userId == null) return;
+        final coachId = await fetchCoachIdForClient(userId);
+        if (coachId == null) return;
         ChatUnreadService().updateContext(
           userId: accessController.userId,
-          coachId: ChatConfig.adminUserId,
+          coachId: coachId,
           userIdOverride: accessController.clientOverrideId,
         );
       }
