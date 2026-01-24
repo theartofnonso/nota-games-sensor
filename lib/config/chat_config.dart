@@ -5,4 +5,7 @@ class ChatConfig {
   /// This should be a fixed user ID that represents your platform admin/coach
   /// TODO: Replace with your actual admin/coach user ID
   static const String adminUserId = 'f92a43e1-97e4-4048-884c-4c8eb9571546';
+
+  /// Agora Chat app key from Agora Console
+  static const String agoraAppKey = '4110016020#1651775';
 }

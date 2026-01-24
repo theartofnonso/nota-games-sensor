@@ -85,6 +85,11 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           password: 'testaccount123',
         );
 
+        if (AppConfig.isCoach) {
+          final allowed = await _enforceCoachAccessIfNeeded();
+          if (!allowed) return;
+        }
+
         // Success! User will be automatically navigated by the auth state listener
       } catch (error) {
         // If login fails, show error but don't fall back to OTP
@@ -105,18 +110,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         }
       }
       return;
-    }
-
-    if (AppConfig.isCoach) {
-      setState(() => _isLoading = true);
-      final canProceed = await _checkCoachAccess(email);
-      if (!mounted) return;
-      if (!canProceed) {
-        setState(() => _isLoading = false);
-        await _showCoachAccessRequiredSheet();
-        return;
-      }
-      setState(() => _isLoading = false);
     }
 
     if (AppConfig.isClient) {
@@ -193,6 +186,10 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         token: otp,
         type: OtpType.email,
       );
+      if (AppConfig.isCoach) {
+        final allowed = await _enforceCoachAccessIfNeeded();
+        if (!allowed) return;
+      }
       // Success! User will be automatically navigated by the auth state listener
     } on AuthException catch (error) {
       if (mounted) {
@@ -235,17 +232,32 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     }
   }
 
-  Future<bool> _checkCoachAccess(String email) async {
+  Future<bool> _checkCoachAccess(String userId) async {
     try {
       final record = await Supabase.instance.client
           .from('coaches')
           .select('id')
-          .eq('email', email)
+          .eq('id', userId)
           .maybeSingle();
       return record != null;
     } catch (_) {
       return false;
     }
+  }
+
+  Future<bool> _enforceCoachAccessIfNeeded() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      return false;
+    }
+    final canProceed = await _checkCoachAccess(userId);
+    if (!mounted) return false;
+    if (!canProceed) {
+      await Supabase.instance.client.auth.signOut();
+      await _showCoachAccessRequiredSheet();
+      return false;
+    }
+    return true;
   }
 
   Future<void> _showClientAccessRequiredSheet() async {

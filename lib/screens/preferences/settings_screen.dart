@@ -19,8 +19,6 @@ import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/screens/request_screens/notifications_request.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/services/chat_unread_service.dart';
-import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
@@ -38,7 +36,6 @@ import '../../utils/uri_utils.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
-import '../../widgets/badges/unread_badge.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
@@ -102,7 +99,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _notificationEnabled = false;
   bool _hasCachedSession = false;
 
-  int _chatUnreadCount = 0;
   bool _nutritionInitialized = false;
 
   @override
@@ -175,7 +171,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: InkWell(
                     onTap: () async {
                       await navigateToChat(context: context);
-                      await ChatUnreadService().refreshUnreadCount();
                     },
                     borderRadius: BorderRadius.circular(28),
                     child: Center(
@@ -190,12 +185,6 @@ class _SettingsScreenState extends State<SettingsScreen>
               ),
             ),
           ),
-          if (_chatUnreadCount > 0)
-            Positioned(
-              top: -1,
-              right: -1,
-              child: UnreadBadge(count: _chatUnreadCount),
-            ),
         ],
       ),
       body: SafeArea(
@@ -870,15 +859,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     _checkNotificationPermission();
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
-    if (AppConfig.isCoach) {
-      _chatUnreadCount = ChatUnreadCountsService().totalUnreadCount.value;
-      ChatUnreadCountsService()
-          .totalUnreadCount
-          .addListener(_handleChatUnreadChange);
-    } else {
-      _chatUnreadCount = ChatUnreadService().unreadCount.value;
-      ChatUnreadService().unreadCount.addListener(_handleChatUnreadChange);
-    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _nutritionInitialized) return;
       _nutritionInitialized = true;
@@ -886,26 +866,10 @@ class _SettingsScreenState extends State<SettingsScreen>
     });
   }
 
-  void _handleChatUnreadChange() {
-    if (!mounted) return;
-    setState(() {
-      _chatUnreadCount = AppConfig.isCoach
-          ? ChatUnreadCountsService().totalUnreadCount.value
-          : ChatUnreadService().unreadCount.value;
-    });
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     SharedPrefs().routineLogRevision.removeListener(_checkCachedSession);
-    if (AppConfig.isCoach) {
-      ChatUnreadCountsService()
-          .totalUnreadCount
-          .removeListener(_handleChatUnreadChange);
-    } else {
-      ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
-    }
     super.dispose();
   }
 
@@ -915,8 +879,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (state == AppLifecycleState.resumed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkNotificationPermission();
-        ChatUnreadService().refreshSubscription();
-        ChatUnreadService().refreshUnreadCount();
       });
     }
   }

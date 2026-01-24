@@ -8,8 +8,14 @@ const pexelsImageUrl =
 
 /// API Endpoints
 const routineLogs = '/routine-logs';
+
+/// Stripe Endpoints
 const apiBaseUrl = 'https://stripe.notathletes.com';
 const checkClientAccessPath = '/checkEmail';
+
+/// Agora Endpoints
+const agoraBaseUrl = 'https://agora.notathletes.com';
+const agoraTokenPath = '/token';
 
 /// App Store ID
 const appStoreId = "id6474073502";

@@ -40,8 +40,6 @@ import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
-import 'package:trainware/services/chat_unread_service.dart';
-import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -415,24 +413,8 @@ class _MyAppState extends State<MyApp> {
           _isFirstLaunch = true;
           SharedPrefs().firstLaunch = true;
         });
-        ChatUnreadService().clear();
-        ChatUnreadCountsService().clear();
       } catch (e) {
         debugPrint('[Auth] Error clearing data: $e');
-      }
-    }
-
-    if (isAuthenticated) {
-      final accessController = _accessController;
-      if (AppConfig.isCoach) {
-        ChatUnreadCountsService()
-            .updateContext(coachId: accessController.userId);
-      } else {
-        ChatUnreadService().updateContext(
-          userId: accessController.userId,
-          coachId: ChatConfig.adminUserId,
-          userIdOverride: accessController.clientOverrideId,
-        );
       }
     }
 

@@ -1,10 +1,14 @@
-import 'dart:async';
+import 'dart:convert';
+
+import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import '../../services/chat_service.dart';
-import '../../dtos/appsync/chat_message_dto.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../config/chat_config.dart';
 import '../../utils/theme/color_extensions.dart';
+import '../../urls.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -33,20 +37,24 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
-  final ChatService _chatService = ChatService();
   final TextEditingController _messageController = TextEditingController();
   late final ScrollController _scrollController;
-  final List<ChatMessageDto> _messages = [];
+  final List<ChatMessage> _messages = [];
+  ChatConversation? _conversation;
+  String? _currentUserId;
+  String? _targetUserId;
+  late final String _messageHandlerId;
 
   bool _isLoading = true;
   bool _isSending = false;
-  StreamSubscription<ChatMessageEvent>? _messageSubscription;
+  static bool _isAgoraInitialized = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _scrollController = widget.scrollController ?? ScrollController();
+    _messageHandlerId = 'chat_screen_${DateTime.now().millisecondsSinceEpoch}';
     _initializeChat();
   }
 
@@ -55,74 +63,23 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (!mounted) return;
       setState(() => _isLoading = true);
 
-      // Get or create conversation
-      if (widget.clientUserId != null) {
-        final coachId = _chatService.currentUserId;
-        if (coachId == null) {
-          throw Exception('No coach ID available.');
-        }
-        await _chatService.getOrCreateConversation(
-          coachId: coachId,
-          userIdOverride: widget.clientUserId,
-        );
-      } else {
-        await _chatService.getOrCreateConversation(
-          coachId: widget.adminUserId,
-        );
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('No user ID available. Please sign in again.');
       }
+      _currentUserId = userId;
+      _targetUserId = widget.clientUserId ?? widget.adminUserId;
 
-      // Set up real-time message subscription
-      _chatService.setupMessageSubscription();
-
-      // Load previous messages
-      final previousMessages =
-          await _chatService.loadPreviousMessages(limit: 50);
-      if (!mounted) return;
-      setState(() {
-        _messages.addAll(previousMessages);
-        // Sort messages by timestamp in ascending order (oldest first, newest last)
-        // Oldest messages at top, newest messages at bottom
-        _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      });
-
-      // Set up message stream listener for real-time updates
-      _messageSubscription = _chatService.messageStream.listen((event) {
-        if (!mounted) return;
-
-        setState(() {
-          switch (event.type) {
-            case ChatMessageEventType.insert:
-              final message = event.message;
-              if (message == null) return;
-              if (_messages.any((m) => m.id == message.id)) return;
-              _messages.add(message);
-              break;
-            case ChatMessageEventType.update:
-              final message = event.message;
-              if (message == null) return;
-              final index = _messages.indexWhere((m) => m.id == message.id);
-              if (index != -1) {
-                _messages[index] = message;
-              }
-              break;
-            case ChatMessageEventType.delete:
-              final id = event.messageId;
-              if (id == null) return;
-              _messages.removeWhere((m) => m.id == id);
-              break;
-          }
-          _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          _scrollToBottom();
-          _chatService.markConversationAsRead();
-        });
-      });
+      await _ensureAgoraInitialized();
+      await _ensureAgoraLoggedIn(userId);
+      await _loadConversationMessages();
+      _registerMessageHandler();
 
       if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
       _scrollToBottom();
-      _chatService.markConversationAsRead();
     } catch (e) {
       debugPrint('Error initializing chat: $e');
       if (mounted) {
@@ -139,16 +96,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   Future<void> _refreshMessages() async {
     try {
-      final previousMessages =
-          await _chatService.loadPreviousMessages(limit: 50);
+      await _loadConversationMessages(append: true);
       if (!mounted) return;
-      setState(() {
-        for (final message in previousMessages) {
-          if (_messages.any((m) => m.id == message.id)) continue;
-          _messages.add(message);
-        }
-        _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      });
       _scrollToBottom();
     } catch (e) {
       debugPrint('Error refreshing chat messages: $e');
@@ -168,25 +117,145 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     });
   }
 
+  Future<void> _ensureAgoraInitialized() async {
+    if (_isAgoraInitialized) return;
+    if (ChatConfig.agoraAppKey.isEmpty) {
+      throw Exception('Agora app key is not configured.');
+    }
+    final options = ChatOptions(
+      appKey: ChatConfig.agoraAppKey,
+      autoLogin: false,
+    );
+    await ChatClient.getInstance.init(options);
+    _isAgoraInitialized = true;
+  }
+
+  Future<void> _ensureAgoraLoggedIn(String userId) async {
+    if (ChatClient.getInstance.currentUserId == userId) {
+      return;
+    }
+    final token = await _resolveAgoraToken(userId);
+    if (token == null || token.isEmpty) {
+      throw Exception('Agora chat token is not available.');
+    }
+    await ChatClient.getInstance.loginWithToken(userId, token);
+  }
+
+  Future<String?> _resolveAgoraToken(String userId) async {
+    try {
+      final uri = Uri.parse(agoraBaseUrl)
+          .resolve(agoraTokenPath)
+          .replace(queryParameters: {'userId': userId});
+      final response = await http.get(uri);
+      if (response.statusCode != 200) {
+        return null;
+      }
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) {
+        return data['token'] as String?;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _loadConversationMessages({bool append = false}) async {
+    final targetUserId = _targetUserId;
+    if (targetUserId == null) return;
+
+    _conversation ??= await ChatClient.getInstance.chatManager.getConversation(
+      targetUserId,
+      type: ChatConversationType.Chat,
+      createIfNeed: true,
+    );
+
+    final messages = await _conversation!.loadMessages(
+      startMsgId: '',
+      loadCount: 50,
+      direction: ChatSearchDirection.Up,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      for (final message in messages) {
+        if (_messages.any((m) => m.msgId == message.msgId)) continue;
+        _messages.add(message);
+      }
+      _sortMessages();
+    });
+  }
+
+  void _registerMessageHandler() {
+    ChatClient.getInstance.chatManager.addEventHandler(
+      _messageHandlerId,
+      ChatEventHandler(
+        onMessagesReceived: (messages) {
+          if (!mounted) return;
+          setState(() {
+            for (final message in messages) {
+              if (_messages.any((m) => m.msgId == message.msgId)) continue;
+              _messages.add(message);
+            }
+            _sortMessages();
+          });
+          _scrollToBottom();
+        },
+      ),
+    );
+  }
+
+  void _sortMessages() {
+    _messages
+        .sort((a, b) => _messageTimestamp(a).compareTo(_messageTimestamp(b)));
+  }
+
+  DateTime _messageTimestamp(ChatMessage message) {
+    final serverTime = message.serverTime;
+    final localTime = message.localTime;
+    final time =
+        serverTime != 0 ? serverTime : (localTime != 0 ? localTime : 0);
+    if (time == 0) {
+      return DateTime.now();
+    }
+    return DateTime.fromMillisecondsSinceEpoch(time);
+  }
+
+  Future<void> _handleResume() async {
+    final userId = _currentUserId;
+    if (userId == null) {
+      await _initializeChat();
+      return;
+    }
+    try {
+      await _ensureAgoraLoggedIn(userId);
+      await _refreshMessages();
+    } catch (_) {}
+  }
+
   Future<void> _sendMessage() async {
     final messageText = _messageController.text.trim();
     if (messageText.isEmpty || _isSending) return;
+    final targetUserId = _targetUserId;
+    if (targetUserId == null) return;
 
     if (!mounted) return;
     setState(() => _isSending = true);
     _messageController.clear();
 
     try {
-      final sentMessage = await _chatService.sendMessage(messageText);
-      // Add to local list if not already added by stream
+      final message = ChatMessage.createTxtSendMessage(
+        targetId: targetUserId,
+        content: messageText,
+      );
+      message.chatType = ChatType.Chat;
+      await ChatClient.getInstance.chatManager.sendMessage(message);
       if (!mounted) return;
       setState(() {
-        final isDuplicate = _messages.any((m) => m.id == sentMessage.id);
+        final isDuplicate = _messages.any((m) => m.msgId == message.msgId);
         if (!isDuplicate) {
-          _messages.add(sentMessage);
-          // Sort messages by timestamp in ascending order (oldest first, newest last)
-          // Oldest messages at top, newest messages at bottom
-          _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          _messages.add(message);
+          _sortMessages();
         }
       });
       _scrollToBottom();
@@ -212,20 +281,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (_chatService.currentConversationId == null) {
-        _initializeChat();
-        return;
-      }
-      _chatService.refreshMessageSubscription();
-      _refreshMessages();
-      _chatService.markConversationAsRead();
+      _handleResume();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _messageSubscription?.cancel();
+    ChatClient.getInstance.chatManager.removeEventHandler(_messageHandlerId);
     _messageController.dispose();
     // Only dispose if we created the controller ourselves
     if (widget.scrollController == null) {
@@ -248,9 +311,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  bool _isCurrentUserMessage(ChatMessageDto message) {
-    final currentUserId = _chatService.currentUserId;
-    return message.senderId == currentUserId;
+  bool _isCurrentUserMessage(ChatMessage message) {
+    final currentUserId = _currentUserId;
+    return message.from == currentUserId;
   }
 
   String _initialsForName(String name, String? email) {
@@ -278,7 +341,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     String? lastLabel;
 
     for (final message in _messages) {
-      final label = _dateBucketLabel(message.createdAt);
+      final label = _dateBucketLabel(_messageTimestamp(message));
       if (label != lastLabel) {
         entries.add(_ChatListEntry.divider(label));
         lastLabel = label;
@@ -443,7 +506,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     return _ChatMessageBubble(
                       message: message,
                       isCurrentUser: isCurrentUser,
-                      timestamp: _formatTimestamp(message.createdAt),
+                      timestamp: _formatTimestamp(_messageTimestamp(message)),
                       isDarkMode: isDarkMode,
                       vibrantAccent: colors?.vibrantAccent ?? Colors.green,
                     );
@@ -559,7 +622,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 }
 
 class _ChatMessageBubble extends StatelessWidget {
-  final ChatMessageDto message;
+  final ChatMessage message;
   final bool isCurrentUser;
   final String timestamp;
   final bool isDarkMode;
@@ -613,7 +676,7 @@ class _ChatMessageBubble extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          message.content,
+                          _messageContent(message),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: textColor,
                             fontWeight: FontWeight.w400,
@@ -643,13 +706,21 @@ class _ChatMessageBubble extends StatelessWidget {
 }
 
 class _ChatListEntry {
-  final ChatMessageDto? message;
+  final ChatMessage? message;
   final String? label;
 
   const _ChatListEntry.message(this.message) : label = null;
   const _ChatListEntry.divider(this.label) : message = null;
 
   bool get isDivider => label != null;
+}
+
+String _messageContent(ChatMessage message) {
+  final body = message.body;
+  if (body is ChatTextMessageBody) {
+    return body.content;
+  }
+  return '';
 }
 
 class _ChatDateDivider extends StatelessWidget {
