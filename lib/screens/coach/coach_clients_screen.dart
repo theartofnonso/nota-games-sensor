@@ -5,9 +5,11 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/widgets/search_bar.dart';
 import 'package:trainware/widgets/empty_states/list_empty_state.dart';
+import 'package:trainware/widgets/badges/unread_badge.dart';
 
 class CoachClientsScreen extends StatefulWidget {
   final bool navigateToOverviewOnSelect;
@@ -25,6 +27,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     with WidgetsBindingObserver {
   late Future<List<_CoachClient>> _clientsFuture;
   String? _loadingClientId;
+  Map<String, int> _unreadByClientId = const {};
   late final TextEditingController _searchController;
   String _searchQuery = '';
 
@@ -34,18 +37,32 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     WidgetsBinding.instance.addObserver(this);
     _clientsFuture = _loadClients();
     _searchController = TextEditingController();
+    _unreadByClientId = ChatUnreadCountsService().unreadByClientId.value;
+    ChatUnreadCountsService().unreadByClientId.addListener(_handleUnreadChange);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    ChatUnreadCountsService()
+        .unreadByClientId
+        .removeListener(_handleUnreadChange);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _handleUnreadChange() {
+    if (!mounted) return;
+    setState(() {
+      _unreadByClientId = ChatUnreadCountsService().unreadByClientId.value;
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      ChatUnreadCountsService().refreshUnreadCounts();
+      ChatUnreadCountsService().refreshTotalUnreadCount();
     }
   }
 
@@ -57,6 +74,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
       });
     }
     await next;
+    await ChatUnreadCountsService().refreshUnreadCounts();
   }
 
   void _updateSearch(String value) {
@@ -86,9 +104,12 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
         .select('id, email, name, created_at')
         .order('name', ascending: true);
     final rows = response as List<dynamic>;
-    return rows
+    final clients = rows
         .map((row) => _CoachClient.fromJson(row as Map<String, dynamic>))
         .toList();
+    await ChatUnreadCountsService()
+        .updateClients(clients.map((client) => client.id).toList());
+    return clients;
   }
 
   @override
@@ -172,6 +193,8 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                             final client = clients[index];
                             final isLoadingClient =
                                 _loadingClientId == client.id;
+                            final unreadCount =
+                                _unreadByClientId[client.id] ?? 0;
                             final joinedLabel = DateFormat('MMM yyyy')
                                 .format(client.createdAt.toLocal());
                             return InkWell(
@@ -275,6 +298,17 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                       Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
+                                          if (unreadCount > 0) ...[
+                                            UnreadBadge(
+                                              count: unreadCount,
+                                              fontSize: 11,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4),
+                                            ),
+                                            const SizedBox(width: 8),
+                                          ],
                                           Icon(
                                             Icons.chevron_right_rounded,
                                             color: Colors.white

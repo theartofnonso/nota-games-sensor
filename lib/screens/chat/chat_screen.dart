@@ -1,14 +1,26 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../config/chat_config.dart';
 import '../../utils/theme/color_extensions.dart';
+import '../../utils/agora_chat_utils.dart';
 import '../../urls.dart';
+import '../../app_flavor.dart';
+import '../../services/chat_unread_service.dart';
+import '../../services/chat_unread_counts_service.dart';
+import '../../services/agora_chat_bootstrap.dart';
+import '../../utils/uri_utils.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -41,13 +53,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   late final ScrollController _scrollController;
   final List<ChatMessage> _messages = [];
   ChatConversation? _conversation;
-  String? _currentUserId;
-  String? _targetUserId;
+  String? _currentAgoraUserId;
+  String? _targetAgoraUserId;
   late final String _messageHandlerId;
 
   bool _isLoading = true;
   bool _isSending = false;
-  static bool _isAgoraInitialized = false;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -67,13 +79,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (userId == null) {
         throw Exception('No user ID available. Please sign in again.');
       }
-      _currentUserId = userId;
-      _targetUserId = widget.clientUserId ?? widget.adminUserId;
+      _currentAgoraUserId = toAgoraUsername(userId);
+      final targetUserId = widget.clientUserId ?? widget.adminUserId;
+      _targetAgoraUserId = toAgoraUsername(targetUserId);
 
       await _ensureAgoraInitialized();
-      await _ensureAgoraLoggedIn(userId);
+      await _ensureAgoraLoggedIn(_currentAgoraUserId!);
       await _loadConversationMessages();
       _registerMessageHandler();
+      await _markConversationRead();
+      _refreshUnreadBadges();
 
       if (!mounted) return;
       setState(() {
@@ -118,16 +133,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _ensureAgoraInitialized() async {
-    if (_isAgoraInitialized) return;
-    if (ChatConfig.agoraAppKey.isEmpty) {
-      throw Exception('Agora app key is not configured.');
-    }
-    final options = ChatOptions(
-      appKey: ChatConfig.agoraAppKey,
-      autoLogin: false,
-    );
-    await ChatClient.getInstance.init(options);
-    _isAgoraInitialized = true;
+    await AgoraChatBootstrap.ensureInitialized();
   }
 
   Future<void> _ensureAgoraLoggedIn(String userId) async {
@@ -163,11 +169,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadConversationMessages({bool append = false}) async {
-    final targetUserId = _targetUserId;
-    if (targetUserId == null) return;
+    final targetAgoraUserId = _targetAgoraUserId;
+    if (targetAgoraUserId == null) return;
 
     _conversation ??= await ChatClient.getInstance.chatManager.getConversation(
-      targetUserId,
+      targetAgoraUserId,
       type: ChatConversationType.Chat,
       createIfNeed: true,
     );
@@ -181,11 +187,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (!mounted) return;
     setState(() {
       for (final message in messages) {
-        if (_messages.any((m) => m.msgId == message.msgId)) continue;
-        _messages.add(message);
+        _mergeMessage(message);
       }
       _sortMessages();
     });
+    await _markConversationRead();
+    _refreshUnreadBadges();
   }
 
   void _registerMessageHandler() {
@@ -196,8 +203,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           if (!mounted) return;
           setState(() {
             for (final message in messages) {
-              if (_messages.any((m) => m.msgId == message.msgId)) continue;
-              _messages.add(message);
+              _mergeMessage(message);
             }
             _sortMessages();
           });
@@ -212,6 +218,39 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         .sort((a, b) => _messageTimestamp(a).compareTo(_messageTimestamp(b)));
   }
 
+  void _mergeMessage(ChatMessage message) {
+    final msgId = message.msgId;
+    if (msgId.isNotEmpty) {
+      final index = _messages.indexWhere((m) => m.msgId == msgId);
+      if (index != -1) {
+        _messages[index] = message;
+        return;
+      }
+    }
+    final index = _messages.indexWhere(
+      (m) => _isLikelyDuplicate(m, message),
+    );
+    if (index != -1) {
+      _messages[index] = message;
+      return;
+    }
+    _messages.add(message);
+  }
+
+  bool _isLikelyDuplicate(ChatMessage existing, ChatMessage incoming) {
+    if (existing.msgId.isNotEmpty &&
+        incoming.msgId.isNotEmpty &&
+        existing.msgId == incoming.msgId) {
+      return true;
+    }
+    if (existing.from != incoming.from) return false;
+    if (_messageContent(existing) != _messageContent(incoming)) return false;
+    final delta = (_messageTimestamp(existing).millisecondsSinceEpoch -
+            _messageTimestamp(incoming).millisecondsSinceEpoch)
+        .abs();
+    return delta <= 2000;
+  }
+
   DateTime _messageTimestamp(ChatMessage message) {
     final serverTime = message.serverTime;
     final localTime = message.localTime;
@@ -223,8 +262,27 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     return DateTime.fromMillisecondsSinceEpoch(time);
   }
 
+  Future<void> _markConversationRead() async {
+    final conversation = _conversation;
+    if (conversation == null) return;
+    try {
+      await conversation.markAllMessagesAsRead();
+    } catch (_) {}
+  }
+
+  void _refreshUnreadBadges() {
+    if (AppConfig.isCoach) {
+      final clientId = widget.clientUserId;
+      if (clientId != null) {
+        ChatUnreadCountsService().refreshUnreadCountForClient(clientId);
+      }
+    } else {
+      ChatUnreadService().refreshUnreadCount();
+    }
+  }
+
   Future<void> _handleResume() async {
-    final userId = _currentUserId;
+    final userId = _currentAgoraUserId;
     if (userId == null) {
       await _initializeChat();
       return;
@@ -232,14 +290,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     try {
       await _ensureAgoraLoggedIn(userId);
       await _refreshMessages();
+      await _markConversationRead();
+      _refreshUnreadBadges();
     } catch (_) {}
   }
 
   Future<void> _sendMessage() async {
     final messageText = _messageController.text.trim();
     if (messageText.isEmpty || _isSending) return;
-    final targetUserId = _targetUserId;
-    if (targetUserId == null) return;
+    final targetAgoraUserId = _targetAgoraUserId;
+    if (targetAgoraUserId == null) return;
 
     if (!mounted) return;
     setState(() => _isSending = true);
@@ -247,19 +307,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
     try {
       final message = ChatMessage.createTxtSendMessage(
-        targetId: targetUserId,
+        targetId: targetAgoraUserId,
         content: messageText,
       );
       message.chatType = ChatType.Chat;
       await ChatClient.getInstance.chatManager.sendMessage(message);
       if (!mounted) return;
       setState(() {
-        final isDuplicate = _messages.any((m) => m.msgId == message.msgId);
-        if (!isDuplicate) {
-          _messages.add(message);
-          _sortMessages();
-        }
+        _mergeMessage(message);
+        _sortMessages();
       });
+      await _markConversationRead();
+      _refreshUnreadBadges();
       _scrollToBottom();
     } catch (e) {
       debugPrint('Error sending message: $e');
@@ -277,6 +336,172 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (mounted) {
         setState(() => _isSending = false);
       }
+    }
+  }
+
+  Future<void> _showAttachmentSheet() async {
+    await showAppBottomSheet<void>(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Share',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.photo),
+              title: const Text('Photo'),
+              onTap: () async {
+                Navigator.of(context).pop();
+                await _pickImage();
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.videocam),
+              title: const Text('Video'),
+              onTap: () async {
+                Navigator.of(context).pop();
+                await _pickVideo();
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.insert_drive_file),
+              title: const Text('File'),
+              onTap: () async {
+                Navigator.of(context).pop();
+                await _pickFile();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage() async {
+    final targetAgoraUserId = _targetAgoraUserId;
+    if (targetAgoraUserId == null) return;
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+    await _sendImageMessage(targetAgoraUserId, picked.path);
+  }
+
+  Future<void> _pickVideo() async {
+    final targetAgoraUserId = _targetAgoraUserId;
+    if (targetAgoraUserId == null) return;
+    final picked = await _imagePicker.pickVideo(source: ImageSource.gallery);
+    if (picked == null) return;
+    await _sendVideoMessage(targetAgoraUserId, picked.path);
+  }
+
+  Future<void> _pickFile() async {
+    final targetAgoraUserId = _targetAgoraUserId;
+    if (targetAgoraUserId == null) return;
+    final result = await FilePicker.platform.pickFiles();
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.path == null) return;
+    await _sendFileMessage(targetAgoraUserId, file.path!);
+  }
+
+  Future<void> _sendImageMessage(String targetId, String path) async {
+    try {
+      final message = ChatMessage.createImageSendMessage(
+        targetId: targetId,
+        filePath: path,
+      );
+      message.chatType = ChatType.Chat;
+      await ChatClient.getInstance.chatManager.sendMessage(message);
+      if (!mounted) return;
+      setState(() {
+        _mergeMessage(message);
+        _sortMessages();
+      });
+      _scrollToBottom();
+    } catch (e) {
+      _handleSendError(e, 'image');
+    }
+  }
+
+  Future<void> _sendVideoMessage(String targetId, String path) async {
+    try {
+      final thumbnailPath = await _generateVideoThumbnail(path);
+      final message = ChatMessage.createVideoSendMessage(
+        targetId: targetId,
+        filePath: path,
+        thumbnailLocalPath: thumbnailPath,
+      );
+      message.chatType = ChatType.Chat;
+      await ChatClient.getInstance.chatManager.sendMessage(message);
+      if (!mounted) return;
+      setState(() {
+        _mergeMessage(message);
+        _sortMessages();
+      });
+      _scrollToBottom();
+    } catch (e) {
+      _handleSendError(e, 'video');
+    }
+  }
+
+  Future<String?> _generateVideoThumbnail(String path) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final thumbnail = await VideoThumbnail.thumbnailFile(
+        video: path,
+        thumbnailPath: tempDir.path,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 480,
+        quality: 75,
+      );
+      return thumbnail;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _sendFileMessage(String targetId, String path) async {
+    try {
+      final message = ChatMessage.createFileSendMessage(
+        targetId: targetId,
+        filePath: path,
+      );
+      message.chatType = ChatType.Chat;
+      await ChatClient.getInstance.chatManager.sendMessage(message);
+      if (!mounted) return;
+      setState(() {
+        _mergeMessage(message);
+        _sortMessages();
+      });
+      _scrollToBottom();
+    } catch (e) {
+      _handleSendError(e, 'file');
+    }
+  }
+
+  void _handleSendError(Object e, String label) {
+    debugPrint('Error sending $label: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send $label: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -314,7 +539,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   bool _isCurrentUserMessage(ChatMessage message) {
-    final currentUserId = _currentUserId;
+    final currentUserId = _currentAgoraUserId;
     return message.from == currentUserId;
   }
 
@@ -566,7 +791,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         contentPadding: const EdgeInsets.fromLTRB(
-                          20,
+                          56,
                           12,
                           60,
                           12,
@@ -575,6 +800,28 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       maxLines: null,
                       textCapitalization: TextCapitalization.sentences,
                       onSubmitted: (_) => _sendMessage(),
+                    ),
+                    Positioned(
+                      left: 8,
+                      bottom: 8,
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: _showAttachmentSheet,
+                            child: Icon(
+                              Icons.add,
+                              color: isDarkMode
+                                  ? Colors.white
+                                  : Colors.black,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                     Positioned(
                       right: 8,
@@ -677,13 +924,9 @@ class _ChatMessageBubble extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _messageContent(message),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: textColor,
-                            fontWeight: FontWeight.w400,
-                            fontSize: 16,
-                          ),
+                        _MessageBody(
+                          message: message,
+                          textColor: textColor,
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -707,6 +950,502 @@ class _ChatMessageBubble extends StatelessWidget {
   }
 }
 
+class _MessageBody extends StatelessWidget {
+  final ChatMessage message;
+  final Color textColor;
+
+  const _MessageBody({
+    required this.message,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final body = message.body;
+    if (body is ChatTextMessageBody) {
+      return Text(
+        body.content,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: textColor,
+          fontWeight: FontWeight.w400,
+          fontSize: 16,
+        ),
+      );
+    }
+
+    if (body is ChatImageMessageBody) {
+      final path = body.localPath;
+      final remote = body.remotePath;
+      final imageWidget = _attachmentImage(path, remote);
+      if (imageWidget == null) {
+        return _AttachmentFallback(label: 'Image', textColor: textColor);
+      }
+      return GestureDetector(
+        onTap: () => _openImageViewer(context, path, remote),
+        child: imageWidget,
+      );
+    }
+
+    if (body is ChatVideoMessageBody) {
+      return _VideoAttachment(
+        body: body,
+        textColor: textColor,
+      );
+    }
+
+    if (body is ChatFileMessageBody) {
+      return _AttachmentTile(
+        icon: Icons.insert_drive_file,
+        label: body.displayName ?? 'File',
+        textColor: textColor,
+        onTap: () => _openAttachment(context, body.remotePath),
+      );
+    }
+
+    return Text(
+      'Unsupported message',
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: textColor,
+        fontWeight: FontWeight.w400,
+        fontSize: 16,
+      ),
+    );
+  }
+}
+
+Widget? _attachmentImage(String? localPath, String? remotePath) {
+  if (localPath != null && localPath.isNotEmpty) {
+    final file = File(localPath);
+    if (file.existsSync()) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.file(
+          file,
+          width: 220,
+          height: 160,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+  }
+  if (remotePath != null && remotePath.isNotEmpty) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.network(
+        remotePath,
+        width: 220,
+        height: 160,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+  return null;
+}
+
+Future<void> _openAttachment(BuildContext context, String? remotePath) async {
+  if (remotePath == null || remotePath.isEmpty) {
+    return;
+  }
+  await openUrl(context: context, url: remotePath);
+}
+
+Future<void> _openImageViewer(
+  BuildContext context,
+  String? localPath,
+  String? remotePath,
+) async {
+  if ((localPath == null || localPath.isEmpty) &&
+      (remotePath == null || remotePath.isEmpty)) {
+    return;
+  }
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (_) {
+      return _ImageViewerDialog(
+        localPath: localPath,
+        remotePath: remotePath,
+      );
+    },
+  );
+}
+
+class _AttachmentTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color textColor;
+  final VoidCallback? onTap;
+
+  const _AttachmentTile({
+    required this.icon,
+    required this.label,
+    required this.textColor,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: textColor),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentFallback extends StatelessWidget {
+  final String label;
+  final Color textColor;
+
+  const _AttachmentFallback({
+    required this.label,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: textColor,
+            fontWeight: FontWeight.w500,
+          ),
+    );
+  }
+}
+
+class _ImageViewerDialog extends StatelessWidget {
+  final String? localPath;
+  final String? remotePath;
+
+  const _ImageViewerDialog({
+    required this.localPath,
+    required this.remotePath,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final image = localPath != null && localPath!.isNotEmpty
+        ? Image.file(File(localPath!), fit: BoxFit.contain)
+        : Image.network(remotePath ?? '', fit: BoxFit.contain);
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: EdgeInsets.zero,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: InteractiveViewer(
+                child: Center(child: image),
+              ),
+            ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoAttachment extends StatefulWidget {
+  final ChatVideoMessageBody body;
+  final Color textColor;
+
+  const _VideoAttachment({
+    required this.body,
+    required this.textColor,
+  });
+
+  @override
+  State<_VideoAttachment> createState() => _VideoAttachmentState();
+}
+
+class _VideoAttachmentState extends State<_VideoAttachment> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initController();
+  }
+
+  Future<void> _initController() async {
+    final localPath = widget.body.localPath;
+    final remotePath = widget.body.remotePath;
+    if (localPath.isNotEmpty) {
+      _controller = VideoPlayerController.file(File(localPath));
+    } else if (remotePath != null && remotePath.isNotEmpty) {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(remotePath));
+    }
+    if (_controller == null) return;
+    await _controller!.initialize();
+    if (!mounted) return;
+    setState(() {
+      _isInitialized = true;
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbnail = _videoThumbnail(widget.body);
+    if (!_isInitialized && thumbnail != null) {
+      return _ThumbnailPreview(
+        thumbnail: thumbnail,
+        textColor: widget.textColor,
+        onTap: _playPause,
+      );
+    }
+
+    if (_controller == null || !_isInitialized) {
+      return _AttachmentFallback(label: 'Video', textColor: widget.textColor);
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          AspectRatio(
+            aspectRatio: _controller!.value.aspectRatio,
+            child: VideoPlayer(_controller!),
+          ),
+          _PlayOverlay(
+            isPlaying: _controller!.value.isPlaying,
+            onTap: _playPause,
+          ),
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _openFullScreen,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _playPause() {
+    final controller = _controller;
+    if (controller == null) return;
+    if (controller.value.isPlaying) {
+      controller.pause();
+    } else {
+      controller.play();
+    }
+    setState(() {});
+  }
+
+  Future<void> _openFullScreen() async {
+    final localPath = widget.body.localPath;
+    final remotePath = widget.body.remotePath;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) {
+        return _VideoViewerDialog(
+          localPath: localPath,
+          remotePath: remotePath,
+        );
+      },
+    );
+  }
+}
+
+Widget? _videoThumbnail(ChatVideoMessageBody body) {
+  final localThumb = body.thumbnailLocalPath;
+  if (localThumb != null && localThumb.isNotEmpty) {
+    final file = File(localThumb);
+    if (file.existsSync()) {
+      return Image.file(file, width: 220, height: 160, fit: BoxFit.cover);
+    }
+  }
+  final remoteThumb = body.thumbnailRemotePath;
+  if (remoteThumb != null && remoteThumb.isNotEmpty) {
+    return Image.network(
+      remoteThumb,
+      width: 220,
+      height: 160,
+      fit: BoxFit.cover,
+    );
+  }
+  return null;
+}
+
+class _ThumbnailPreview extends StatelessWidget {
+  final Widget thumbnail;
+  final Color textColor;
+  final VoidCallback onTap;
+
+  const _ThumbnailPreview({
+    required this.thumbnail,
+    required this.textColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          thumbnail,
+          _PlayOverlay(isPlaying: false, onTap: onTap),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlayOverlay extends StatelessWidget {
+  final bool isPlaying;
+  final VoidCallback onTap;
+
+  const _PlayOverlay({
+    required this.isPlaying,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.2),
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Icon(
+            isPlaying ? Icons.pause : Icons.play_arrow,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoViewerDialog extends StatefulWidget {
+  final String? localPath;
+  final String? remotePath;
+
+  const _VideoViewerDialog({
+    required this.localPath,
+    required this.remotePath,
+  });
+
+  @override
+  State<_VideoViewerDialog> createState() => _VideoViewerDialogState();
+}
+
+class _VideoViewerDialogState extends State<_VideoViewerDialog> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    if (widget.localPath != null && widget.localPath!.isNotEmpty) {
+      _controller = VideoPlayerController.file(File(widget.localPath!));
+    } else if (widget.remotePath != null && widget.remotePath!.isNotEmpty) {
+      _controller =
+          VideoPlayerController.networkUrl(Uri.parse(widget.remotePath!));
+    }
+    if (_controller == null) return;
+    await _controller!.initialize();
+    if (!mounted) return;
+    setState(() => _isInitialized = true);
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: EdgeInsets.zero,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Center(
+                child: _isInitialized && _controller != null
+                    ? AspectRatio(
+                        aspectRatio: _controller!.value.aspectRatio,
+                        child: VideoPlayer(_controller!),
+                      )
+                    : const CircularProgressIndicator(),
+              ),
+            ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close, color: Colors.white),
+              ),
+            ),
+            if (_isInitialized && _controller != null)
+              Center(
+                child: _PlayOverlay(
+                  isPlaying: _controller!.value.isPlaying,
+                  onTap: () {
+                    if (_controller!.value.isPlaying) {
+                      _controller!.pause();
+                    } else {
+                      _controller!.play();
+                    }
+                    setState(() {});
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ChatListEntry {
   final ChatMessage? message;
   final String? label;
@@ -721,6 +1460,15 @@ String _messageContent(ChatMessage message) {
   final body = message.body;
   if (body is ChatTextMessageBody) {
     return body.content;
+  }
+  if (body is ChatFileMessageBody) {
+    return body.displayName ?? '';
+  }
+  if (body is ChatImageMessageBody) {
+    return body.displayName ?? 'image';
+  }
+  if (body is ChatVideoMessageBody) {
+    return body.displayName ?? 'video';
   }
   return '';
 }
