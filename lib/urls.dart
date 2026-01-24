@@ -8,7 +8,7 @@ const pexelsImageUrl =
 
 /// API Endpoints
 const routineLogs = '/routine-logs';
-const apiBaseUrl = 'https://api.notathletes.com';
+const apiBaseUrl = 'https://stripe.notathletes.com';
 const checkClientAccessPath = '/checkEmail';
 
 /// App Store ID
