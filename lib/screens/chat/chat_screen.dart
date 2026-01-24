@@ -143,10 +143,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   Future<String?> _resolveAgoraToken(String userId) async {
     try {
-      final uri = Uri.parse(agoraBaseUrl)
-          .resolve(agoraTokenPath)
-          .replace(queryParameters: {'userId': userId});
-      final response = await http.get(uri);
+      final uri = Uri.parse(agoraBaseUrl).resolve(agoraTokenPath);
+      final response = await http.post(
+        uri,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': userId}),
+      );
       if (response.statusCode != 200) {
         return null;
       }
