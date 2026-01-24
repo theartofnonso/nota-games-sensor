@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
@@ -78,6 +79,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: true);
+    final accessController = context.read<AccessController>();
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -108,6 +110,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     // Check if this template belongs to a system plan
     final isSystemTemplate = plan?.isSystemPlan ?? false;
+    final isClientMode = accessController.isClientMode;
 
     final allLogsForTemplate = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: template.id)
@@ -154,12 +157,15 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
 
     return Scaffold(
-        floatingActionButton: FloatingActionButton(
-            heroTag: UniqueKey,
-            backgroundColor: themeGradient(context: context).colors.first,
-            elevation: 8.0,
-            onPressed: () => _launchRoutineLogEditor(),
-            child: const FaIcon(FontAwesomeIcons.play, size: 24)),
+        floatingActionButton: accessController.isClientMode
+            ? null
+            : FloatingActionButton(
+                heroTag: UniqueKey,
+                backgroundColor: themeGradient(context: context).colors.first,
+                elevation: 8.0,
+                onPressed: () => _launchRoutineLogEditor(),
+                child: const FaIcon(FontAwesomeIcons.play, size: 24),
+              ),
         body: Container(
           height: double.infinity,
           decoration: BoxDecoration(
@@ -209,7 +215,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                 ],
                               ),
                             ),
-                            if (!isSystemTemplate)
+                            if (!isSystemTemplate || isClientMode)
                               IconButton(
                                 onPressed: () =>
                                     _showMenuBottomSheet(planDto: plan),
@@ -375,6 +381,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final isPredicted = (isToday || isFuture) &&
         predictedDates.contains(selectedDate) &&
         !hasLogs;
+    final isClientMode = context.read<AccessController>().isClientMode;
 
     String dateLabel;
     if (isToday) {
@@ -427,7 +434,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                     ),
                   ),
                   // Log workout button (only show for today)
-                  if (isToday)
+                  if (isToday && !isClientMode)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
@@ -486,10 +493,11 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _deleteRoutine({required RoutineTemplateDto template}) async {
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+        context,
+        listen: false);
     try {
-      await Provider.of<SupabaseExerciseAndRoutineController>(context,
-              listen: false)
-          .removeTemplate(template: template);
+      await controller.removeTemplate(template: template);
     } catch (e) {
       if (mounted) {
         showSnackbar(context: context, message: "Unable to remove workout");
@@ -605,11 +613,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
+    final accessController = context.read<AccessController>();
     final template = exerciseAndRoutineController.templateWhere(id: widget.id);
     final plan = template != null
         ? exerciseAndRoutineController.planWhere(id: template.planId)
         : null;
     final isSystemTemplate = plan?.isSystemPlan ?? false;
+    final isClientMode = accessController.isClientMode;
 
     showAppBottomSheet(
         context: context,
@@ -620,7 +630,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (!isSystemTemplate) ...[
+                if (!isSystemTemplate || isClientMode) ...[
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(

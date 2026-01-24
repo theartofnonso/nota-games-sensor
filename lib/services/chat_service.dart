@@ -41,9 +41,10 @@ class ChatService {
   /// Returns the conversation ID
   Future<String> getOrCreateConversation({
     required String coachId,
+    String? userIdOverride,
   }) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = userIdOverride ?? _client.auth.currentUser?.id;
       if (userId == null) {
         throw Exception('No user ID available. User must be authenticated.');
       }
@@ -234,6 +235,15 @@ class ChatService {
       logger.e('Error setting up message subscription: $e');
       rethrow;
     }
+  }
+
+  /// Re-subscribe after app resumes or connection drops.
+  void refreshMessageSubscription() {
+    if (_currentConversationId == null) {
+      logger.w('Cannot refresh subscription: no active conversation');
+      return;
+    }
+    setupMessageSubscription();
   }
 
   /// Get current conversation ID

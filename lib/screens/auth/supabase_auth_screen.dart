@@ -1,11 +1,19 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/uri_utils.dart';
+import 'package:trainware/app_flavor.dart';
+import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
+import 'package:trainware/urls.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -78,7 +86,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         );
 
         // Success! User will be automatically navigated by the auth state listener
-        // No need to show snackbar or OTP screen - just silently log in
       } catch (error) {
         // If login fails, show error but don't fall back to OTP
         debugPrint('[Test Account] Login failed: $error');
@@ -100,6 +107,30 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       return;
     }
 
+    if (AppConfig.isCoach) {
+      setState(() => _isLoading = true);
+      final canProceed = await _checkCoachAccess(email);
+      if (!mounted) return;
+      if (!canProceed) {
+        setState(() => _isLoading = false);
+        await _showCoachAccessRequiredSheet();
+        return;
+      }
+      setState(() => _isLoading = false);
+    }
+
+    if (AppConfig.isClient) {
+      setState(() => _isLoading = true);
+      final canProceed = await _checkClientAccess(email);
+      if (!mounted) return;
+      if (!canProceed) {
+        setState(() => _isLoading = false);
+        await _showClientAccessRequiredSheet();
+        return;
+      }
+      setState(() => _isLoading = false);
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -113,11 +144,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           _otpSent = true;
           _isLoading = false;
         });
-        showSnackbar(
-          context: context,
-          message: 'Check your email for the verification code',
-          backgroundColor: Theme.of(context).colors.vibrantAccent,
-        );
       }
     } on AuthException catch (error) {
       if (mounted) {
@@ -137,7 +163,9 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -165,7 +193,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         token: otp,
         type: OtpType.email,
       );
-
       // Success! User will be automatically navigated by the auth state listener
     } on AuthException catch (error) {
       if (mounted) {
@@ -188,6 +215,119 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<bool> _checkClientAccess(String email) async {
+    try {
+      final uri = Uri.parse(apiBaseUrl).resolve(checkClientAccessPath);
+      final response = await http.post(
+        uri,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      if (response.statusCode != 200) {
+        return false;
+      }
+      final data = jsonDecode(response.body);
+      return data is Map<String, dynamic> && data['found'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _checkCoachAccess(String email) async {
+    try {
+      final record = await Supabase.instance.client
+          .from('coaches')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle();
+      return record != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _showClientAccessRequiredSheet() async {
+    await showAppBottomSheet<void>(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Complete your signup",
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.start,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "To use the app, complete the survey, set up your subscription, and book a consultation call. Then come back and sign in using the same email you used for payment.",
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.start,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await openUrl(
+                    context: context,
+                    url: 'https://www.notathletes.com/survey',
+                  );
+                },
+                label: "Open survey",
+                buttonColor: Theme.of(context).colors.vibrantAccent,
+                showArrowRight: false,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showCoachAccessRequiredSheet() async {
+    await showAppBottomSheet<void>(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Coach access only",
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.start,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Only Not Athletes coaches can train users with this app. If you’re a coach, please contact support to get access.",
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.start,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                label: "Got it",
+                buttonColor: Theme.of(context).colors.vibrantAccent,
+                showArrowRight: false,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _resetForm() {
@@ -242,65 +382,80 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           ),
 
           // ----------------- CONTENT --------------------
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Modern Email Input with integrated button
-                    if (!_otpSent)
-                      _ModernEmailInput(
-                        controller: _emailController,
-                        onSubmit: _sendOTP,
-                        isLoading: _isLoading,
-                        isDarkMode: isDarkMode,
+          GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            behavior: HitTestBehavior.translucent,
+            child: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Text(
+                          AppConfig.appName,
+                          style: const TextStyle(
+                            fontFamily: 'GroutpixFlow',
+                            color: Colors.white70,
+                            fontSize: 18,
+                          ),
+                        ),
                       ),
+                      const SizedBox(height: 28),
+                      // Modern Email Input with integrated button
+                      if (!_otpSent)
+                        _ModernEmailInput(
+                          controller: _emailController,
+                          onSubmit: _sendOTP,
+                          isLoading: _isLoading,
+                          isDarkMode: isDarkMode,
+                        ),
 
-                    // OTP field (shown after email submitted)
-                    if (_otpSent) ...[
-                      _ModernOTPInput(
-                        controller: _otpController,
-                        onSubmit: _verifyOTP,
-                        isLoading: _isLoading,
-                        isDarkMode: isDarkMode,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Enter the 6-digit code sent to ${_emailController.text.trim()}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
+                      // OTP field (shown after email submitted)
+                      if (_otpSent) ...[
+                        _ModernOTPInput(
+                          controller: _otpController,
+                          onSubmit: _verifyOTP,
+                          isLoading: _isLoading,
+                          isDarkMode: isDarkMode,
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      TextButton(
-                        onPressed: _resetForm,
-                        child: Text(
-                          'Use different email',
+                        const SizedBox(height: 16),
+                        Text(
+                          'Enter the 6-digit code sent to ${_emailController.text.trim()}',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: theme.colorScheme.primary,
                             fontSize: 14,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
                           ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: _isLoading ? null : _sendOTP,
-                        child: Text(
-                          'Resend code',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.7),
-                            fontSize: 14,
+                        const SizedBox(height: 24),
+                        TextButton(
+                          onPressed: _resetForm,
+                          child: Text(
+                            'Use different email',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                      ),
+                        TextButton(
+                          onPressed: _isLoading ? null : _sendOTP,
+                          child: Text(
+                            'Resend code',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.7),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),

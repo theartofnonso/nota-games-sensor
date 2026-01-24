@@ -1,0 +1,2 @@
+#include "Flutter/Debug.xcconfig"
+APP_DISPLAY_NAME=Not Athletes

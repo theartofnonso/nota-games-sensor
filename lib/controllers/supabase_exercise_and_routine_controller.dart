@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/offline_first/exercise_offline_repository.dart';
@@ -22,11 +23,12 @@ import '../repositories/supabase/supabase_routine_plan_repository.dart';
 import '../repositories/supabase/supabase_routine_template_repository.dart';
 import '../utils/notifications_utils.dart';
 import '../utils/routine_utils.dart';
+import 'access_controller.dart';
+import '../app_flavor.dart';
 
 class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   bool isLoading = false;
   String errorMessage = '';
-
   final logger = getLogger(className: "SupabaseExerciseAndRoutineController");
 
   late SupabaseExerciseRepository _exerciseRepository;
@@ -37,12 +39,18 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   late OfflineRoutineTemplateRepository _offlineTemplateRepository;
   late OfflineRoutinePlanRepository _offlinePlanRepository;
   late OfflineRoutineLogRepository _offlineLogRepository;
+  List<ExerciseDto> _overrideExercises = const [];
+  List<RoutineTemplateDto> _overrideTemplates = const [];
+  List<RoutinePlanDto> _overridePlans = const [];
+  List<RoutineLogDto> _overrideLogs = const [];
+  final AccessController accessController;
 
   SupabaseExerciseAndRoutineController({
     required SupabaseExerciseRepository exerciseRepository,
     required SupabaseRoutineTemplateRepository templateRepository,
     required SupabaseRoutinePlanRepository planRepository,
     required SupabaseRoutineLogRepository logRepository,
+    required this.accessController,
   }) {
     _exerciseRepository = exerciseRepository;
     _templateRepository = templateRepository;
@@ -58,26 +66,57 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         OfflineRoutineLogRepository(remoteRepository: _logRepository);
   }
 
-  UnmodifiableListView<ExerciseDto> get exercises =>
-      UnmodifiableListView(_offlineExerciseRepository.offlineExercises);
+  UnmodifiableListView<ExerciseDto> get exercises => UnmodifiableListView(
+        accessController.isClientMode
+            ? _overrideExercises
+            : (AppConfig.isCoach
+                ? const []
+                : _offlineExerciseRepository.offlineExercises),
+      );
 
   UnmodifiableListView<RoutineTemplateDto> get templates =>
-      UnmodifiableListView(_offlineTemplateRepository.offlineTemplates);
+      UnmodifiableListView(
+        accessController.isClientMode
+            ? _overrideTemplates
+            : (AppConfig.isCoach
+                ? const []
+                : _offlineTemplateRepository.offlineTemplates),
+      );
 
-  UnmodifiableListView<RoutinePlanDto> get plans =>
-      UnmodifiableListView(_offlinePlanRepository.offlinePlans);
+  UnmodifiableListView<RoutinePlanDto> get plans => UnmodifiableListView(
+        accessController.isClientMode
+            ? _overridePlans
+            : (AppConfig.isCoach
+                ? const []
+                : _offlinePlanRepository.offlinePlans),
+      );
 
   /// Offline-first view of routine logs backed by local cache and sync engine.
-  UnmodifiableListView<RoutineLogDto> get logs =>
-      UnmodifiableListView(_offlineLogRepository.offlineLogs);
+  UnmodifiableListView<RoutineLogDto> get logs => UnmodifiableListView(
+        accessController.isClientMode
+            ? _overrideLogs
+            : (AppConfig.isCoach
+                ? const []
+                : _offlineLogRepository.offlineLogs),
+      );
 
   /// Direct view of logs loaded from Supabase (used internally by the
   /// offline sync engine and for debugging; prefer [logs] in the UI).
   UnmodifiableListView<RoutineLogDto> get remoteLogs => _logRepository.logs;
+  bool get isCoach => AppConfig.isCoach;
 
   UnmodifiableMapView<String, List<ExerciseLogDto>>
       get exerciseLogsByExerciseId =>
           UnmodifiableMapView(groupExerciseLogsByExerciseId(routineLogs: logs));
+
+  bool _blockIfClientMode() {
+    if (!accessController.isClientMode) {
+      return false;
+    }
+    errorMessage = "Client mode is read-only.";
+    notifyListeners();
+    return true;
+  }
 
   /// Initialization
   Future<void> initialize() async {
@@ -97,6 +136,20 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> loadUserData() async {
     try {
+      if (accessController.isClientMode &&
+          accessController.clientOverrideId != null) {
+        await _loadRemoteForClient(accessController.clientOverrideId!);
+        notifyListeners();
+        return;
+      }
+      if (AppConfig.isCoach) {
+        _overrideExercises = const [];
+        _overrideTemplates = const [];
+        _overridePlans = const [];
+        _overrideLogs = const [];
+        notifyListeners();
+        return;
+      }
       // Load cached data first so they are available immediately in offline mode.
       await _offlineExerciseRepository.loadFromCache();
       await _offlineTemplateRepository.loadFromCache();
@@ -120,6 +173,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Manually trigger a routine log sync (e.g. on pull-to-refresh or
   /// connectivity change).
   Future<void> syncRoutineLogs() async {
+    if (accessController.isClientMode || AppConfig.isCoach) {
+      return;
+    }
     final connectivity = await Connectivity().checkConnectivity();
     if (connectivity.last == ConnectivityResult.none) {
       logger.w("Sync skipped: offline/no connectivity");
@@ -138,6 +194,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Exercises
 
   Future<void> saveExercise({required ExerciseDto exerciseDto}) async {
+    if (_blockIfClientMode()) return;
     isLoading = true;
     try {
       // Ensure new exercises have a stable client-generated ID so offline
@@ -159,6 +216,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   Future<void> updateExercise({required ExerciseDto exercise}) async {
+    if (_blockIfClientMode()) return;
     isLoading = true;
     try {
       await _offlineExerciseRepository.upsertLocal(exercise);
@@ -175,6 +233,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   Future<void> removeExercise({required ExerciseDto exercise}) async {
+    if (_blockIfClientMode()) return;
     isLoading = true;
     try {
       await _offlineExerciseRepository.deleteLocal(exercise.id);
@@ -193,6 +252,36 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Plans
 
   Future<RoutinePlanDto?> savePlan({required RoutinePlanDto planDto}) async {
+    if (accessController.isClientMode) {
+      isLoading = true;
+      RoutinePlanDto? result;
+      try {
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId == null) {
+          errorMessage = "Please sign in to continue.";
+          notifyListeners();
+          return null;
+        }
+        final id = planDto.id.isEmpty ? const Uuid().v4() : planDto.id;
+        final planWithId = planDto.copyWith(
+          id: id,
+          clientId: accessController.clientOverrideId,
+        );
+        final json = planWithId.toJson();
+        json['owner'] = userId;
+        await Supabase.instance.client.from('routine_plans').upsert(json);
+        await _loadRemoteForClient(accessController.clientOverrideId!);
+        result = planWithId;
+      } catch (e) {
+        errorMessage = "Oops! Something went wrong. Please try again later.";
+        logger.e("Error saving client plan", error: e);
+      } finally {
+        isLoading = false;
+        errorMessage = "";
+        notifyListeners();
+      }
+      return result;
+    }
     isLoading = true;
     RoutinePlanDto? result;
     try {
@@ -216,14 +305,39 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   Future<void> updatePlan({required RoutinePlanDto plan}) async {
-    // Prevent updating system plans
-    if (plan.isSystemPlan) {
+    final isClientMode = accessController.isClientMode;
+    if (!isClientMode && plan.isSystemPlan) {
       errorMessage = "System plans cannot be edited.";
       logger.w("Attempted to update system plan: ${plan.id}");
       notifyListeners();
       return;
     }
-    
+    if (isClientMode) {
+      isLoading = true;
+      try {
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId == null) {
+          errorMessage = "Please sign in to continue.";
+          notifyListeners();
+          return;
+        }
+        final updatedPlan =
+            plan.copyWith(clientId: accessController.clientOverrideId);
+        final json = updatedPlan.toJson();
+        json['owner'] = userId;
+        await Supabase.instance.client.from('routine_plans').upsert(json);
+        await _loadRemoteForClient(accessController.clientOverrideId!);
+      } catch (e) {
+        errorMessage = "Oops! Something went wrong. Please try again later.";
+        logger.e("Error updating client plan", error: e);
+      } finally {
+        isLoading = false;
+        errorMessage = "";
+        notifyListeners();
+      }
+      return;
+    }
+
     isLoading = true;
     try {
       await _offlinePlanRepository.upsertLocal(plan);
@@ -240,14 +354,33 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   Future<void> deletePlan({required RoutinePlanDto plan}) async {
-    // Prevent deletion of system plans
-    if (plan.isSystemPlan) {
+    final isClientMode = accessController.isClientMode;
+    if (!isClientMode && plan.isSystemPlan) {
       errorMessage = "System plans cannot be deleted.";
       logger.w("Attempted to delete system plan: ${plan.id}");
       notifyListeners();
       return;
     }
-    
+
+    if (isClientMode) {
+      isLoading = true;
+      try {
+        await Supabase.instance.client
+            .from('routine_plans')
+            .delete()
+            .eq('id', plan.id);
+        await _loadRemoteForClient(accessController.clientOverrideId!);
+      } catch (e) {
+        errorMessage = "Oops! Something went wrong. Please try again later.";
+        logger.e("Error deleting client plan", error: e);
+      } finally {
+        isLoading = false;
+        errorMessage = "";
+        notifyListeners();
+      }
+      return;
+    }
+
     isLoading = true;
     try {
       await _offlinePlanRepository.deleteLocal(plan.id);
@@ -268,15 +401,46 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<RoutineTemplateDto?> saveTemplate({
     required RoutineTemplateDto templateDto,
   }) async {
+    if (accessController.isClientMode) {
+      isLoading = true;
+      RoutineTemplateDto? result;
+      try {
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId == null) {
+          errorMessage = "Please sign in to continue.";
+          notifyListeners();
+          return null;
+        }
+        final id = templateDto.id.isEmpty ? const Uuid().v4() : templateDto.id;
+        final templateWithId = templateDto.copyWith(
+          id: id,
+          clientId: accessController.clientOverrideId,
+        );
+        final json = templateWithId.toJson();
+        json['owner'] = userId;
+        await Supabase.instance.client.from('routine_templates').upsert(json);
+        await _loadRemoteForClient(accessController.clientOverrideId!);
+        result = templateWithId;
+      } catch (e) {
+        errorMessage = "Oops! Something went wrong. Please try again later.";
+        logger.e("Error saving client template", error: e);
+      } finally {
+        isLoading = false;
+        errorMessage = "";
+        notifyListeners();
+      }
+      return result;
+    }
     // Check if template belongs to a system plan
     final plan = planWhere(id: templateDto.planId);
     if (plan?.isSystemPlan ?? false) {
       errorMessage = "Cannot add workouts to system plans.";
-      logger.w("Attempted to save template to system plan: ${templateDto.planId}");
+      logger.w(
+          "Attempted to save template to system plan: ${templateDto.planId}");
       notifyListeners();
       return null;
     }
-    
+
     isLoading = true;
     RoutineTemplateDto? result;
     try {
@@ -302,15 +466,44 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> updateTemplate({
     required RoutineTemplateDto template,
   }) async {
-    // Check if template belongs to a system plan
-    final plan = planWhere(id: template.planId);
-    if (plan?.isSystemPlan ?? false) {
-      errorMessage = "Templates from system plans cannot be edited.";
-      logger.w("Attempted to update template from system plan: ${template.id}");
-      notifyListeners();
+    final isClientMode = accessController.isClientMode;
+    if (!isClientMode) {
+      final plan = planWhere(id: template.planId);
+      if (plan?.isSystemPlan ?? false) {
+        errorMessage = "Templates from system plans cannot be edited.";
+        logger
+            .w("Attempted to update template from system plan: ${template.id}");
+        notifyListeners();
+        return;
+      }
+    }
+
+    if (isClientMode) {
+      isLoading = true;
+      try {
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId == null) {
+          errorMessage = "Please sign in to continue.";
+          notifyListeners();
+          return;
+        }
+        final updatedTemplate =
+            template.copyWith(clientId: accessController.clientOverrideId);
+        final json = updatedTemplate.toJson();
+        json['owner'] = userId;
+        await Supabase.instance.client.from('routine_templates').upsert(json);
+        await _loadRemoteForClient(accessController.clientOverrideId!);
+      } catch (e) {
+        errorMessage = "Oops! Something went wrong. Please try again later.";
+        logger.e("Error updating client template", error: e);
+      } finally {
+        isLoading = false;
+        errorMessage = "";
+        notifyListeners();
+      }
       return;
     }
-    
+
     isLoading = true;
     try {
       await _offlineTemplateRepository.upsertLocal(template);
@@ -329,15 +522,37 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> deleteTemplate({
     required RoutineTemplateDto template,
   }) async {
-    // Check if template belongs to a system plan
-    final plan = planWhere(id: template.planId);
-    if (plan?.isSystemPlan ?? false) {
-      errorMessage = "Templates from system plans cannot be deleted.";
-      logger.w("Attempted to delete template from system plan: ${template.id}");
-      notifyListeners();
+    final isClientMode = accessController.isClientMode;
+    if (!isClientMode) {
+      final plan = planWhere(id: template.planId);
+      if (plan?.isSystemPlan ?? false) {
+        errorMessage = "Templates from system plans cannot be deleted.";
+        logger
+            .w("Attempted to delete template from system plan: ${template.id}");
+        notifyListeners();
+        return;
+      }
+    }
+
+    if (isClientMode) {
+      isLoading = true;
+      try {
+        await Supabase.instance.client
+            .from('routine_templates')
+            .delete()
+            .eq('id', template.id);
+        await _loadRemoteForClient(accessController.clientOverrideId!);
+      } catch (e) {
+        errorMessage = "Oops! Something went wrong. Please try again later.";
+        logger.e("Error deleting client template", error: e);
+      } finally {
+        isLoading = false;
+        errorMessage = "";
+        notifyListeners();
+      }
       return;
     }
-    
+
     isLoading = true;
     try {
       await _offlineTemplateRepository.deleteLocal(template.id);
@@ -358,6 +573,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Local-first create: write to the offline cache, then sync to Supabase
   /// in the background using last-write-wins.
   Future<RoutineLogDto?> saveLog({required RoutineLogDto logDto}) async {
+    if (_blockIfClientMode()) return null;
     isLoading = true;
     try {
       // Generate a stable ID if needed so we can persist locally without
@@ -401,6 +617,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// background. Callers still get a success flag but are not blocked
   /// on the network.
   Future<bool> updateLog({required RoutineLogDto log}) async {
+    if (_blockIfClientMode()) return false;
     isLoading = true;
     bool success = false;
     try {
@@ -424,6 +641,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Local-first delete: mark/remove the log from the offline cache and
   /// then sync in the background.
   Future<void> deleteLog({required RoutineLogDto log}) async {
+    if (_blockIfClientMode()) return;
     isLoading = true;
     try {
       await _offlineLogRepository.deleteLocal(log.id);
@@ -667,6 +885,60 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       allSets.addAll(log.sets);
     }
     return allSets;
+  }
+
+  Future<void> loadClientData({
+    required String clientId,
+    String? clientName,
+  }) async {
+    accessController.setClientOverride(
+      clientId: clientId,
+      clientName: clientName,
+    );
+    isLoading = true;
+    notifyListeners();
+    try {
+      await _loadRemoteForClient(clientId);
+    } catch (e) {
+      logger.e("Error loading client data", error: e);
+      errorMessage = "Failed to load client data.";
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> clearClientOverride() async {
+    accessController.clearClientOverride();
+    _overrideExercises = const [];
+    _overrideTemplates = const [];
+    _overridePlans = const [];
+    _overrideLogs = const [];
+    await initialize();
+  }
+
+  Future<void> _loadRemoteForClient(String clientId) async {
+    final ownerId = Supabase.instance.client.auth.currentUser?.id;
+    if (AppConfig.isCoach) {
+      _overrideExercises = const [];
+    } else {
+      await _exerciseRepository.loadUserExercises(userIdOverride: clientId);
+      _overrideExercises = _exerciseRepository.exercises.toList();
+    }
+    await _templateRepository.loadTemplates(
+      ownerIdOverride: ownerId,
+      clientIdOverride: clientId,
+      requireOwnerAndClient: true,
+    );
+    _overrideTemplates = _templateRepository.templates.toList();
+    await _planRepository.loadPlans(
+      ownerIdOverride: ownerId,
+      clientIdOverride: clientId,
+      requireOwnerAndClient: true,
+    );
+    _overridePlans = _planRepository.plans.toList();
+    await _logRepository.loadLogs(userIdOverride: clientId);
+    _overrideLogs = _logRepository.logs.toList();
   }
 
   Future<void> removeLog({required RoutineLogDto log}) async {

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/screens/editors/exercise_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
@@ -75,7 +76,6 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
   if (details == null) return null;
 
   final controller = context.read<SupabaseExerciseAndRoutineController>();
-
   if (isEditing) {
     final updated = initialPlan.copyWith(
       name: details.name,
@@ -233,6 +233,12 @@ Future<void> navigateToChat({
   String? adminUserId,
 }) async {
   final finalAdminUserId = adminUserId ?? ChatConfig.adminUserId;
+  final accessController = context.read<AccessController>();
+  final clientUserId =
+      accessController.isClientMode ? accessController.clientOverrideId : null;
+  final clientName =
+      accessController.isClientMode ? accessController.clientOverrideName : null;
+  final clientEmail = null;
   await showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -262,6 +268,9 @@ Future<void> navigateToChat({
           isDismissible: true,
           child: ChatScreen(
             adminUserId: finalAdminUserId,
+            clientUserId: clientUserId,
+            clientName: clientName,
+            clientEmail: clientEmail,
             scrollController: null,
           ),
         ),

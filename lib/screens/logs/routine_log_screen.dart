@@ -26,6 +26,7 @@ import '../../dtos/viewmodels/routine_log_arguments.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
+import '../../app_flavor.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/personal_bests_utils.dart';
@@ -118,6 +119,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     logs.map((log) => log.volume).toList();
 
+    final isCoach = AppConfig.isCoach;
+
     return Scaffold(
         appBar: AppBar(
             backgroundColor: appBarBackgroundColor(context: context),
@@ -127,7 +130,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
               onPressed: context.pop,
             ),
-            actions: widget.isEditable
+            actions: widget.isEditable && !isCoach
                 ? [
                     IconButton(
                         onPressed: _showBottomSheet,
@@ -155,18 +158,20 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                         children: [
                           Builder(
                             builder: (context) {
-                              if (updatedLog.templateId.isEmpty) {
-                                return const SizedBox.shrink();
+                              String? attribution;
+                              if (updatedLog.templateId.isNotEmpty) {
+                                final template = exerciseAndRoutineController
+                                    .templateWhere(id: updatedLog.templateId);
+                                if (template != null) {
+                                  final plan = exerciseAndRoutineController
+                                      .planWhere(id: template.planId);
+                                  final isSystemTemplate =
+                                      plan?.isSystemPlan ?? false;
+                                  attribution = isSystemTemplate
+                                      ? 'Not Athletes'
+                                      : 'Created by you';
+                                }
                               }
-                              final template = exerciseAndRoutineController
-                                  .templateWhere(id: updatedLog.templateId);
-                              if (template == null) {
-                                return const SizedBox.shrink();
-                              }
-                              final plan = exerciseAndRoutineController
-                                  .planWhere(id: template.planId);
-                              final isSystemTemplate =
-                                  plan?.isSystemPlan ?? false;
 
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,16 +184,15 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
-                                  Text(
-                                    isSystemTemplate
-                                        ? 'Not Athletes'
-                                        : 'Created by you',
-                                    style: TextStyle(
-                                      fontFamily: 'GroutpixFlow',
-                                      color: Colors.blueGrey.shade400,
-                                      fontSize: 14,
+                                  if (attribution != null)
+                                    Text(
+                                      attribution,
+                                      style: TextStyle(
+                                        fontFamily: 'GroutpixFlow',
+                                        color: Colors.blueGrey.shade400,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               );
                             },
@@ -293,8 +297,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading:
-                  const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
+              leading: const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
               horizontalTitleGap: 6,
               title: Text("Edit Log"),
               onTap: _editLog,

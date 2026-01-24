@@ -16,9 +16,9 @@ class SupabaseRoutineLogRepository {
 
   /// Load logs from Supabase (read-only; writes go through offline layer).
   /// Only loads logs within date range: last year to end of current year.
-  Future<void> loadLogs() async {
+  Future<void> loadLogs({String? userIdOverride}) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = userIdOverride ?? _client.auth.currentUser?.id;
       if (userId == null) {
         logger.w('No user logged in');
         return;

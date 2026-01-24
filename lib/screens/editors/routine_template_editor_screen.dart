@@ -116,12 +116,16 @@ class _RoutineTemplateEditorScreenState
           context: context,
           title: "Update workout",
           description: "Do you want to update workout?",
-          action: () {
+          action: () async {
             _closeDialog();
             final updatedTemplate =
                 _getUpdatedRoutineTemplate(template: template);
-            _doUpdateRoutineTemplate(updatedTemplate: updatedTemplate);
-            _navigateBack(template: updatedTemplate);
+            final didUpdate = await _doUpdateRoutineTemplate(
+              updatedTemplate: updatedTemplate,
+            );
+            if (didUpdate) {
+              _navigateBack(template: updatedTemplate);
+            }
           },
           actionLabel: 'Update',
           isDestructive: false);
@@ -142,7 +146,7 @@ class _RoutineTemplateEditorScreenState
     );
   }
 
-  void _doUpdateRoutineTemplate(
+  Future<bool> _doUpdateRoutineTemplate(
       {required RoutineTemplateDto updatedTemplate}) async {
     final templateProvider = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
@@ -152,6 +156,7 @@ class _RoutineTemplateEditorScreenState
         _getUpdatedRoutineTemplate(template: updatedTemplate);
 
     await templateProvider.updateTemplate(template: updatedRoutineTemplate);
+    return true;
   }
 
   void _dismissKeyboard() {

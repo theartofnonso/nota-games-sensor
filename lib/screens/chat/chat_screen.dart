@@ -12,6 +12,9 @@ class ChatScreen extends StatefulWidget {
 
   /// Admin/Coach user ID for the one-to-one chat
   final String adminUserId;
+  final String? clientUserId;
+  final String? clientName;
+  final String? clientEmail;
 
   /// Optional scroll controller for bottom sheet integration
   final ScrollController? scrollController;
@@ -19,6 +22,9 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({
     super.key,
     required this.adminUserId,
+    this.clientUserId,
+    this.clientName,
+    this.clientEmail,
     this.scrollController,
   });
 
@@ -26,7 +32,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   final ChatService _chatService = ChatService();
   final TextEditingController _messageController = TextEditingController();
   late final ScrollController _scrollController;
@@ -39,18 +45,31 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController = widget.scrollController ?? ScrollController();
     _initializeChat();
   }
 
   Future<void> _initializeChat() async {
     try {
+      if (!mounted) return;
       setState(() => _isLoading = true);
 
       // Get or create conversation
-      await _chatService.getOrCreateConversation(
-        coachId: widget.adminUserId,
-      );
+      if (widget.clientUserId != null) {
+        final coachId = _chatService.currentUserId;
+        if (coachId == null) {
+          throw Exception('No coach ID available.');
+        }
+        await _chatService.getOrCreateConversation(
+          coachId: coachId,
+          userIdOverride: widget.clientUserId,
+        );
+      } else {
+        await _chatService.getOrCreateConversation(
+          coachId: widget.adminUserId,
+        );
+      }
 
       // Set up real-time message subscription
       _chatService.setupMessageSubscription();
@@ -58,6 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
       // Load previous messages
       final previousMessages =
           await _chatService.loadPreviousMessages(limit: 50);
+      if (!mounted) return;
       setState(() {
         _messages.addAll(previousMessages);
         // Sort messages by timestamp in ascending order (oldest first, newest last)
@@ -97,6 +117,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       });
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -113,6 +134,24 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _refreshMessages() async {
+    try {
+      final previousMessages =
+          await _chatService.loadPreviousMessages(limit: 50);
+      if (!mounted) return;
+      setState(() {
+        for (final message in previousMessages) {
+          if (_messages.any((m) => m.id == message.id)) continue;
+          _messages.add(message);
+        }
+        _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      });
+      _scrollToBottom();
+    } catch (e) {
+      debugPrint('Error refreshing chat messages: $e');
     }
   }
 
@@ -133,12 +172,14 @@ class _ChatScreenState extends State<ChatScreen> {
     final messageText = _messageController.text.trim();
     if (messageText.isEmpty || _isSending) return;
 
+    if (!mounted) return;
     setState(() => _isSending = true);
     _messageController.clear();
 
     try {
       final sentMessage = await _chatService.sendMessage(messageText);
       // Add to local list if not already added by stream
+      if (!mounted) return;
       setState(() {
         final isDuplicate = _messages.any((m) => m.id == sentMessage.id);
         if (!isDuplicate) {
@@ -168,6 +209,31 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (_chatService.currentConversationId == null) {
+        _initializeChat();
+        return;
+      }
+      _chatService.refreshMessageSubscription();
+      _refreshMessages();
+      _chatService.markConversationAsRead();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _messageSubscription?.cancel();
+    _messageController.dispose();
+    // Only dispose if we created the controller ourselves
+    if (widget.scrollController == null) {
+      _scrollController.dispose();
+    }
+    super.dispose();
+  }
+
   String _formatTimestamp(DateTime dateTime) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -185,6 +251,26 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isCurrentUserMessage(ChatMessageDto message) {
     final currentUserId = _chatService.currentUserId;
     return message.senderId == currentUserId;
+  }
+
+  String _initialsForName(String name, String? email) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return _initialsFromEmail(email);
+    }
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length == 1) {
+      return parts.first.characters.take(2).toString().toUpperCase();
+    }
+    final first = parts.first.characters.first.toString().toUpperCase();
+    final last = parts.last.characters.first.toString().toUpperCase();
+    return '$first$last';
+  }
+
+  String _initialsFromEmail(String? email) {
+    if (email == null || email.isEmpty) return '';
+    final namePart = email.split('@').first;
+    return namePart.characters.take(2).toString().toUpperCase();
   }
 
   List<_ChatListEntry> _buildChatEntries() {
@@ -219,17 +305,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   @override
-  void dispose() {
-    _messageSubscription?.cancel();
-    _messageController.dispose();
-    // Only dispose if we created the controller ourselves
-    if (widget.scrollController == null) {
-      _scrollController.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return TRKRLoadingScreen(action: () {});
@@ -239,6 +314,12 @@ class _ChatScreenState extends State<ChatScreen> {
     final isDarkMode = theme.brightness == Brightness.dark;
     final colors = theme.extension<TRKRColors>();
 
+    final showClientHeader =
+        widget.clientUserId != null && widget.clientName != null;
+    final clientInitials = showClientHeader
+        ? _initialsForName(widget.clientName!, widget.clientEmail)
+        : null;
+
     return Column(
       children: [
         // Header
@@ -246,17 +327,47 @@ class _ChatScreenState extends State<ChatScreen> {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
           child: Row(
             children: [
+              if (showClientHeader && clientInitials != null) ...[
+                Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        (isDarkMode ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.18),
+                        (isDarkMode ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    clientInitials,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Check In',
-                      style: theme.textTheme.titleLarge?.copyWith(
+                      showClientHeader ? widget.clientName! : 'Check In',
+                      style: theme.textTheme.titleMedium?.copyWith(
                         color: isDarkMode ? Colors.white : Colors.black,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 17,
                       ),
                     ),
+                    if (showClientHeader) const SizedBox.shrink(),
                   ],
                 ),
               ),
@@ -294,6 +405,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           'No messages yet',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: Colors.grey.withValues(alpha: 0.7),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -301,41 +414,40 @@ class _ChatScreenState extends State<ChatScreen> {
                           'Start a conversation with support',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.grey.withValues(alpha: 0.5),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
                     ),
                   ),
                 )
-              : GestureDetector(
-                  onTap: () => FocusScope.of(context).unfocus(),
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    itemCount: _buildChatEntries().length,
-                    itemBuilder: (context, index) {
-                      final entries = _buildChatEntries();
-                      final entry = entries[index];
+              : ListView.builder(
+                  controller: _scrollController,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.manual,
+                  itemCount: _buildChatEntries().length,
+                  itemBuilder: (context, index) {
+                    final entries = _buildChatEntries();
+                    final entry = entries[index];
 
-                      if (entry.isDivider) {
-                        return _ChatDateDivider(label: entry.label!);
-                      }
+                    if (entry.isDivider) {
+                      return _ChatDateDivider(label: entry.label!);
+                    }
 
-                      final message = entry.message!;
-                      final isCurrentUser = _isCurrentUserMessage(message);
+                    final message = entry.message!;
+                    final isCurrentUser = _isCurrentUserMessage(message);
 
-                      return _ChatMessageBubble(
-                        message: message,
-                        isCurrentUser: isCurrentUser,
-                        timestamp: _formatTimestamp(message.createdAt),
-                        isDarkMode: isDarkMode,
-                        vibrantAccent: colors?.vibrantAccent ?? Colors.green,
-                      );
-                    },
-                  ),
+                    return _ChatMessageBubble(
+                      message: message,
+                      isCurrentUser: isCurrentUser,
+                      timestamp: _formatTimestamp(message.createdAt),
+                      isDarkMode: isDarkMode,
+                      vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+                    );
+                  },
                 ),
         ),
 
@@ -349,93 +461,95 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           child: SafeArea(
             top: false,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    enabled: !_isSending,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDarkMode ? Colors.white : Colors.black,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      hintStyle: TextStyle(
-                        color: Colors.grey.withValues(alpha: 0.5),
-                      ),
-                      filled: true,
-                      fillColor: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.05),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.2)
-                              : Colors.black.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.2)
-                              : Colors.black.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.4)
-                              : Colors.black.withValues(alpha: 0.4),
-                          width: 1,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                    ),
-                    maxLines: null,
-                    textCapitalization: TextCapitalization.sentences,
-                    onSubmitted: (_) => _sendMessage(),
+            child: GestureDetector(
+              onVerticalDragUpdate: (details) {
+                if (details.delta.dy > 6) {
+                  FocusScope.of(context).unfocus();
+                }
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.black.withValues(alpha: 0.2),
+                    width: 1,
                   ),
                 ),
-                const SizedBox(width: 12),
-                // Send button - no background, with border
-                SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap: _isSending ? null : _sendMessage,
-                      child: Container(
-                        alignment: Alignment.center,
-                        child: _isSending
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
-                                ),
-                              )
-                            : FaIcon(
-                                FontAwesomeIcons.arrowUp,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                                size: 18,
-                              ),
+                child: Stack(
+                  children: [
+                    TextField(
+                      controller: _messageController,
+                      enabled: !_isSending,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isDarkMode ? Colors.white : Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Type a message...',
+                        hintStyle: TextStyle(
+                          color: Colors.grey.withValues(alpha: 0.5),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          20,
+                          12,
+                          60,
+                          12,
+                        ),
+                      ),
+                      maxLines: null,
+                      textCapitalization: TextCapitalization.sentences,
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: _isSending ? null : _sendMessage,
+                            child: Container(
+                              alignment: Alignment.center,
+                              child: _isSending
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                      ),
+                                    )
+                                  : FaIcon(
+                                      FontAwesomeIcons.arrowUp,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                      size: 16,
+                                    ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -462,6 +576,10 @@ class _ChatMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final outgoingColor = Colors.white;
+    final incomingColor = Colors.black;
+    final bubbleColor = isCurrentUser ? outgoingColor : incomingColor;
+    final textColor = isCurrentUser ? Colors.black : Colors.white;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -480,11 +598,16 @@ class _ChatMessageBubble extends StatelessWidget {
                     maxWidth: maxBubbleWidth,
                   ),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isCurrentUser ? Colors.white : Colors.black,
-                      borderRadius: BorderRadius.circular(5),
+                      color: bubbleColor,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(18),
+                        topRight: const Radius.circular(18),
+                        bottomLeft: Radius.circular(isCurrentUser ? 18 : 4),
+                        bottomRight: Radius.circular(isCurrentUser ? 4 : 18),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,18 +615,16 @@ class _ChatMessageBubble extends StatelessWidget {
                         Text(
                           message.content,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: isCurrentUser ? Colors.black : Colors.white,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            color: textColor,
+                            fontWeight: FontWeight.w400,
+                            fontSize: 16,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           timestamp,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: isCurrentUser
-                                ? Colors.black.withValues(alpha: 0.7)
-                                : Colors.white.withValues(alpha: 0.7),
+                            color: textColor.withValues(alpha: 0.7),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -552,7 +673,8 @@ class _ChatDateDivider extends StatelessWidget {
             label,
             style: theme.textTheme.bodySmall?.copyWith(
               color: Colors.black.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
           ),
         ),

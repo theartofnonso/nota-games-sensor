@@ -97,6 +97,7 @@ Future<T?> showAppBottomSheet<T>({
   bool isDraggable = false,
   bool isDismissible = true,
   bool isScrollControlled = true,
+  bool useRootNavigator = false,
   double? initialChildSize,
   double? minChildSize,
   double? maxChildSize,
@@ -112,6 +113,7 @@ Future<T?> showAppBottomSheet<T>({
     backgroundColor: Colors.transparent,
     isScrollControlled: isScrollControlled,
     isDismissible: isDismissible,
+    useRootNavigator: useRootNavigator,
     // When using our own DraggableScrollableSheet, disable the modal's drag
     // dismissal so slight pulls don't instantly close the sheet.
     enableDrag: !isDraggable,
@@ -133,7 +135,8 @@ Future<T?> showAppBottomSheet<T>({
                 Navigator.of(context, rootNavigator: false).pop();
               },
               child: Container(
-                color: Colors.transparent, // Transparent so it doesn't interfere with barrierColor
+                color: Colors
+                    .transparent, // Transparent so it doesn't interfere with barrierColor
               ),
             ),
           ),
@@ -155,7 +158,8 @@ Future<T?> showAppBottomSheet<T>({
                 }
               },
               child: Container(
-                color: Colors.black.withValues(alpha: 0.55), // Match barrier color
+                color:
+                    Colors.black.withValues(alpha: 0.55), // Match barrier color
               ),
             ),
           ),

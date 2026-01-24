@@ -64,11 +64,15 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
           context: context,
           title: "Update plan",
           description: "Do you want to update plan?",
-          action: () {
+          action: () async {
             _closeDialog();
             final updatedTemplate = _getUpdatedRoutinePlan(plan: plan);
-            _doUpdateRoutinePlan(planToBeUpdated: updatedTemplate);
-            _navigateBack(plan: updatedTemplate);
+            final didUpdate = await _doUpdateRoutinePlan(
+              planToBeUpdated: updatedTemplate,
+            );
+            if (didUpdate) {
+              _navigateBack(plan: updatedTemplate);
+            }
           },
           actionLabel: 'Update',
           isDestructive: false);
@@ -83,12 +87,13 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
     return planToBeUpdated;
   }
 
-  void _doUpdateRoutinePlan({required RoutinePlanDto planToBeUpdated}) async {
+  Future<bool> _doUpdateRoutinePlan(
+      {required RoutinePlanDto planToBeUpdated}) async {
     final planProvider = Provider.of<SupabaseExerciseAndRoutineController>(
         context,
         listen: false);
-
     await planProvider.updatePlan(plan: planToBeUpdated);
+    return true;
   }
 
   void _dismissKeyboard() {

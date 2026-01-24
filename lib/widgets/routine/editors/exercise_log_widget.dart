@@ -36,12 +36,14 @@ class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
   final String exerciseLogId;
   final bool showSetCheck;
+  final ValueNotifier<bool>? timerRunningNotifier;
 
   const ExerciseLogWidget(
       {super.key,
       this.editorType = RoutineEditorMode.edit,
       required this.exerciseLogId,
-      this.showSetCheck = true});
+      this.showSetCheck = true,
+      this.timerRunningNotifier});
 
   @override
   State<ExerciseLogWidget> createState() => _ExerciseLogWidgetState();
@@ -810,6 +812,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     // We currently only pass showSetCheck = false from the template editor,
     // so treat that as "template mode" to tweak duration behaviour.
     final bool isTemplateMode = !widget.showSetCheck;
+    final bool canAddAlternatives = isTemplateMode;
 
     hasEmptyValues(sets: currentSets, exerciseType: exerciseType);
 
@@ -916,6 +919,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                 DurationStopwatchWidget(
                                   key: _durationStopwatchKey,
                                   onLogSet: _onLogDurationSet,
+                                  onRunningChanged: (isRunning) {
+                                    widget.timerRunningNotifier?.value =
+                                        isRunning;
+                                  },
                                 ),
                               // For duration exercises in the template editor, we
                               // don't allow pre-configuring sets. Instead, show a
@@ -1131,39 +1138,58 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                           child: Padding(
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 16),
-                                            child: Row(
-                                              children: [
-                                                GestureDetector(
-                                                  onTap:
-                                                      _addAlternativesDirectly,
-                                                  child: Container(
-                                                    width: 64,
-                                                    height: 64,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                      border: Border.all(
-                                                        color: Colors.white
-                                                            .withValues(
-                                                                alpha: 0.2),
-                                                        width: 1.5,
+                                            child: canAddAlternatives
+                                                ? Row(
+                                                    children: [
+                                                      GestureDetector(
+                                                        onTap:
+                                                            _addAlternativesDirectly,
+                                                        child: Container(
+                                                          width: 64,
+                                                          height: 64,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
+                                                            border: Border.all(
+                                                              color: Colors.white
+                                                                  .withValues(
+                                                                      alpha:
+                                                                          0.2),
+                                                              width: 1.5,
+                                                            ),
+                                                          ),
+                                                          child: const Center(
+                                                            child: FaIcon(
+                                                              FontAwesomeIcons
+                                                                  .circlePlus,
+                                                              size: 24,
+                                                              color:
+                                                                  Colors.white70,
+                                                            ),
+                                                          ),
+                                                        ),
                                                       ),
-                                                    ),
-                                                    child: const Center(
-                                                      child: FaIcon(
-                                                        FontAwesomeIcons
-                                                            .circlePlus,
-                                                        size: 24,
-                                                        color: Colors.white70,
+                                                      const SizedBox(width: 16),
+                                                      Expanded(
+                                                        child: Text(
+                                                          'Tap + to add alternative exercises',
+                                                          style: Theme.of(
+                                                                  context)
+                                                              .textTheme
+                                                              .bodySmall
+                                                              ?.copyWith(
+                                                                color: Colors
+                                                                    .white54,
+                                                              ),
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 16),
-                                                Expanded(
-                                                  child: Text(
-                                                    'Tap + to add alternative exercises',
+                                                    ],
+                                                  )
+                                                : Text(
+                                                    'No alternative exercises added.',
                                                     style: Theme.of(context)
                                                         .textTheme
                                                         .bodySmall
@@ -1171,9 +1197,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                                           color: Colors.white54,
                                                         ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
                                           ),
                                         )
                                       : ListView.builder(
@@ -1181,9 +1204,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                           padding: EdgeInsets.zero,
                                           itemCount:
                                               exerciseLog.alternatives.length +
-                                                  1, // +1 for add button
+                                                  (canAddAlternatives ? 1 : 0),
                                           itemBuilder: (context, index) {
-                                            if (index == 0) {
+                                            if (canAddAlternatives &&
+                                                index == 0) {
                                               // Add button as first item
                                               return _AlternativeExerciseCard(
                                                 exercise:
@@ -1193,14 +1217,20 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                                 onTap: _addAlternativesDirectly,
                                               );
                                             }
+                                            final alternativeIndex =
+                                                canAddAlternatives
+                                                    ? index - 1
+                                                    : index;
                                             final alternative = exerciseLog
-                                                .alternatives[index - 1];
+                                                .alternatives[alternativeIndex];
                                             return _AlternativeExerciseCard(
                                               exercise: alternative,
-                                              isFirst: false,
-                                              isLast: index ==
+                                              isFirst: !canAddAlternatives &&
+                                                  index == 0,
+                                              isLast: alternativeIndex ==
                                                   exerciseLog
-                                                      .alternatives.length,
+                                                      .alternatives.length -
+                                                      1,
                                               onTap: () =>
                                                   _confirmReplaceWithAlternative(
                                                       alternative),

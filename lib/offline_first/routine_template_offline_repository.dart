@@ -33,6 +33,11 @@ class OfflineRoutineTemplateRepository {
     _entries = await _localStore.loadAll();
   }
 
+  Future<void> clearCache() async {
+    _entries = const [];
+    await _localStore.deleteAll();
+  }
+
   Future<void> syncNow() async {
     _logger.i('Starting routine template sync');
 

@@ -39,6 +39,11 @@ class OfflineExerciseRepository {
     _entries = await _localStore.loadAll();
   }
 
+  Future<void> clearCache() async {
+    _entries = const [];
+    await _localStore.deleteAll();
+  }
+
   /// Full sync: push local changes to server, then pull everything from
   /// Supabase and merge using last-write-wins.
   Future<void> syncNow() async {

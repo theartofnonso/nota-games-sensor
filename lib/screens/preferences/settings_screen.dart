@@ -12,14 +12,19 @@ import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/controllers/nutrition_log_controller.dart';
+import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/screens/request_screens/notifications_request.dart';
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/shared_prefs.dart';
+import 'package:trainware/services/chat_unread_service.dart';
+import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/urls.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
-import '../../config/chat_config.dart';
+import '../../controllers/access_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
@@ -33,6 +38,7 @@ import '../../utils/uri_utils.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../widgets/badges/unread_badge.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
@@ -97,8 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _hasCachedSession = false;
 
   int _chatUnreadCount = 0;
-  RealtimeChannel? _chatUnreadChannel;
-  String? _chatConversationId;
+  bool _nutritionInitialized = false;
 
   @override
   Widget build(BuildContext context) {
@@ -106,12 +111,36 @@ class _SettingsScreenState extends State<SettingsScreen>
     final isDarkMode = systemBrightness == Brightness.dark;
     if (_loading) return TRKRLoadingScreen(action: _hideLoadingScreen);
 
+    final nutritionController = context.watch<NutritionLogController>();
+    final accessController = context.watch<AccessController>();
+    final isClientMode = accessController.isClientMode;
+    final isCoach = AppConfig.isCoach;
+    final consumedCalories = _sumCaloriesToday(nutritionController.logs);
+    final goalCalories = nutritionController.calorieTarget;
+    final hasLogsToday = _hasLogsToday(nutritionController.logs);
+    final remainingCalories = goalCalories > 0
+        ? (hasLogsToday
+            ? (goalCalories - consumedCalories).clamp(0.0, goalCalories)
+            : goalCalories)
+        : 0.0;
+    final consumedProtein = _sumProteinToday(nutritionController.logs);
+    final consumedCarbs = _sumCarbsToday(nutritionController.logs);
+    final consumedFats = _sumFatsToday(nutritionController.logs);
+
     final userEmail =
         Supabase.instance.client.auth.currentUser?.email ?? "User";
     final controller = context.watch<SupabaseExerciseAndRoutineController>();
     final logs = controller.logs;
     final yearStats = _YearTrainingStats.fromLogs(logs);
     final yearHoursStats = _YearHoursStats.fromLogs(logs);
+    final headerName = isClientMode
+        ? (accessController.clientOverrideName?.trim().isNotEmpty ?? false
+            ? accessController.clientOverrideName!.trim()
+            : 'Client')
+        : 'Settings';
+    final headerEmail = isClientMode ? '' : userEmail;
+    final headerInitials =
+        _initialsForName(headerName, isClientMode ? null : headerEmail);
     final nextSession = TrainingPredictionService.getNextPredictedSession(logs);
     final predictionInfo = nextSession != null
         ? _PredictionInfo(
@@ -146,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: InkWell(
                     onTap: () async {
                       await navigateToChat(context: context);
-                      await _refreshChatUnreadCount();
+                      await ChatUnreadService().refreshUnreadCount();
                     },
                     borderRadius: BorderRadius.circular(28),
                     child: Center(
@@ -165,21 +194,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             Positioned(
               top: -1,
               right: -1,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.amber,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  _chatUnreadCount > 99 ? '99+' : '$_chatUnreadCount+',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
+              child: UnreadBadge(count: _chatUnreadCount),
             ),
         ],
       ),
@@ -191,6 +206,90 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (isCoach)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: Row(
+                        children: [
+                          if (headerInitials != null) ...[
+                            Container(
+                              width: 36,
+                              height: 36,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    (isDarkMode ? Colors.white : Colors.black)
+                                        .withValues(alpha: 0.18),
+                                    (isDarkMode ? Colors.white : Colors.black)
+                                        .withValues(alpha: 0.05),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                headerInitials,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  headerName,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                ),
+                                if (headerEmail.trim().isNotEmpty)
+                                  Text(
+                                    headerEmail,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: isDarkMode
+                                              ? Colors.white
+                                                  .withValues(alpha: 0.6)
+                                              : Colors.black
+                                                  .withValues(alpha: 0.6),
+                                        ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: FaIcon(
+                              FontAwesomeIcons.users,
+                              color: isDarkMode ? Colors.white70 : Colors.black,
+                              size: 18,
+                            ),
+                            onPressed: _goBackToCoachList,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                    ),
                   // Calendar widget at top
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -222,48 +321,56 @@ class _SettingsScreenState extends State<SettingsScreen>
                     predictionInfo: predictionInfo,
                   ),
                   const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: CalorieTrackingCard(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          PageRouteBuilder(
-                            pageBuilder: (_, __, ___) =>
-                                const NutritionTrackerScreen(),
-                            transitionsBuilder: (_, animation, __, child) {
-                              final tween = Tween(
-                                begin: const Offset(0, 1),
-                                end: Offset.zero,
-                              ).chain(CurveTween(curve: Curves.easeOutCubic));
-                              return SlideTransition(
-                                position: animation.drive(tween),
-                                child: child,
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
+                  NutritionTrackingCarousel(
+                    goalCalories: goalCalories,
+                    remainingCalories: remainingCalories,
+                    proteinTarget: nutritionController.proteinTarget,
+                    carbsTarget: nutritionController.carbsTarget,
+                    fatsTarget: nutritionController.fatsTarget,
+                    consumedProtein: consumedProtein,
+                    consumedCarbs: consumedCarbs,
+                    consumedFats: consumedFats,
+                    hasLogsToday: hasLogsToday,
+                    onCardTap: () {
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) =>
+                              const NutritionTrackerScreen(),
+                          transitionsBuilder: (_, animation, __, child) {
+                            final tween = Tween(
+                              begin: const Offset(0, 1),
+                              end: Offset.zero,
+                            ).chain(CurveTween(curve: Curves.easeOutCubic));
+                            return SlideTransition(
+                              position: animation.drive(tween),
+                              child: child,
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   // Routine Plans section - edge-to-edge, no padding
                   _RoutinePlansSection(),
                   const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: InformationContainerWithBackgroundImage(
-                      image: 'images/background.jpg',
-                      subtitle:
-                          "Loving the app? Learn more about us and our mission.",
-                      color: Colors.black,
-                      onTap: _openWebpage,
-                      alignmentGeometry: Alignment.center,
+                  if (!isClientMode) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: InformationContainerWithBackgroundImage(
+                        image: 'images/background.jpg',
+                        subtitle:
+                            "Loving the app? Learn more about us and our mission.",
+                        color: Colors.black,
+                        onTap: _openWebpage,
+                        alignmentGeometry: Alignment.center,
+                      ),
                     ),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  if (Platform.isIOS)
+                    const SizedBox(
+                      height: 20,
+                    ),
+                  ],
+                  if (Platform.isIOS && !isClientMode)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -444,6 +551,17 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  Future<void> _goBackToCoachList() async {
+    if (!mounted) return;
+    final routineController =
+        context.read<SupabaseExerciseAndRoutineController>();
+    final nutritionController = context.read<NutritionLogController>();
+    await routineController.clearClientOverride();
+    await nutritionController.clearClientOverride();
+    if (!mounted) return;
+    context.go('/coach');
+  }
+
   void _openWebpage() {
     final url = trackrWebUrl;
     openUrl(url: url, context: context);
@@ -514,6 +632,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           context: context,
           child: NotificationsRequestScreen(onRequest: () {
             requestNotificationPermission().then((status) {
+              if (!mounted) return;
               setState(() {
                 _notificationEnabled = status;
               });
@@ -527,6 +646,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _checkNotificationPermission() async {
     final result = await checkIosNotificationPermission();
+    if (!mounted) return;
     setState(() {
       _notificationEnabled = result.isEnabled;
     });
@@ -662,6 +782,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     final version = packageInfo.version;
     final buildNumber = packageInfo.buildNumber;
+    if (!mounted) return;
     setState(() {
       _appVersion = "APP VERSION: $version (BUILD $buildNumber)";
     });
@@ -681,6 +802,65 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  double _sumCaloriesToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
+    return todayLogs.fold(0.0, (sum, log) => sum + log.calories);
+  }
+
+  bool _hasLogsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    return logs.any((log) => _isSameDay(log.loggedAt.toLocal(), now));
+  }
+
+  double _sumProteinToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
+    return todayLogs.fold(0.0, (sum, log) => sum + log.protein);
+  }
+
+  double _sumCarbsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
+    return todayLogs.fold(0.0, (sum, log) => sum + log.carbs);
+  }
+
+  double _sumFatsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
+    return todayLogs.fold(0.0, (sum, log) => sum + log.fats);
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String? _initialsForName(String name, String? email) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      return _initialsFromEmail(email);
+    }
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
+
+  String? _initialsFromEmail(String? email) {
+    if (email == null || email.trim().isEmpty) return null;
+    final atIndex = email.indexOf('@');
+    if (atIndex <= 0) return email.substring(0, 1).toUpperCase();
+    final local = email.substring(0, atIndex);
+    if (local.isEmpty) return null;
+    return local.substring(0, 1).toUpperCase();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -690,82 +870,41 @@ class _SettingsScreenState extends State<SettingsScreen>
     _checkNotificationPermission();
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
-    _initChatUnread();
+    if (AppConfig.isCoach) {
+      _chatUnreadCount = ChatUnreadCountsService().totalUnreadCount.value;
+      ChatUnreadCountsService()
+          .totalUnreadCount
+          .addListener(_handleChatUnreadChange);
+    } else {
+      _chatUnreadCount = ChatUnreadService().unreadCount.value;
+      ChatUnreadService().unreadCount.addListener(_handleChatUnreadChange);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _nutritionInitialized) return;
+      _nutritionInitialized = true;
+      context.read<NutritionLogController>().initialize();
+    });
   }
 
-  Future<void> _initChatUnread() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
-
-    final conversation = await Supabase.instance.client
-        .from('chat_conversations')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('coach_id', ChatConfig.adminUserId)
-        .maybeSingle();
-
-    if (conversation == null) {
-      if (mounted) {
-        setState(() => _chatUnreadCount = 0);
-      }
-      return;
-    }
-
-    _chatConversationId = conversation['id'] as String;
-    await _refreshChatUnreadCount();
-    _subscribeChatUnread();
-  }
-
-  Future<void> _refreshChatUnreadCount() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    final conversationId = _chatConversationId;
-    if (userId == null || conversationId == null) return;
-
-    final response = await Supabase.instance.client
-        .from('chat_messages')
-        .select()
-        .eq('conversation_id', conversationId)
-        .neq('sender_id', userId)
-        .eq('is_read', false);
-
-    if (mounted) {
-      setState(() => _chatUnreadCount = (response as List).length);
-    }
-  }
-
-  void _subscribeChatUnread() {
-    final conversationId = _chatConversationId;
-    if (conversationId == null) return;
-
-    if (_chatUnreadChannel != null) {
-      Supabase.instance.client.removeChannel(_chatUnreadChannel!);
-    }
-
-    _chatUnreadChannel = Supabase.instance.client
-        .channel('chat_messages_unread_$conversationId')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'chat_messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'conversation_id',
-            value: conversationId,
-          ),
-          callback: (_) {
-            _refreshChatUnreadCount();
-          },
-        )
-        .subscribe();
+  void _handleChatUnreadChange() {
+    if (!mounted) return;
+    setState(() {
+      _chatUnreadCount = AppConfig.isCoach
+          ? ChatUnreadCountsService().totalUnreadCount.value
+          : ChatUnreadService().unreadCount.value;
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     SharedPrefs().routineLogRevision.removeListener(_checkCachedSession);
-    if (_chatUnreadChannel != null) {
-      Supabase.instance.client.removeChannel(_chatUnreadChannel!);
-      _chatUnreadChannel = null;
+    if (AppConfig.isCoach) {
+      ChatUnreadCountsService()
+          .totalUnreadCount
+          .removeListener(_handleChatUnreadChange);
+    } else {
+      ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
     }
     super.dispose();
   }
@@ -776,6 +915,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     if (state == AppLifecycleState.resumed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkNotificationPermission();
+        ChatUnreadService().refreshSubscription();
+        ChatUnreadService().refreshUnreadCount();
       });
     }
   }
@@ -784,6 +925,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     final controller = context.read<SupabaseExerciseAndRoutineController>();
     final logs = controller.whereLogsIsSameDay(dateTime: date).toList();
     final hasLogs = logs.isNotEmpty;
+    final isClientMode = context.read<AccessController>().isClientMode;
 
     // Determine date label (Today, Yesterday, or full date)
     final now = DateTime.now();
@@ -862,7 +1004,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ),
                   // Log workout button (only show for today)
-                  if (isToday)
+                  if (isToday && !isClientMode)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
@@ -2349,3 +2491,4 @@ class _CreatePlanCard extends StatelessWidget {
     );
   }
 }
+

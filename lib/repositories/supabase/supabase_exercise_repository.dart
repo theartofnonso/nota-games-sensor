@@ -16,9 +16,9 @@ class SupabaseExerciseRepository {
       _userExercises.sorted((a, b) => a.name.compareTo(b.name)));
 
   /// Load exercises from Supabase (read-only; writes go through offline layer).
-  Future<void> loadUserExercises() async {
+  Future<void> loadUserExercises({String? userIdOverride}) async {
     try {
-      final userId = _client.auth.currentUser?.id;
+      final userId = userIdOverride ?? _client.auth.currentUser?.id;
       if (userId == null) {
         logger.w('No user logged in');
         return;

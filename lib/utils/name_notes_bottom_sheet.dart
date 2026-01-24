@@ -13,6 +13,7 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
   required BuildContext context,
   required String title,
   required String primaryButtonLabel,
+  String description = 'Add a name and optional notes to continue.',
   String initialName = '',
   String initialNotes = '',
   String emptyNameMessage = 'Please provide a name',
@@ -47,6 +48,14 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
                     .textTheme
                     .titleLarge
                     ?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                description,
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                      color: (isDark ? Colors.white : Colors.black)
+                          .withValues(alpha: 0.6),
+                    ),
               ),
               const SizedBox(height: 16),
               TextField(

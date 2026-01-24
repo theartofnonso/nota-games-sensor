@@ -213,6 +213,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   void _navigateToExerciseHistory(ExerciseDto exercise) async {
     _dismissKeyboard(context);
     await navigateToExerciseHome(context: context, exercise: exercise);
+    if (!mounted) return;
     setState(() {
       _loadOrSyncExercises();
     });
@@ -226,17 +227,18 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       emptyNameMessage: 'Please provide a name for this exercise',
     );
     if (details == null) return;
+    if (!mounted) return;
 
     final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-                            context,
-                            listen: false);
-                    final newExercise = ExerciseDto(
+        context,
+        listen: false);
+    final newExercise = ExerciseDto(
       name: details.name,
       notes: details.notes,
-                      type: ExerciseType.weights,
-                    );
-                    await controller.saveExercise(exerciseDto: newExercise);
-                    _loadOrSyncExercises();
+      type: ExerciseType.weights,
+    );
+    await controller.saveExercise(exerciseDto: newExercise);
+    _loadOrSyncExercises();
   }
 
   @override
@@ -373,6 +375,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   void _loadOrSyncExercises() {
     _loadSystemExercises().then((_) {
+      if (!mounted) return;
       final exerciseType = widget.type;
       final excludeExerciseIds =
           widget.excludeExercises.map((e) => e.id).toSet();

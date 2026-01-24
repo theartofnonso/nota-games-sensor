@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/shared_prefs.dart';
@@ -227,6 +228,7 @@ class _OverviewScreenState extends State<OverviewScreen>
     final controller = context.read<SupabaseExerciseAndRoutineController>();
     final logs = controller.whereLogsIsSameDay(dateTime: date).toList();
     final hasLogs = logs.isNotEmpty;
+    final isClientMode = context.read<AccessController>().isClientMode;
 
     // Determine date label (Today, Yesterday, or full date)
     final now = DateTime.now();
@@ -303,7 +305,7 @@ class _OverviewScreenState extends State<OverviewScreen>
                     ),
                   ),
                   // Log workout button (only show for today)
-                  if (isToday)
+                  if (isToday && !isClientMode)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
