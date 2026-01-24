@@ -248,9 +248,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (body is ChatImageMessageBody) {
       if (_attachmentImage(body) != null) return;
       _attachmentDownloadsInFlight.add(msgId);
-      ChatClient.getInstance.chatManager
-          .downloadThumbnail(message)
-          .whenComplete(() {
+      Future<void>(() async {
+        await ChatClient.getInstance.chatManager.downloadThumbnail(message);
+        if (body.localPath.isEmpty) {
+          await ChatClient.getInstance.chatManager.downloadAttachment(message);
+        }
+      }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
         _refreshMessages();
       });
@@ -260,9 +263,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (body is ChatVideoMessageBody) {
       if (_videoThumbnail(body) != null) return;
       _attachmentDownloadsInFlight.add(msgId);
-      ChatClient.getInstance.chatManager
-          .downloadThumbnail(message)
-          .whenComplete(() {
+      Future<void>(() async {
+        await ChatClient.getInstance.chatManager.downloadThumbnail(message);
+      }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
         _refreshMessages();
       });
@@ -277,19 +280,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
     if (existing.from != incoming.from) return false;
     if (_messageContent(existing) != _messageContent(incoming)) return false;
-    final delta =
-        (_messageTimestamp(existing).millisecondsSinceEpoch -
-                _messageTimestamp(incoming).millisecondsSinceEpoch)
-            .abs();
+    final delta = (_messageTimestamp(existing).millisecondsSinceEpoch -
+            _messageTimestamp(incoming).millisecondsSinceEpoch)
+        .abs();
     return delta <= 2000;
   }
 
   DateTime _messageTimestamp(ChatMessage message) {
     final serverTime = message.serverTime;
     final localTime = message.localTime;
-    final time = serverTime != 0
-        ? serverTime
-        : (localTime != 0 ? localTime : 0);
+    final time =
+        serverTime != 0 ? serverTime : (localTime != 0 ? localTime : 0);
     if (time == 0) {
       return DateTime.now();
     }
@@ -378,7 +379,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       context: context,
       isScrollControlled: false,
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,32 +391,41 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.photo),
-              title: const Text('Photo'),
-              onTap: () async {
-                Navigator.of(context).pop();
-                await _pickImage();
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.videocam),
-              title: const Text('Video'),
-              onTap: () async {
-                Navigator.of(context).pop();
-                await _pickVideo();
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.insert_drive_file),
-              title: const Text('File'),
-              onTap: () async {
-                Navigator.of(context).pop();
-                await _pickFile();
-              },
+            Row(
+              children: [
+                Expanded(
+                  child: _ShareTile(
+                    icon: Icons.photo,
+                    label: 'Photo',
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _pickImage();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _ShareTile(
+                    icon: Icons.videocam,
+                    label: 'Video',
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _pickVideo();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _ShareTile(
+                    icon: Icons.insert_drive_file,
+                    label: 'File',
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _pickFile();
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -499,8 +509,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         video: path,
         thumbnailPath: tempDir.path,
         imageFormat: ImageFormat.JPEG,
-        maxWidth: 480,
-        quality: 75,
+        maxWidth: 720,
+        quality: 90,
       );
       return thumbnail;
     } catch (_) {
@@ -832,9 +842,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         contentPadding: const EdgeInsets.fromLTRB(
-                          56,
+                          52,
                           12,
-                          60,
+                          52,
                           12,
                         ),
                       ),
@@ -844,58 +854,28 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     ),
                     Positioned(
                       left: 8,
+                      top: 8,
                       bottom: 8,
-                      child: SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: _showAttachmentSheet,
-                            child: Icon(
-                              Icons.add,
-                              color: isDarkMode ? Colors.white : Colors.black,
-                              size: 20,
-                            ),
-                          ),
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: _ChatInputIconButton(
+                          icon: Icons.add,
+                          isDarkMode: isDarkMode,
+                          onTap: _showAttachmentSheet,
                         ),
                       ),
                     ),
                     Positioned(
                       right: 8,
+                      top: 8,
                       bottom: 8,
-                      child: SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: _isSending ? null : _sendMessage,
-                            child: Container(
-                              alignment: Alignment.center,
-                              child: _isSending
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
-                                      ),
-                                    )
-                                  : FaIcon(
-                                      FontAwesomeIcons.arrowUp,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
-                                      size: 16,
-                                    ),
-                            ),
-                          ),
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: _ChatInputIconButton(
+                          icon: FontAwesomeIcons.arrowUp,
+                          isDarkMode: isDarkMode,
+                          onTap: _isSending ? null : _sendMessage,
+                          isLoading: _isSending,
                         ),
                       ),
                     ),
@@ -936,9 +916,8 @@ class _ChatMessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: isCurrentUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
@@ -1152,9 +1131,9 @@ class _AttachmentTile extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: textColor,
-                fontWeight: FontWeight.w500,
-              ),
+                    color: textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
           ),
         ],
@@ -1174,9 +1153,9 @@ class _AttachmentFallback extends StatelessWidget {
     return Text(
       label,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: textColor,
-        fontWeight: FontWeight.w500,
-      ),
+            color: textColor,
+            fontWeight: FontWeight.w500,
+          ),
     );
   }
 }
@@ -1488,6 +1467,118 @@ class _ChatListEntry {
   const _ChatListEntry.divider(this.label) : message = null;
 
   bool get isDivider => label != null;
+}
+
+class _ChatInputIconButton extends StatelessWidget {
+  final IconData icon;
+  final bool isDarkMode;
+  final VoidCallback? onTap;
+  final bool isLoading;
+
+  const _ChatInputIconButton({
+    required this.icon,
+    required this.isDarkMode,
+    required this.onTap,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final background = isDarkMode
+        ? Colors.white.withValues(alpha: 0.18)
+        : Colors.black.withValues(alpha: 0.08);
+    return SizedBox(
+      width: 36,
+      height: 36,
+      child: Material(
+        color: background,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Center(
+            child: isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Icon(
+                    icon,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    size: 16,
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShareTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ShareTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final background = isDarkMode
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.05);
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.black.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.16)
+                    : Colors.black.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                icon,
+                color: isDarkMode ? Colors.white : Colors.black,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 String _messageContent(ChatMessage message) {
