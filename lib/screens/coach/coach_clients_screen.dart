@@ -126,7 +126,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
         ),
         child: SafeArea(
           bottom: false,
-          minimum: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          minimum: const EdgeInsets.fromLTRB(20, 12, 20, 0),
           child: FutureBuilder<List<_CoachClient>>(
             future: _clientsFuture,
             builder: (context, snapshot) {
