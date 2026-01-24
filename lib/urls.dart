@@ -8,6 +8,8 @@ const pexelsImageUrl =
 
 /// API Endpoints
 const routineLogs = '/routine-logs';
+const apiBaseUrl = 'https://api.notathletes.com';
+const checkClientAccessPath = '/checkEmail';
 
 /// App Store ID
 const appStoreId = "id6474073502";
