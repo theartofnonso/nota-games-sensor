@@ -42,6 +42,7 @@ import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
+import 'package:trainware/utils/client_access_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 
 import 'dtos/appsync/routine_plan_dto.dart';
@@ -371,6 +372,8 @@ class _MyAppState extends State<MyApp> {
   late final GoRouter _router;
   bool _lastAuthenticated = false;
   bool _lastCoach = false;
+  bool _checkingClientAccess = false;
+  String? _lastAccessCheckedUserId;
 
   @override
   void initState() {
@@ -402,6 +405,10 @@ class _MyAppState extends State<MyApp> {
       }
     }
 
+    if (isAuthenticated && AppConfig.isClient) {
+      unawaited(_ensureClientAccessOnLogin());
+    }
+
     if (!isAuthenticated && _lastAuthenticated) {
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
@@ -410,6 +417,7 @@ class _MyAppState extends State<MyApp> {
           _isFirstLaunch = true;
           SharedPrefs().firstLaunch = true;
         });
+        _lastAccessCheckedUserId = null;
       } catch (e) {
         debugPrint('[Auth] Error clearing data: $e');
       }
@@ -421,6 +429,29 @@ class _MyAppState extends State<MyApp> {
 
     _lastAuthenticated = isAuthenticated;
     _lastCoach = isCoach;
+  }
+
+  Future<void> _ensureClientAccessOnLogin() async {
+    if (_checkingClientAccess) return;
+    final userId = _accessController.userId;
+    if (userId == null) return;
+    if (_lastAccessCheckedUserId == userId) return;
+    _checkingClientAccess = true;
+    _lastAccessCheckedUserId = userId;
+    try {
+      final email = Supabase.instance.client.auth.currentUser?.email;
+      if (email == null) return;
+      await requireClientAccess(
+        context: context,
+        email: email,
+        signOutOnFail: true,
+        onDenied: () async {
+          await Supabase.instance.client.auth.signOut();
+        },
+      );
+    } finally {
+      _checkingClientAccess = false;
+    }
   }
 
   void _completeIntro() {

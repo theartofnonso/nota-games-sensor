@@ -8,8 +8,10 @@ import 'package:provider/provider.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
@@ -493,15 +495,18 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   }
 
   void _deleteRoutine({required RoutineTemplateDto template}) async {
-    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context,
-        listen: false);
+    if (AppConfig.isCoach) showCoachLoadingOverlay(context);
     try {
+      final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+          context,
+          listen: false);
       await controller.removeTemplate(template: template);
     } catch (e) {
       if (mounted) {
         showSnackbar(context: context, message: "Unable to remove workout");
       }
+    } finally {
+      if (mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
     }
   }
 
@@ -522,11 +527,19 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       emptyNameMessage: 'Please provide a name for this workout',
     ).then((result) async {
       if (result == null) return;
+      if (!context.mounted) return;
       final updated = template.copyWith(
         name: result.name,
         notes: result.notes,
       );
-      await controller.updateTemplate(template: updated);
+      if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+      try {
+        await controller.updateTemplate(template: updated);
+      } finally {
+        if (mounted && context.mounted && AppConfig.isCoach) {
+          hideCoachLoadingOverlay(context);
+        }
+      }
     });
   }
 
@@ -572,8 +585,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         listen: false);
     final template = controller.templateWhere(id: widget.id);
     if (template != null) {
-      _showLoadingScreen();
-
+      if (!context.mounted) return;
+      if (!AppConfig.isCoach) _showLoadingScreen();
+      if (AppConfig.isCoach) showCoachLoadingOverlay(context);
       try {
         final exercises = template.exerciseTemplates.map((exerciseLog) {
           final uncheckedSets = exerciseLog.sets
@@ -591,20 +605,26 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             await Provider.of<SupabaseExerciseAndRoutineController>(context,
                     listen: false)
                 .saveTemplate(templateDto: templateToBeCreated);
-        if (mounted) {
+        if (mounted && context.mounted) {
           if (createdTemplate != null) {
             navigateToRoutineTemplatePreview(
                 context: context, template: createdTemplate);
           }
         }
       } catch (_) {
-        if (mounted) {
+        if (mounted && context.mounted) {
           showSnackbar(
               context: context,
               message: "Oops, we are unable to create your template");
         }
       } finally {
-        _hideLoadingScreen();
+        if (mounted && context.mounted) {
+          if (AppConfig.isCoach) {
+            hideCoachLoadingOverlay(context);
+          } else {
+            _hideLoadingScreen();
+          }
+        }
       }
     }
   }
@@ -783,13 +803,19 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               final updatedRoutineTemplate =
                   template.copyWith(planId: selectedPlan.id);
 
-              await templateProvider.updateTemplate(
-                  template: updatedRoutineTemplate);
+              if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+              try {
+                await templateProvider.updateTemplate(
+                    template: updatedRoutineTemplate);
 
-              if (mounted) {
-                showSnackbar(
-                    context: context,
-                    message: "Moved ${template.name} to ${selectedPlan.name}");
+                if (mounted) {
+                  showSnackbar(
+                      context: context,
+                      message:
+                          "Moved ${template.name} to ${selectedPlan.name}");
+                }
+              } finally {
+                if (mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
               }
             },
             onCreatePlan: () async {
@@ -806,12 +832,20 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                         listen: false);
                 final updatedRoutineTemplate =
                     template.copyWith(planId: newPlan.id);
-                await templateProvider.updateTemplate(
-                    template: updatedRoutineTemplate);
-                if (mounted) {
-                  showSnackbar(
-                      context: context,
-                      message: "Moved ${template.name} to ${newPlan.name}");
+                if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+                try {
+                  await templateProvider.updateTemplate(
+                      template: updatedRoutineTemplate);
+                  if (mounted) {
+                    showSnackbar(
+                        context: context,
+                        message:
+                            "Moved ${template.name} to ${newPlan.name}");
+                  }
+                } finally {
+                  if (mounted && AppConfig.isCoach) {
+                    hideCoachLoadingOverlay(context);
+                  }
                 }
               }
             },

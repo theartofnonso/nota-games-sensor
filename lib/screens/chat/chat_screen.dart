@@ -753,7 +753,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Start a conversation with support',
+                          'Start a conversation with your coach',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.grey.withValues(alpha: 0.5),
                             fontSize: 14,

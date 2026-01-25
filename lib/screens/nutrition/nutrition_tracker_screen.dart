@@ -17,6 +17,7 @@ import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 import 'package:trainware/widgets/nutrition/calorie_tracking_card.dart';
 import 'package:trainware/app_flavor.dart';
+import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
 class NutritionTrackerScreen extends StatefulWidget {
   const NutritionTrackerScreen({super.key});
@@ -834,11 +835,14 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                         updatedAt: now,
                       );
 
-                      await nutritionController.upsertTemplate(
-                        template: updated,
-                      );
-                      if (ctx.mounted) {
-                        Navigator.of(ctx).pop();
+                      showCoachLoadingOverlay(ctx);
+                      try {
+                        await nutritionController.upsertTemplate(
+                          template: updated,
+                        );
+                        if (ctx.mounted) Navigator.of(ctx).pop();
+                      } finally {
+                        if (ctx.mounted) hideCoachLoadingOverlay(ctx);
                       }
                     },
                   ),

@@ -1,19 +1,15 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
-import 'package:trainware/utils/uri_utils.dart';
+import 'package:trainware/utils/client_access_utils.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
-import 'package:trainware/urls.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -114,11 +110,11 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
 
     if (AppConfig.isClient) {
       setState(() => _isLoading = true);
-      final canProceed = await _checkClientAccess(email);
+      final canProceed =
+          await requireClientAccess(context: context, email: email);
       if (!mounted) return;
       if (!canProceed) {
         setState(() => _isLoading = false);
-        await _showClientAccessRequiredSheet();
         return;
       }
       setState(() => _isLoading = false);
@@ -214,24 +210,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     }
   }
 
-  Future<bool> _checkClientAccess(String email) async {
-    try {
-      final uri = Uri.parse(apiBaseUrl).resolve(checkClientAccessPath);
-      final response = await http.post(
-        uri,
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
-      if (response.statusCode != 200) {
-        return false;
-      }
-      final data = jsonDecode(response.body);
-      return data is Map<String, dynamic> && data['found'] == true;
-    } catch (_) {
-      return false;
-    }
-  }
-
   Future<bool> _checkCoachAccess(String userId) async {
     try {
       final record = await Supabase.instance.client
@@ -260,48 +238,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     return true;
   }
 
-  Future<void> _showClientAccessRequiredSheet() async {
-    await showAppBottomSheet<void>(
-      context: context,
-      isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Complete your signup",
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.start,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "To use the app, complete the survey, set up your subscription, and book a consultation call. Then come back and sign in using the same email you used for payment.",
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.start,
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OpacityButtonWidgetTwo(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  await openUrl(
-                    context: context,
-                    url: 'https://www.notathletes.com/survey',
-                  );
-                },
-                label: "Open survey",
-                buttonColor: Theme.of(context).colors.vibrantAccent,
-                showArrowRight: false,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Future<void> _showCoachAccessRequiredSheet() async {
     await showAppBottomSheet<void>(

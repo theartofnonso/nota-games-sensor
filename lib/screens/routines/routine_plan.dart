@@ -8,8 +8,9 @@ import 'package:provider/provider.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/string_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
-
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
@@ -356,6 +357,11 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
   }
 
   void _deleteRoutinePlan({required RoutinePlanDto plan}) async {
+    if (AppConfig.isCoach) {
+      showCoachLoadingOverlay(context);
+    } else {
+      _toggleLoadingState();
+    }
     try {
       final exerciseAndRoutineController =
           Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -371,7 +377,13 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
         showSnackbar(context: context, message: "Unable to remove plan");
       }
     } finally {
-      _toggleLoadingState();
+      if (mounted) {
+        if (AppConfig.isCoach) {
+          hideCoachLoadingOverlay(context);
+        } else {
+          _toggleLoadingState();
+        }
+      }
     }
   }
 
@@ -404,18 +416,26 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       emptyNameMessage: 'Please provide a name for this workout',
     ).then((result) async {
       if (result == null) return;
-      final exerciseAndRoutineController =
-          Provider.of<SupabaseExerciseAndRoutineController>(context,
-              listen: false);
-      final template = RoutineTemplateDto(
-        id: "",
-        name: result.name,
-        notes: result.notes,
-        exerciseTemplates: const [],
-        planId: plan.id,
-      );
+      if (!context.mounted) return;
+      if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+      try {
+        final exerciseAndRoutineController =
+            Provider.of<SupabaseExerciseAndRoutineController>(context,
+                listen: false);
+        final template = RoutineTemplateDto(
+          id: "",
+          name: result.name,
+          notes: result.notes,
+          exerciseTemplates: const [],
+          planId: plan.id,
+        );
 
-      await exerciseAndRoutineController.saveTemplate(templateDto: template);
+        await exerciseAndRoutineController.saveTemplate(templateDto: template);
+      } finally {
+        if (mounted && AppConfig.isCoach && context.mounted) {
+          hideCoachLoadingOverlay(context);
+        }
+      }
     });
   }
 
@@ -493,8 +513,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                               "Are you sure you want to delete this plan?",
                           action: () {
                             Navigator.of(context).pop();
-                            context.pop();
-                            _toggleLoadingState();
                             _deleteRoutinePlan(plan: plan);
                           },
                           actionLabel: 'Delete',

@@ -116,7 +116,8 @@ Future<T?> showAppBottomSheet<T>({
     useRootNavigator: useRootNavigator,
     // When using our own DraggableScrollableSheet, disable the modal's drag
     // dismissal so slight pulls don't instantly close the sheet.
-    enableDrag: !isDraggable,
+    // When not dismissible, never allow drag-to-dismiss.
+    enableDrag: isDismissible && !isDraggable,
     showDragHandle: false,
     useSafeArea: true,
     // Dim the backdrop so transparent sheets still pop against the content behind.

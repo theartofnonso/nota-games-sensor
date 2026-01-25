@@ -14,6 +14,7 @@ import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/utils/dialog_utils.dart';
+import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
@@ -77,20 +78,27 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
   if (details == null) return null;
 
   final controller = context.read<SupabaseExerciseAndRoutineController>();
-  if (isEditing) {
-    final updated = initialPlan.copyWith(
-      name: details.name,
-      notes: details.notes,
-    );
-    await controller.updatePlan(plan: updated);
-    return updated;
-  } else {
-    final newPlan = RoutinePlanDto(
-      name: details.name,
-      notes: details.notes,
-    );
-    final created = await controller.savePlan(planDto: newPlan);
-    return created;
+  if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+  try {
+    if (isEditing) {
+      final updated = initialPlan.copyWith(
+        name: details.name,
+        notes: details.notes,
+      );
+      await controller.updatePlan(plan: updated);
+      if (!context.mounted) return null;
+      return updated;
+    } else {
+      final newPlan = RoutinePlanDto(
+        name: details.name,
+        notes: details.notes,
+      );
+      final created = await controller.savePlan(planDto: newPlan);
+      if (!context.mounted) return null;
+      return created;
+    }
+  } finally {
+    if (context.mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
   }
 }
 
@@ -256,15 +264,23 @@ Future<void> navigateToChat({
       );
       return;
     }
-    coachId = await fetchCoachIdForClient(userId);
-    if (coachId == null) {
-      showSnackbar(
-        context: context,
-        message: 'No coach assigned yet. Contact support.',
-      );
-      return;
+    showCoachLoadingOverlay(context);
+    try {
+      coachId = await fetchCoachIdForClient(userId);
+      if (coachId == null) {
+        if (context.mounted) {
+          showSnackbar(
+            context: context,
+            message: 'No coach assigned yet. Contact support.',
+          );
+        }
+        return;
+      }
+    } finally {
+      if (context.mounted) hideCoachLoadingOverlay(context);
     }
   }
+  if (!context.mounted) return;
   await showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,

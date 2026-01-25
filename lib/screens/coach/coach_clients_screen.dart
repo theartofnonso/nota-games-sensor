@@ -11,6 +11,7 @@ import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/widgets/search_bar.dart';
 import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 import 'package:trainware/widgets/badges/unread_badge.dart';
+import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
 class CoachClientsScreen extends StatefulWidget {
   final bool navigateToOverviewOnSelect;
@@ -28,7 +29,6 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     with WidgetsBindingObserver {
   late Future<List<_CoachClient>> _clientsFuture;
   String _appVersion = '';
-  String? _loadingClientId;
   Map<String, int> _unreadByClientId = const {};
   late final TextEditingController _searchController;
   String _searchQuery = '';
@@ -118,9 +118,19 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
         })
         .whereType<_CoachClient>()
         .toList();
-    await ChatUnreadCountsService()
-        .updateClients(clients.map((client) => client.id).toList());
+    try {
+      await ChatUnreadCountsService()
+          .updateClients(clients.map((client) => client.id).toList());
+    } catch (_) {
+      // Don't fail clients load if Agora/unread service fails
+    }
     return clients;
+  }
+
+  void _retryLoadClients() {
+    setState(() {
+      _clientsFuture = _loadClients();
+    });
   }
 
   Future<void> _getAppVersion() async {
@@ -154,13 +164,28 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
             builder: (context, snapshot) {
               final theme = Theme.of(context);
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: CoachLoadingIndicator());
               }
               if (snapshot.hasError) {
                 return Center(
-                  child: Text(
-                    'Failed to load clients.',
-                    style: theme.textTheme.bodyMedium,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Failed to load clients.',
+                          style: theme.textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton.icon(
+                          onPressed: _retryLoadClients,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }
@@ -212,8 +237,6 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                         const SizedBox(height: 12),
                                     itemBuilder: (context, index) {
                                       final client = clients[index];
-                                      final isLoadingClient =
-                                          _loadingClientId == client.id;
                                       final unreadCount =
                                           _unreadByClientId[client.id] ?? 0;
                                       final joinedLabel = DateFormat('MMM yyyy')
@@ -221,39 +244,31 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                       return InkWell(
                                         borderRadius:
                                             BorderRadius.circular(18),
-                                        onTap: isLoadingClient
-                                            ? null
-                                            : () async {
-                                                setState(() =>
-                                                    _loadingClientId =
-                                                        client.id);
-                                                try {
-                                                  await routineController
-                                                      .loadClientData(
-                                                    clientId: client.id,
-                                                    clientName: client.name,
-                                                  );
-                                                  await nutritionController
-                                                      .loadClientData(
-                                                    clientId: client.id,
-                                                  );
-                                                  if (context.mounted) {
-                                                    if (widget
-                                                        .navigateToOverviewOnSelect) {
-                                                      context.go('/');
-                                                    } else {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                    }
-                                                  }
-                                                } finally {
-                                                  if (mounted) {
-                                                    setState(() =>
-                                                        _loadingClientId =
-                                                            null);
-                                                  }
-                                                }
-                                              },
+                                        onTap: () async {
+                                          showCoachLoadingOverlay(context);
+                                          try {
+                                            await routineController
+                                                .loadClientData(
+                                              clientId: client.id,
+                                              clientName: client.name,
+                                            );
+                                            await nutritionController
+                                                .loadClientData(
+                                              clientId: client.id,
+                                            );
+                                          } finally {
+                                            if (mounted) {
+                                              hideCoachLoadingOverlay(context);
+                                            }
+                                          }
+                                          if (!context.mounted) return;
+                                          if (widget
+                                              .navigateToOverviewOnSelect) {
+                                            context.go('/');
+                                          } else {
+                                            Navigator.of(context).pop();
+                                          }
+                                        },
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 16,
@@ -320,37 +335,28 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                                   ],
                                                 ),
                                               ),
-                                              if (isLoadingClient)
-                                                const SizedBox(
-                                                  width: 18,
-                                                  height: 18,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                          strokeWidth: 2),
-                                                )
-                                              else
-                                                Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    if (unreadCount > 0) ...[
-                                                      UnreadBadge(
-                                                        count: unreadCount,
-                                                        fontSize: 11,
-                                                        padding:
-                                                            const EdgeInsets.symmetric(
-                                                                horizontal: 8,
-                                                                vertical: 4),
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                    ],
-                                                    Icon(
-                                                      Icons.chevron_right_rounded,
-                                                      color: Colors.white
-                                                          .withValues(alpha: 0.7),
-                                                      size: 22,
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  if (unreadCount > 0) ...[
+                                                    UnreadBadge(
+                                                      count: unreadCount,
+                                                      fontSize: 11,
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4),
                                                     ),
+                                                    const SizedBox(width: 8),
                                                   ],
-                                                ),
+                                                  Icon(
+                                                    Icons.chevron_right_rounded,
+                                                    color: Colors.white
+                                                        .withValues(alpha: 0.7),
+                                                    size: 22,
+                                                  ),
+                                                ],
+                                              ),
                                             ],
                                           ),
                                         ),
