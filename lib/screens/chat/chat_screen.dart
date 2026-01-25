@@ -22,6 +22,7 @@ import '../../services/agora_chat_bootstrap.dart';
 import '../../utils/uri_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../video/video_call_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   static const routeName = '/chat_screen';
@@ -179,6 +180,32 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       createIfNeed: true,
     );
 
+    // Fetch history from server first (local DB may be empty after reinstall / new device)
+    try {
+      final cursorResult = await ChatClient.getInstance.chatManager
+          .fetchHistoryMessagesByOption(
+        targetAgoraUserId,
+        ChatConversationType.Chat,
+        options: const FetchMessageOptions(
+          direction: ChatSearchDirection.Up,
+          needSave: true,
+        ),
+        pageSize: 50,
+      );
+      final serverMessages = cursorResult.data;
+      if (!mounted) return;
+      setState(() {
+        for (final message in serverMessages) {
+          _mergeMessage(message);
+          _ensureAttachmentAvailable(message);
+        }
+      });
+    } catch (e) {
+      debugPrint('Error fetching chat history from server: $e');
+      // Continue with local load; server fetch may fail (e.g. offline)
+    }
+
+    // Load from local DB (includes cached messages; may overlap with server fetch)
     final messages = await _conversation!.loadMessages(
       startMsgId: '',
       loadCount: 50,
@@ -597,17 +624,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
     final parts = trimmed.split(RegExp(r'\s+'));
     if (parts.length == 1) {
-      return parts.first.characters.take(2).toString().toUpperCase();
+      final s = parts.first;
+      return s.substring(0, s.length.clamp(0, 2)).toUpperCase();
     }
-    final first = parts.first.characters.first.toString().toUpperCase();
-    final last = parts.last.characters.first.toString().toUpperCase();
+    final first = parts.first[0].toString().toUpperCase();
+    final last = parts.last[0].toString().toUpperCase();
     return '$first$last';
   }
 
   String _initialsFromEmail(String? email) {
     if (email == null || email.isEmpty) return '';
     final namePart = email.split('@').first;
-    return namePart.characters.take(2).toString().toUpperCase();
+    return namePart.substring(0, namePart.length.clamp(0, 2)).toUpperCase();
   }
 
   List<_ChatListEntry> _buildChatEntries() {
@@ -713,6 +741,28 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   ],
                 ),
               ),
+              // Video call button
+              if (showClientHeader || widget.clientUserId != null)
+                IconButton(
+                  icon: Icon(
+                    Icons.videocam,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                    size: 22,
+                  ),
+                  onPressed: () async {
+                    final targetUserId =
+                        widget.clientUserId ?? widget.adminUserId;
+                    if (!mounted) return;
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => VideoCallScreen(
+                          targetUserId: targetUserId,
+                          targetName: widget.clientName,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               // Close button
               IconButton(
                 icon: FaIcon(

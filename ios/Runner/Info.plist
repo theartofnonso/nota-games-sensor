@@ -54,15 +54,15 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow trainware to access your photos</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow trainware to access your camera</string>
+	<string>trainware needs access to your camera for video calls with your coach</string>
 	<key>com.posthog.posthog.API_KEY</key>
     <string>phc_oLmuad146lylxGF2A45kOzRCMG5cJgnkv5oyedPf5A6</string>
     <key>com.posthog.posthog.POSTHOG_HOST</key>
     <string>https://us.i.posthog.com</string>
     <key>com.posthog.posthog.CAPTURE_APPLICATION_LIFECYCLE_EVENTS</key>
 	<true/>
-	<key>NSMicrophoneUsageDescription</key>
-    <string>trainware requires microphone access to enable voice-activated commands when training.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>trainware needs access to your microphone for video calls with your coach</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>trainware uses speech to text for hands-free logging of your sets, reps, and weights.</string>
     <key>NSHealthShareUsageDescription</key>

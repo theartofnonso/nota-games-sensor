@@ -15,7 +15,8 @@ const checkClientAccessPath = '/checkSubscription';
 
 /// Agora Endpoints
 const agoraBaseUrl = 'https://agora.notathletes.com';
-const agoraTokenPath = '/token';
+const agoraTokenPath = '/chat-token';
+const agoraVideoTokenPath = '/video-token';
 
 /// App Store ID
 const appStoreId = "id6474073502";
