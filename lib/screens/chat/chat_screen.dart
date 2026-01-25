@@ -182,8 +182,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
     // Fetch history from server first (local DB may be empty after reinstall / new device)
     try {
-      final cursorResult = await ChatClient.getInstance.chatManager
-          .fetchHistoryMessagesByOption(
+      final cursorResult =
+          await ChatClient.getInstance.chatManager.fetchHistoryMessagesByOption(
         targetAgoraUserId,
         ChatConversationType.Chat,
         options: const FetchMessageOptions(
@@ -907,29 +907,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     ),
                     Positioned(
                       left: 8,
-                      top: 8,
                       bottom: 8,
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: _ChatInputIconButton(
-                          icon: Icons.add,
-                          isDarkMode: isDarkMode,
-                          onTap: _showAttachmentSheet,
-                        ),
+                      child: _ChatInputIconButton(
+                        icon: Icons.add,
+                        isDarkMode: isDarkMode,
+                        onTap: _showAttachmentSheet,
                       ),
                     ),
                     Positioned(
                       right: 8,
-                      top: 8,
                       bottom: 8,
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: _ChatInputIconButton(
-                          icon: FontAwesomeIcons.arrowUp,
-                          isDarkMode: isDarkMode,
-                          onTap: _isSending ? null : _sendMessage,
-                          isLoading: _isSending,
-                        ),
+                      child: _ChatInputIconButton(
+                        icon: FontAwesomeIcons.arrowUp,
+                        isDarkMode: isDarkMode,
+                        onTap: _isSending ? null : _sendMessage,
+                        isLoading: _isSending,
                       ),
                     ),
                   ],
