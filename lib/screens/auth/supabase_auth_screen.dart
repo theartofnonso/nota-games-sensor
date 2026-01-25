@@ -7,9 +7,8 @@ import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/utils/client_access_utils.dart';
+import 'package:trainware/utils/coach_access_utils.dart';
 import 'package:trainware/app_flavor.dart';
-import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
-import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -81,10 +80,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           password: 'testaccount123',
         );
 
-        if (AppConfig.isCoach) {
-          final allowed = await _enforceCoachAccessIfNeeded();
-          if (!allowed) return;
-        }
+        // Coach access is checked before OTP/test login, so no need to check here
 
         // Success! User will be automatically navigated by the auth state listener
       } catch (error) {
@@ -112,6 +108,18 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       setState(() => _isLoading = true);
       final canProceed =
           await requireClientAccess(context: context, email: email);
+      if (!mounted) return;
+      if (!canProceed) {
+        setState(() => _isLoading = false);
+        return;
+      }
+      setState(() => _isLoading = false);
+    }
+
+    if (AppConfig.isCoach) {
+      setState(() => _isLoading = true);
+      final canProceed =
+          await requireCoachAccess(context: context, email: email);
       if (!mounted) return;
       if (!canProceed) {
         setState(() => _isLoading = false);
@@ -182,10 +190,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         token: otp,
         type: OtpType.email,
       );
-      if (AppConfig.isCoach) {
-        final allowed = await _enforceCoachAccessIfNeeded();
-        if (!allowed) return;
-      }
+      // Coach access is checked before OTP send, so no need to check here
       // Success! User will be automatically navigated by the auth state listener
     } on AuthException catch (error) {
       if (mounted) {
@@ -210,80 +215,13 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     }
   }
 
-  Future<bool> _checkCoachAccess(String userId) async {
-    try {
-      final record = await Supabase.instance.client
-          .from('coaches')
-          .select('id')
-          .eq('id', userId)
-          .maybeSingle();
-      return record != null;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> _enforceCoachAccessIfNeeded() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) {
-      return false;
-    }
-    final canProceed = await _checkCoachAccess(userId);
-    if (!mounted) return false;
-    if (!canProceed) {
-      await Supabase.instance.client.auth.signOut();
-      await _showCoachAccessRequiredSheet();
-      return false;
-    }
-    return true;
-  }
-
-
-  Future<void> _showCoachAccessRequiredSheet() async {
-    await showAppBottomSheet<void>(
-      context: context,
-      isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Coach access only",
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.start,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Only Not Athletes coaches can train users with this app. If you’re a coach, please contact support to get access.",
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.start,
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OpacityButtonWidgetTwo(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                label: "Got it",
-                buttonColor: Theme.of(context).colors.vibrantAccent,
-                showArrowRight: false,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _resetForm() {
     setState(() {
       _otpSent = false;
       _otpController.clear();
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
