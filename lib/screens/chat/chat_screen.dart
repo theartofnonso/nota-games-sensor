@@ -741,28 +741,27 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-              // Video call button
-              if (showClientHeader || widget.clientUserId != null)
-                IconButton(
-                  icon: Icon(
-                    Icons.videocam,
-                    color: isDarkMode ? Colors.white : Colors.black,
-                    size: 22,
-                  ),
-                  onPressed: () async {
-                    final targetUserId =
-                        widget.clientUserId ?? widget.adminUserId;
-                    if (!mounted) return;
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => VideoCallScreen(
-                          targetUserId: targetUserId,
-                          targetName: widget.clientName,
-                        ),
-                      ),
-                    );
-                  },
+              // Video call button (always shown for coach and client)
+              IconButton(
+                icon: Icon(
+                  Icons.videocam,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  size: 22,
                 ),
+                onPressed: () async {
+                  final targetUserId =
+                      widget.clientUserId ?? widget.adminUserId;
+                  if (!mounted) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => VideoCallScreen(
+                        targetUserId: targetUserId,
+                        targetName: widget.clientName,
+                      ),
+                    ),
+                  );
+                },
+              ),
               // Close button
               IconButton(
                 icon: FaIcon(

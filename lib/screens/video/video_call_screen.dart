@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'dart:convert';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
@@ -52,8 +51,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   @override
   void dispose() {
-    _leaveChannel();
-    _engine?.release();
+    if (_engine != null) {
+      unawaited(AgoraVideoBootstrap.releaseEngine(_engine));
+    }
     super.dispose();
   }
 
@@ -120,6 +120,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         rethrow;
       }
 
+      // Trigger rebuild so we show video views instead of loader
+      if (mounted) setState(() {});
+
       // Get token and join channel
       final token = await _resolveVideoToken();
       if (token == null || token.isEmpty) {
@@ -162,7 +165,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   Future<String?> _getCurrentUserId() async {
     try {
-      final user = await Supabase.instance.client.auth.currentUser;
+      final user = Supabase.instance.client.auth.currentUser;
       return user?.id;
     } catch (_) {
       return null;
@@ -197,25 +200,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     }
   }
 
-  Future<void> _leaveChannel() async {
-    if (_engine != null && _isJoined) {
-      try {
-        await _engine!.leaveChannel();
-        setState(() {
-          _isJoined = false;
-          _remoteUid = null;
-        });
-      } catch (e) {
-        debugPrint('Error leaving channel: $e');
-        // Still update state even if leaveChannel fails
-        setState(() {
-          _isJoined = false;
-          _remoteUid = null;
-        });
-      }
-    }
-  }
-
   void _toggleMute() {
     if (_engine == null || !_isJoined) return;
     try {
@@ -236,9 +220,16 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     }
   }
 
-  void _endCall() {
-    _leaveChannel();
-    Navigator.of(context).pop();
+  Future<void> _endCall() async {
+    setState(() {
+      _isJoined = false;
+      _remoteUid = null;
+    });
+    await AgoraVideoBootstrap.releaseEngine(_engine);
+    _engine = null;
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
