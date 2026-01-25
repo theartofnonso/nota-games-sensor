@@ -862,11 +862,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 }
               },
               child: Container(
+                padding: const EdgeInsets.only(top: 4),
                 decoration: BoxDecoration(
                   color: isDarkMode
                       ? Colors.white.withValues(alpha: 0.1)
                       : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(28),
                   border: Border.all(
                     color: isDarkMode
                         ? Colors.white.withValues(alpha: 0.2)
@@ -1537,7 +1538,7 @@ class _ChatInputIconButton extends StatelessWidget {
       height: 36,
       child: Material(
         color: background,
-        borderRadius: BorderRadius.circular(12),
+        shape: const CircleBorder(),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: onTap,
