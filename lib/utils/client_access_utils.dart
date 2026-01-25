@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../utils/uri_utils.dart';
 import '../utils/theme/color_extensions.dart';
@@ -9,19 +10,35 @@ import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
 import '../urls.dart';
 
-Future<bool> checkClientAccess({required String email}) async {
+/// Fetches the Stripe customerId for a given email from the clients table.
+Future<String?> fetchCustomerIdFromEmail(String email) async {
+  try {
+    final response = await Supabase.instance.client
+        .from('clients')
+        .select('stripe_customer_id')
+        .eq('email', email)
+        .maybeSingle();
+    print(response);
+    return response?['stripe_customer_id'] as String?;
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<bool> checkStripeSubscription({required String customerId}) async {
   try {
     final uri = Uri.parse(apiBaseUrl).resolve(checkClientAccessPath);
     final response = await http.post(
       uri,
       headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email}),
+      body: jsonEncode({'customerId': customerId}),
     );
     if (response.statusCode != 200) {
       return false;
     }
     final data = jsonDecode(response.body);
-    return data is Map<String, dynamic> && data['found'] == true;
+    return data is Map<String, dynamic> &&
+        data['hasActiveSubscription'] == true;
   } catch (_) {
     return false;
   }
@@ -33,7 +50,18 @@ Future<bool> requireClientAccess({
   bool signOutOnFail = false,
   Future<void> Function()? onDenied,
 }) async {
-  final isAllowed = await checkClientAccess(email: email);
+  // Fetch customerId from clients table using email
+  final customerId = await fetchCustomerIdFromEmail(email);
+  if (customerId == null || customerId.isEmpty) {
+    // No customerId found - show access required sheet
+    await _showClientAccessRequiredSheet(context);
+    if (signOutOnFail && onDenied != null) {
+      await onDenied();
+    }
+    return false;
+  }
+
+  final isAllowed = await checkStripeSubscription(customerId: customerId);
   if (isAllowed) return true;
 
   await _showClientAccessRequiredSheet(context);

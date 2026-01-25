@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/dtos/coach_client_dto.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/widgets/search_bar.dart';
@@ -27,7 +28,7 @@ class CoachClientsScreen extends StatefulWidget {
 
 class _CoachClientsScreenState extends State<CoachClientsScreen>
     with WidgetsBindingObserver {
-  late Future<List<_CoachClient>> _clientsFuture;
+  late Future<List<CoachClientDto>> _clientsFuture;
   String _appVersion = '';
   Map<String, int> _unreadByClientId = const {};
   late final TextEditingController _searchController;
@@ -92,35 +93,37 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     _updateSearch('');
   }
 
-  List<_CoachClient> _filterClients(List<_CoachClient> clients) {
+  List<CoachClientDto> _filterClients(List<CoachClientDto> clients) {
     final query = _searchQuery.toLowerCase();
     if (query.isEmpty) return clients;
-    return clients.where((client) {
-      final name = client.name.toLowerCase();
+    return clients.where((c) {
+      final name = (c.clientName ?? '').toLowerCase();
       return name.contains(query);
     }).toList();
   }
 
-  Future<List<_CoachClient>> _loadClients() async {
+  Future<List<CoachClientDto>> _loadClients() async {
     final coachId = Supabase.instance.client.auth.currentUser?.id;
     if (coachId == null) return [];
     final response = await Supabase.instance.client
         .from('coach_clients')
-        .select('client_id, clients (id, email, name, created_at)')
+        .select(
+            'id, coach_id, client_id, created_at, clients (id, email, name, created_at)')
         .eq('coach_id', coachId)
         .order('created_at', ascending: false);
     final rows = response as List<dynamic>;
     final clients = rows
         .map((row) {
-          final client = row['clients'] as Map<String, dynamic>?;
-          if (client == null) return null;
-          return _CoachClient.fromJson(client);
+          final clientsMap = row['clients'] as Map<String, dynamic>?;
+          if (clientsMap == null) return null;
+          return CoachClientDto.fromJson(
+              row as Map<String, dynamic>, clientsMap);
         })
-        .whereType<_CoachClient>()
+        .whereType<CoachClientDto>()
         .toList();
     try {
       await ChatUnreadCountsService()
-          .updateClients(clients.map((client) => client.id).toList());
+          .updateClients(clients.map((c) => c.clientId).toList());
     } catch (_) {
       // Don't fail clients load if Agora/unread service fails
     }
@@ -159,7 +162,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
         child: SafeArea(
           bottom: false,
           minimum: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-          child: FutureBuilder<List<_CoachClient>>(
+          child: FutureBuilder<List<CoachClientDto>>(
             future: _clientsFuture,
             builder: (context, snapshot) {
               final theme = Theme.of(context);
@@ -238,23 +241,24 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                     itemBuilder: (context, index) {
                                       final client = clients[index];
                                       final unreadCount =
-                                          _unreadByClientId[client.id] ?? 0;
+                                          _unreadByClientId[client.clientId] ??
+                                              0;
                                       final joinedLabel = DateFormat('MMM yyyy')
                                           .format(client.createdAt.toLocal());
                                       return InkWell(
-                                        borderRadius:
-                                            BorderRadius.circular(18),
+                                        borderRadius: BorderRadius.circular(18),
                                         onTap: () async {
                                           showCoachLoadingOverlay(context);
                                           try {
                                             await routineController
                                                 .loadClientData(
-                                              clientId: client.id,
-                                              clientName: client.name,
+                                              clientId: client.clientId,
+                                              clientName:
+                                                  client.clientName ?? '',
                                             );
                                             await nutritionController
                                                 .loadClientData(
-                                              clientId: client.id,
+                                              clientId: client.clientId,
                                             );
                                           } finally {
                                             if (mounted) {
@@ -275,8 +279,8 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                             vertical: 14,
                                           ),
                                           decoration: BoxDecoration(
-                                            color:
-                                                Colors.white.withValues(alpha: 0.06),
+                                            color: Colors.white
+                                                .withValues(alpha: 0.06),
                                             borderRadius:
                                                 BorderRadius.circular(18),
                                             border: Border.all(
@@ -298,7 +302,8 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                                 ),
                                                 child: Text(
                                                   client.initials,
-                                                  style: theme.textTheme.titleSmall
+                                                  style: theme
+                                                      .textTheme.titleSmall
                                                       ?.copyWith(
                                                     fontWeight: FontWeight.w700,
                                                     color: isDarkMode
@@ -314,7 +319,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      client.name,
+                                                      client.clientName ?? '',
                                                       style: theme
                                                           .textTheme.titleMedium
                                                           ?.copyWith(
@@ -329,7 +334,8 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                                           .textTheme.bodySmall
                                                           ?.copyWith(
                                                         color: Colors.white
-                                                            .withValues(alpha: 0.6),
+                                                            .withValues(
+                                                                alpha: 0.6),
                                                       ),
                                                     ),
                                                   ],
@@ -342,10 +348,10 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                                     UnreadBadge(
                                                       count: unreadCount,
                                                       fontSize: 11,
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                              horizontal: 8,
-                                                              vertical: 4),
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4),
                                                     ),
                                                     const SizedBox(width: 8),
                                                   ],
@@ -382,51 +388,5 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
         ),
       ),
     );
-  }
-}
-
-class _CoachClient {
-  final String id;
-  final String email;
-  final String name;
-  final DateTime createdAt;
-
-  const _CoachClient({
-    required this.id,
-    required this.email,
-    required this.name,
-    required this.createdAt,
-  });
-
-  factory _CoachClient.fromJson(Map<String, dynamic> json) {
-    return _CoachClient(
-      id: json['id'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      createdAt: DateTime.parse(json['created_at'] as String),
-    );
-  }
-
-  String get initials {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) {
-      return _fallbackInitials(email);
-    }
-    final parts = trimmed.split(RegExp(r'\s+'));
-    if (parts.isEmpty) {
-      return _fallbackInitials(email);
-    }
-    if (parts.length == 1) {
-      return parts.first.characters.take(2).toString().toUpperCase();
-    }
-    final first = parts.first.characters.first.toString().toUpperCase();
-    final last = parts.last.characters.first.toString().toUpperCase();
-    return '$first$last';
-  }
-
-  String _fallbackInitials(String value) {
-    if (value.isEmpty) return '';
-    final cleaned = value.split('@').first;
-    return cleaned.characters.take(2).toString().toUpperCase();
   }
 }

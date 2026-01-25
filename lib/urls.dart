@@ -11,7 +11,7 @@ const routineLogs = '/routine-logs';
 
 /// Stripe Endpoints
 const apiBaseUrl = 'https://stripe.notathletes.com';
-const checkClientAccessPath = '/checkEmail';
+const checkClientAccessPath = '/checkSubscription';
 
 /// Agora Endpoints
 const agoraBaseUrl = 'https://agora.notathletes.com';
