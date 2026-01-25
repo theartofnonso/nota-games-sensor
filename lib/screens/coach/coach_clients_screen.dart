@@ -378,6 +378,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                             color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
