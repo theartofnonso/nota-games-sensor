@@ -753,11 +753,24 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       widget.clientUserId ?? widget.adminUserId;
                   if (!mounted) return;
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => VideoCallScreen(
+                    PageRouteBuilder(
+                      fullscreenDialog: true,
+                      opaque: true,
+                      pageBuilder: (_, __, ___) => VideoCallScreen(
                         targetUserId: targetUserId,
                         targetName: widget.clientName,
                       ),
+                      transitionsBuilder: (_, animation, __, child) {
+                        const begin = Offset(0.0, 1.0);
+                        const end = Offset.zero;
+                        const curve = Curves.easeOutCubic;
+                        final tween = Tween(begin: begin, end: end)
+                            .chain(CurveTween(curve: curve));
+                        return SlideTransition(
+                          position: animation.drive(tween),
+                          child: child,
+                        );
+                      },
                     ),
                   );
                 },

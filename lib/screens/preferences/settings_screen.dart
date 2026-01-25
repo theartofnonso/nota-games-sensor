@@ -532,7 +532,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-
   Future<void> _goBackToCoachList() async {
     if (!mounted) return;
     final routineController =
@@ -548,7 +547,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     final url = trackrWebUrl;
     openUrl(url: url, context: context);
   }
-
 
   void _turnOnNotification() async {
     if (!_notificationEnabled) {
@@ -710,11 +708,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     setState(() {
       if (AppConfig.isCoach) {
         final clientId = accessController.clientOverrideId;
-        _chatUnreadCount =
-            clientId == null
-                ? 0
-                : (ChatUnreadCountsService().unreadByClientId.value[clientId] ??
-                    0);
+        _chatUnreadCount = clientId == null
+            ? 0
+            : (ChatUnreadCountsService().unreadByClientId.value[clientId] ?? 0);
       } else {
         _chatUnreadCount = ChatUnreadService().unreadCount.value;
       }
@@ -2324,4 +2320,3 @@ class _CreatePlanCard extends StatelessWidget {
     );
   }
 }
-

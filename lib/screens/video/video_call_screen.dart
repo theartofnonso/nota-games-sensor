@@ -27,7 +27,7 @@ class VideoCallScreen extends StatefulWidget {
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
   RtcEngine? _engine;
-  bool _isJoined = false;
+  bool _localUserJoined = false;
   bool _isMuted = false;
   bool _isVideoEnabled = true;
   int? _remoteUid;
@@ -59,96 +59,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   Future<void> _initializeVideoCall() async {
     try {
-      // Request permissions
-      await [Permission.camera, Permission.microphone].request();
-
-      // Create and initialize engine
-      _engine = await AgoraVideoBootstrap.createEngine();
-
-      // Register event handlers BEFORE enabling video
-      _engine!.registerEventHandler(
-        RtcEngineEventHandler(
-          onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-            debugPrint('Joined channel successfully');
-            if (mounted) {
-              setState(() => _isJoined = true);
-            }
-          },
-          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-            debugPrint('Remote user joined: $remoteUid');
-            if (mounted) {
-              setState(() => _remoteUid = remoteUid);
-            }
-          },
-          onUserOffline: (RtcConnection connection, int remoteUid,
-              UserOfflineReasonType reason) {
-            debugPrint('Remote user left: $remoteUid');
-            if (mounted) {
-              setState(() => _remoteUid = null);
-            }
-          },
-          onError: (ErrorCodeType err, String msg) {
-            debugPrint('Agora error: $err - $msg');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text('Video call error: $msg'),
-                    backgroundColor: Colors.red),
-              );
-            }
-          },
-        ),
-      );
-
-      // Enable video
-      // Note: enableVideo must be called after engine is initialized and event handlers are registered
-      if (_engine == null) {
-        throw Exception('Video engine is not available.');
-      }
-      try {
-        await _engine!.enableVideo();
-        await _engine!.startPreview();
-      } catch (e) {
-        // Error -7 typically means engine not initialized or already released
-        if (e.toString().contains('-7') ||
-            e.toString().contains('not initialized')) {
-          // Engine might have been released, recreate it
-          debugPrint('Engine error -7 detected, engine may need recreation');
-          throw Exception(
-              'Video engine initialization failed. Please try again.');
-        }
-        rethrow;
-      }
-
-      // Trigger rebuild so we show video views instead of loader
-      if (mounted) setState(() {});
-
-      // Get token and join channel
-      final token = await _resolveVideoToken();
-      if (token == null || token.isEmpty) {
-        throw Exception('Video call token is not available.');
-      }
-
-      final currentUserId = await _getCurrentUserId();
-      if (currentUserId == null) {
-        throw Exception('No user ID available.');
-      }
-
-      await _engine!.joinChannel(
-        token: token,
-        channelId: _channelName,
-        uid: 0, // Let Agora assign UID
-        options: const ChannelMediaOptions(
-          autoSubscribeVideo:
-              true, // Automatically subscribe to all video streams
-          autoSubscribeAudio:
-              true, // Automatically subscribe to all audio streams
-          clientRoleType: ClientRoleType.clientRoleBroadcaster,
-          channelProfile: ChannelProfileType.channelProfileCommunication,
-          publishCameraTrack: true,
-          publishMicrophoneTrack: true,
-        ),
-      );
+      await _requestPermissions();
+      await _initializeAgoraVideoSDK();
+      await _setupLocalVideo();
+      _setupEventHandlers();
+      await _joinChannel();
     } catch (e) {
       debugPrint('Error initializing video call: $e');
       if (mounted) {
@@ -161,6 +76,75 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         Navigator.of(context).pop();
       }
     }
+  }
+
+  Future<void> _requestPermissions() async {
+    await [Permission.camera, Permission.microphone].request();
+  }
+
+  Future<void> _initializeAgoraVideoSDK() async {
+    _engine = await AgoraVideoBootstrap.createEngine();
+  }
+
+  Future<void> _setupLocalVideo() async {
+    if (_engine == null) throw Exception('Video engine is not available.');
+    await _engine!.enableVideo();
+    await _engine!.startPreview();
+  }
+
+  void _setupEventHandlers() {
+    _engine!.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+          debugPrint('Local user ${connection.localUid} joined');
+          if (mounted) setState(() => _localUserJoined = true);
+        },
+        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+          debugPrint('Remote user $remoteUid joined');
+          if (mounted) setState(() => _remoteUid = remoteUid);
+        },
+        onUserOffline: (RtcConnection connection, int remoteUid,
+            UserOfflineReasonType reason) {
+          debugPrint('Remote user $remoteUid left');
+          if (mounted) setState(() => _remoteUid = null);
+        },
+        onError: (ErrorCodeType err, String msg) {
+          debugPrint('Agora error: $err - $msg');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Video call error: $msg'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _joinChannel() async {
+    final token = await _resolveVideoToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Video call token is not available.');
+    }
+    final currentUserId = await _getCurrentUserId();
+    if (currentUserId == null) {
+      throw Exception('No user ID available.');
+    }
+    await _engine!.joinChannel(
+      token: token,
+      channelId: _channelName,
+      uid: 0,
+      options: const ChannelMediaOptions(
+        autoSubscribeVideo: true,
+        autoSubscribeAudio: true,
+        publishCameraTrack: true,
+        publishMicrophoneTrack: true,
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+        channelProfile: ChannelProfileType.channelProfileCommunication,
+      ),
+    );
   }
 
   Future<String?> _getCurrentUserId() async {
@@ -201,7 +185,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   void _toggleMute() {
-    if (_engine == null || !_isJoined) return;
+    if (_engine == null || !_localUserJoined) return;
     try {
       _engine!.muteLocalAudioStream(!_isMuted);
       setState(() => _isMuted = !_isMuted);
@@ -211,7 +195,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   void _toggleVideo() {
-    if (_engine == null || !_isJoined) return;
+    if (_engine == null || !_localUserJoined) return;
     try {
       _engine!.muteLocalVideoStream(!_isVideoEnabled);
       setState(() => _isVideoEnabled = !_isVideoEnabled);
@@ -222,7 +206,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   Future<void> _endCall() async {
     setState(() {
-      _isJoined = false;
+      _localUserJoined = false;
       _remoteUid = null;
     });
     await AgoraVideoBootstrap.releaseEngine(_engine);
@@ -244,7 +228,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         children: [
           // Video views - full screen edge to edge
           Positioned.fill(
-            child: _buildVideoViews(isDarkMode),
+            child: _buildVideoViews(),
           ),
           // Controls overlay
           Positioned(
@@ -265,128 +249,59 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  Widget _buildVideoViews(bool isDarkMode) {
+  Widget _buildVideoViews() {
     if (_engine == null) {
       return const Center(
         child: CircularProgressIndicator(),
       );
     }
-
-    // If remote user has joined, show both videos
-    if (_remoteUid != null) {
-      return Row(
-        children: [
-          // Local video (small, top-right)
-          if (_isVideoEnabled)
-            Expanded(
-              flex: 1,
-              child: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AgoraVideoView(
-                    controller: VideoViewController(
-                      rtcEngine: _engine!,
-                      canvas: const VideoCanvas(uid: 0),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          // Remote video (main view)
-          Expanded(
-            flex: _isVideoEnabled ? 3 : 1,
-            child: Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: AgoraVideoView(
-                  controller: VideoViewController.remote(
-                    rtcEngine: _engine!,
-                    canvas: VideoCanvas(uid: _remoteUid),
-                    connection: RtcConnection(channelId: _channelName),
-                  ),
-                ),
-              ),
+    return Stack(
+      children: [
+        Center(child: _remoteVideo()),
+        Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 100,
+            height: 150,
+            child: Center(
+              child: _localUserJoined
+                  ? _localVideo()
+                  : const CircularProgressIndicator(),
             ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _localVideo() {
+    return AgoraVideoView(
+      controller: VideoViewController(
+        rtcEngine: _engine!,
+        canvas: const VideoCanvas(
+          uid: 0,
+          renderMode: RenderModeType.renderModeHidden,
+        ),
+      ),
+    );
+  }
+
+  Widget _remoteVideo() {
+    if (_remoteUid != null) {
+      return AgoraVideoView(
+        controller: VideoViewController.remote(
+          rtcEngine: _engine!,
+          canvas: VideoCanvas(uid: _remoteUid!),
+          connection: RtcConnection(channelId: _channelName),
+        ),
       );
     }
-
-    // No remote user yet - show local video preview in main view
-    return Container(
-      margin: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          children: [
-            // Local video preview
-            if (_isVideoEnabled)
-              AgoraVideoView(
-                controller: VideoViewController(
-                  rtcEngine: _engine!,
-                  canvas: const VideoCanvas(uid: 0),
-                ),
-              )
-            else
-              Container(
-                color: Colors.grey[900],
-                child: const Center(
-                  child: Icon(
-                    Icons.videocam_off,
-                    color: Colors.white54,
-                    size: 64,
-                  ),
-                ),
-              ),
-            // Overlay message
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.6),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Waiting for ${widget.targetName ?? 'user'} to join...',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+    return Text(
+      'Waiting for remote user to join...',
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        color: Colors.grey[400],
+        fontSize: 16,
       ),
     );
   }
@@ -417,7 +332,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
               style: theme.textTheme.titleMedium?.copyWith(color: Colors.white),
             ),
           ),
-          if (_isJoined)
+          if (_localUserJoined)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
