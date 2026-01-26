@@ -49,25 +49,27 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Allow trainware to save your photos</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Allow trainware to access your photos</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Allow trainware to access your camera</string>
-	<key>com.posthog.posthog.API_KEY</key>
-    <string>phc_oLmuad146lylxGF2A45kOzRCMG5cJgnkv5oyedPf5A6</string>
-    <key>com.posthog.posthog.POSTHOG_HOST</key>
-    <string>https://us.i.posthog.com</string>
-    <key>com.posthog.posthog.CAPTURE_APPLICATION_LIFECYCLE_EVENTS</key>
-	<true/>
+	<string>Not Athletes needs camera access for video calls with your coach.</string>
 	<key>NSMicrophoneUsageDescription</key>
-    <string>trainware requires microphone access to enable voice-activated commands when training.</string>
-    <key>NSSpeechRecognitionUsageDescription</key>
-    <string>trainware uses speech to text for hands-free logging of your sets, reps, and weights.</string>
-    <key>NSHealthShareUsageDescription</key>
-    <string>We will sync your data with the Apple Health app to give you better insights</string>
-    <key>NSHealthUpdateUsageDescription</key>
-    <string>We will sync your data with the Apple Health app to give you better insights</string>
+	<string>Not Athletes needs microphone access for video calls with your coach.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Not Athletes uses Bluetooth for audio during video calls (e.g. headphones).</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Not Athletes needs photo access to share images in chat.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Not Athletes needs permission to save photos to your library.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Not Athletes uses speech to text for hands-free logging of your sets, reps, and weights.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>We sync your data with Apple Health to give you better insights.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>We sync your data with Apple Health to give you better insights.</string>
+	<key>com.posthog.posthog.API_KEY</key>
+	<string>phc_oLmuad146lylxGF2A45kOzRCMG5cJgnkv5oyedPf5A6</string>
+	<key>com.posthog.posthog.POSTHOG_HOST</key>
+	<string>https://us.i.posthog.com</string>
+	<key>com.posthog.posthog.CAPTURE_APPLICATION_LIFECYCLE_EVENTS</key>
+	<true/>
 </dict>
 </plist>

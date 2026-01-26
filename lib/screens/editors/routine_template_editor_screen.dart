@@ -10,6 +10,8 @@ import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
+import 'package:trainware/app_flavor.dart';
+import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
 import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
@@ -102,10 +104,15 @@ class _RoutineTemplateEditorScreenState
         exerciseTemplates: exercises,
         planId: widget.planId);
 
-    await Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false)
-        .saveTemplate(templateDto: template);
-    _navigateBack();
+    if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+    try {
+      await Provider.of<SupabaseExerciseAndRoutineController>(context,
+              listen: false)
+          .saveTemplate(templateDto: template);
+      if (mounted) _navigateBack();
+    } finally {
+      if (mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
+    }
   }
 
   void _updateRoutineTemplate() {
@@ -118,13 +125,18 @@ class _RoutineTemplateEditorScreenState
           description: "Do you want to update workout?",
           action: () async {
             _closeDialog();
-            final updatedTemplate =
-                _getUpdatedRoutineTemplate(template: template);
-            final didUpdate = await _doUpdateRoutineTemplate(
-              updatedTemplate: updatedTemplate,
-            );
-            if (didUpdate) {
-              _navigateBack(template: updatedTemplate);
+            if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+            try {
+              final updatedTemplate =
+                  _getUpdatedRoutineTemplate(template: template);
+              final didUpdate = await _doUpdateRoutineTemplate(
+                updatedTemplate: updatedTemplate,
+              );
+              if (didUpdate && mounted) {
+                _navigateBack(template: updatedTemplate);
+              }
+            } finally {
+              if (mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
             }
           },
           actionLabel: 'Update',
@@ -186,11 +198,16 @@ class _RoutineTemplateEditorScreenState
 
       if (isUpdate) {
         final template = widget.template;
-        if (template != null) {
+        if (template != null && mounted) {
           final updatedTemplate =
               _getUpdatedRoutineTemplate(template: template);
-          _doUpdateRoutineTemplate(updatedTemplate: updatedTemplate);
-          _navigateBack(template: updatedTemplate);
+          if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+          try {
+            await _doUpdateRoutineTemplate(updatedTemplate: updatedTemplate);
+            if (mounted) _navigateBack(template: updatedTemplate);
+          } finally {
+            if (mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
+          }
         }
       } else {
         _createRoutineTemplate();
@@ -227,7 +244,7 @@ class _RoutineTemplateEditorScreenState
         if (didPop) return;
 
         final shouldPop = await _handleBackNavigation();
-        if (shouldPop && mounted) {
+        if (shouldPop && mounted && context.mounted) {
           context.pop();
         }
       },

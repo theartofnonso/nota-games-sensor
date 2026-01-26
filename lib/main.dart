@@ -37,11 +37,8 @@ import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
-import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
-import 'package:trainware/services/chat_unread_service.dart';
-import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -186,8 +183,9 @@ Future<void> mainCommon(AppFlavor flavor) async {
     },
     appRunner: () {
       return runApp(MultiProvider(providers: [
-        ChangeNotifierProvider<AccessController>(
-          create: (BuildContext context) => AccessController()..initialize(),
+        ChangeNotifierProvider<ClientOverrideController>(
+          create: (BuildContext context) =>
+              ClientOverrideController()..initialize(),
         ),
         // Provide main controller with Supabase repositories
         ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
@@ -197,12 +195,12 @@ Future<void> mainCommon(AppFlavor flavor) async {
             templateRepository: SupabaseRoutineTemplateRepository(),
             planRepository: SupabaseRoutinePlanRepository(),
             logRepository: SupabaseRoutineLogRepository(),
-            accessController: context.read<AccessController>(),
+            accessController: context.read<ClientOverrideController>(),
           ),
         ),
         ChangeNotifierProvider<NutritionLogController>(
           create: (BuildContext context) => NutritionLogController(
-              accessController: context.read<AccessController>()),
+              accessController: context.read<ClientOverrideController>()),
         ),
         ChangeNotifierProvider<ExerciseLogController>(
             create: (BuildContext context) =>
@@ -212,7 +210,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
   );
 }
 
-GoRouter _createRouter(AccessController accessController) {
+GoRouter _createRouter(ClientOverrideController accessController) {
   return GoRouter(
     initialLocation: "/",
     navigatorKey: navigatorKey,
@@ -220,13 +218,16 @@ GoRouter _createRouter(AccessController accessController) {
     refreshListenable: accessController,
     redirect: (context, state) {
       if (!AppConfig.isCoach) {
+        // Client app: redirect away from coach screen
         if (state.matchedLocation == '/coach') {
           return '/';
         }
         return null;
       }
 
-      if (!accessController.isClientMode && state.matchedLocation != '/coach') {
+      // Coach app: if no client selected, must be on client selection screen
+      if (!accessController.hasSelectedClient &&
+          state.matchedLocation != '/coach') {
         return '/coach';
       }
       return null;
@@ -348,10 +349,25 @@ GoRouter _createRouter(AccessController accessController) {
       GoRoute(
         path: ChatScreen.routeName,
         builder: (context, state) {
-          // Get adminUserId from state params or use default from config
-          final adminUserId = state.uri.queryParameters['adminUserId'] ??
-              ChatConfig.adminUserId;
-          return ChatScreen(adminUserId: adminUserId);
+          final coachId = state.uri.queryParameters['coachId'] ?? '';
+          final coachName = state.uri.queryParameters['coachName'] ?? '';
+          final clientUserId = state.uri.queryParameters['clientUserId'] ?? '';
+          final clientName = state.uri.queryParameters['clientName'] ?? '';
+
+          // Validate required parameters - redirect to home if missing
+          if (coachId.isEmpty ||
+              coachName.isEmpty ||
+              clientUserId.isEmpty ||
+              clientName.isEmpty) {
+            return const Home();
+          }
+
+          return ChatScreen(
+            coachId: coachId,
+            coachName: coachName,
+            clientUserId: clientUserId,
+            clientName: clientName,
+          );
         },
       ),
       GoRoute(
@@ -372,7 +388,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _isFirstLaunch = SharedPrefs().firstLaunch;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
-  late final AccessController _accessController;
+  late final ClientOverrideController _accessController;
   late final GoRouter _router;
   bool _lastAuthenticated = false;
   bool _lastCoach = false;
@@ -380,7 +396,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _accessController = context.read<AccessController>();
+    _accessController = context.read<ClientOverrideController>();
     _router = _createRouter(_accessController);
     _lastAuthenticated = _accessController.isAuthenticated;
     _lastCoach = AppConfig.isCoach;
@@ -389,6 +405,10 @@ class _MyAppState extends State<MyApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _processPendingNotification();
     });
+    // Set preferred orientation once at startup
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
   }
 
   void _handleAccessChanged() {
@@ -415,24 +435,8 @@ class _MyAppState extends State<MyApp> {
           _isFirstLaunch = true;
           SharedPrefs().firstLaunch = true;
         });
-        ChatUnreadService().clear();
-        ChatUnreadCountsService().clear();
       } catch (e) {
         debugPrint('[Auth] Error clearing data: $e');
-      }
-    }
-
-    if (isAuthenticated) {
-      final accessController = _accessController;
-      if (AppConfig.isCoach) {
-        ChatUnreadCountsService()
-            .updateContext(coachId: accessController.userId);
-      } else {
-        ChatUnreadService().updateContext(
-          userId: accessController.userId,
-          coachId: ChatConfig.adminUserId,
-          userIdOverride: accessController.clientOverrideId,
-        );
       }
     }
 
@@ -489,10 +493,6 @@ class _MyAppState extends State<MyApp> {
       );
     }
 
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
-
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.black,
@@ -501,11 +501,6 @@ class _MyAppState extends State<MyApp> {
         systemNavigationBarIconBrightness: Brightness.light,
       ),
     );
-
-    // Show onboarding if first launch
-    if (_isFirstLaunch) {
-      return OnboardingFlowScreen(onPressed: _completeIntro);
-    }
 
     // Show auth screen if not authenticated
     if (!_accessController.isAuthenticated) {
@@ -518,14 +513,9 @@ class _MyAppState extends State<MyApp> {
       );
     }
 
-    if (!_accessController.isRoleResolved) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: TRKRTheme.darkTheme,
-        darkTheme: TRKRTheme.darkTheme,
-        home: const TRKRLoadingScreen(),
-      );
+    // Show onboarding if first launch (only after profile is created)
+    if (_isFirstLaunch) {
+      return OnboardingFlowScreen(onPressed: _completeIntro);
     }
 
     // Show main app if authenticated

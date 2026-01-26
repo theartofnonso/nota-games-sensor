@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:video_player/video_player.dart';
 
 import 'app_flavor.dart';
 import 'utils/general_utils.dart';
@@ -20,29 +19,6 @@ class OnboardingFlowScreen extends StatefulWidget {
 }
 
 class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
-  late final VideoPlayerController _videoController;
-
-  @override
-  void initState() {
-    super.initState();
-    _videoController = VideoPlayerController.asset(
-      'images/DTS_IRL_ESCAPISM_Joey_Bania_Clips_ID129.mp4',
-    )
-      ..setLooping(true)
-      ..setVolume(0);
-    _videoController.initialize().then((_) {
-      if (!mounted) return;
-      _videoController.play();
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _videoController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -83,37 +59,11 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
               backgroundColor: Colors.black,
               body: Stack(
                 children: [
-                  // ----------------- VIDEO BACKGROUND -----------------
-                  Positioned.fill(
-                    child: _videoController.value.isInitialized
-                        ? IgnorePointer(
-                            child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                width: _videoController.value.size.width,
-                                height: _videoController.value.size.height,
-                                child: VideoPlayer(_videoController),
-                              ),
-                            ),
-                          )
-                        : Container(
-                            decoration: BoxDecoration(
-                              gradient: themeGradient(context: context),
-                            ),
-                          ),
-                  ),
-                  // Gradient overlay for readability
+                  // ----------------- GRADIENT BACKGROUND -----------------
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.55),
-                            Colors.black.withValues(alpha: 0.75),
-                          ],
-                        ),
+                        gradient: themeGradient(context: context),
                       ),
                     ),
                   ),

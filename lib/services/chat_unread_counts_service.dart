@@ -1,205 +1,124 @@
 import 'dart:async';
 
+import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../logger.dart';
+import '../utils/agora_chat_utils.dart';
+import 'agora_chat_bootstrap.dart';
 
 class ChatUnreadCountsService {
-  final logger = getLogger(className: 'ChatUnreadCountsService');
-
   static final ChatUnreadCountsService _instance =
       ChatUnreadCountsService._internal();
   factory ChatUnreadCountsService() => _instance;
   ChatUnreadCountsService._internal();
 
-  final SupabaseClient _client = Supabase.instance.client;
-
   final ValueNotifier<Map<String, int>> unreadByClientId =
       ValueNotifier<Map<String, int>>({});
   final ValueNotifier<int> totalUnreadCount = ValueNotifier<int>(0);
 
-  String? _coachId;
-  final Map<String, String> _conversationToClientId = {};
-  RealtimeChannel? _messagesChannel;
-  RealtimeChannel? _conversationsChannel;
+  final Map<String, String> _clientIdToAgora = {};
+  String? _handlerId;
 
-  Future<void> updateContext({required String? coachId}) async {
-    if (coachId == null) {
-      clear();
-      return;
-    }
-
-    final isSameCoach =
-        _coachId == coachId && _conversationToClientId.isNotEmpty;
-    _coachId = coachId;
-
-    if (!isSameCoach) {
-      await _loadConversations();
-      _subscribeConversations();
-    }
-
-    _subscribeMessages();
+  Future<void> updateClients(List<String> clientIds) async {
+    await AgoraChatBootstrap.ensureInitialized();
+    _clientIdToAgora
+      ..clear()
+      ..addEntries(
+        clientIds.map((id) => MapEntry(id, toAgoraUsername(id))),
+      );
+    _handlerId ??= 'chat_unread_counts_${clientIds.hashCode}';
+    refreshSubscription();
     await refreshUnreadCounts();
-  }
-
-  Future<void> _loadConversations() async {
-    if (_coachId == null) return;
-    try {
-      final response = await _client
-          .from('chat_conversations')
-          .select('id, user_id')
-          .eq('coach_id', _coachId!);
-      final rows = (response as List<dynamic>)
-          .map((row) => row as Map<String, dynamic>)
-          .toList();
-      _conversationToClientId
-        ..clear()
-        ..addEntries(
-          rows.map((row) => MapEntry(
-                row['id'] as String,
-                row['user_id'] as String,
-              )),
-        );
-    } catch (e) {
-      logger.e('Error loading coach conversations: $e');
-    }
-  }
-
-  void _subscribeConversations() {
-    if (_coachId == null) return;
-    _conversationsChannel?.let(_client.removeChannel);
-    _conversationsChannel = _client
-        .channel('chat_conversations_coach_$_coachId')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'chat_conversations',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'coach_id',
-            value: _coachId!,
-          ),
-          callback: (_) async {
-            await _loadConversations();
-            await refreshUnreadCounts();
-          },
-        )
-        .subscribe();
-  }
-
-  void _subscribeMessages() {
-    _messagesChannel?.let(_client.removeChannel);
-    _messagesChannel = _client
-        .channel('chat_messages_coach_$_coachId')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'chat_messages',
-          callback: (payload) {
-            final conversationId = (payload.newRecord['conversation_id'] ??
-                payload.oldRecord['conversation_id']) as String?;
-            if (conversationId == null ||
-                !_conversationToClientId.containsKey(conversationId)) {
-              return;
-            }
-            unawaited(refreshUnreadCountForConversation(conversationId));
-          },
-        )
-        .subscribe();
+    await refreshTotalUnreadCount();
   }
 
   void refreshSubscription() {
-    if (_coachId == null) return;
-    _subscribeConversations();
-    _subscribeMessages();
+    final handlerId = _handlerId;
+    if (handlerId == null) return;
+    ChatClient.getInstance.chatManager.removeEventHandler(handlerId);
+    ChatClient.getInstance.chatManager.addEventHandler(
+      handlerId,
+      ChatEventHandler(
+        onMessagesReceived: (messages) {
+          final targetIds = _clientIdToAgora.values.toSet();
+          for (final message in messages) {
+            final from = message.from;
+            if (targetIds.contains(from)) {
+              final clientId = _clientIdToAgora.entries
+                  .firstWhere((entry) => entry.value == from)
+                  .key;
+              unawaited(refreshUnreadCountForClient(clientId));
+            }
+          }
+          unawaited(refreshTotalUnreadCount());
+        },
+      ),
+    );
   }
 
   Future<void> refreshUnreadCounts() async {
-    final coachId = _coachId;
-    if (coachId == null || _conversationToClientId.isEmpty) {
+    if (_clientIdToAgora.isEmpty) {
       unreadByClientId.value = {};
+      totalUnreadCount.value = 0;
       return;
     }
 
-    try {
-      final conversationIds = _conversationToClientId.keys.toList();
-      final response = await _client
-          .from('chat_messages')
-          .select('conversation_id')
-          .filter('conversation_id', 'in', '(${conversationIds.join(',')})')
-          .neq('sender_id', coachId)
-          .eq('is_read', false);
-
-      final countsByConversation = <String, int>{};
-      for (final row in (response as List<dynamic>)) {
-        final conversationId = row['conversation_id'] as String?;
-        if (conversationId == null) continue;
-        countsByConversation[conversationId] =
-            (countsByConversation[conversationId] ?? 0) + 1;
+    final updated = <String, int>{};
+    for (final entry in _clientIdToAgora.entries) {
+      final count = await _fetchUnreadCount(entry.value);
+      if (count > 0) {
+        updated[entry.key] = count;
       }
-
-      final countsByClient = <String, int>{};
-      countsByConversation.forEach((conversationId, count) {
-        final clientId = _conversationToClientId[conversationId];
-        if (clientId == null) return;
-        countsByClient[clientId] = count;
-      });
-
-      unreadByClientId.value = countsByClient;
-      totalUnreadCount.value =
-          countsByClient.values.fold<int>(0, (sum, count) => sum + count);
-    } catch (e) {
-      logger.e('Error refreshing coach unread counts: $e');
     }
+    unreadByClientId.value = updated;
+    totalUnreadCount.value =
+        updated.values.fold<int>(0, (sum, count) => sum + count);
   }
 
-  Future<void> refreshUnreadCountForConversation(String conversationId) async {
-    final coachId = _coachId;
-    if (coachId == null) return;
-    final clientId = _conversationToClientId[conversationId];
-    if (clientId == null) return;
+  Future<void> refreshUnreadCountForClient(String clientId) async {
+    final agoraId = _clientIdToAgora[clientId];
+    if (agoraId == null) return;
+    final count = await _fetchUnreadCount(agoraId);
 
+    final updated = Map<String, int>.from(unreadByClientId.value);
+    if (count == 0) {
+      updated.remove(clientId);
+    } else {
+      updated[clientId] = count;
+    }
+    unreadByClientId.value = updated;
+    totalUnreadCount.value =
+        updated.values.fold<int>(0, (sum, count) => sum + count);
+  }
+
+  Future<void> refreshTotalUnreadCount() async {
+    final total =
+        unreadByClientId.value.values.fold<int>(0, (sum, count) => sum + count);
+    totalUnreadCount.value = total;
+  }
+
+  Future<int> _fetchUnreadCount(String agoraUserId) async {
     try {
-      final response = await _client
-          .from('chat_messages')
-          .select()
-          .eq('conversation_id', conversationId)
-          .neq('sender_id', coachId)
-          .eq('is_read', false);
-      final count = (response as List<dynamic>).length;
-
-      final updated = Map<String, int>.from(unreadByClientId.value);
-      if (count == 0) {
-        updated.remove(clientId);
-      } else {
-        updated[clientId] = count;
-      }
-      unreadByClientId.value = updated;
-      totalUnreadCount.value =
-          updated.values.fold<int>(0, (sum, count) => sum + count);
-    } catch (e) {
-      logger.e('Error refreshing conversation unread count: $e');
+      final conversation =
+          await ChatClient.getInstance.chatManager.getConversation(
+        agoraUserId,
+        type: ChatConversationType.Chat,
+        createIfNeed: true,
+      );
+      return await conversation!.unreadCount();
+    } catch (_) {
+      return 0;
     }
   }
 
   void clear() {
-    _coachId = null;
-    _conversationToClientId.clear();
     unreadByClientId.value = {};
     totalUnreadCount.value = 0;
-    _messagesChannel?.let(_client.removeChannel);
-    _conversationsChannel?.let(_client.removeChannel);
-    _messagesChannel = null;
-    _conversationsChannel = null;
-  }
-}
-
-extension _ChannelDispose on RealtimeChannel? {
-  void let(void Function(RealtimeChannel channel) fn) {
-    final channel = this;
-    if (channel != null) {
-      fn(channel);
+    _clientIdToAgora.clear();
+    final handlerId = _handlerId;
+    if (handlerId != null) {
+      ChatClient.getInstance.chatManager.removeEventHandler(handlerId);
     }
+    _handlerId = null;
   }
 }

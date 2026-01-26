@@ -1,19 +1,13 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:video_player/video_player.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
-import 'package:trainware/utils/uri_utils.dart';
+import 'package:trainware/utils/client_access_utils.dart';
+import 'package:trainware/utils/coach_access_utils.dart';
 import 'package:trainware/app_flavor.dart';
-import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
-import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
-import 'package:trainware/urls.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -27,29 +21,12 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   bool _otpSent = false;
   final _emailController = TextEditingController();
   final _otpController = TextEditingController();
-  late final VideoPlayerController _videoController;
 
   @override
   void dispose() {
-    _videoController.dispose();
     _emailController.dispose();
     _otpController.dispose();
     super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _videoController = VideoPlayerController.asset(
-      'images/DTS_IRL_ESCAPISM_Joey_Bania_Clips_ID129.mp4',
-    )
-      ..setLooping(true)
-      ..setVolume(0);
-    _videoController.initialize().then((_) {
-      if (!mounted) return;
-      _videoController.play();
-      setState(() {});
-    });
   }
 
   Future<void> _sendOTP() async {
@@ -78,16 +55,12 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       setState(() => _isLoading = true);
 
       try {
-        // For test account, automatically sign in with password (no OTP needed)
-        // The test account must exist in Supabase with password: 'testaccount123'
         await Supabase.instance.client.auth.signInWithPassword(
           email: testAccountEmail,
           password: 'testaccount123',
         );
-
         // Success! User will be automatically navigated by the auth state listener
       } catch (error) {
-        // If login fails, show error but don't fall back to OTP
         debugPrint('[Test Account] Login failed: $error');
         if (mounted) {
           showSnackbar(
@@ -107,35 +80,30 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       return;
     }
 
-    if (AppConfig.isCoach) {
-      setState(() => _isLoading = true);
-      final canProceed = await _checkCoachAccess(email);
-      if (!mounted) return;
-      if (!canProceed) {
-        setState(() => _isLoading = false);
-        await _showCoachAccessRequiredSheet();
-        return;
-      }
-      setState(() => _isLoading = false);
-    }
+    // Check access before sending OTP
+    setState(() => _isLoading = true);
 
     if (AppConfig.isClient) {
-      setState(() => _isLoading = true);
-      final canProceed = await _checkClientAccess(email);
+      final canProceed =
+          await requireClientAccess(context: context, email: email);
       if (!mounted) return;
       if (!canProceed) {
         setState(() => _isLoading = false);
-        await _showClientAccessRequiredSheet();
         return;
       }
-      setState(() => _isLoading = false);
+    } else if (AppConfig.isCoach) {
+      final canProceed =
+          await requireCoachAccess(context: context, email: email);
+      if (!mounted) return;
+      if (!canProceed) {
+        setState(() => _isLoading = false);
+        return;
+      }
     }
-
-    setState(() => _isLoading = true);
 
     try {
       await Supabase.instance.client.auth.signInWithOtp(
-        email: _emailController.text.trim(),
+        email: email,
         emailRedirectTo: null,
       );
 
@@ -152,6 +120,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           message: error.message,
           backgroundColor: Colors.red,
         );
+        setState(() => _isLoading = false);
       }
     } catch (error) {
       if (mounted) {
@@ -160,12 +129,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           message: 'Unexpected error: $error',
           backgroundColor: Colors.red,
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -186,14 +150,19 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Normal OTP verification for regular users
-      // (Test account should never reach here as it bypasses in _sendOTP)
+      // Verify OTP
       await Supabase.instance.client.auth.verifyOTP(
         email: email,
         token: otp,
         type: OtpType.email,
       );
+
       // Success! User will be automatically navigated by the auth state listener
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } on AuthException catch (error) {
       if (mounted) {
         showSnackbar(
@@ -201,6 +170,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           message: error.message,
           backgroundColor: Colors.red,
         );
+        setState(() => _isLoading = false);
       }
     } catch (error) {
       if (mounted) {
@@ -209,125 +179,9 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           message: 'Unexpected error: $error',
           backgroundColor: Colors.red,
         );
-      }
-    } finally {
-      if (mounted) {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  Future<bool> _checkClientAccess(String email) async {
-    try {
-      final uri = Uri.parse(apiBaseUrl).resolve(checkClientAccessPath);
-      final response = await http.post(
-        uri,
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
-      if (response.statusCode != 200) {
-        return false;
-      }
-      final data = jsonDecode(response.body);
-      return data is Map<String, dynamic> && data['found'] == true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> _checkCoachAccess(String email) async {
-    try {
-      final record = await Supabase.instance.client
-          .from('coaches')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle();
-      return record != null;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<void> _showClientAccessRequiredSheet() async {
-    await showAppBottomSheet<void>(
-      context: context,
-      isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Complete your signup",
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.start,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "To use the app, complete the survey, set up your subscription, and book a consultation call. Then come back and sign in using the same email you used for payment.",
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.start,
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OpacityButtonWidgetTwo(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  await openUrl(
-                    context: context,
-                    url: 'https://www.notathletes.com/survey',
-                  );
-                },
-                label: "Open survey",
-                buttonColor: Theme.of(context).colors.vibrantAccent,
-                showArrowRight: false,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showCoachAccessRequiredSheet() async {
-    await showAppBottomSheet<void>(
-      context: context,
-      isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Coach access only",
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.start,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Only Not Athletes coaches can train users with this app. If you’re a coach, please contact support to get access.",
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.start,
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OpacityButtonWidgetTwo(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                label: "Got it",
-                buttonColor: Theme.of(context).colors.vibrantAccent,
-                showArrowRight: false,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _resetForm() {
@@ -346,37 +200,11 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // ----------------- VIDEO/GRADIENT BACKGROUND -----------------
-          Positioned.fill(
-            child: _videoController.value.isInitialized
-                ? IgnorePointer(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: _videoController.value.size.width,
-                        height: _videoController.value.size.height,
-                        child: VideoPlayer(_videoController),
-                      ),
-                    ),
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                      gradient: themeGradient(context: context),
-                    ),
-                  ),
-          ),
-          // Gradient overlay for readability
+          // ----------------- GRADIENT BACKGROUND -----------------
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.55),
-                    Colors.black.withValues(alpha: 0.75),
-                  ],
-                ),
+                gradient: themeGradient(context: context),
               ),
             ),
           ),

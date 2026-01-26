@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/screens/editors/exercise_editor_screen.dart';
@@ -11,8 +12,9 @@ import 'package:trainware/screens/exercise/history/exercise_home_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
-import 'package:trainware/config/chat_config.dart';
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/utils/dialog_utils.dart';
+import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
@@ -76,20 +78,27 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
   if (details == null) return null;
 
   final controller = context.read<SupabaseExerciseAndRoutineController>();
-  if (isEditing) {
-    final updated = initialPlan.copyWith(
-      name: details.name,
-      notes: details.notes,
-    );
-    await controller.updatePlan(plan: updated);
-    return updated;
-  } else {
-    final newPlan = RoutinePlanDto(
-      name: details.name,
-      notes: details.notes,
-    );
-    final created = await controller.savePlan(planDto: newPlan);
-    return created;
+  if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+  try {
+    if (isEditing) {
+      final updated = initialPlan.copyWith(
+        name: details.name,
+        notes: details.notes,
+      );
+      await controller.updatePlan(plan: updated);
+      if (!context.mounted) return null;
+      return updated;
+    } else {
+      final newPlan = RoutinePlanDto(
+        name: details.name,
+        notes: details.notes,
+      );
+      final created = await controller.savePlan(planDto: newPlan);
+      if (!context.mounted) return null;
+      return created;
+    }
+  } finally {
+    if (context.mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
   }
 }
 
@@ -227,18 +236,33 @@ Future<void> navigateToSettings({required BuildContext context}) async {
 }
 
 /// Navigate to the chat screen
-/// Uses the adminUserId from ChatConfig by default, or can be overridden
 Future<void> navigateToChat({
   required BuildContext context,
-  String? adminUserId,
 }) async {
-  final finalAdminUserId = adminUserId ?? ChatConfig.adminUserId;
-  final accessController = context.read<AccessController>();
-  final clientUserId =
-      accessController.isClientMode ? accessController.clientOverrideId : null;
-  final clientName =
-      accessController.isClientMode ? accessController.clientOverrideName : null;
-  final clientEmail = null;
+  final accessController = context.read<ClientOverrideController>();
+  String clientUserId = '';
+  String clientName = '';
+  String coachId = '';
+  String coachName = '';
+
+  if (AppConfig.isCoach) {
+    // Coach app: coach viewing a client
+
+    clientUserId = accessController.selectedClientId ?? '';
+    clientName = accessController.selectedClientName ?? '';
+
+    // Get coach info (current user)
+    coachId = accessController.userId ?? '';
+  } else {
+    // Use stored coach data (should already be set when client logs in)
+    coachId = accessController.coachId ?? '';
+    coachName = accessController.coachName ?? '';
+
+    // Client app: client viewing their coach
+    clientUserId = accessController.userId ?? '';
+  }
+
+  if (!context.mounted) return;
   await showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
@@ -267,10 +291,10 @@ Future<void> navigateToChat({
           isDraggable: false,
           isDismissible: true,
           child: ChatScreen(
-            adminUserId: finalAdminUserId,
+            coachId: coachId,
+            coachName: coachName,
             clientUserId: clientUserId,
             clientName: clientName,
-            clientEmail: clientEmail,
             scrollController: null,
           ),
         ),

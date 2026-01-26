@@ -145,9 +145,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     if (_exerciseLog == null) return;
     final type = _currentExerciseLog.exercise.type;
     if (type == ExerciseType.none) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Pick an exercise type before adding sets.'),
-      ));
+      showErrorBottomSheet(
+        context: context,
+        message: 'Pick an exercise type before adding sets.',
+      );
       return;
     }
     final pastSets = Provider.of<SupabaseExerciseAndRoutineController>(context,

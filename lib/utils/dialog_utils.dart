@@ -9,113 +9,20 @@ import '../dtos/appsync/exercise_dto.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
 import '../widgets/timers/time_picker.dart';
 
+/// Replaced with bottom sheet - shows a non-dismissible bottom sheet instead of top snackbar
+/// All snackbars are now replaced with bottom sheets that require user acknowledgment
 void showSnackbar({
   required BuildContext context,
   required String message,
   Color? backgroundColor,
   Duration duration = const Duration(seconds: 3),
 }) {
-  final overlay = Overlay.maybeOf(context);
-  if (overlay == null) return;
-
-  final defaultBg = backgroundColor ?? sapphireDark;
-
-  final overlayEntry = OverlayEntry(
-    builder: (ctx) {
-      final paddingTop = MediaQuery.of(ctx).padding.top;
-      return Positioned(
-        top: paddingTop + 12,
-        left: 12,
-        right: 12,
-        child: _TopSnackbarBanner(
-          backgroundColor: defaultBg,
-          message: message,
-        ),
-      );
-    },
+  // Use bottom sheet instead of top snackbar
+  showErrorBottomSheet(
+    context: context,
+    message: message,
+    title: 'Notice',
   );
-
-  overlay.insert(overlayEntry);
-
-  Future.delayed(duration, () {
-    if (overlayEntry.mounted) {
-      overlayEntry.remove();
-    }
-  });
-}
-
-class _TopSnackbarBanner extends StatefulWidget {
-  final String message;
-  final Color backgroundColor;
-
-  const _TopSnackbarBanner({
-    required this.message,
-    required this.backgroundColor,
-  });
-
-  @override
-  State<_TopSnackbarBanner> createState() => _TopSnackbarBannerState();
-}
-
-class _TopSnackbarBannerState extends State<_TopSnackbarBanner>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<Offset> _slideAnimation;
-  late final Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, -0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: widget.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                widget.message,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      height: 1.5,
-                      color: Colors.white,
-                    ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 void displayTimePicker(
@@ -218,10 +125,12 @@ void showBottomSheetWithSingleAction(
     required void Function() action,
     required String actionLabel,
     bool isDestructive = false,
-    Color? actionColor}) {
+    Color? actionColor,
+    bool isDismissible = true}) {
   showAppBottomSheet(
       context: context,
       isScrollControlled: false,
+      isDismissible: isDismissible,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(
@@ -248,6 +157,24 @@ void showBottomSheetWithSingleAction(
           ],
         ),
       ));
+}
+
+/// Shows a non-dismissible bottom sheet with a message and "Got it" button
+/// The sheet can only be dismissed by tapping the "Got it" button
+/// Use this to replace SnackBars for error messages
+void showErrorBottomSheet({
+  required BuildContext context,
+  required String message,
+  String title = 'Error',
+}) {
+  showBottomSheetWithSingleAction(
+    context: context,
+    title: title,
+    description: message,
+    action: () => Navigator.of(context).pop(),
+    actionLabel: 'Got it',
+    isDismissible: false,
+  );
 }
 
 /// Shows a dialog with similar exercises found

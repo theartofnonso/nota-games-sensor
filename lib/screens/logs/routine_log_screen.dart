@@ -10,6 +10,7 @@ import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
+import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/share/routine_share_service.dart';
@@ -297,7 +298,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
+              leading:
+                  const FaIcon(FontAwesomeIcons.solidPenToSquare, size: 18),
               horizontalTitleGap: 6,
               title: Text("Edit Log"),
               onTap: _editLog,
@@ -556,9 +558,10 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     );
 
     if (details == null) return;
+    if (!context.mounted) return;
 
-    _showLoadingScreen();
-
+    if (!AppConfig.isCoach) _showLoadingScreen();
+    if (AppConfig.isCoach) showCoachLoadingOverlay(context);
     try {
       final exercises = log.exerciseLogs.map((exerciseLog) {
         final uncheckedSets = exerciseLog.sets
@@ -585,9 +588,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                   listen: false)
               .saveTemplate(templateDto: templateToCreate);
 
-      _hideLoadingScreen();
-
-      if (mounted) {
+      if (mounted && context.mounted) {
         if (createdTemplate != null) {
           navigateToRoutineTemplatePreview(
               context: context, template: createdTemplate);
@@ -598,12 +599,19 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         }
       }
     } catch (e) {
-      _hideLoadingScreen();
       debugPrint('Error creating template: $e');
-      if (mounted) {
+      if (mounted && context.mounted) {
         showSnackbar(
             context: context,
             message: "Oops, we are unable to create template: $e");
+      }
+    } finally {
+      if (mounted && context.mounted) {
+        if (AppConfig.isCoach) {
+          hideCoachLoadingOverlay(context);
+        } else {
+          _hideLoadingScreen();
+        }
       }
     }
   }
@@ -615,6 +623,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     final log = controller.logWhereId(id: widget.id);
 
     if (log != null) {
+      if (AppConfig.isCoach) showCoachLoadingOverlay(context);
       try {
         await controller.removeLog(log: log);
         if (mounted) {
@@ -627,7 +636,11 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               message: "Oops, we are unable to delete this log");
         }
       } finally {
-        _hideLoadingScreen();
+        if (AppConfig.isCoach) {
+          if (mounted) hideCoachLoadingOverlay(context);
+        } else {
+          _hideLoadingScreen();
+        }
       }
     }
   }
@@ -640,7 +653,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         description: "Are you sure you want to delete this log?",
         action: () {
           Navigator.of(context).pop(); // Close current BottomSheet
-          _showLoadingScreen();
+          if (!AppConfig.isCoach) _showLoadingScreen();
           _doDeleteLog();
         },
         actionLabel: 'Delete',
