@@ -28,19 +28,20 @@ class VideoCallScreen extends StatefulWidget {
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
   RtcEngine? _engine;
-  bool _previewStarted = false;
   bool _localUserJoined = false;
   bool _isMuted = false;
   bool _isVideoEnabled = true;
   int? _remoteUid;
   late final String _channelName;
+  bool _permissionsGranted = false;
 
   @override
   void initState() {
     super.initState();
     // Generate unique channel name from current user and target user IDs
     _channelName = _generateChannelName();
-    _startVideoCalling();
+    // Check permissions first, then start video calling
+    _checkPermissions();
   }
 
   String _generateChannelName() {
@@ -59,22 +60,29 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     super.dispose();
   }
 
-  /// Start video calling following Agora's Flutter documentation pattern:
-  /// 1. Request permissions (MUST be done before engine initialization)
-  /// 2. Initialize engine
-  /// 3. Enable video
-  /// 4. Start preview
-  /// 5. Join channel
-  Future<void> _startVideoCalling() async {
-    // Step 1: Request permissions (following Agora's documentation)
-    // This MUST happen before initializing the Agora engine
+  /// Check permissions first (following Agora's documentation pattern)
+  Future<void> _checkPermissions() async {
+    final cameraStatus = await Permission.camera.status;
+    final microphoneStatus = await Permission.microphone.status;
+
+    final allGranted = cameraStatus.isGranted && microphoneStatus.isGranted;
+
+    if (allGranted) {
+      setState(() => _permissionsGranted = true);
+      _startVideoCalling();
+    } else {
+      _requestPermissions();
+    }
+  }
+
+  /// Request permissions (following Agora's documentation pattern)
+  Future<void> _requestPermissions() async {
     final permissions =
         await [Permission.microphone, Permission.camera].request();
 
     final cameraStatus = permissions[Permission.camera];
     final microphoneStatus = permissions[Permission.microphone];
 
-    // Check if permissions are granted
     final allGranted = permissions.values.every((status) => status.isGranted);
 
     if (!allGranted) {
@@ -103,68 +111,108 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       return;
     }
 
-    // Permissions granted, proceed with video call initialization
-    await _initializeVideoCall();
+    // Permissions granted, proceed with video call
+    setState(() => _permissionsGranted = true);
+    _startVideoCalling();
   }
 
-  /// Initialize video call following Agora's exact workflow:
+  /// Start video calling following Agora's exact workflow:
   /// 1. Initialize engine
-  /// 2. Enable video
-  /// 3. Start preview
-  /// 4. Setup event handlers
-  /// 5. Join channel
-  Future<void> _initializeVideoCall() async {
+  /// 2. Setup event handlers (BEFORE enabling video)
+  /// 3. Enable video
+  /// 4. Start preview
+  /// 5. Setup local video
+  /// 6. Join channel
+  Future<void> _startVideoCalling() async {
     try {
       // Step 1: Initialize the Agora Engine
       _engine = await AgoraVideoBootstrap.createEngine();
 
-      // Step 2: Enable video module (required before preview/join)
-      await _engine!.enableVideo();
-
-      // Step 3: Start preview (enables local video preview)
-      // This MUST be called after enableVideo() and before joinChannel()
-      await _engine!.startPreview();
-      if (mounted) setState(() => _previewStarted = true);
-
-      // Step 4: Setup event handlers (before joining channel)
+      // Step 2: Setup event handlers (BEFORE enabling video, as per Agora docs)
       _setupEventHandlers();
 
-      // Step 5: Join channel
+      // Step 3: Enable video module
+      await _engine!.enableVideo();
+
+      // Step 4: Start preview (enables local video preview)
+      await _engine!.startPreview();
+
+      // Step 5: Setup local video (must be done after startPreview)
+      _setupLocalVideo();
+
+      // Step 6: Join channel
       await _joinChannel();
     } catch (e) {
       if (mounted) {
         showErrorBottomSheet(
           context: context,
-          message: 'Failed to start video call: $e',
+          message: 'Failed to start video call: ${e.toString()}',
         );
         Navigator.of(context).pop();
       }
     }
   }
 
+  /// Setup event handlers (must be called BEFORE enabling video, as per Agora docs)
   void _setupEventHandlers() {
     _engine!.registerEventHandler(
       RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          if (mounted) setState(() => _localUserJoined = true);
+          if (mounted) {
+            setState(() {
+              _localUserJoined = true;
+            });
+          }
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          if (mounted) setState(() => _remoteUid = remoteUid);
+          if (mounted) {
+            setState(() {
+              _remoteUid = remoteUid;
+            });
+            // Setup remote video when user joins
+            _setupRemoteVideo(remoteUid);
+          }
         },
         onUserOffline: (RtcConnection connection, int remoteUid,
             UserOfflineReasonType reason) {
-          if (mounted) setState(() => _remoteUid = null);
+          if (mounted) {
+            setState(() {
+              _remoteUid = null;
+            });
+          }
         },
         onError: (ErrorCodeType err, String msg) {
           if (mounted) {
             showErrorBottomSheet(
               context: context,
-              message: 'Video call error: $msg',
+              message: 'Video call error (${err.value}): $msg',
             );
           }
         },
       ),
     );
+  }
+
+  /// Setup local video view (following Agora's documentation pattern)
+  void _setupLocalVideo() {
+    // Local video is set up via AgoraVideoView widget in the build method
+    // This method ensures the view is ready after preview starts
+    if (mounted) {
+      setState(() {
+        // Trigger rebuild to show local video
+      });
+    }
+  }
+
+  /// Setup remote video view (following Agora's documentation pattern)
+  void _setupRemoteVideo(int remoteUid) {
+    // Remote video is set up via AgoraVideoView widget in the build method
+    // This method ensures the view is ready when remote user joins
+    if (mounted) {
+      setState(() {
+        // Trigger rebuild to show remote video
+      });
+    }
   }
 
   Future<void> _joinChannel() async {
@@ -203,7 +251,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   Future<String?> _resolveVideoToken() async {
     try {
       final currentUserId = await _getCurrentUserId();
-      if (currentUserId == null) return null;
+      if (currentUserId == null) {
+        throw Exception('No current user ID available');
+      }
 
       final agoraUserId = toAgoraUsername(currentUserId);
       final uri = Uri.parse(agoraBaseUrl).resolve(agoraVideoTokenPath);
@@ -216,15 +266,21 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         }),
       );
       if (response.statusCode != 200) {
-        return null;
+        throw Exception(
+            'Token API returned ${response.statusCode}: ${response.body}');
       }
       final data = jsonDecode(response.body);
       if (data is Map<String, dynamic>) {
-        return data['token'] as String?;
+        final token = data['token'] as String?;
+        if (token == null || token.isEmpty) {
+          throw Exception('Token is null or empty');
+        }
+        return token;
       }
-      return null;
+      throw Exception('Invalid token response format');
     } catch (e) {
-      return null;
+      // Re-throw to be caught by _initializeVideoCall
+      rethrow;
     }
   }
 
@@ -250,10 +306,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   Future<void> _endCall() async {
     setState(() {
-      _previewStarted = false;
       _localUserJoined = false;
       _remoteUid = null;
     });
+    // Cleanup following Agora's documentation pattern: stopPreview -> leaveChannel -> release
     await AgoraVideoBootstrap.releaseEngine(_engine);
     _engine = null;
     if (mounted) {
@@ -295,7 +351,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   Widget _buildVideoViews() {
-    if (_engine == null) {
+    if (_engine == null || !_permissionsGranted) {
       return const Center(
         child: CircularProgressIndicator(),
       );
@@ -306,21 +362,28 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         final h = constraints.maxHeight > 0 ? constraints.maxHeight : 600.0;
         return Stack(
           children: [
+            // Remote video (full screen)
             SizedBox(
               width: w,
               height: h,
               child: _remoteVideo(width: w, height: h),
             ),
+            // Local video (preview in corner)
             Align(
               alignment: Alignment.topLeft,
-              child: SizedBox(
+              child: Container(
                 width: 100,
                 height: 150,
-                child: _previewStarted
-                    ? _localVideo()
-                    : const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white24, width: 1),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _localVideo(),
+                ),
               ),
             ),
           ],
@@ -330,12 +393,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   Widget _localVideo() {
+    if (_engine == null) {
+      return const SizedBox.shrink();
+    }
     return AgoraVideoView(
       controller: VideoViewController(
         rtcEngine: _engine!,
         canvas: const VideoCanvas(
           uid: 0,
-          renderMode: RenderModeType.renderModeHidden,
+          renderMode: RenderModeType.renderModeFit,
         ),
       ),
     );
@@ -351,7 +417,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
             rtcEngine: _engine!,
             canvas: VideoCanvas(
               uid: _remoteUid!,
-              renderMode: RenderModeType.renderModeHidden,
+              renderMode: RenderModeType.renderModeFit,
             ),
             connection: RtcConnection(channelId: _channelName),
           ),
