@@ -60,24 +60,43 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   /// Start video calling following Agora's Flutter documentation pattern:
-  /// 1. Request permissions
+  /// 1. Request permissions (MUST be done before engine initialization)
   /// 2. Initialize engine
   /// 3. Enable video
   /// 4. Start preview
   /// 5. Join channel
   Future<void> _startVideoCalling() async {
-    // Request permissions (following Agora's simple pattern)
+    // Step 1: Request permissions (following Agora's documentation)
+    // This MUST happen before initializing the Agora engine
     final permissions =
         await [Permission.microphone, Permission.camera].request();
 
+    final cameraStatus = permissions[Permission.camera];
+    final microphoneStatus = permissions[Permission.microphone];
+
     // Check if permissions are granted
     final allGranted = permissions.values.every((status) => status.isGranted);
+
     if (!allGranted) {
       if (mounted) {
+        final cameraDenied = cameraStatus?.isDenied ?? false;
+        final micDenied = microphoneStatus?.isDenied ?? false;
+        final cameraPermanentlyDenied =
+            cameraStatus?.isPermanentlyDenied ?? false;
+        final micPermanentlyDenied =
+            microphoneStatus?.isPermanentlyDenied ?? false;
+
+        String message =
+            'Camera and microphone permissions are required for video calls.';
+        if (cameraPermanentlyDenied || micPermanentlyDenied) {
+          message += '\n\nPlease enable them in Settings > Not Athletes.';
+        } else if (cameraDenied || micDenied) {
+          message += '\n\nPlease grant permissions when prompted.';
+        }
+
         showErrorBottomSheet(
           context: context,
-          message:
-              'Camera and microphone permissions are required for video calls.',
+          message: message,
         );
         Navigator.of(context).pop();
       }
@@ -99,10 +118,11 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       // Step 1: Initialize the Agora Engine
       _engine = await AgoraVideoBootstrap.createEngine();
 
-      // Step 2: Enable video module
+      // Step 2: Enable video module (required before preview/join)
       await _engine!.enableVideo();
 
       // Step 3: Start preview (enables local video preview)
+      // This MUST be called after enableVideo() and before joinChannel()
       await _engine!.startPreview();
       if (mounted) setState(() => _previewStarted = true);
 
@@ -112,7 +132,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       // Step 5: Join channel
       await _joinChannel();
     } catch (e) {
-      debugPrint('Error initializing video call: $e');
       if (mounted) {
         showErrorBottomSheet(
           context: context,
@@ -127,20 +146,16 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     _engine!.registerEventHandler(
       RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          debugPrint('Local user ${connection.localUid} joined');
           if (mounted) setState(() => _localUserJoined = true);
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          debugPrint('Remote user $remoteUid joined');
           if (mounted) setState(() => _remoteUid = remoteUid);
         },
         onUserOffline: (RtcConnection connection, int remoteUid,
             UserOfflineReasonType reason) {
-          debugPrint('Remote user $remoteUid left');
           if (mounted) setState(() => _remoteUid = null);
         },
         onError: (ErrorCodeType err, String msg) {
-          debugPrint('Agora error: $err - $msg');
           if (mounted) {
             showErrorBottomSheet(
               context: context,
@@ -201,9 +216,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         }),
       );
       if (response.statusCode != 200) {
-        debugPrint(
-          'Video call: token API returned ${response.statusCode}',
-        );
         return null;
       }
       final data = jsonDecode(response.body);
@@ -212,7 +224,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       }
       return null;
     } catch (e) {
-      debugPrint('Video call: token resolution failed: $e');
       return null;
     }
   }
@@ -223,7 +234,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       _engine!.muteLocalAudioStream(!_isMuted);
       setState(() => _isMuted = !_isMuted);
     } catch (e) {
-      debugPrint('Error toggling mute: $e');
+      // Silently handle error
     }
   }
 
@@ -233,7 +244,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       _engine!.muteLocalVideoStream(!_isVideoEnabled);
       setState(() => _isVideoEnabled = !_isVideoEnabled);
     } catch (e) {
-      debugPrint('Error toggling video: $e');
+      // Silently handle error
     }
   }
 
