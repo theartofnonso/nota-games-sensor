@@ -199,19 +199,24 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 6),
-                  Text(
-                    'Clients',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Select a client to view their training experience.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.7),
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Clients',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Select a client to view their training experience.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
                   Padding(
@@ -262,11 +267,12 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                               clientId: client.clientId,
                                             );
                                           } finally {
-                                            if (mounted) {
+                                            if (mounted && context.mounted) {
                                               hideCoachLoadingOverlay(context);
                                             }
                                           }
-                                          if (!context.mounted) return;
+                                          if (!mounted || !context.mounted)
+                                            return;
                                           if (widget
                                               .navigateToOverviewOnSelect) {
                                             context.go('/');

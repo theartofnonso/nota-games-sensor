@@ -67,21 +67,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                       ),
                     ),
                   ),
-                  // Gradient overlay for readability
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.55),
-                            Colors.black.withValues(alpha: 0.75),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
 
                   // ----------------- CONTENT --------------------
                   SafeArea(

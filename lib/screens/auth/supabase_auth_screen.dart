@@ -55,18 +55,12 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       setState(() => _isLoading = true);
 
       try {
-        // For test account, automatically sign in with password (no OTP needed)
-        // The test account must exist in Supabase with password: 'testaccount123'
         await Supabase.instance.client.auth.signInWithPassword(
           email: testAccountEmail,
           password: 'testaccount123',
         );
-
-        // Coach access is checked before OTP/test login, so no need to check here
-
         // Success! User will be automatically navigated by the auth state listener
       } catch (error) {
-        // If login fails, show error but don't fall back to OTP
         debugPrint('[Test Account] Login failed: $error');
         if (mounted) {
           showSnackbar(
@@ -86,8 +80,10 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       return;
     }
 
+    // Check access before sending OTP
+    setState(() => _isLoading = true);
+
     if (AppConfig.isClient) {
-      setState(() => _isLoading = true);
       final canProceed =
           await requireClientAccess(context: context, email: email);
       if (!mounted) return;
@@ -95,11 +91,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         setState(() => _isLoading = false);
         return;
       }
-      setState(() => _isLoading = false);
-    }
-
-    if (AppConfig.isCoach) {
-      setState(() => _isLoading = true);
+    } else if (AppConfig.isCoach) {
       final canProceed =
           await requireCoachAccess(context: context, email: email);
       if (!mounted) return;
@@ -107,14 +99,11 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         setState(() => _isLoading = false);
         return;
       }
-      setState(() => _isLoading = false);
     }
-
-    setState(() => _isLoading = true);
 
     try {
       await Supabase.instance.client.auth.signInWithOtp(
-        email: _emailController.text.trim(),
+        email: email,
         emailRedirectTo: null,
       );
 
@@ -131,6 +120,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           message: error.message,
           backgroundColor: Colors.red,
         );
+        setState(() => _isLoading = false);
       }
     } catch (error) {
       if (mounted) {
@@ -139,12 +129,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           message: 'Unexpected error: $error',
           backgroundColor: Colors.red,
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -165,15 +150,19 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Normal OTP verification for regular users
-      // (Test account should never reach here as it bypasses in _sendOTP)
+      // Verify OTP
       await Supabase.instance.client.auth.verifyOTP(
         email: email,
         token: otp,
         type: OtpType.email,
       );
-      // Coach access is checked before OTP send, so no need to check here
+
       // Success! User will be automatically navigated by the auth state listener
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     } on AuthException catch (error) {
       if (mounted) {
         showSnackbar(
@@ -181,6 +170,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           message: error.message,
           backgroundColor: Colors.red,
         );
+        setState(() => _isLoading = false);
       }
     } catch (error) {
       if (mounted) {
@@ -189,9 +179,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           message: 'Unexpected error: $error',
           backgroundColor: Colors.red,
         );
-      }
-    } finally {
-      if (mounted) {
         setState(() => _isLoading = false);
       }
     }
@@ -203,7 +190,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       _otpController.clear();
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -219,21 +205,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
             child: Container(
               decoration: BoxDecoration(
                 gradient: themeGradient(context: context),
-              ),
-            ),
-          ),
-          // Gradient overlay for readability
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.55),
-                    Colors.black.withValues(alpha: 0.75),
-                  ],
-                ),
               ),
             ),
           ),

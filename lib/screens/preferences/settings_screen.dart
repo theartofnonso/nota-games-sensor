@@ -514,6 +514,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       },
                     ),
                   ),
+                  if (isCoach) const SizedBox(height: 32),
                   if (!isCoach) ...[
                     Center(
                       child: Text(
