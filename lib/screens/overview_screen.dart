@@ -228,7 +228,8 @@ class _OverviewScreenState extends State<OverviewScreen>
     final controller = context.read<SupabaseExerciseAndRoutineController>();
     final logs = controller.whereLogsIsSameDay(dateTime: date).toList();
     final hasLogs = logs.isNotEmpty;
-    final isClientMode = context.read<AccessController>().isClientMode;
+    final hasSelectedClient =
+        context.read<ClientOverrideController>().hasSelectedClient;
 
     // Determine date label (Today, Yesterday, or full date)
     final now = DateTime.now();
@@ -305,7 +306,7 @@ class _OverviewScreenState extends State<OverviewScreen>
                     ),
                   ),
                   // Log workout button (only show for today)
-                  if (isToday && !isClientMode)
+                  if (isToday && !hasSelectedClient)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
@@ -362,7 +363,6 @@ class _OverviewScreenState extends State<OverviewScreen>
       },
     );
   }
-
 
   void _hideLoadingScreen() {
     if (mounted) {

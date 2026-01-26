@@ -108,7 +108,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     final response = await Supabase.instance.client
         .from('coach_clients')
         .select(
-            'id, coach_id, client_id, created_at, clients (id, email, name, created_at)')
+            'id, coach_id, client_id, created_at, clients (id, email, name, created_at), coaches (id, email, name)')
         .eq('coach_id', coachId)
         .order('created_at', ascending: false);
     final rows = response as List<dynamic>;
@@ -116,8 +116,9 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
         .map((row) {
           final clientsMap = row['clients'] as Map<String, dynamic>?;
           if (clientsMap == null) return null;
+          final coachesMap = row['coaches'] as Map<String, dynamic>?;
           return CoachClientDto.fromJson(
-              row as Map<String, dynamic>, clientsMap);
+              row as Map<String, dynamic>, clientsMap, coachesMap);
         })
         .whereType<CoachClientDto>()
         .toList();

@@ -184,8 +184,9 @@ Future<void> mainCommon(AppFlavor flavor) async {
     },
     appRunner: () {
       return runApp(MultiProvider(providers: [
-        ChangeNotifierProvider<AccessController>(
-          create: (BuildContext context) => AccessController()..initialize(),
+        ChangeNotifierProvider<ClientOverrideController>(
+          create: (BuildContext context) =>
+              ClientOverrideController()..initialize(),
         ),
         // Provide main controller with Supabase repositories
         ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
@@ -195,12 +196,12 @@ Future<void> mainCommon(AppFlavor flavor) async {
             templateRepository: SupabaseRoutineTemplateRepository(),
             planRepository: SupabaseRoutinePlanRepository(),
             logRepository: SupabaseRoutineLogRepository(),
-            accessController: context.read<AccessController>(),
+            accessController: context.read<ClientOverrideController>(),
           ),
         ),
         ChangeNotifierProvider<NutritionLogController>(
           create: (BuildContext context) => NutritionLogController(
-              accessController: context.read<AccessController>()),
+              accessController: context.read<ClientOverrideController>()),
         ),
         ChangeNotifierProvider<ExerciseLogController>(
             create: (BuildContext context) =>
@@ -210,7 +211,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
   );
 }
 
-GoRouter _createRouter(AccessController accessController) {
+GoRouter _createRouter(ClientOverrideController accessController) {
   return GoRouter(
     initialLocation: "/",
     navigatorKey: navigatorKey,
@@ -218,13 +219,16 @@ GoRouter _createRouter(AccessController accessController) {
     refreshListenable: accessController,
     redirect: (context, state) {
       if (!AppConfig.isCoach) {
+        // Client app: redirect away from coach screen
         if (state.matchedLocation == '/coach') {
           return '/';
         }
         return null;
       }
 
-      if (!accessController.isClientMode && state.matchedLocation != '/coach') {
+      // Coach app: if no client selected, must be on client selection screen
+      if (!accessController.hasSelectedClient &&
+          state.matchedLocation != '/coach') {
         return '/coach';
       }
       return null;
@@ -346,8 +350,25 @@ GoRouter _createRouter(AccessController accessController) {
       GoRoute(
         path: ChatScreen.routeName,
         builder: (context, state) {
-          final adminUserId = state.uri.queryParameters['adminUserId'] ?? '';
-          return ChatScreen(adminUserId: adminUserId);
+          final coachId = state.uri.queryParameters['coachId'] ?? '';
+          final coachName = state.uri.queryParameters['coachName'] ?? '';
+          final clientUserId = state.uri.queryParameters['clientUserId'] ?? '';
+          final clientName = state.uri.queryParameters['clientName'] ?? '';
+
+          // Validate required parameters - redirect to home if missing
+          if (coachId.isEmpty ||
+              coachName.isEmpty ||
+              clientUserId.isEmpty ||
+              clientName.isEmpty) {
+            return const Home();
+          }
+
+          return ChatScreen(
+            coachId: coachId,
+            coachName: coachName,
+            clientUserId: clientUserId,
+            clientName: clientName,
+          );
         },
       ),
       GoRoute(
@@ -368,7 +389,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _isFirstLaunch = SharedPrefs().firstLaunch;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
-  late final AccessController _accessController;
+  late final ClientOverrideController _accessController;
   late final GoRouter _router;
   bool _lastAuthenticated = false;
   bool _lastCoach = false;
@@ -378,7 +399,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _accessController = context.read<AccessController>();
+    _accessController = context.read<ClientOverrideController>();
     _router = _createRouter(_accessController);
     _lastAuthenticated = _accessController.isAuthenticated;
     _lastCoach = AppConfig.isCoach;
@@ -387,6 +408,10 @@ class _MyAppState extends State<MyApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _processPendingNotification();
     });
+    // Set preferred orientation once at startup
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
   }
 
   void _handleAccessChanged() {
@@ -499,10 +524,6 @@ class _MyAppState extends State<MyApp> {
       );
     }
 
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
-
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.black,
@@ -525,16 +546,6 @@ class _MyAppState extends State<MyApp> {
         theme: TRKRTheme.darkTheme,
         darkTheme: TRKRTheme.darkTheme,
         home: const SupabaseAuthScreen(),
-      );
-    }
-
-    if (!_accessController.isRoleResolved) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: TRKRTheme.darkTheme,
-        darkTheme: TRKRTheme.darkTheme,
-        home: const TRKRLoadingScreen(),
       );
     }
 

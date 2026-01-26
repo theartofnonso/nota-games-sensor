@@ -81,7 +81,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: true);
-    final accessController = context.read<AccessController>();
+    final accessController = context.read<ClientOverrideController>();
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -112,7 +112,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
 
     // Check if this template belongs to a system plan
     final isSystemTemplate = plan?.isSystemPlan ?? false;
-    final isClientMode = accessController.isClientMode;
+    final hasSelectedClient = accessController.hasSelectedClient;
 
     final allLogsForTemplate = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: template.id)
@@ -159,7 +159,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
 
     return Scaffold(
-        floatingActionButton: accessController.isClientMode
+        floatingActionButton: accessController.hasSelectedClient
             ? null
             : FloatingActionButton(
                 heroTag: UniqueKey,
@@ -217,7 +217,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                 ],
                               ),
                             ),
-                            if (!isSystemTemplate || isClientMode)
+                            if (!isSystemTemplate || hasSelectedClient)
                               IconButton(
                                 onPressed: () =>
                                     _showMenuBottomSheet(planDto: plan),
@@ -383,7 +383,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final isPredicted = (isToday || isFuture) &&
         predictedDates.contains(selectedDate) &&
         !hasLogs;
-    final isClientMode = context.read<AccessController>().isClientMode;
+    final hasSelectedClient =
+        context.read<ClientOverrideController>().hasSelectedClient;
 
     String dateLabel;
     if (isToday) {
@@ -436,7 +437,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                     ),
                   ),
                   // Log workout button (only show for today)
-                  if (isToday && !isClientMode)
+                  if (isToday && !hasSelectedClient)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
@@ -633,13 +634,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
-    final accessController = context.read<AccessController>();
+    final accessController = context.read<ClientOverrideController>();
     final template = exerciseAndRoutineController.templateWhere(id: widget.id);
     final plan = template != null
         ? exerciseAndRoutineController.planWhere(id: template.planId)
         : null;
     final isSystemTemplate = plan?.isSystemPlan ?? false;
-    final isClientMode = accessController.isClientMode;
+    final hasSelectedClient = accessController.hasSelectedClient;
 
     showAppBottomSheet(
         context: context,
@@ -650,7 +651,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (!isSystemTemplate || isClientMode) ...[
+                if (!isSystemTemplate || hasSelectedClient) ...[
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(
@@ -815,7 +816,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                           "Moved ${template.name} to ${selectedPlan.name}");
                 }
               } finally {
-                if (mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
+                if (mounted && AppConfig.isCoach)
+                  hideCoachLoadingOverlay(context);
               }
             },
             onCreatePlan: () async {
@@ -839,8 +841,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                   if (mounted) {
                     showSnackbar(
                         context: context,
-                        message:
-                            "Moved ${template.name} to ${newPlan.name}");
+                        message: "Moved ${template.name} to ${newPlan.name}");
                   }
                 } finally {
                   if (mounted && AppConfig.isCoach) {

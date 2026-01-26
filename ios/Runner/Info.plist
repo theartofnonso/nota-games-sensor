@@ -50,17 +50,17 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>Trainware needs camera access for video calls with your coach.</string>
+	<string>Not Athletes needs camera access for video calls with your coach.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Trainware needs microphone access for video calls with your coach.</string>
+	<string>Not Athletes needs microphone access for video calls with your coach.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Trainware uses Bluetooth for audio during video calls (e.g. headphones).</string>
+	<string>Not Athletes uses Bluetooth for audio during video calls (e.g. headphones).</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Trainware needs photo access to share images in chat.</string>
+	<string>Not Athletes needs photo access to share images in chat.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Trainware needs permission to save photos to your library.</string>
+	<string>Not Athletes needs permission to save photos to your library.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Trainware uses speech to text for hands-free logging of your sets, reps, and weights.</string>
+	<string>Not Athletes uses speech to text for hands-free logging of your sets, reps, and weights.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>We sync your data with Apple Health to give you better insights.</string>
 	<key>NSHealthUpdateUsageDescription</key>

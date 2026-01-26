@@ -20,6 +20,7 @@ import '../../services/chat_unread_service.dart';
 import '../../services/chat_unread_counts_service.dart';
 import '../../services/agora_chat_bootstrap.dart';
 import '../../utils/uri_utils.dart';
+import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../video/video_call_screen.dart';
@@ -27,21 +28,21 @@ import '../video/video_call_screen.dart';
 class ChatScreen extends StatefulWidget {
   static const routeName = '/chat_screen';
 
-  /// Admin/Coach user ID for the one-to-one chat
-  final String adminUserId;
-  final String? clientUserId;
-  final String? clientName;
-  final String? clientEmail;
+  /// Coach user ID for the one-to-one chat
+  final String coachId;
+  final String coachName;
+  final String clientUserId;
+  final String clientName;
 
   /// Optional scroll controller for bottom sheet integration
   final ScrollController? scrollController;
 
   const ChatScreen({
     super.key,
-    required this.adminUserId,
-    this.clientUserId,
-    this.clientName,
-    this.clientEmail,
+    required this.coachId,
+    required this.coachName,
+    required this.clientUserId,
+    required this.clientName,
     this.scrollController,
   });
 
@@ -82,8 +83,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         throw Exception('No user ID available. Please sign in again.');
       }
       _currentAgoraUserId = toAgoraUsername(userId);
-      final targetUserId = widget.clientUserId ?? widget.adminUserId;
-      _targetAgoraUserId = toAgoraUsername(targetUserId);
+      _targetAgoraUserId = toAgoraUsername(_targetUserId());
 
       await _ensureAgoraInitialized();
       await _ensureAgoraLoggedIn(_currentAgoraUserId!);
@@ -101,11 +101,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       debugPrint('Error initializing chat: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to initialize chat: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showErrorBottomSheet(
+          context: context,
+          message: 'Failed to initialize chat: $e',
         );
       }
     }
@@ -338,9 +336,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   void _refreshUnreadBadges() {
     if (AppConfig.isCoach) {
       final clientId = widget.clientUserId;
-      if (clientId != null) {
-        ChatUnreadCountsService().refreshUnreadCountForClient(clientId);
-      }
+      ChatUnreadCountsService().refreshUnreadCountForClient(clientId);
     } else {
       ChatUnreadService().refreshUnreadCount();
     }
@@ -388,11 +384,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     } catch (e) {
       debugPrint('Error sending message: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send message: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showErrorBottomSheet(
+          context: context,
+          message: 'Failed to send message: $e',
         );
       }
       // Restore message text on error
@@ -570,11 +564,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   void _handleSendError(Object e, String label) {
     debugPrint('Error sending $label: $e');
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to send $label: $e'),
-          backgroundColor: Colors.red,
-        ),
+      showErrorBottomSheet(
+        context: context,
+        message: 'Failed to send $label: $e',
       );
     }
   }
@@ -617,11 +609,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     return message.from == currentUserId;
   }
 
-  String _initialsForName(String name, String? email) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) {
-      return _initialsFromEmail(email);
-    }
+  String _clientInitials() {
+    final trimmed = widget.clientName.trim();
     final parts = trimmed.split(RegExp(r'\s+'));
     if (parts.length == 1) {
       final s = parts.first;
@@ -632,10 +621,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     return '$first$last';
   }
 
-  String _initialsFromEmail(String? email) {
-    if (email == null || email.isEmpty) return '';
-    final namePart = email.split('@').first;
-    return namePart.substring(0, namePart.length.clamp(0, 2)).toUpperCase();
+  String _coachInitials() {
+    final trimmed = widget.coachName.trim();
+    return trimmed[0].toUpperCase();
+  }
+
+  /// Returns the target user ID based on app configuration.
+  /// - Coach app: returns clientUserId (coach viewing client)
+  /// - Client app: returns coachId (client viewing coach)
+  String _targetUserId() {
+    return AppConfig.isCoach ? widget.clientUserId : widget.coachId;
   }
 
   List<_ChatListEntry> _buildChatEntries() {
@@ -682,11 +677,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final isDarkMode = theme.brightness == Brightness.dark;
     final colors = theme.extension<TRKRColors>();
 
-    final showClientHeader =
-        widget.clientUserId != null && widget.clientName != null;
-    final clientInitials = showClientHeader
-        ? _initialsForName(widget.clientName!, widget.clientEmail)
-        : null;
+    final displayInitials =
+        AppConfig.isCoach ? _clientInitials() : _coachInitials();
 
     return Column(
       children: [
@@ -695,7 +687,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
           child: Row(
             children: [
-              if (showClientHeader && clientInitials != null) ...[
+              if (displayInitials.isNotEmpty) ...[
                 Container(
                   width: 36,
                   height: 36,
@@ -716,7 +708,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    clientInitials,
+                    displayInitials,
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: isDarkMode ? Colors.white : Colors.black,
                       fontWeight: FontWeight.w700,
@@ -730,14 +722,16 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      showClientHeader ? widget.clientName! : 'Check In',
+                      AppConfig.isCoach
+                          ? widget.clientName
+                          : 'Coach ${widget.coachName}',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: isDarkMode ? Colors.white : Colors.black,
                         fontWeight: FontWeight.w600,
                         fontSize: 17,
                       ),
                     ),
-                    if (showClientHeader) const SizedBox.shrink(),
+                    if (AppConfig.isCoach) const SizedBox.shrink(),
                   ],
                 ),
               ),
@@ -748,16 +742,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   color: isDarkMode ? Colors.white : Colors.black,
                   size: 22,
                 ),
-                onPressed: () async {
-                  final targetUserId =
-                      widget.clientUserId ?? widget.adminUserId;
+                onPressed: () {
                   if (!mounted) return;
                   Navigator.of(context).push(
                     PageRouteBuilder(
                       fullscreenDialog: true,
                       opaque: true,
                       pageBuilder: (_, __, ___) => VideoCallScreen(
-                        targetUserId: targetUserId,
+                        targetUserId: _targetUserId(),
                         targetName: widget.clientName,
                       ),
                       transitionsBuilder: (_, animation, __, child) {

@@ -43,7 +43,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   List<RoutineTemplateDto> _overrideTemplates = const [];
   List<RoutinePlanDto> _overridePlans = const [];
   List<RoutineLogDto> _overrideLogs = const [];
-  final AccessController accessController;
+  final ClientOverrideController accessController;
 
   SupabaseExerciseAndRoutineController({
     required SupabaseExerciseRepository exerciseRepository,
@@ -67,7 +67,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   UnmodifiableListView<ExerciseDto> get exercises => UnmodifiableListView(
-        accessController.isClientMode
+        accessController.hasSelectedClient
             ? _overrideExercises
             : (AppConfig.isCoach
                 ? const []
@@ -76,7 +76,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   UnmodifiableListView<RoutineTemplateDto> get templates =>
       UnmodifiableListView(
-        accessController.isClientMode
+        accessController.hasSelectedClient
             ? _overrideTemplates
             : (AppConfig.isCoach
                 ? const []
@@ -84,7 +84,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       );
 
   UnmodifiableListView<RoutinePlanDto> get plans => UnmodifiableListView(
-        accessController.isClientMode
+        accessController.hasSelectedClient
             ? _overridePlans
             : (AppConfig.isCoach
                 ? const []
@@ -93,7 +93,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Offline-first view of routine logs backed by local cache and sync engine.
   UnmodifiableListView<RoutineLogDto> get logs => UnmodifiableListView(
-        accessController.isClientMode
+        accessController.hasSelectedClient
             ? _overrideLogs
             : (AppConfig.isCoach
                 ? const []
@@ -110,7 +110,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
           UnmodifiableMapView(groupExerciseLogsByExerciseId(routineLogs: logs));
 
   bool _blockIfClientMode() {
-    if (!accessController.isClientMode) {
+    if (!accessController.hasSelectedClient) {
       return false;
     }
     errorMessage = "Client mode is read-only.";
@@ -136,9 +136,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> loadUserData() async {
     try {
-      if (accessController.isClientMode &&
-          accessController.clientOverrideId != null) {
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+      if (accessController.hasSelectedClient &&
+          accessController.selectedClientId != null) {
+        await _loadRemoteForClient(accessController.selectedClientId!);
         notifyListeners();
         return;
       }
@@ -173,7 +173,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Manually trigger a routine log sync (e.g. on pull-to-refresh or
   /// connectivity change).
   Future<void> syncRoutineLogs() async {
-    if (accessController.isClientMode || AppConfig.isCoach) {
+    if (accessController.hasSelectedClient || AppConfig.isCoach) {
       return;
     }
     final connectivity = await Connectivity().checkConnectivity();
@@ -252,7 +252,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Plans
 
   Future<RoutinePlanDto?> savePlan({required RoutinePlanDto planDto}) async {
-    if (accessController.isClientMode) {
+    if (accessController.hasSelectedClient) {
       isLoading = true;
       RoutinePlanDto? result;
       try {
@@ -265,12 +265,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         final id = planDto.id.isEmpty ? const Uuid().v4() : planDto.id;
         final planWithId = planDto.copyWith(
           id: id,
-          clientId: accessController.clientOverrideId,
+          clientId: accessController.selectedClientId,
         );
         final json = planWithId.toJson();
         json['owner'] = userId;
         await Supabase.instance.client.from('routine_plans').upsert(json);
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+        await _loadRemoteForClient(accessController.selectedClientId!);
         result = planWithId;
       } catch (e) {
         errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -305,7 +305,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   Future<void> updatePlan({required RoutinePlanDto plan}) async {
-    final isClientMode = accessController.isClientMode;
+    final isClientMode = accessController.hasSelectedClient;
     if (!isClientMode && plan.isSystemPlan) {
       errorMessage = "System plans cannot be edited.";
       logger.w("Attempted to update system plan: ${plan.id}");
@@ -322,11 +322,11 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
           return;
         }
         final updatedPlan =
-            plan.copyWith(clientId: accessController.clientOverrideId);
+            plan.copyWith(clientId: accessController.selectedClientId);
         final json = updatedPlan.toJson();
         json['owner'] = userId;
         await Supabase.instance.client.from('routine_plans').upsert(json);
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+        await _loadRemoteForClient(accessController.selectedClientId!);
       } catch (e) {
         errorMessage = "Oops! Something went wrong. Please try again later.";
         logger.e("Error updating client plan", error: e);
@@ -354,7 +354,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   Future<void> deletePlan({required RoutinePlanDto plan}) async {
-    final isClientMode = accessController.isClientMode;
+    final isClientMode = accessController.hasSelectedClient;
     if (!isClientMode && plan.isSystemPlan) {
       errorMessage = "System plans cannot be deleted.";
       logger.w("Attempted to delete system plan: ${plan.id}");
@@ -369,7 +369,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
             .from('routine_plans')
             .delete()
             .eq('id', plan.id);
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+        await _loadRemoteForClient(accessController.selectedClientId!);
       } catch (e) {
         errorMessage = "Oops! Something went wrong. Please try again later.";
         logger.e("Error deleting client plan", error: e);
@@ -401,7 +401,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<RoutineTemplateDto?> saveTemplate({
     required RoutineTemplateDto templateDto,
   }) async {
-    if (accessController.isClientMode) {
+    if (accessController.hasSelectedClient) {
       isLoading = true;
       RoutineTemplateDto? result;
       try {
@@ -414,12 +414,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         final id = templateDto.id.isEmpty ? const Uuid().v4() : templateDto.id;
         final templateWithId = templateDto.copyWith(
           id: id,
-          clientId: accessController.clientOverrideId,
+          clientId: accessController.selectedClientId,
         );
         final json = templateWithId.toJson();
         json['owner'] = userId;
         await Supabase.instance.client.from('routine_templates').upsert(json);
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+        await _loadRemoteForClient(accessController.selectedClientId!);
         result = templateWithId;
       } catch (e) {
         errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -466,7 +466,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> updateTemplate({
     required RoutineTemplateDto template,
   }) async {
-    final isClientMode = accessController.isClientMode;
+    final isClientMode = accessController.hasSelectedClient;
     if (!isClientMode) {
       final plan = planWhere(id: template.planId);
       if (plan?.isSystemPlan ?? false) {
@@ -488,11 +488,11 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
           return;
         }
         final updatedTemplate =
-            template.copyWith(clientId: accessController.clientOverrideId);
+            template.copyWith(clientId: accessController.selectedClientId);
         final json = updatedTemplate.toJson();
         json['owner'] = userId;
         await Supabase.instance.client.from('routine_templates').upsert(json);
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+        await _loadRemoteForClient(accessController.selectedClientId!);
       } catch (e) {
         errorMessage = "Oops! Something went wrong. Please try again later.";
         logger.e("Error updating client template", error: e);
@@ -522,7 +522,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> deleteTemplate({
     required RoutineTemplateDto template,
   }) async {
-    final isClientMode = accessController.isClientMode;
+    final isClientMode = accessController.hasSelectedClient;
     if (!isClientMode) {
       final plan = planWhere(id: template.planId);
       if (plan?.isSystemPlan ?? false) {
@@ -541,7 +541,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
             .from('routine_templates')
             .delete()
             .eq('id', template.id);
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+        await _loadRemoteForClient(accessController.selectedClientId!);
       } catch (e) {
         errorMessage = "Oops! Something went wrong. Please try again later.";
         logger.e("Error deleting client template", error: e);
@@ -891,7 +891,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     required String clientId,
     String? clientName,
   }) async {
-    accessController.setClientOverride(
+    accessController.setSelectedClient(
       clientId: clientId,
       clientName: clientName,
     );
@@ -908,8 +908,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
-  Future<void> clearClientOverride() async {
-    accessController.clearClientOverride();
+  Future<void> clearSelectedClient() async {
+    accessController.clearSelectedClient();
     _overrideExercises = const [];
     _overrideTemplates = const [];
     _overridePlans = const [];

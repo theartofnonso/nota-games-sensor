@@ -55,8 +55,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: true);
-    final accessController = context.watch<AccessController>();
-    final isClientMode = accessController.isClientMode;
+    final accessController = context.watch<ClientOverrideController>();
+    final hasSelectedClient = accessController.hasSelectedClient;
 
     // Reload plan from controller on every build (in case it was updated)
     final plan = exerciseAndRoutineController.planWhere(id: widget.id);
@@ -117,7 +117,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            if (!plan.isSystemPlan || isClientMode)
+            if (!plan.isSystemPlan || hasSelectedClient)
               IconButton(
                   onPressed: _showMenuBottomSheet,
                   icon:
@@ -253,7 +253,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       dateLabel = DateFormat('EEEE').format(date);
     }
 
-    final isClientMode = context.read<AccessController>().isClientMode;
+    final hasSelectedClient = context.read<ClientOverrideController>().hasSelectedClient;
     showEditorBottomSheet(
       context: context,
       isDismissible:
@@ -298,7 +298,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                     ),
                   ),
                   // Log workout button (only show for today)
-                  if (isToday && !isClientMode)
+                  if (isToday && !hasSelectedClient)
                     IconButton(
                       onPressed: () {
                         Navigator.pop(sheetContext); // Close bottom sheet
@@ -460,7 +460,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (!plan.isSystemPlan ||
-                    context.read<AccessController>().isClientMode) ...[
+                    context.read<ClientOverrideController>().hasSelectedClient) ...[
                   ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const FaIcon(

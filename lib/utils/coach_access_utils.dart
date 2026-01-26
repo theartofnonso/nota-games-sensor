@@ -10,7 +10,7 @@ Future<bool> checkCoachAccess(String email) async {
   try {
     final record = await Supabase.instance.client
         .from('coaches')
-        .select('email')
+        .select('email, name')
         .eq('email', email)
         .maybeSingle();
     return record != null;

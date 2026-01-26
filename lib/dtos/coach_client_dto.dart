@@ -1,5 +1,6 @@
 /// DTO matching [coach_clients] schema: id, coach_id, client_id, created_at.
 /// [clientName] and [clientEmail] come from the joined [clients] table for display.
+/// [coachName] and [coachEmail] come from the joined [coaches] table for display.
 class CoachClientDto {
   final String id;
   final String coachId;
@@ -7,6 +8,8 @@ class CoachClientDto {
   final DateTime createdAt;
   final String? clientName;
   final String? clientEmail;
+  final String? coachName;
+  final String? coachEmail;
 
   const CoachClientDto({
     required this.id,
@@ -15,11 +18,14 @@ class CoachClientDto {
     required this.createdAt,
     this.clientName,
     this.clientEmail,
+    this.coachName,
+    this.coachEmail,
   });
 
   factory CoachClientDto.fromJson(
     Map<String, dynamic> coachClientsRow,
     Map<String, dynamic> clientsRow,
+    Map<String, dynamic>? coachesRow,
   ) {
     final rawCreated = coachClientsRow['created_at'];
     DateTime createdAt;
@@ -37,6 +43,8 @@ class CoachClientDto {
       createdAt: createdAt,
       clientName: clientsRow['name'] as String?,
       clientEmail: clientsRow['email'] as String?,
+      coachName: coachesRow?['name'] as String?,
+      coachEmail: coachesRow?['email'] as String?,
     );
   }
 

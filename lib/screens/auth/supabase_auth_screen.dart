@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:video_player/video_player.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
@@ -22,29 +21,12 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   bool _otpSent = false;
   final _emailController = TextEditingController();
   final _otpController = TextEditingController();
-  late final VideoPlayerController _videoController;
 
   @override
   void dispose() {
-    _videoController.dispose();
     _emailController.dispose();
     _otpController.dispose();
     super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _videoController = VideoPlayerController.asset(
-      'images/DTS_IRL_ESCAPISM_Joey_Bania_Clips_ID129.mp4',
-    )
-      ..setLooping(true)
-      ..setVolume(0);
-    _videoController.initialize().then((_) {
-      if (!mounted) return;
-      _videoController.play();
-      setState(() {});
-    });
   }
 
   Future<void> _sendOTP() async {
@@ -232,24 +214,13 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // ----------------- VIDEO/GRADIENT BACKGROUND -----------------
+          // ----------------- GRADIENT BACKGROUND -----------------
           Positioned.fill(
-            child: _videoController.value.isInitialized
-                ? IgnorePointer(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: _videoController.value.size.width,
-                        height: _videoController.value.size.height,
-                        child: VideoPlayer(_videoController),
-                      ),
-                    ),
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                      gradient: themeGradient(context: context),
-                    ),
-                  ),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: themeGradient(context: context),
+              ),
+            ),
           ),
           // Gradient overlay for readability
           Positioned.fill(

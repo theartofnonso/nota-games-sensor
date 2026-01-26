@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/agora_video_bootstrap.dart';
 import '../../utils/agora_chat_utils.dart';
+import '../../utils/dialog_utils.dart';
 import '../../urls.dart';
 
 class VideoCallScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class VideoCallScreen extends StatefulWidget {
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
   RtcEngine? _engine;
+  bool _previewStarted = false;
   bool _localUserJoined = false;
   bool _isMuted = false;
   bool _isVideoEnabled = true;
@@ -38,7 +40,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     super.initState();
     // Generate unique channel name from current user and target user IDs
     _channelName = _generateChannelName();
-    _initializeVideoCall();
+    _startVideoCalling();
   }
 
   String _generateChannelName() {
@@ -57,39 +59,68 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     super.dispose();
   }
 
+  /// Start video calling following Agora's Flutter documentation pattern:
+  /// 1. Request permissions
+  /// 2. Initialize engine
+  /// 3. Enable video
+  /// 4. Start preview
+  /// 5. Join channel
+  Future<void> _startVideoCalling() async {
+    // Request permissions (following Agora's simple pattern)
+    final permissions =
+        await [Permission.microphone, Permission.camera].request();
+
+    // Check if permissions are granted
+    final allGranted = permissions.values.every((status) => status.isGranted);
+    if (!allGranted) {
+      if (mounted) {
+        showErrorBottomSheet(
+          context: context,
+          message:
+              'Camera and microphone permissions are required for video calls.',
+        );
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+
+    // Permissions granted, proceed with video call initialization
+    await _initializeVideoCall();
+  }
+
+  /// Initialize video call following Agora's exact workflow:
+  /// 1. Initialize engine
+  /// 2. Enable video
+  /// 3. Start preview
+  /// 4. Setup event handlers
+  /// 5. Join channel
   Future<void> _initializeVideoCall() async {
     try {
-      await _requestPermissions();
-      await _initializeAgoraVideoSDK();
-      await _setupLocalVideo();
+      // Step 1: Initialize the Agora Engine
+      _engine = await AgoraVideoBootstrap.createEngine();
+
+      // Step 2: Enable video module
+      await _engine!.enableVideo();
+
+      // Step 3: Start preview (enables local video preview)
+      await _engine!.startPreview();
+      if (mounted) setState(() => _previewStarted = true);
+
+      // Step 4: Setup event handlers (before joining channel)
       _setupEventHandlers();
+
+      // Step 5: Join channel
       await _joinChannel();
     } catch (e) {
       debugPrint('Error initializing video call: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start video call: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showErrorBottomSheet(
+          context: context,
+          message: 'Failed to start video call: $e',
         );
         Navigator.of(context).pop();
       }
     }
-  }
-
-  Future<void> _requestPermissions() async {
-    await [Permission.camera, Permission.microphone].request();
-  }
-
-  Future<void> _initializeAgoraVideoSDK() async {
-    _engine = await AgoraVideoBootstrap.createEngine();
-  }
-
-  Future<void> _setupLocalVideo() async {
-    if (_engine == null) throw Exception('Video engine is not available.');
-    await _engine!.enableVideo();
-    await _engine!.startPreview();
   }
 
   void _setupEventHandlers() {
@@ -111,11 +142,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         onError: (ErrorCodeType err, String msg) {
           debugPrint('Agora error: $err - $msg');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Video call error: $msg'),
-                backgroundColor: Colors.red,
-              ),
+            showErrorBottomSheet(
+              context: context,
+              message: 'Video call error: $msg',
             );
           }
         },
@@ -172,6 +201,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         }),
       );
       if (response.statusCode != 200) {
+        debugPrint(
+          'Video call: token API returned ${response.statusCode}',
+        );
         return null;
       }
       final data = jsonDecode(response.body);
@@ -179,7 +211,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         return data['token'] as String?;
       }
       return null;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Video call: token resolution failed: $e');
       return null;
     }
   }
@@ -206,6 +239,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   Future<void> _endCall() async {
     setState(() {
+      _previewStarted = false;
       _localUserJoined = false;
       _remoteUid = null;
     });
@@ -255,22 +289,32 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         child: CircularProgressIndicator(),
       );
     }
-    return Stack(
-      children: [
-        Center(child: _remoteVideo()),
-        Align(
-          alignment: Alignment.topLeft,
-          child: SizedBox(
-            width: 100,
-            height: 150,
-            child: Center(
-              child: _localUserJoined
-                  ? _localVideo()
-                  : const CircularProgressIndicator(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth > 0 ? constraints.maxWidth : 400.0;
+        final h = constraints.maxHeight > 0 ? constraints.maxHeight : 600.0;
+        return Stack(
+          children: [
+            SizedBox(
+              width: w,
+              height: h,
+              child: _remoteVideo(width: w, height: h),
             ),
-          ),
-        ),
-      ],
+            Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 100,
+                height: 150,
+                child: _previewStarted
+                    ? _localVideo()
+                    : const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -286,22 +330,33 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  Widget _remoteVideo() {
+  Widget _remoteVideo({required double width, required double height}) {
     if (_remoteUid != null) {
-      return AgoraVideoView(
-        controller: VideoViewController.remote(
-          rtcEngine: _engine!,
-          canvas: VideoCanvas(uid: _remoteUid!),
-          connection: RtcConnection(channelId: _channelName),
+      return SizedBox(
+        width: width,
+        height: height,
+        child: AgoraVideoView(
+          controller: VideoViewController.remote(
+            rtcEngine: _engine!,
+            canvas: VideoCanvas(
+              uid: _remoteUid!,
+              renderMode: RenderModeType.renderModeHidden,
+            ),
+            connection: RtcConnection(channelId: _channelName),
+          ),
         ),
       );
     }
-    return Text(
-      'Waiting for remote user to join...',
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        color: Colors.grey[400],
-        fontSize: 16,
+    return Center(
+      child: Text(
+        _localUserJoined
+            ? 'Waiting for remote user to join...'
+            : 'Connecting...',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.grey[400],
+          fontSize: 16,
+        ),
       ),
     );
   }

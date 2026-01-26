@@ -115,8 +115,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
 
     final nutritionController = context.watch<NutritionLogController>();
-    final accessController = context.watch<AccessController>();
-    final isClientMode = accessController.isClientMode;
+    final accessController = context.watch<ClientOverrideController>();
+    final isClientMode = accessController.hasSelectedClient;
     final isCoach = AppConfig.isCoach;
     final consumedCalories = _sumCaloriesToday(nutritionController.logs);
     final goalCalories = nutritionController.calorieTarget;
@@ -137,8 +137,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     final yearStats = _YearTrainingStats.fromLogs(logs);
     final yearHoursStats = _YearHoursStats.fromLogs(logs);
     final headerName = isClientMode
-        ? (accessController.clientOverrideName?.trim().isNotEmpty ?? false
-            ? accessController.clientOverrideName!.trim()
+        ? (accessController.selectedClientName?.trim().isNotEmpty ?? false
+            ? accessController.selectedClientName!.trim()
             : 'Client')
         : 'Settings';
     final headerEmail = isClientMode ? '' : userEmail;
@@ -537,8 +537,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     final routineController =
         context.read<SupabaseExerciseAndRoutineController>();
     final nutritionController = context.read<NutritionLogController>();
-    await routineController.clearClientOverride();
-    await nutritionController.clearClientOverride();
+    await routineController.clearSelectedClient();
+    await nutritionController.clearSelectedClient();
     if (!mounted) return;
     context.go('/coach');
   }
@@ -674,24 +674,35 @@ class _SettingsScreenState extends State<SettingsScreen>
       ChatUnreadCountsService()
           .unreadByClientId
           .addListener(_handleChatUnreadChange);
+      // Also listen to selectedClientId changes to update badge when client is selected
+      final accessController = context.read<ClientOverrideController>();
+      accessController.addListener(_handleChatUnreadChange);
     } else {
       _chatUnreadCount = ChatUnreadService().unreadCount.value;
       ChatUnreadService().unreadCount.addListener(_handleChatUnreadChange);
     }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final accessController = context.read<AccessController>();
+      final accessController = context.read<ClientOverrideController>();
       if (AppConfig.isCoach) {
         ChatUnreadCountsService().refreshTotalUnreadCount();
       } else {
         final userId = accessController.userId;
         if (userId == null) return;
-        final coachId = await fetchCoachIdForClient(userId);
+        final coachData = await fetchCoachForClient(userId);
+        if (coachData == null) return;
+        final coachId = coachData['coachId'];
+        final coachName = coachData['coachName'];
         if (coachId == null) return;
+        // Store coach data for future use (e.g., in navigateToChat)
+        accessController.setCoachData(
+          coachId: coachId,
+          coachName: coachName ?? '',
+        );
         ChatUnreadService().updateContext(
           userId: accessController.userId,
           coachId: coachId,
-          userIdOverride: accessController.clientOverrideId,
+          userIdOverride: accessController.selectedClientId,
         );
       }
     });
@@ -704,10 +715,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _handleChatUnreadChange() {
     if (!mounted) return;
-    final accessController = context.read<AccessController>();
+    final accessController = context.read<ClientOverrideController>();
     setState(() {
       if (AppConfig.isCoach) {
-        final clientId = accessController.clientOverrideId;
+        final clientId = accessController.selectedClientId;
         _chatUnreadCount = clientId == null
             ? 0
             : (ChatUnreadCountsService().unreadByClientId.value[clientId] ?? 0);
@@ -728,6 +739,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       ChatUnreadCountsService()
           .unreadByClientId
           .removeListener(_handleChatUnreadChange);
+      // Remove listener from accessController
+      final accessController = context.read<ClientOverrideController>();
+      accessController.removeListener(_handleChatUnreadChange);
     } else {
       ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
     }
@@ -754,7 +768,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     final controller = context.read<SupabaseExerciseAndRoutineController>();
     final logs = controller.whereLogsIsSameDay(dateTime: date).toList();
     final hasLogs = logs.isNotEmpty;
-    final isClientMode = context.read<AccessController>().isClientMode;
+    final isClientMode =
+        context.read<ClientOverrideController>().hasSelectedClient;
 
     // Determine date label (Today, Yesterday, or full date)
     final now = DateTime.now();

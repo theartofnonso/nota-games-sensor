@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/screens/editors/exercise_editor_screen.dart';
@@ -12,7 +13,6 @@ import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/app_flavor.dart';
-import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
@@ -239,47 +239,29 @@ Future<void> navigateToSettings({required BuildContext context}) async {
 Future<void> navigateToChat({
   required BuildContext context,
 }) async {
-  final accessController = context.read<AccessController>();
-  final clientUserId =
-      accessController.isClientMode ? accessController.clientOverrideId : null;
-  final clientName =
-      accessController.isClientMode ? accessController.clientOverrideName : null;
-  final clientEmail = null;
-  String? coachId;
+  final accessController = context.read<ClientOverrideController>();
+  String clientUserId = '';
+  String clientName = '';
+  String coachId = '';
+  String coachName = '';
 
   if (AppConfig.isCoach) {
-    if (!accessController.isClientMode || clientUserId == null) {
-      showSnackbar(
-        context: context,
-        message: 'Select a client to start a chat.',
-      );
-      return;
-    }
+    // Coach app: coach viewing a client
+
+    clientUserId = accessController.selectedClientId ?? '';
+    clientName = accessController.selectedClientName ?? '';
+
+    // Get coach info (current user)
+    coachId = accessController.userId ?? '';
   } else {
-    final userId = accessController.userId;
-    if (userId == null) {
-      showSnackbar(
-        context: context,
-        message: 'Please sign in to start a chat.',
-      );
-      return;
-    }
-    showCoachLoadingOverlay(context);
-    try {
-      coachId = await fetchCoachIdForClient(userId);
-      if (coachId == null) {
-        if (context.mounted) {
-          showSnackbar(
-            context: context,
-            message: 'No coach assigned yet. Contact support.',
-          );
-        }
-        return;
-      }
-    } finally {
-      if (context.mounted) hideCoachLoadingOverlay(context);
-    }
+    // Use stored coach data (should already be set when client logs in)
+    coachId = accessController.coachId ?? '';
+    coachName = accessController.coachName ?? '';
+
+    // Client app: client viewing their coach
+    clientUserId = accessController.userId ?? '';
   }
+
   if (!context.mounted) return;
   await showModalBottomSheet(
     context: context,
@@ -309,10 +291,10 @@ Future<void> navigateToChat({
           isDraggable: false,
           isDismissible: true,
           child: ChatScreen(
-            adminUserId: coachId ?? '',
+            coachId: coachId,
+            coachName: coachName,
             clientUserId: clientUserId,
             clientName: clientName,
-            clientEmail: clientEmail,
             scrollController: null,
           ),
         ),

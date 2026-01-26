@@ -26,7 +26,7 @@ class NutritionLogController extends ChangeNotifier {
 
   List<NutritionLogDto> _overrideLogs = const [];
   NutritionTemplateDto? _overrideTemplate;
-  final AccessController accessController;
+  final ClientOverrideController accessController;
 
   NutritionLogController({
     SupabaseNutritionLogRepository? repository,
@@ -45,7 +45,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   UnmodifiableListView<NutritionLogDto> get logs {
-    if (accessController.isClientMode) {
+    if (accessController.hasSelectedClient) {
       return UnmodifiableListView(_overrideLogs);
     }
     if (AppConfig.isCoach) {
@@ -55,7 +55,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   NutritionTemplateDto? get nutritionTemplate {
-    if (accessController.isClientMode) {
+    if (accessController.hasSelectedClient) {
       return _overrideTemplate;
     }
     final templates = AppConfig.isCoach
@@ -72,7 +72,7 @@ class NutritionLogController extends ChangeNotifier {
   double get fatsTarget => nutritionTemplate?.fats ?? 0;
   double get calorieTarget => nutritionTemplate?.calories ?? 0;
   String? get activeUserId =>
-      accessController.clientOverrideId ??
+      accessController.selectedClientId ??
       Supabase.instance.client.auth.currentUser?.id;
   bool get isCoach => AppConfig.isCoach;
 
@@ -81,9 +81,9 @@ class NutritionLogController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (accessController.isClientMode &&
-          accessController.clientOverrideId != null) {
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+      if (accessController.hasSelectedClient &&
+          accessController.selectedClientId != null) {
+        await _loadRemoteForClient(accessController.selectedClientId!);
       } else if (AppConfig.isCoach) {
         _overrideLogs = const [];
         _overrideTemplate = null;
@@ -102,7 +102,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   Future<void> syncNutritionLogs() async {
-    if (accessController.isClientMode || AppConfig.isCoach) {
+    if (accessController.hasSelectedClient || AppConfig.isCoach) {
       return;
     }
     final connectivity = await Connectivity().checkConnectivity();
@@ -120,9 +120,9 @@ class NutritionLogController extends ChangeNotifier {
 
   Future<void> addLog({required NutritionLogDto log}) async {
     try {
-      if (accessController.isClientMode) {
+      if (accessController.hasSelectedClient) {
         await _remoteRepository.upsertLog(log);
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+        await _loadRemoteForClient(accessController.selectedClientId!);
         notifyListeners();
         return;
       }
@@ -139,9 +139,9 @@ class NutritionLogController extends ChangeNotifier {
 
   Future<void> removeLog({required String id}) async {
     try {
-      if (accessController.isClientMode) {
+      if (accessController.hasSelectedClient) {
         await _remoteRepository.deleteLog(id);
-        await _loadRemoteForClient(accessController.clientOverrideId!);
+        await _loadRemoteForClient(accessController.selectedClientId!);
         notifyListeners();
         return;
       }
@@ -158,13 +158,13 @@ class NutritionLogController extends ChangeNotifier {
 
   Future<void> upsertTemplate({required NutritionTemplateDto template}) async {
     try {
-      if (accessController.clientOverrideId == null) {
+      if (accessController.selectedClientId == null) {
         errorMessage = 'Client context is required to save nutrition template.';
         notifyListeners();
         return;
       }
       await _remoteTemplateRepository.upsertTemplate(template: template);
-      await _loadRemoteForClient(accessController.clientOverrideId!);
+      await _loadRemoteForClient(accessController.selectedClientId!);
       notifyListeners();
     } catch (e) {
       logger.e('Error saving nutrition template', error: e);
@@ -174,7 +174,7 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   Future<void> loadClientData({required String clientId}) async {
-    accessController.setClientOverride(clientId: clientId);
+    accessController.setSelectedClient(clientId: clientId);
     isLoading = true;
     notifyListeners();
     try {
@@ -188,8 +188,8 @@ class NutritionLogController extends ChangeNotifier {
     }
   }
 
-  Future<void> clearClientOverride() async {
-    accessController.clearClientOverride();
+  Future<void> clearSelectedClient() async {
+    accessController.clearSelectedClient();
     _overrideLogs = const [];
     _overrideTemplate = null;
     await initialize();
