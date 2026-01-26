@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -76,7 +77,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   Future<void> _initializeChat() async {
     try {
       if (!mounted) return;
-      setState(() => _isLoading = true);
 
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) {
@@ -87,16 +87,26 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
       await _ensureAgoraInitialized();
       await _ensureAgoraLoggedIn(_currentAgoraUserId!);
-      await _loadConversationMessages();
+
+      // Load cached messages FIRST (instant, no loading screen)
+      await _loadCachedMessages();
+
+      // Register message handler before fetching new messages
       _registerMessageHandler();
+
+      // Mark conversation as read with cached messages
       await _markConversationRead();
       _refreshUnreadBadges();
 
+      // Hide loading immediately after showing cached messages
       if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
       _scrollToBottom();
+
+      // Fetch recent messages from server in background (non-blocking)
+      _fetchRecentMessagesFromServer();
     } catch (e) {
       debugPrint('Error initializing chat: $e');
       if (mounted) {
@@ -168,7 +178,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _loadConversationMessages({bool append = false}) async {
+  /// Load cached messages from local DB instantly (non-blocking)
+  Future<void> _loadCachedMessages() async {
     final targetAgoraUserId = _targetAgoraUserId;
     if (targetAgoraUserId == null) return;
 
@@ -178,32 +189,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       createIfNeed: true,
     );
 
-    // Fetch history from server first (local DB may be empty after reinstall / new device)
-    try {
-      final cursorResult =
-          await ChatClient.getInstance.chatManager.fetchHistoryMessagesByOption(
-        targetAgoraUserId,
-        ChatConversationType.Chat,
-        options: const FetchMessageOptions(
-          direction: ChatSearchDirection.Up,
-          needSave: true,
-        ),
-        pageSize: 50,
-      );
-      final serverMessages = cursorResult.data;
-      if (!mounted) return;
-      setState(() {
-        for (final message in serverMessages) {
-          _mergeMessage(message);
-          _ensureAttachmentAvailable(message);
-        }
-      });
-    } catch (e) {
-      debugPrint('Error fetching chat history from server: $e');
-      // Continue with local load; server fetch may fail (e.g. offline)
-    }
-
-    // Load from local DB (includes cached messages; may overlap with server fetch)
+    // Load from local DB first (instant, cached messages)
     final messages = await _conversation!.loadMessages(
       startMsgId: '',
       loadCount: 50,
@@ -218,8 +204,61 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       }
       _sortMessages();
     });
-    await _markConversationRead();
-    _refreshUnreadBadges();
+  }
+
+  /// Fetch recent messages from server in background (non-blocking)
+  Future<void> _fetchRecentMessagesFromServer() async {
+    final targetAgoraUserId = _targetAgoraUserId;
+    if (targetAgoraUserId == null) return;
+
+    try {
+      final cursorResult =
+          await ChatClient.getInstance.chatManager.fetchHistoryMessagesByOption(
+        targetAgoraUserId,
+        ChatConversationType.Chat,
+        options: const FetchMessageOptions(
+          direction: ChatSearchDirection.Up,
+          needSave: true, // Save to local DB for future cache hits
+        ),
+        pageSize: 50,
+      );
+      final serverMessages = cursorResult.data;
+
+      if (!mounted) return;
+
+      // Check if we got any new messages
+      bool hasNewMessages = false;
+      for (final message in serverMessages) {
+        final existingIndex =
+            _messages.indexWhere((m) => m.msgId == message.msgId);
+        if (existingIndex == -1) {
+          hasNewMessages = true;
+          break;
+        }
+      }
+
+      if (hasNewMessages) {
+        setState(() {
+          for (final message in serverMessages) {
+            _mergeMessage(message);
+            _ensureAttachmentAvailable(message);
+          }
+          _sortMessages();
+        });
+        _scrollToBottom();
+        await _markConversationRead();
+        _refreshUnreadBadges();
+      }
+    } catch (e) {
+      debugPrint('Error fetching chat history from server: $e');
+      // Silently fail - cached messages are already shown
+    }
+  }
+
+  /// Legacy method for refreshing messages (used by pull-to-refresh, etc.)
+  Future<void> _loadConversationMessages({bool append = false}) async {
+    // For refresh scenarios, still fetch from server
+    await _fetchRecentMessagesFromServer();
   }
 
   void _registerMessageHandler() {
@@ -271,7 +310,36 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
     final body = message.body;
     if (body is ChatImageMessageBody) {
-      if (_attachmentImage(body) != null) return;
+      // Check if we already have the image available
+      final hasLocal =
+          body.localPath.isNotEmpty && File(body.localPath).existsSync();
+      final hasThumbLocal = body.thumbnailLocalPath != null &&
+          body.thumbnailLocalPath!.isNotEmpty &&
+          File(body.thumbnailLocalPath!).existsSync();
+      final hasThumbRemote = body.thumbnailRemotePath != null &&
+          body.thumbnailRemotePath!.isNotEmpty;
+
+      // If we have at least a thumbnail, we can show something
+      if (hasLocal || hasThumbLocal || hasThumbRemote) {
+        // Still try to download full quality in background if not available
+        if (!hasLocal &&
+            body.remotePath != null &&
+            body.remotePath!.isNotEmpty) {
+          if (_attachmentDownloadsInFlight.contains(msgId)) return;
+          _attachmentDownloadsInFlight.add(msgId);
+          Future<void>(() async {
+            await ChatClient.getInstance.chatManager
+                .downloadAttachment(message);
+          }).whenComplete(() {
+            _attachmentDownloadsInFlight.remove(msgId);
+            _refreshMessages();
+          });
+        }
+        return;
+      }
+
+      // No image available at all - download thumbnail first
+      if (_attachmentDownloadsInFlight.contains(msgId)) return;
       _attachmentDownloadsInFlight.add(msgId);
       Future<void>(() async {
         await ChatClient.getInstance.chatManager.downloadThumbnail(message);
@@ -1041,17 +1109,12 @@ class _MessageBody extends StatelessWidget {
     }
 
     if (body is ChatImageMessageBody) {
-      final imageWidget = _attachmentImage(body);
-      if (imageWidget == null) {
-        return _AttachmentFallback(label: 'Image', textColor: textColor);
-      }
       return GestureDetector(
         onTap: () => _openImageViewer(
           context,
-          body.localPath,
-          body.remotePath,
+          body,
         ),
-        child: imageWidget,
+        child: _ProgressiveImageWidget(body: body),
       );
     }
 
@@ -1079,55 +1142,193 @@ class _MessageBody extends StatelessWidget {
   }
 }
 
-Widget? _attachmentImage(ChatImageMessageBody body) {
-  if (body.localPath.isNotEmpty) {
-    final file = File(body.localPath);
-    if (file.existsSync()) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.file(file, width: 220, height: 160, fit: BoxFit.cover),
-      );
+/// Progressive image widget that shows thumbnail first, then loads full quality
+class _ProgressiveImageWidget extends StatefulWidget {
+  final ChatImageMessageBody body;
+
+  const _ProgressiveImageWidget({required this.body});
+
+  @override
+  State<_ProgressiveImageWidget> createState() =>
+      _ProgressiveImageWidgetState();
+}
+
+class _ProgressiveImageWidgetState extends State<_ProgressiveImageWidget> {
+  bool _hasFullQuality = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFullQualityInBackground();
+  }
+
+  void _loadFullQualityInBackground() {
+    // Check if we already have full quality local image
+    if (widget.body.localPath.isNotEmpty) {
+      final file = File(widget.body.localPath);
+      if (file.existsSync()) {
+        setState(() {
+          _hasFullQuality = true;
+        });
+        return;
+      }
+    }
+
+    // Load full quality remote image in background
+    if (widget.body.remotePath != null && widget.body.remotePath!.isNotEmpty) {
+      // Precache the image to load it in background
+      precacheImage(
+        NetworkImage(widget.body.remotePath!),
+        context,
+      ).then((_) {
+        if (!mounted) return;
+        setState(() {
+          _hasFullQuality = true;
+        });
+      }).catchError((_) {
+        // Silently fail - keep showing thumbnail
+      });
     }
   }
-  final thumbLocal = body.thumbnailLocalPath;
-  if (thumbLocal != null && thumbLocal.isNotEmpty) {
-    final file = File(thumbLocal);
-    if (file.existsSync()) {
+
+  ImageProvider? _getThumbnailProvider() {
+    // Try local thumbnail first
+    final thumbLocal = widget.body.thumbnailLocalPath;
+    if (thumbLocal != null && thumbLocal.isNotEmpty) {
+      final file = File(thumbLocal);
+      if (file.existsSync()) {
+        return FileImage(file);
+      }
+    }
+
+    // Fall back to remote thumbnail
+    if (widget.body.thumbnailRemotePath != null &&
+        widget.body.thumbnailRemotePath!.isNotEmpty) {
+      return NetworkImage(widget.body.thumbnailRemotePath!);
+    }
+
+    return null;
+  }
+
+  ImageProvider? _getFullQualityProvider() {
+    if (widget.body.localPath.isNotEmpty) {
+      final file = File(widget.body.localPath);
+      if (file.existsSync()) {
+        return FileImage(file);
+      }
+    }
+
+    if (widget.body.remotePath != null && widget.body.remotePath!.isNotEmpty) {
+      return NetworkImage(widget.body.remotePath!);
+    }
+
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbnailProvider = _getThumbnailProvider();
+    final fullQualityProvider = _getFullQualityProvider();
+
+    // If no thumbnail or full quality available, show placeholder
+    if (thumbnailProvider == null && fullQualityProvider == null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.file(
-          file,
+        child: const SizedBox(
           width: 220,
           height: 160,
-          fit: BoxFit.cover,
+          child: Center(
+            child: Icon(Icons.image, color: Colors.grey),
+          ),
         ),
       );
     }
-  }
-  if (body.thumbnailRemotePath != null &&
-      body.thumbnailRemotePath!.isNotEmpty) {
+
+    // If we have full quality loaded, show it with smooth fade-in transition
+    if (_hasFullQuality &&
+        fullQualityProvider != null &&
+        thumbnailProvider != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: FadeInImage(
+          placeholder: thumbnailProvider,
+          image: fullQualityProvider,
+          width: 220,
+          height: 160,
+          fit: BoxFit.cover,
+          fadeInDuration: const Duration(milliseconds: 300),
+          fadeOutDuration: const Duration(milliseconds: 100),
+          imageErrorBuilder: (context, error, stackTrace) {
+            // If full quality fails, show thumbnail
+            return Image(
+              image: thumbnailProvider,
+              width: 220,
+              height: 160,
+              fit: BoxFit.cover,
+            );
+          },
+        ),
+      );
+    }
+
+    // If we have full quality but no thumbnail, show full quality directly
+    if (_hasFullQuality &&
+        fullQualityProvider != null &&
+        thumbnailProvider == null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image(
+          image: fullQualityProvider,
+          width: 220,
+          height: 160,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return const SizedBox(
+              width: 220,
+              height: 160,
+              child: Center(
+                child: Icon(Icons.image, color: Colors.grey),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    // Show thumbnail while loading full quality in background
+    if (thumbnailProvider != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image(
+          image: thumbnailProvider,
+          width: 220,
+          height: 160,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return const SizedBox(
+              width: 220,
+              height: 160,
+              child: Center(
+                child: Icon(Icons.image, color: Colors.grey),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    // Fallback placeholder
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: Image.network(
-        body.thumbnailRemotePath!,
+      child: const SizedBox(
         width: 220,
         height: 160,
-        fit: BoxFit.cover,
+        child: Center(
+          child: Icon(Icons.image, color: Colors.grey),
+        ),
       ),
     );
   }
-  if (body.remotePath != null && body.remotePath!.isNotEmpty) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Image.network(
-        body.remotePath!,
-        width: 220,
-        height: 160,
-        fit: BoxFit.cover,
-      ),
-    );
-  }
-  return null;
 }
 
 Future<void> _openAttachment(BuildContext context, String? remotePath) async {
@@ -1139,18 +1340,27 @@ Future<void> _openAttachment(BuildContext context, String? remotePath) async {
 
 Future<void> _openImageViewer(
   BuildContext context,
-  String? localPath,
-  String? remotePath,
+  ChatImageMessageBody body,
 ) async {
-  if ((localPath == null || localPath.isEmpty) &&
-      (remotePath == null || remotePath.isEmpty)) {
+  // Check if we have any image source available
+  final hasLocal =
+      body.localPath.isNotEmpty && File(body.localPath).existsSync();
+  final hasRemote = body.remotePath != null && body.remotePath!.isNotEmpty;
+  final hasThumbLocal = body.thumbnailLocalPath != null &&
+      body.thumbnailLocalPath!.isNotEmpty &&
+      File(body.thumbnailLocalPath!).existsSync();
+  final hasThumbRemote =
+      body.thumbnailRemotePath != null && body.thumbnailRemotePath!.isNotEmpty;
+
+  if (!hasLocal && !hasRemote && !hasThumbLocal && !hasThumbRemote) {
     return;
   }
+
   await showDialog<void>(
     context: context,
     barrierDismissible: true,
     builder: (_) {
-      return _ImageViewerDialog(localPath: localPath, remotePath: remotePath);
+      return _ImageViewerDialog(body: body);
     },
   );
 }
@@ -1210,17 +1420,152 @@ class _AttachmentFallback extends StatelessWidget {
   }
 }
 
-class _ImageViewerDialog extends StatelessWidget {
-  final String? localPath;
-  final String? remotePath;
+class _ImageViewerDialog extends StatefulWidget {
+  final ChatImageMessageBody body;
 
-  const _ImageViewerDialog({required this.localPath, required this.remotePath});
+  const _ImageViewerDialog({required this.body});
+
+  @override
+  State<_ImageViewerDialog> createState() => _ImageViewerDialogState();
+}
+
+class _ImageViewerDialogState extends State<_ImageViewerDialog> {
+  Widget? _imageWidget;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage();
+  }
+
+  Future<void> _loadImage() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    // Priority 1: Full quality local image
+    if (widget.body.localPath.isNotEmpty) {
+      final file = File(widget.body.localPath);
+      if (file.existsSync()) {
+        setState(() {
+          _imageWidget = Image.file(
+            file,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildErrorWidget();
+            },
+          );
+          _isLoading = false;
+        });
+        return;
+      }
+    }
+
+    // Priority 2: Full quality remote image
+    if (widget.body.remotePath != null && widget.body.remotePath!.isNotEmpty) {
+      setState(() {
+        _imageWidget = Image.network(
+          widget.body.remotePath!,
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) {
+              setState(() => _isLoading = false);
+              return child;
+            }
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            setState(() {
+              _isLoading = false;
+              _error = 'Failed to load image';
+            });
+            return _buildErrorWidget();
+          },
+        );
+      });
+      return;
+    }
+
+    // Priority 3: Local thumbnail
+    if (widget.body.thumbnailLocalPath != null &&
+        widget.body.thumbnailLocalPath!.isNotEmpty) {
+      final file = File(widget.body.thumbnailLocalPath!);
+      if (file.existsSync()) {
+        setState(() {
+          _imageWidget = Image.file(
+            file,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildErrorWidget();
+            },
+          );
+          _isLoading = false;
+        });
+        return;
+      }
+    }
+
+    // Priority 4: Remote thumbnail
+    if (widget.body.thumbnailRemotePath != null &&
+        widget.body.thumbnailRemotePath!.isNotEmpty) {
+      setState(() {
+        _imageWidget = Image.network(
+          widget.body.thumbnailRemotePath!,
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) {
+              setState(() => _isLoading = false);
+              return child;
+            }
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            setState(() {
+              _isLoading = false;
+              _error = 'Failed to load image';
+            });
+            return _buildErrorWidget();
+          },
+        );
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = false;
+      _error = 'No image available';
+    });
+  }
+
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: Colors.white70, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            _error ?? 'Failed to load image',
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final image = localPath != null && localPath!.isNotEmpty
-        ? Image.file(File(localPath!), fit: BoxFit.contain)
-        : Image.network(remotePath ?? '', fit: BoxFit.contain);
     return Dialog(
       backgroundColor: Colors.black,
       insetPadding: EdgeInsets.zero,
@@ -1228,14 +1573,30 @@ class _ImageViewerDialog extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(
-              child: InteractiveViewer(child: Center(child: image)),
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : _imageWidget != null
+                      ? InteractiveViewer(
+                          child: Center(child: _imageWidget),
+                        )
+                      : _buildErrorWidget(),
             ),
             Positioned(
               top: 12,
               right: 12,
-              child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close, color: Colors.white),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, color: Colors.white),
+                ),
               ),
             ),
           ],
@@ -1483,9 +1844,15 @@ class _VideoViewerDialogState extends State<_VideoViewerDialog> {
             Positioned(
               top: 12,
               right: 12,
-              child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close, color: Colors.white),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, color: Colors.white),
+                ),
               ),
             ),
             if (_isInitialized && _controller != null)
