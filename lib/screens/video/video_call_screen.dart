@@ -88,9 +88,17 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   // Join a channel
   Future<void> _joinChannel() async {
-    await _engine.joinChannel(
-      token: await _resolveVideoToken() ?? '',
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) throw StateError('No user ID');
+
+    final agoraUsername = toAgoraUsername(userId);
+    final token = await _resolveVideoToken();
+    if (token == null || token.isEmpty) throw StateError('No token');
+
+    await _engine.joinChannelWithUserAccount(
+      token: token,
       channelId: _generateChannelName(),
+      userAccount: agoraUsername,
       options: const ChannelMediaOptions(
         autoSubscribeVideo: true,
         autoSubscribeAudio: true,
@@ -98,7 +106,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         publishMicrophoneTrack: true,
         clientRoleType: ClientRoleType.clientRoleBroadcaster,
       ),
-      uid: 0,
     );
   }
 

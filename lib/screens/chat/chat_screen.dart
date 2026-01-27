@@ -23,7 +23,6 @@ import '../../services/agora_chat_bootstrap.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
-import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../video/video_call_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -61,7 +60,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   late final String _messageHandlerId;
   final Set<String> _attachmentDownloadsInFlight = {};
 
-  bool _isLoading = true;
   bool _isSending = false;
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -86,36 +84,57 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _targetAgoraUserId = toAgoraUsername(_targetUserId());
 
       await _ensureAgoraInitialized();
-      await _ensureAgoraLoggedIn(_currentAgoraUserId!);
 
-      // Load cached messages FIRST (instant, no loading screen)
+      // Load cached messages FIRST (instant, while login happens in background)
       await _loadCachedMessages();
 
-      // Register message handler before fetching new messages
-      _registerMessageHandler();
-
-      // Mark conversation as read with cached messages
-      await _markConversationRead();
-      _refreshUnreadBadges();
-
-      // Hide loading immediately after showing cached messages
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
       _scrollToBottom();
 
-      // Fetch recent messages from server in background (non-blocking)
-      _fetchRecentMessagesFromServer();
+      // Login in background (non-blocking, after cache is shown)
+      unawaited(_loginAndFetchMessages());
     } catch (e) {
       debugPrint('Error initializing chat: $e');
       if (mounted) {
-        setState(() => _isLoading = false);
         showErrorBottomSheet(
           context: context,
           message: 'Failed to initialize chat: $e',
         );
       }
+    }
+  }
+
+  /// Login and fetch messages in background (after cache is already shown)
+  Future<void> _loginAndFetchMessages() async {
+    try {
+      final currentUserId = _currentAgoraUserId;
+      if (currentUserId == null) return;
+
+      // Login to Agora Chat (happens while cached messages are shown)
+      await _ensureAgoraLoggedIn(currentUserId);
+
+      // Ensure conversation exists (create if needed, now that we're logged in)
+      final targetAgoraUserId = _targetAgoraUserId;
+      if (targetAgoraUserId != null && _conversation == null) {
+        _conversation = await ChatClient.getInstance.chatManager.getConversation(
+          targetAgoraUserId,
+          type: ChatConversationType.Chat,
+          createIfNeed: true,
+        );
+      }
+
+      // Register message handler after login
+      _registerMessageHandler();
+
+      // Mark conversation as read
+      await _markConversationRead();
+      _refreshUnreadBadges();
+
+      // Fetch recent messages from server in background
+      await _fetchRecentMessagesFromServer();
+    } catch (e) {
+      debugPrint('Error during background login/fetch: $e');
+      // Silently fail - cached messages are already shown
     }
   }
 
@@ -146,16 +165,31 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     await AgoraChatBootstrap.ensureInitialized();
   }
 
+  /// Ensure user is logged in. Login happens once when chat opens.
   Future<void> _ensureAgoraLoggedIn(String userId) async {
+    // Check if already logged in as the correct user
     if (ChatClient.getInstance.currentUserId == userId) {
       return;
     }
+
     final token = await _resolveAgoraToken(userId);
     if (token == null || token.isEmpty) {
       throw Exception('Agora chat token is not available.');
     }
-    await ChatClient.getInstance.loginWithToken(userId, token);
+
+    try {
+      await ChatClient.getInstance.loginWithToken(userId, token);
+      // Verify login succeeded
+      if (ChatClient.getInstance.currentUserId != userId) {
+        throw Exception('Login verification failed. Please try again.');
+      }
+    } catch (e) {
+      debugPrint('Agora Chat login error: $e');
+      // Re-throw to be handled by caller
+      rethrow;
+    }
   }
+
 
   Future<String?> _resolveAgoraToken(String userId) async {
     try {
@@ -178,35 +212,45 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// Load cached messages from local DB instantly (non-blocking)
+  /// Load cached messages from local DB instantly (can be done without login)
+  /// This loads from local cache while login happens in background
   Future<void> _loadCachedMessages() async {
     final targetAgoraUserId = _targetAgoraUserId;
     if (targetAgoraUserId == null) return;
 
-    _conversation ??= await ChatClient.getInstance.chatManager.getConversation(
-      targetAgoraUserId,
-      type: ChatConversationType.Chat,
-      createIfNeed: true,
-    );
+    try {
+      // Get conversation from local cache (works without login)
+      _conversation ??= await ChatClient.getInstance.chatManager.getConversation(
+        targetAgoraUserId,
+        type: ChatConversationType.Chat,
+        createIfNeed: false, // Don't create if not exists - just load cache
+      );
 
-    // Load from local DB first (instant, cached messages)
-    final messages = await _conversation!.loadMessages(
-      startMsgId: '',
-      loadCount: 50,
-      direction: ChatSearchDirection.Up,
-    );
+      if (_conversation == null) return;
 
-    if (!mounted) return;
-    setState(() {
-      for (final message in messages) {
-        _mergeMessage(message);
-        _ensureAttachmentAvailable(message);
-      }
-      _sortMessages();
-    });
+      // Load from local DB (instant, cached messages - no login required)
+      final messages = await _conversation!.loadMessages(
+        startMsgId: '',
+        loadCount: 50,
+        direction: ChatSearchDirection.Up,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        for (final message in messages) {
+          _mergeMessage(message);
+          _ensureAttachmentAvailable(message);
+        }
+        _sortMessages();
+      });
+    } catch (e) {
+      // Silently fail - we'll fetch after login
+      debugPrint('Error loading cached messages: $e');
+    }
   }
 
   /// Fetch recent messages from server in background (non-blocking)
+  /// Called after login completes - no need to check login state
   Future<void> _fetchRecentMessagesFromServer() async {
     final targetAgoraUserId = _targetAgoraUserId;
     if (targetAgoraUserId == null) return;
@@ -398,7 +442,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (conversation == null) return;
     try {
       await conversation.markAllMessagesAsRead();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error marking conversation as read: $e');
+    }
   }
 
   void _refreshUnreadBadges() {
@@ -416,12 +462,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       await _initializeChat();
       return;
     }
+    // Just refresh messages - login was done once at start
     try {
-      await _ensureAgoraLoggedIn(userId);
       await _refreshMessages();
       await _markConversationRead();
       _refreshUnreadBadges();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Error resuming chat: $e');
+    }
   }
 
   Future<void> _sendMessage() async {
@@ -441,6 +489,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       );
       message.chatType = ChatType.Chat;
       await ChatClient.getInstance.chatManager.sendMessage(message);
+      
       if (!mounted) return;
       setState(() {
         _mergeMessage(message);
@@ -737,10 +786,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return TRKRLoadingScreen(action: () {});
-    }
-
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final colors = theme.extension<TRKRColors>();
