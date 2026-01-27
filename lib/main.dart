@@ -143,7 +143,8 @@ String _getFCMCertificateName(AppFlavor flavor) {
 Future<void> _uploadFCMTokenToAgora() async {
   // Check if user is logged in to Agora Chat SDK
   if (ChatClient.getInstance.currentUserId == null) {
-    debugPrint('[FCM] User not logged in to Agora Chat SDK, skipping token upload');
+    debugPrint(
+        '[FCM] User not logged in to Agora Chat SDK, skipping token upload');
     return;
   }
 
@@ -161,7 +162,8 @@ Future<void> _uploadFCMTokenToAgora() async {
     // Error 201: "Not login" - User must be logged in before uploading token
     // Error 205: "Apns cert name is NULL" - FCM certificate not configured in Agora Console
     if (e.toString().contains('201') || e.toString().contains('Not login')) {
-      debugPrint('[FCM] User not logged in to Agora Chat SDK. Token will be uploaded after login.');
+      debugPrint(
+          '[FCM] User not logged in to Agora Chat SDK. Token will be uploaded after login.');
     } else {
       debugPrint(
           '[FCM] Note: Ensure FCM certificate/server key is configured in Agora Console for push notifications');
