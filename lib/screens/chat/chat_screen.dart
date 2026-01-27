@@ -116,7 +116,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       // Ensure conversation exists (create if needed, now that we're logged in)
       final targetAgoraUserId = _targetAgoraUserId;
       if (targetAgoraUserId != null && _conversation == null) {
-        _conversation = await ChatClient.getInstance.chatManager.getConversation(
+        _conversation =
+            await ChatClient.getInstance.chatManager.getConversation(
           targetAgoraUserId,
           type: ChatConversationType.Chat,
           createIfNeed: true,
@@ -190,7 +191,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-
   Future<String?> _resolveAgoraToken(String userId) async {
     try {
       final uri = Uri.parse(agoraBaseUrl).resolve(agoraTokenPath);
@@ -220,7 +220,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
     try {
       // Get conversation from local cache (works without login)
-      _conversation ??= await ChatClient.getInstance.chatManager.getConversation(
+      _conversation ??=
+          await ChatClient.getInstance.chatManager.getConversation(
         targetAgoraUserId,
         type: ChatConversationType.Chat,
         createIfNeed: false, // Don't create if not exists - just load cache
@@ -231,7 +232,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       // Load from local DB (instant, cached messages - no login required)
       final messages = await _conversation!.loadMessages(
         startMsgId: '',
-        loadCount: 50,
+        loadCount: 10000, // Load all cached messages
         direction: ChatSearchDirection.Up,
       );
 
@@ -256,6 +257,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (targetAgoraUserId == null) return;
 
     try {
+      // Fetch all messages from server (using large pageSize to load all)
       final cursorResult =
           await ChatClient.getInstance.chatManager.fetchHistoryMessagesByOption(
         targetAgoraUserId,
@@ -264,7 +266,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           direction: ChatSearchDirection.Up,
           needSave: true, // Save to local DB for future cache hits
         ),
-        pageSize: 50,
+        pageSize: 10000, // Load all messages
       );
       final serverMessages = cursorResult.data;
 
@@ -489,7 +491,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       );
       message.chatType = ChatType.Chat;
       await ChatClient.getInstance.chatManager.sendMessage(message);
-      
+
       if (!mounted) return;
       setState(() {
         _mergeMessage(message);
@@ -863,7 +865,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       opaque: true,
                       pageBuilder: (_, __, ___) => VideoCallScreen(
                         targetUserId: _targetUserId(),
-                        targetName: widget.clientName,
                       ),
                       transitionsBuilder: (_, animation, __, child) {
                         const begin = Offset(0.0, 1.0);

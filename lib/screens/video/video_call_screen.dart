@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
@@ -13,12 +12,10 @@ import '../../urls.dart';
 
 class VideoCallScreen extends StatefulWidget {
   final String targetUserId;
-  final String? targetName;
 
   const VideoCallScreen({
     super.key,
     required this.targetUserId,
-    this.targetName,
   });
 
   @override
@@ -26,79 +23,93 @@ class VideoCallScreen extends StatefulWidget {
 }
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
-  int? _remoteUid; // Stores remote user ID
-  bool _localUserJoined =
-      false; // Indicates if local user has joined the channel
-  late RtcEngine _engine; // Stores Agora RTC Engine instance
+  late final RtcEngine _engine;
+
+  bool _localUserJoined = false;
+  int? _remoteUid;
+  bool _isMuted = false;
+  bool _isCameraEnabled = true;
+
   @override
   void initState() {
     super.initState();
     _startVideoCalling();
   }
 
-  // Initializes Agora SDK
+  /* --------------------------- INIT FLOW --------------------------- */
+
   Future<void> _startVideoCalling() async {
     await _requestPermissions();
-    await _initializeAgoraVideoSDK();
+    await _initializeAgora();
     await _setupLocalVideo();
-    _setupEventHandlers();
+    _registerEventHandlers();
     await _joinChannel();
   }
 
-  // Requests microphone and camera permissions
   Future<void> _requestPermissions() async {
-    await [Permission.microphone, Permission.camera].request();
+    final statuses = await [
+      Permission.microphone,
+      Permission.camera,
+    ].request();
+
+    if (statuses[Permission.microphone] != PermissionStatus.granted ||
+        statuses[Permission.camera] != PermissionStatus.granted) {
+      throw StateError('Camera or microphone permission not granted');
+    }
   }
 
-  // Set up the Agora RTC engine instance
-  Future<void> _initializeAgoraVideoSDK() async {
+  Future<void> _initializeAgora() async {
     _engine = createAgoraRtcEngine();
-    await _engine.initialize(const RtcEngineContext(
-      appId: VideoConfig.agoraAppId,
-      channelProfile: ChannelProfileType.channelProfileCommunication,
-    ));
+    await _engine.initialize(
+      const RtcEngineContext(
+        appId: VideoConfig.agoraAppId,
+        channelProfile: ChannelProfileType.channelProfileCommunication,
+      ),
+    );
   }
 
-  // Enables and starts local video preview
   Future<void> _setupLocalVideo() async {
     await _engine.enableVideo();
     await _engine.startPreview();
   }
 
-  // Register an event handler for Agora RTC
-  void _setupEventHandlers() {
+  void _registerEventHandlers() {
     _engine.registerEventHandler(
       RtcEngineEventHandler(
-        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          debugPrint("Local user ${connection.localUid} joined");
+        onJoinChannelSuccess: (_, __) {
           setState(() => _localUserJoined = true);
         },
-        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          debugPrint("Remote user $remoteUid joined");
+        onUserJoined: (_, remoteUid, __) {
           setState(() => _remoteUid = remoteUid);
         },
-        onUserOffline: (RtcConnection connection, int remoteUid,
-            UserOfflineReasonType reason) {
-          debugPrint("Remote user $remoteUid left");
+        onUserOffline: (_, __, ___) {
           setState(() => _remoteUid = null);
+        },
+        onError: (err, msg) {
+          debugPrint('Agora error: $err, $msg');
         },
       ),
     );
   }
 
-  // Join a channel
+  /* --------------------------- JOIN CHANNEL --------------------------- */
+
   Future<void> _joinChannel() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) throw StateError('No user ID');
+    if (userId == null) throw StateError('User not authenticated');
 
-    final agoraUsername = toAgoraUsername(userId);
-    final token = await _resolveVideoToken();
-    if (token == null || token.isEmpty) throw StateError('No token');
+    final agoraUserAccount = toAgoraUsername(userId);
+    final channelName = _generateChannelName();
+    final token = await _fetchAgoraToken(channelName, agoraUserAccount);
+
+    if (token == null || token.isEmpty) {
+      throw StateError('Failed to retrieve Agora token');
+    }
 
     await _engine.joinChannelWithUserAccount(
       token: token,
-      channelId: _generateChannelName(),
-      userAccount: agoraUsername,
+      channelId: channelName,
+      userAccount: agoraUserAccount,
       options: const ChannelMediaOptions(
         autoSubscribeVideo: true,
         autoSubscribeAudio: true,
@@ -109,74 +120,109 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
+  /* --------------------------- HELPERS --------------------------- */
+
   String _generateChannelName() {
     final currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final ids = [currentUserId, widget.targetUserId]..sort();
-    const maxLen = 64;
-    const prefix = 'call_';
-    const sep = '_';
-    final allowed =
-        maxLen - prefix.length - sep.length; // 58 chars for both IDs
-    final half = allowed ~/ 2; // 29 chars each
+    final half = (64 - 6) ~/ 2; // 64 max - 'call__' = 58, /2 = 29 each
     final a = ids[0].replaceAll('-', '').substring(0, half.clamp(0, 32));
     final b = ids[1].replaceAll('-', '').substring(0, half.clamp(0, 32));
-    return '$prefix$a$sep$b';
+    return 'call_${a}_$b';
   }
 
-  Future<String?> _resolveVideoToken() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    final uri = Uri.parse(agoraBaseUrl).resolve(agoraVideoTokenPath);
-
+  Future<String?> _fetchAgoraToken(
+      String channelName, String userAccount) async {
     final res = await http.post(
-      uri,
+      Uri.parse(agoraBaseUrl).resolve(agoraVideoTokenPath),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'userId': toAgoraUsername(userId!),
-        'channelName': _generateChannelName(),
+        'channelName': channelName,
+        'userId': userAccount,
       }),
     );
 
-    return jsonDecode(res.body)['token'];
+    if (res.statusCode != 200) return null;
+    return jsonDecode(res.body)['token'] as String?;
   }
+
+  /* --------------------------- CLEANUP --------------------------- */
 
   @override
   void dispose() {
-    _cleanupAgoraEngine();
+    _engine.leaveChannel();
+    _engine.release();
     super.dispose();
   }
 
-  // Leaves the channel and releases resources
-  Future<void> _cleanupAgoraEngine() async {
-    await _engine.leaveChannel();
-    await _engine.release();
+  /* --------------------------- CONTROL METHODS --------------------------- */
+
+  Future<void> _toggleMute() async {
+    await _engine.muteLocalAudioStream(!_isMuted);
+    setState(() => _isMuted = !_isMuted);
   }
+
+  Future<void> _toggleCamera() async {
+    await _engine.muteLocalVideoStream(!_isCameraEnabled);
+    setState(() => _isCameraEnabled = !_isCameraEnabled);
+  }
+
+  Future<void> _switchCamera() async {
+    await _engine.switchCamera();
+  }
+
+  Future<void> _endCall() async {
+    await _engine.leaveChannel();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  /* --------------------------- UI --------------------------- */
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Agora Video Calling')),
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Center(child: _remoteVideo()),
-          Align(
-            alignment: Alignment.topLeft,
-            child: SizedBox(
-              width: 100,
-              height: 150,
-              child: Center(
-                child: _localUserJoined
-                    ? _localVideo()
-                    : const CircularProgressIndicator(),
+          // Split screen: top half remote, bottom half local
+          Column(
+            children: [
+              // Remote video (top half)
+              Expanded(
+                child: _remoteVideoView(),
               ),
-            ),
+              // Local video (bottom half)
+              Expanded(
+                child: _isCameraEnabled && _localUserJoined
+                    ? _localVideoView()
+                    : Container(
+                        color: Colors.black,
+                        child: const Center(
+                          child: Icon(
+                            Icons.person,
+                            color: Colors.white54,
+                            size: 60,
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+          // Control buttons at bottom
+          Positioned(
+            bottom: 32,
+            left: 0,
+            right: 0,
+            child: _controlButtons(),
           ),
         ],
       ),
     );
   }
 
-  // Displays remote video view
-  Widget _localVideo() {
+  Widget _localVideoView() {
     return AgoraVideoView(
       controller: VideoViewController(
         rtcEngine: _engine,
@@ -188,21 +234,90 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  // Displays remote video view
-  Widget _remoteVideo() {
-    if (_remoteUid != null) {
-      return AgoraVideoView(
-        controller: VideoViewController.remote(
-          rtcEngine: _engine,
-          canvas: VideoCanvas(uid: _remoteUid),
-          connection: RtcConnection(channelId: _generateChannelName()),
+  Widget _remoteVideoView() {
+    if (_remoteUid == null) {
+      return const Center(
+        child: Text(
+          'Waiting for the other user to join…',
+          style: TextStyle(color: Colors.white),
+          textAlign: TextAlign.center,
         ),
       );
-    } else {
-      return const Text(
-        'Waiting for remote user to join...',
-        textAlign: TextAlign.center,
-      );
     }
+
+    return AgoraVideoView(
+      controller: VideoViewController.remote(
+        rtcEngine: _engine,
+        canvas: VideoCanvas(uid: _remoteUid),
+        connection: RtcConnection(channelId: _generateChannelName()),
+      ),
+    );
+  }
+
+  Widget _controlButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Mute button
+        _ControlButton(
+          icon: _isMuted ? Icons.mic_off : Icons.mic,
+          onPressed: _toggleMute,
+          backgroundColor:
+              _isMuted ? Colors.red : Colors.white.withValues(alpha: 0.2),
+        ),
+        const SizedBox(width: 16),
+        // Camera toggle button
+        _ControlButton(
+          icon: _isCameraEnabled ? Icons.videocam : Icons.videocam_off,
+          onPressed: _toggleCamera,
+          backgroundColor: _isCameraEnabled
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.red,
+        ),
+        const SizedBox(width: 16),
+        // Switch camera button
+        _ControlButton(
+          icon: Icons.flip_camera_ios,
+          onPressed: _switchCamera,
+          backgroundColor: Colors.white.withValues(alpha: 0.2),
+        ),
+        const SizedBox(width: 16),
+        // End call button
+        _ControlButton(
+          icon: Icons.call_end,
+          onPressed: _endCall,
+          backgroundColor: Colors.red,
+        ),
+      ],
+    );
+  }
+}
+
+class _ControlButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color backgroundColor;
+
+  const _ControlButton({
+    required this.icon,
+    required this.onPressed,
+    required this.backgroundColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: backgroundColor,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 56,
+          height: 56,
+          child: Icon(icon, color: Colors.white, size: 28),
+        ),
+      ),
+    );
   }
 }
