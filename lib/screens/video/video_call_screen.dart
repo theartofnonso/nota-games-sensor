@@ -26,21 +26,82 @@ class VideoCallScreen extends StatefulWidget {
 }
 
 class _VideoCallScreenState extends State<VideoCallScreen> {
-  late RtcEngine _engine;
-  int? _remoteUid;
-  bool _localJoined = false;
-  late final String _channelName;
-
+  int? _remoteUid; // Stores remote user ID
+  bool _localUserJoined =
+      false; // Indicates if local user has joined the channel
+  late RtcEngine _engine; // Stores Agora RTC Engine instance
   @override
   void initState() {
     super.initState();
-    _channelName = _generateChannelName();
-    _initAgora();
+    _startVideoCalling();
   }
 
-  /// Agora channel names must be ≤64 ASCII characters.
-  /// UUIDs are 36 chars each, so "call_uuid_uuid" exceeds the limit.
-  /// Use a deterministic short form: strip hyphens, sort, take leading chars.
+  // Initializes Agora SDK
+  Future<void> _startVideoCalling() async {
+    await _requestPermissions();
+    await _initializeAgoraVideoSDK();
+    await _setupLocalVideo();
+    _setupEventHandlers();
+    await _joinChannel();
+  }
+
+  // Requests microphone and camera permissions
+  Future<void> _requestPermissions() async {
+    await [Permission.microphone, Permission.camera].request();
+  }
+
+  // Set up the Agora RTC engine instance
+  Future<void> _initializeAgoraVideoSDK() async {
+    _engine = createAgoraRtcEngine();
+    await _engine.initialize(const RtcEngineContext(
+      appId: VideoConfig.agoraAppId,
+      channelProfile: ChannelProfileType.channelProfileCommunication,
+    ));
+  }
+
+  // Enables and starts local video preview
+  Future<void> _setupLocalVideo() async {
+    await _engine.enableVideo();
+    await _engine.startPreview();
+  }
+
+  // Register an event handler for Agora RTC
+  void _setupEventHandlers() {
+    _engine.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+          debugPrint("Local user ${connection.localUid} joined");
+          setState(() => _localUserJoined = true);
+        },
+        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+          debugPrint("Remote user $remoteUid joined");
+          setState(() => _remoteUid = remoteUid);
+        },
+        onUserOffline: (RtcConnection connection, int remoteUid,
+            UserOfflineReasonType reason) {
+          debugPrint("Remote user $remoteUid left");
+          setState(() => _remoteUid = null);
+        },
+      ),
+    );
+  }
+
+  // Join a channel
+  Future<void> _joinChannel() async {
+    await _engine.joinChannel(
+      token: await _resolveVideoToken() ?? '',
+      channelId: _generateChannelName(),
+      options: const ChannelMediaOptions(
+        autoSubscribeVideo: true,
+        autoSubscribeAudio: true,
+        publishCameraTrack: true,
+        publishMicrophoneTrack: true,
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+      ),
+      uid: 0,
+    );
+  }
+
   String _generateChannelName() {
     final currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final ids = [currentUserId, widget.targetUserId]..sort();
@@ -55,43 +116,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     return '$prefix$a$sep$b';
   }
 
-  Future<void> _initAgora() async {
-    await [Permission.microphone, Permission.camera].request();
-
-    _engine = createAgoraRtcEngine();
-    await _engine.initialize(const RtcEngineContext(
-      appId: VideoConfig.agoraAppId,
-      channelProfile: ChannelProfileType.channelProfileCommunication,
-    ));
-
-    _engine.registerEventHandler(
-      RtcEngineEventHandler(
-        onJoinChannelSuccess: (_, __) {
-          print('onJoinChannelSuccess');
-          setState(() => _localJoined = true);
-        },
-        onUserJoined: (_, uid, __) {
-          print('onUserJoined: $uid');
-          setState(() => _remoteUid = uid);
-        },
-        onUserOffline: (_, __, ___) {
-          setState(() => _remoteUid = null);
-        },
-      ),
-    );
-
-    await _engine.enableVideo();
-
-    final token = await _resolveVideoToken();
-
-    await _engine.joinChannel(
-      token: token!,
-      channelId: _channelName,
-      uid: 0,
-      options: const ChannelMediaOptions(),
-    );
-  }
-
   Future<String?> _resolveVideoToken() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     final uri = Uri.parse(agoraBaseUrl).resolve(agoraVideoTokenPath);
@@ -101,7 +125,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
         'userId': toAgoraUsername(userId!),
-        'channelName': _channelName,
+        'channelName': _generateChannelName(),
       }),
     );
 
@@ -110,15 +134,42 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   @override
   void dispose() {
-    _engine.leaveChannel();
-    _engine.release();
+    _cleanupAgoraEngine();
     super.dispose();
   }
 
-  Widget _renderLocalPreview() {
-    if (!_localJoined) {
-      return const Center(child: CircularProgressIndicator());
-    }
+  // Leaves the channel and releases resources
+  Future<void> _cleanupAgoraEngine() async {
+    await _engine.leaveChannel();
+    await _engine.release();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Agora Video Calling')),
+      body: Stack(
+        children: [
+          Center(child: _remoteVideo()),
+          Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 100,
+              height: 150,
+              child: Center(
+                child: _localUserJoined
+                    ? _localVideo()
+                    : const CircularProgressIndicator(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Displays remote video view
+  Widget _localVideo() {
     return AgoraVideoView(
       controller: VideoViewController(
         rtcEngine: _engine,
@@ -130,39 +181,21 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
   }
 
-  Widget _renderRemoteVideo() {
-    if (_remoteUid == null) {
+  // Displays remote video view
+  Widget _remoteVideo() {
+    if (_remoteUid != null) {
+      return AgoraVideoView(
+        controller: VideoViewController.remote(
+          rtcEngine: _engine,
+          canvas: VideoCanvas(uid: _remoteUid),
+          connection: RtcConnection(channelId: _generateChannelName()),
+        ),
+      );
+    } else {
       return const Text(
-        'Waiting for remote user…',
-        style: TextStyle(color: Colors.white),
+        'Waiting for remote user to join...',
+        textAlign: TextAlign.center,
       );
     }
-    return AgoraVideoView(
-      controller: VideoViewController.remote(
-        rtcEngine: _engine,
-        canvas: VideoCanvas(uid: _remoteUid),
-        connection: RtcConnection(channelId: _channelName),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          Center(child: _renderRemoteVideo()),
-          Align(
-            alignment: Alignment.topLeft,
-            child: SizedBox(
-              width: 120,
-              height: 160,
-              child: _renderLocalPreview(),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

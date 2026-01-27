@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>FlutterDeepLinkingEnabled</key>
-	<true/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -26,8 +24,26 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Not Athletes uses Bluetooth for audio during video calls (e.g. headphones).</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Not Athletes needs camera access for video calls with your coach.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>We sync your data with Apple Health to give you better insights.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>We sync your data with Apple Health to give you better insights.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Not Athletes needs microphone access for video calls with your coach.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Not Athletes needs permission to save photos to your library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Not Athletes needs photo access to share images in chat.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Not Athletes uses speech to text for hands-free logging of your sets, reps, and weights.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -49,27 +65,11 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>NSCameraUsageDescription</key>
-	<string>Not Athletes needs camera access for video calls with your coach.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Not Athletes needs microphone access for video calls with your coach.</string>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Not Athletes uses Bluetooth for audio during video calls (e.g. headphones).</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Not Athletes needs photo access to share images in chat.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Not Athletes needs permission to save photos to your library.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Not Athletes uses speech to text for hands-free logging of your sets, reps, and weights.</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>We sync your data with Apple Health to give you better insights.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>We sync your data with Apple Health to give you better insights.</string>
 	<key>com.posthog.posthog.API_KEY</key>
 	<string>phc_oLmuad146lylxGF2A45kOzRCMG5cJgnkv5oyedPf5A6</string>
-	<key>com.posthog.posthog.POSTHOG_HOST</key>
-	<string>https://us.i.posthog.com</string>
 	<key>com.posthog.posthog.CAPTURE_APPLICATION_LIFECYCLE_EVENTS</key>
 	<true/>
+	<key>com.posthog.posthog.POSTHOG_HOST</key>
+	<string>https://us.i.posthog.com</string>
 </dict>
 </plist>
