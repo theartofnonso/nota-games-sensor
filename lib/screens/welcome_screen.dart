@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'app_flavor.dart';
-import 'utils/general_utils.dart';
-import 'utils/theme/color_extensions.dart';
-import 'utils/theme/theme.dart';
-import 'widgets/buttons/opacity_button_widget_two.dart';
+import '../app_flavor.dart';
+import '../utils/general_utils.dart';
+import '../utils/theme/color_extensions.dart';
+import '../utils/theme/theme.dart';
+import '../widgets/buttons/opacity_button_widget_two.dart';
 
-class OnboardingFlowScreen extends StatefulWidget {
-  static const routeName = '/onboarding_flow_screen';
+class WelcomeScreen extends StatefulWidget {
+  static const routeName = '/welcome_screen';
 
   final void Function()? onPressed;
 
-  const OnboardingFlowScreen({super.key, this.onPressed});
+  const WelcomeScreen({super.key, this.onPressed});
 
   @override
-  State<OnboardingFlowScreen> createState() => _OnboardingFlowScreenState();
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

@@ -163,8 +163,21 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   }
 
   Future<void> _toggleCamera() async {
-    await _engine.muteLocalVideoStream(!_isCameraEnabled);
-    setState(() => _isCameraEnabled = !_isCameraEnabled);
+    final newState = !_isCameraEnabled;
+
+    // Update channel media options to stop/start publishing camera track
+    // When camera is off, stop publishing so remote user doesn't see the stream
+    await _engine.updateChannelMediaOptions(
+      ChannelMediaOptions(
+        autoSubscribeVideo: true,
+        autoSubscribeAudio: true,
+        publishCameraTrack: newState, // false when camera is off
+        publishMicrophoneTrack: true,
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+      ),
+    );
+
+    setState(() => _isCameraEnabled = newState);
   }
 
   Future<void> _switchCamera() async {

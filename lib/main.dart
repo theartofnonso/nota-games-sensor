@@ -31,7 +31,7 @@ import 'package:trainware/screens/editors/routine_plan_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_template_editor_screen.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/logs/routine_log_screen.dart';
-import 'package:trainware/onboarding_flow_screen.dart';
+import 'package:trainware/screens/welcome_screen.dart';
 import 'package:trainware/screens/coach/coach_clients_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
@@ -386,12 +386,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool _isFirstLaunch = SharedPrefs().firstLaunch;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   late final ClientOverrideController _accessController;
   late final GoRouter _router;
   bool _lastAuthenticated = false;
   bool _lastCoach = false;
+  bool _welcomeDismissed = false;
 
   @override
   void initState() {
@@ -419,6 +419,10 @@ class _MyAppState extends State<MyApp> {
         isAuthenticated != _lastAuthenticated || isCoach != _lastCoach;
 
     if (isAuthenticated && (!_lastAuthenticated || isCoach != _lastCoach)) {
+      // Mark first launch as complete after successful authentication
+      if (SharedPrefs().firstLaunch) {
+        SharedPrefs().firstLaunch = false;
+      }
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.initialize();
@@ -431,10 +435,7 @@ class _MyAppState extends State<MyApp> {
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();
-        setState(() {
-          _isFirstLaunch = true;
-          SharedPrefs().firstLaunch = true;
-        });
+        setState(() {});
       } catch (e) {
         debugPrint('[Auth] Error clearing data: $e');
       }
@@ -446,13 +447,6 @@ class _MyAppState extends State<MyApp> {
 
     _lastAuthenticated = isAuthenticated;
     _lastCoach = isCoach;
-  }
-
-  void _completeIntro() {
-    setState(() {
-      _isFirstLaunch = false;
-      SharedPrefs().firstLaunch = false;
-    });
   }
 
   void _listenToConnectivity() {
@@ -502,6 +496,15 @@ class _MyAppState extends State<MyApp> {
       ),
     );
 
+    // Show welcome screen on first launch (until user dismisses it)
+    if (SharedPrefs().firstLaunch && !_welcomeDismissed) {
+      return WelcomeScreen(
+        onPressed: () {
+          setState(() => _welcomeDismissed = true);
+        },
+      );
+    }
+
     // Show auth screen if not authenticated
     if (!_accessController.isAuthenticated) {
       return MaterialApp(
@@ -511,11 +514,6 @@ class _MyAppState extends State<MyApp> {
         darkTheme: TRKRTheme.darkTheme,
         home: const SupabaseAuthScreen(),
       );
-    }
-
-    // Show onboarding if first launch (only after profile is created)
-    if (_isFirstLaunch) {
-      return OnboardingFlowScreen(onPressed: _completeIntro);
     }
 
     // Show main app if authenticated
