@@ -13,13 +13,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/agora_chat_utils.dart';
 import '../../urls.dart';
 import '../../app_flavor.dart';
 import '../../services/chat_unread_service.dart';
 import '../../services/chat_unread_counts_service.dart';
-import '../../services/agora_chat_bootstrap.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -82,8 +82,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       }
       _currentAgoraUserId = toAgoraUsername(userId);
       _targetAgoraUserId = toAgoraUsername(_targetUserId());
-
-      await _ensureAgoraInitialized();
 
       // Load cached messages FIRST (instant, while login happens in background)
       await _loadCachedMessages();
@@ -162,10 +160,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     });
   }
 
-  Future<void> _ensureAgoraInitialized() async {
-    await AgoraChatBootstrap.ensureInitialized();
-  }
-
   /// Ensure user is logged in. Login happens once when chat opens.
   Future<void> _ensureAgoraLoggedIn(String userId) async {
     // Check if already logged in as the correct user
@@ -184,10 +178,30 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (ChatClient.getInstance.currentUserId != userId) {
         throw Exception('Login verification failed. Please try again.');
       }
+
+      // Upload FCM token after successful login
+      await _uploadFCMTokenAfterLogin();
     } catch (e) {
       debugPrint('Agora Chat login error: $e');
       // Re-throw to be handled by caller
       rethrow;
+    }
+  }
+
+  /// Upload FCM token to Agora Chat SDK after successful login
+  Future<void> _uploadFCMTokenAfterLogin() async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        debugPrint('[Chat] Uploading FCM token to Agora after login');
+        await ChatClient.getInstance.pushManager.updateFCMPushToken(fcmToken);
+        debugPrint('[Chat] FCM token uploaded successfully');
+      } else {
+        debugPrint('[Chat] FCM token is null');
+      }
+    } catch (e) {
+      debugPrint('[Chat] Error uploading FCM token after login: $e');
+      // Don't throw - FCM token upload failure shouldn't block chat functionality
     }
   }
 

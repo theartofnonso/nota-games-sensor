@@ -4,7 +4,6 @@ import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:flutter/foundation.dart';
 
 import '../utils/agora_chat_utils.dart';
-import 'agora_chat_bootstrap.dart';
 
 class ChatUnreadCountsService {
   static final ChatUnreadCountsService _instance =
@@ -20,7 +19,7 @@ class ChatUnreadCountsService {
   String? _handlerId;
 
   Future<void> updateClients(List<String> clientIds) async {
-    await AgoraChatBootstrap.ensureInitialized();
+    // Chat SDK is already initialized in main.dart
     _clientIdToAgora
       ..clear()
       ..addEntries(

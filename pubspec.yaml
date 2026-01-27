@@ -78,6 +78,8 @@ dependencies:
   image_picker: ^1.1.2
   file_picker: ^8.3.7
   video_thumbnail: ^0.5.3
+  firebase_core: ^4.4.0
+  firebase_messaging: ^16.1.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1

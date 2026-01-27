@@ -4,7 +4,6 @@ import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:flutter/foundation.dart';
 
 import '../utils/agora_chat_utils.dart';
-import 'agora_chat_bootstrap.dart';
 
 class ChatUnreadService {
   static final ChatUnreadService _instance = ChatUnreadService._internal();
@@ -28,7 +27,7 @@ class ChatUnreadService {
       return;
     }
 
-    await AgoraChatBootstrap.ensureInitialized();
+    // Chat SDK is already initialized in main.dart
     _targetAgoraUserId = toAgoraUsername(coachId);
     _handlerId ??= 'chat_unread_${resolvedUserId}_$coachId';
 
