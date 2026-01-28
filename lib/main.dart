@@ -44,7 +44,6 @@ import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'firebase_options_coach.dart' as coach_options;
@@ -139,55 +138,6 @@ String _getFCMCertificateName(AppFlavor flavor) {
   return '160658273085-$flavorSuffix-$envSuffix';
 }
 
-/// Upload FCM token to Agora Chat SDK (only if user is logged in)
-Future<void> _uploadFCMTokenToAgora() async {
-  // Check if user is logged in to Agora Chat SDK
-  if (ChatClient.getInstance.currentUserId == null) {
-    debugPrint(
-        '[FCM] User not logged in to Agora Chat SDK, skipping token upload');
-    return;
-  }
-
-  try {
-    final fcmToken = await FirebaseMessaging.instance.getToken();
-    if (fcmToken != null) {
-      debugPrint('[FCM] Uploading FCM token to Agora');
-      await ChatClient.getInstance.pushManager.updateFCMPushToken(fcmToken);
-      debugPrint('[FCM] FCM token uploaded successfully');
-    } else {
-      debugPrint('[FCM] FCM token is null');
-    }
-  } catch (e) {
-    debugPrint('[FCM] Error uploading FCM token: $e');
-    // Error 201: "Not login" - User must be logged in before uploading token
-    // Error 205: "Apns cert name is NULL" - FCM certificate not configured in Agora Console
-    if (e.toString().contains('201') || e.toString().contains('Not login')) {
-      debugPrint(
-          '[FCM] User not logged in to Agora Chat SDK. Token will be uploaded after login.');
-    } else {
-      debugPrint(
-          '[FCM] Note: Ensure FCM certificate/server key is configured in Agora Console for push notifications');
-    }
-  }
-}
-
-/// Setup FCM for push notifications (called early in app lifecycle)
-Future<void> _setupFCM() async {
-  // Request push permission
-  await FirebaseMessaging.instance.requestPermission();
-
-  // Don't upload token here - user isn't logged in yet
-  // Token will be uploaded after login in chat_screen.dart
-
-  // Listen for token refresh and upload to Agora (only if logged in)
-  FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
-    debugPrint('[FCM] Token refreshed: $token');
-    // Upload refreshed token if user is logged in
-    // This will check login status before uploading
-    await _uploadFCMTokenToAgora();
-  });
-}
-
 Future<void> mainCommon(AppFlavor flavor) async {
   AppConfig.setFlavor(flavor);
   final logger = getLogger(className: "main");
@@ -219,9 +169,6 @@ Future<void> mainCommon(AppFlavor flavor) async {
   chatOptions.enableFCM("160658273085");
   chatOptions.enableAPNs(fcmCertificateName);
   await ChatClient.getInstance.init(chatOptions);
-
-  // Setup FCM token handling (upload initial token and listen for refreshes)
-  await _setupFCM();
 
   await SharedPrefs().init();
 

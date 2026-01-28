@@ -13,13 +13,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/agora_chat_utils.dart';
 import '../../urls.dart';
 import '../../app_flavor.dart';
 import '../../services/chat_unread_service.dart';
 import '../../services/chat_unread_counts_service.dart';
+import '../../services/push_token_service.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -83,13 +83,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _currentAgoraUserId = toAgoraUsername(userId);
       _targetAgoraUserId = toAgoraUsername(_targetUserId());
 
-      // Load cached messages FIRST (instant, while login happens in background)
-      await _loadCachedMessages();
-
-      if (!mounted) return;
-      _scrollToBottom();
-
-      // Login in background (non-blocking, after cache is shown)
+      // Login first; cache load requires logged-in user (201 otherwise)
       unawaited(_loginAndFetchMessages());
     } catch (e) {
       debugPrint('Error initializing chat: $e');
@@ -102,16 +96,20 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// Login and fetch messages in background (after cache is already shown)
+  /// Login, then load cache + fetch messages. Cache requires login (201 otherwise).
   Future<void> _loginAndFetchMessages() async {
     try {
       final currentUserId = _currentAgoraUserId;
       if (currentUserId == null) return;
 
-      // Login to Agora Chat (happens while cached messages are shown)
       await _ensureAgoraLoggedIn(currentUserId);
 
-      // Ensure conversation exists (create if needed, now that we're logged in)
+      // Load cached messages only after login (getConversation/loadMessages require login)
+      await _loadCachedMessages();
+      if (!mounted) return;
+      _scrollToBottom();
+
+      // Ensure conversation exists (create if needed)
       final targetAgoraUserId = _targetAgoraUserId;
       if (targetAgoraUserId != null && _conversation == null) {
         _conversation =
@@ -122,18 +120,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         );
       }
 
-      // Register message handler after login
       _registerMessageHandler();
-
-      // Mark conversation as read
       await _markConversationRead();
       _refreshUnreadBadges();
 
-      // Fetch recent messages from server in background
       await _fetchRecentMessagesFromServer();
     } catch (e) {
       debugPrint('Error during background login/fetch: $e');
-      // Silently fail - cached messages are already shown
     }
   }
 
@@ -179,29 +172,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         throw Exception('Login verification failed. Please try again.');
       }
 
-      // Upload FCM token after successful login
-      await _uploadFCMTokenAfterLogin();
+      // Token upload requires a logged-in user; call only after login completes.
+      await setupPushToken();
     } catch (e) {
       debugPrint('Agora Chat login error: $e');
       // Re-throw to be handled by caller
       rethrow;
-    }
-  }
-
-  /// Upload FCM token to Agora Chat SDK after successful login
-  Future<void> _uploadFCMTokenAfterLogin() async {
-    try {
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      if (fcmToken != null) {
-        debugPrint('[Chat] Uploading FCM token to Agora after login');
-        await ChatClient.getInstance.pushManager.updateFCMPushToken(fcmToken);
-        debugPrint('[Chat] FCM token uploaded successfully');
-      } else {
-        debugPrint('[Chat] FCM token is null');
-      }
-    } catch (e) {
-      debugPrint('[Chat] Error uploading FCM token after login: $e');
-      // Don't throw - FCM token upload failure shouldn't block chat functionality
     }
   }
 
@@ -226,24 +202,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// Load cached messages from local DB instantly (can be done without login)
-  /// This loads from local cache while login happens in background
+  /// Load cached messages from local DB. Must be called after Agora login (201 otherwise).
   Future<void> _loadCachedMessages() async {
     final targetAgoraUserId = _targetAgoraUserId;
     if (targetAgoraUserId == null) return;
 
     try {
-      // Get conversation from local cache (works without login)
       _conversation ??=
           await ChatClient.getInstance.chatManager.getConversation(
         targetAgoraUserId,
         type: ChatConversationType.Chat,
-        createIfNeed: false, // Don't create if not exists - just load cache
+        createIfNeed: false,
       );
 
       if (_conversation == null) return;
 
-      // Load from local DB (instant, cached messages - no login required)
       final messages = await _conversation!.loadMessages(
         startMsgId: '',
         loadCount: 10000, // Load all cached messages
@@ -259,7 +232,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _sortMessages();
       });
     } catch (e) {
-      // Silently fail - we'll fetch after login
       debugPrint('Error loading cached messages: $e');
     }
   }

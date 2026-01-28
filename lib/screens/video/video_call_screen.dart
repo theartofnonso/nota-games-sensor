@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -323,7 +324,10 @@ class _ControlButton extends StatelessWidget {
       color: backgroundColor,
       shape: const CircleBorder(),
       child: InkWell(
-        onTap: onPressed,
+        onTap: () {
+          HapticFeedback.heavyImpact();
+          onPressed();
+        },
         customBorder: const CircleBorder(),
         child: SizedBox(
           width: 56,
