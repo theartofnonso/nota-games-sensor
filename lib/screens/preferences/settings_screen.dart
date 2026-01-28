@@ -26,9 +26,11 @@ import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../controllers/access_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
+import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/general_utils.dart';
+import '../../utils/string_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../services/training_prediction_service.dart';
 import '../../utils/navigation_utils.dart';
@@ -42,7 +44,6 @@ import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
-import '../../utils/string_utils.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
@@ -2264,7 +2265,8 @@ class _RoutinePlansSection extends StatelessWidget {
   }
 }
 
-/// Frosted card for clients: same style + info as routine plan grid item, no create/manage.
+/// Frosted card for clients' routine plan: plan name, routine description
+/// (notes), then a workout summary (e.g. "3 workouts · 12 exercises").
 class _ClientRoutinePlansFrostedCard extends StatelessWidget {
   const _ClientRoutinePlansFrostedCard();
 
@@ -2272,152 +2274,183 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
         final plans = controller.plans;
-        final routineTemplates = controller.templates
-            .where((t) => plans.any((p) => p.id == t.planId))
-            .toList();
-        final exerciseCount =
-            routineTemplates.expand((t) => t.exerciseTemplates).length;
-        final sessionCount = routineTemplates.length;
-        final planName = (plans.isNotEmpty ? plans.first.name : 'Routine Plans')
-            .toUpperCase();
         final plan = plans.isNotEmpty ? plans.first : null;
+        final templates = plan != null
+            ? controller.whereTemplatesForPlan(planId: plan.id)
+            : <RoutineTemplateDto>[];
 
-        return SizedBox(
-          height: 188,
-          child: GestureDetector(
-            onTap: plan != null
-                ? () {
-                    navigateWithSlideTransition(
-                      context: context,
-                      child: RoutinePlanScreen(id: plan.id),
-                    );
-                  }
-                : null,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(_radius),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.grey.withValues(alpha: 0.2),
-                        Colors.black.withValues(alpha: 0.4),
-                        Colors.black.withValues(alpha: 0.5),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(_radius),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.05),
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Opacity(
-                          opacity: 0.15,
-                          child: Image.asset(
-                            'images/1k_Dissolve_Noise_Texture.jpg',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          spacing: 12,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Spacer(),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  planName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontSize: 20,
-                                        color: Colors.white
-                                            .withValues(alpha: 0.85),
-                                      ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 3,
-                                ),
-                                Text(
-                                  'Not Athletes',
-                                  style: TextStyle(
-                                    fontFamily: 'GroutpixFlow',
-                                    color: Colors.blueGrey.shade400,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              spacing: 6,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Wrap(
-                                  children: [
-                                    CustomIcon(
-                                      FontAwesomeIcons.personWalking,
-                                      color: Theme.of(context)
-                                          .colors
-                                          .vibrantAccent,
-                                      width: 20,
-                                      height: 20,
-                                      iconSize: 10.5,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '${exerciseCount} ${pluralize(word: 'Exercise', count: exerciseCount)}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(fontSize: 16),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
-                                    ),
-                                  ],
-                                ),
-                                Wrap(
-                                  children: [
-                                    CustomIcon(
-                                      FontAwesomeIcons.hashtag,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .secondary,
-                                      width: 20,
-                                      height: 20,
-                                      iconSize: 10.5,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '$sessionCount ${pluralize(word: 'Session', count: sessionCount)}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(fontSize: 16),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+        return GestureDetector(
+          onTap: plan != null
+              ? () {
+                  navigateWithSlideTransition(
+                    context: context,
+                    child: RoutinePlanScreen(id: plan.id),
+                  );
+                }
+              : null,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(_radius),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.grey.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.4),
+                      Colors.black.withValues(alpha: 0.5),
                     ],
                   ),
+                  borderRadius: BorderRadius.circular(_radius),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.15,
+                        child: Image.asset(
+                          'images/1k_Dissolve_Noise_Texture.jpg',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header: plan name as title, routine description (notes) under it, expand icon
+                        Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      plan?.name ?? 'Routine Plan',
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white
+                                            .withValues(alpha: 0.95),
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    if ((plan?.notes ?? '').isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        plan!.notes,
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.75),
+                                          fontSize: 13,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Material(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                shape: const CircleBorder(),
+                                child: InkWell(
+                                  onTap: () {},
+                                  customBorder: const CircleBorder(),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: FaIcon(
+                                      FontAwesomeIcons.arrowUpRightFromSquare,
+                                      size: 16,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Workout summary (same pattern as routine plan grid item)
+                        if (templates.isNotEmpty) ...[
+                          Builder(
+                            builder: (_) {
+                              final exerciseCount = templates.fold<int>(0,
+                                  (sum, t) => sum + t.exerciseTemplates.length);
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Wrap(
+                                      children: [
+                                        CustomIcon(
+                                          FontAwesomeIcons.personWalking,
+                                          color: theme.colors.vibrantAccent,
+                                          width: 20,
+                                          height: 20,
+                                          iconSize: 10.5,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '$exerciseCount ${pluralize(word: 'Exercise', count: exerciseCount)}',
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.85),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Wrap(
+                                      children: [
+                                        CustomIcon(
+                                          FontAwesomeIcons.hashtag,
+                                          color: theme.colorScheme.secondary,
+                                          width: 20,
+                                          height: 20,
+                                          iconSize: 10.5,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '${templates.length} ${pluralize(word: 'Session', count: templates.length)}',
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.85),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
