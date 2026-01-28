@@ -40,6 +40,7 @@ import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
+import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
@@ -439,6 +440,11 @@ class _MyAppState extends State<MyApp> {
     _lastCoach = AppConfig.isCoach;
     _accessController.addListener(_handleAccessChanged);
     _listenToConnectivity();
+    // Warm up chat when already authenticated at startup (listener may have fired before we attached)
+    if (_accessController.isAuthenticated && _accessController.userId != null) {
+      unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
+          _accessController.userId));
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _processPendingNotification();
     });
@@ -466,6 +472,9 @@ class _MyAppState extends State<MyApp> {
       } catch (e) {
         debugPrint('[Auth] Error initializing data: $e');
       }
+      // Warm up Agora Chat + push tokens so chat screen is instant when opened
+      unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
+          _accessController.userId));
     }
 
     if (!isAuthenticated && _lastAuthenticated) {
