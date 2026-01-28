@@ -42,6 +42,8 @@ import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
+import '../../utils/string_utils.dart';
+import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
@@ -323,39 +325,41 @@ class _SettingsScreenState extends State<SettingsScreen>
                     predictionInfo: predictionInfo,
                   ),
                   const SizedBox(height: 16),
-                  NutritionTrackingCarousel(
-                    goalCalories: goalCalories,
-                    remainingCalories: remainingCalories,
-                    proteinTarget: nutritionController.proteinTarget,
-                    carbsTarget: nutritionController.carbsTarget,
-                    fatsTarget: nutritionController.fatsTarget,
-                    consumedProtein: consumedProtein,
-                    consumedCarbs: consumedCarbs,
-                    consumedFats: consumedFats,
-                    hasLogsToday: hasLogsToday,
-                    onCardTap: () {
-                      Navigator.of(context).push(
-                        PageRouteBuilder(
-                          pageBuilder: (_, __, ___) =>
-                              const NutritionTrackerScreen(),
-                          transitionsBuilder: (_, animation, __, child) {
-                            final tween = Tween(
-                              begin: const Offset(0, 1),
-                              end: Offset.zero,
-                            ).chain(CurveTween(curve: Curves.easeOutCubic));
-                            return SlideTransition(
-                              position: animation.drive(tween),
-                              child: child,
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  // Routine Plans section - edge-to-edge, no padding
                   _RoutinePlansSection(),
                   const SizedBox(height: 16),
+                  if (!AppConfig.isClient ||
+                      nutritionController.nutritionTemplate != null) ...[
+                    NutritionTrackingCarousel(
+                      goalCalories: goalCalories,
+                      remainingCalories: remainingCalories,
+                      proteinTarget: nutritionController.proteinTarget,
+                      carbsTarget: nutritionController.carbsTarget,
+                      fatsTarget: nutritionController.fatsTarget,
+                      consumedProtein: consumedProtein,
+                      consumedCarbs: consumedCarbs,
+                      consumedFats: consumedFats,
+                      hasLogsToday: hasLogsToday,
+                      onCardTap: () {
+                        Navigator.of(context).push(
+                          PageRouteBuilder(
+                            pageBuilder: (_, __, ___) =>
+                                const NutritionTrackerScreen(),
+                            transitionsBuilder: (_, animation, __, child) {
+                              final tween = Tween(
+                                begin: const Offset(0, 1),
+                                end: Offset.zero,
+                              ).chain(CurveTween(curve: Curves.easeOutCubic));
+                              return SlideTransition(
+                                position: animation.drive(tween),
+                                child: child,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   if (!isClientMode) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -1340,6 +1344,7 @@ class _NextSessionContentState extends State<_NextSessionContent> {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
+    final forClient = AppConfig.isClient;
     return _FrostedCard(
       gradientColors: [
         Colors.white.withValues(alpha: 0.9),
@@ -1358,7 +1363,9 @@ class _NextSessionContentState extends State<_NextSessionContent> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Start a session now or create a new routine plan',
+            forClient
+                ? 'Start a session now'
+                : 'Start a session now or create a new routine plan',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.black.withValues(alpha: 0.6),
             ),
@@ -2153,11 +2160,17 @@ class _RoutinePlansSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AppConfig.isClient) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+        child: _ClientRoutinePlansFrostedCard(),
+      );
+    }
+
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
         final plans = controller.plans;
 
-        // Show full-width empty state when no plans exist
         if (plans.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -2185,23 +2198,21 @@ class _RoutinePlansSection extends StatelessWidget {
           );
         }
 
-        // Show normal grid layout when plans exist
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              height: 188, // 188 * 0.85 ≈ 160px width for consistent cards
+              height: 188,
               child: GridView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.zero, // Edge-to-edge scroll
+                padding: EdgeInsets.zero,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 1,
                   childAspectRatio: 1.0,
                 ),
-                itemCount: plans.length + 1, // +1 for create new plan card
+                itemCount: plans.length + 1,
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    // Create new plan card with consistent padding
                     return Padding(
                       padding: const EdgeInsets.only(left: 10),
                       child: _CreatePlanCard(
@@ -2228,7 +2239,6 @@ class _RoutinePlansSection extends StatelessWidget {
                     );
                   }
                   final plan = plans[index - 1];
-                  // Consistent padding across cards; add right padding on last
                   return Padding(
                     padding: EdgeInsets.only(
                       left: 10,
@@ -2248,6 +2258,170 @@ class _RoutinePlansSection extends StatelessWidget {
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+/// Frosted card for clients: same style + info as routine plan grid item, no create/manage.
+class _ClientRoutinePlansFrostedCard extends StatelessWidget {
+  const _ClientRoutinePlansFrostedCard();
+
+  static const double _radius = 22;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SupabaseExerciseAndRoutineController>(
+      builder: (context, controller, _) {
+        final plans = controller.plans;
+        final routineTemplates = controller.templates
+            .where((t) => plans.any((p) => p.id == t.planId))
+            .toList();
+        final exerciseCount =
+            routineTemplates.expand((t) => t.exerciseTemplates).length;
+        final sessionCount = routineTemplates.length;
+        final planName = (plans.isNotEmpty ? plans.first.name : 'Routine Plans')
+            .toUpperCase();
+        final plan = plans.isNotEmpty ? plans.first : null;
+
+        return SizedBox(
+          height: 188,
+          child: GestureDetector(
+            onTap: plan != null
+                ? () {
+                    navigateWithSlideTransition(
+                      context: context,
+                      child: RoutinePlanScreen(id: plan.id),
+                    );
+                  }
+                : null,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(_radius),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.grey.withValues(alpha: 0.2),
+                        Colors.black.withValues(alpha: 0.4),
+                        Colors.black.withValues(alpha: 0.5),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(_radius),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.05),
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Opacity(
+                          opacity: 0.15,
+                          child: Image.asset(
+                            'images/1k_Dissolve_Noise_Texture.jpg',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          spacing: 12,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Spacer(),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  planName,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        fontSize: 20,
+                                        color: Colors.white
+                                            .withValues(alpha: 0.85),
+                                      ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 3,
+                                ),
+                                Text(
+                                  'Not Athletes',
+                                  style: TextStyle(
+                                    fontFamily: 'GroutpixFlow',
+                                    color: Colors.blueGrey.shade400,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              spacing: 6,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Wrap(
+                                  children: [
+                                    CustomIcon(
+                                      FontAwesomeIcons.personWalking,
+                                      color: Theme.of(context)
+                                          .colors
+                                          .vibrantAccent,
+                                      width: 20,
+                                      height: 20,
+                                      iconSize: 10.5,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${exerciseCount} ${pluralize(word: 'Exercise', count: exerciseCount)}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(fontSize: 16),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    ),
+                                  ],
+                                ),
+                                Wrap(
+                                  children: [
+                                    CustomIcon(
+                                      FontAwesomeIcons.hashtag,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                      width: 20,
+                                      height: 20,
+                                      iconSize: 10.5,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '$sessionCount ${pluralize(word: 'Session', count: sessionCount)}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(fontSize: 16),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         );
       },
     );
