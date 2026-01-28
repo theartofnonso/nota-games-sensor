@@ -2356,98 +2356,102 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        // Workout summary (same pattern as routine plan grid item)
-                        if (templates.isNotEmpty) ...[
-                          Builder(
+                        // Workout summary + expand icon on same horizontal plane
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                          child: Builder(
                             builder: (_) {
                               final exerciseCount = templates.fold<int>(0,
                                   (sum, t) => sum + t.exerciseTemplates.length);
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Wrap(
-                                      children: [
-                                        CustomIcon(
-                                          FontAwesomeIcons.personWalking,
-                                          color: theme.colors.vibrantAccent,
-                                          width: 20,
-                                          height: 20,
-                                          iconSize: 10.5,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '$exerciseCount ${pluralize(word: 'Exercise', count: exerciseCount)}',
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.85),
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Expanded(
+                                    child: templates.isEmpty
+                                        ? const SizedBox.shrink()
+                                        : Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Wrap(
+                                                children: [
+                                                  CustomIcon(
+                                                    FontAwesomeIcons
+                                                        .personWalking,
+                                                    color: theme
+                                                        .colors.vibrantAccent,
+                                                    width: 20,
+                                                    height: 20,
+                                                    iconSize: 10.5,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    '$exerciseCount ${pluralize(word: 'Exercise', count: exerciseCount)}',
+                                                    style: theme
+                                                        .textTheme.bodyMedium
+                                                        ?.copyWith(
+                                                      color: Colors.white
+                                                          .withValues(
+                                                              alpha: 0.85),
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 2,
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Wrap(
+                                                children: [
+                                                  CustomIcon(
+                                                    FontAwesomeIcons.hashtag,
+                                                    color: theme
+                                                        .colorScheme.secondary,
+                                                    width: 20,
+                                                    height: 20,
+                                                    iconSize: 10.5,
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    '${templates.length} ${pluralize(word: 'Session', count: templates.length)}',
+                                                    style: theme
+                                                        .textTheme.bodyMedium
+                                                        ?.copyWith(
+                                                      color: Colors.white
+                                                          .withValues(
+                                                              alpha: 0.85),
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 2,
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
                                           ),
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 2,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Material(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    shape: const CircleBorder(),
+                                    child: InkWell(
+                                      onTap: () {},
+                                      customBorder: const CircleBorder(),
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(10),
+                                        child: FaIcon(
+                                          FontAwesomeIcons
+                                              .arrowUpRightFromSquare,
+                                          size: 16,
+                                          color: Colors.white70,
                                         ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Wrap(
-                                      children: [
-                                        CustomIcon(
-                                          FontAwesomeIcons.hashtag,
-                                          color: theme.colorScheme.secondary,
-                                          width: 20,
-                                          height: 20,
-                                          iconSize: 10.5,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '${templates.length} ${pluralize(word: 'Session', count: templates.length)}',
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.85),
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 2,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                        // Expand icon at bottom right
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            20,
-                            templates.isNotEmpty ? 8 : 0,
-                            20,
-                            20,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Material(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                shape: const CircleBorder(),
-                                child: InkWell(
-                                  onTap: () {},
-                                  customBorder: const CircleBorder(),
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(10),
-                                    child: FaIcon(
-                                      FontAwesomeIcons.arrowUpRightFromSquare,
-                                      size: 16,
-                                      color: Colors.white70,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            ],
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ],
