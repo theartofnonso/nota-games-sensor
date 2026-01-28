@@ -2328,59 +2328,31 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Header: plan name as title, routine description (notes) under it, expand icon
+                        // Header: plan name as title, routine description (notes)
                         Padding(
                           padding: const EdgeInsets.all(20),
-                          child: Row(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      plan?.name ?? 'Routine Plan',
-                                      style:
-                                          theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white
-                                            .withValues(alpha: 0.95),
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    if ((plan?.notes ?? '').isNotEmpty) ...[
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        plan!.notes,
-                                        style:
-                                            theme.textTheme.bodySmall?.copyWith(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.75),
-                                          fontSize: 13,
-                                          height: 1.35,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
+                              Text(
+                                plan?.name ?? 'Routine Plan',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                  fontSize: 18,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Material(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                shape: const CircleBorder(),
-                                child: InkWell(
-                                  onTap: () {},
-                                  customBorder: const CircleBorder(),
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(10),
-                                    child: FaIcon(
-                                      FontAwesomeIcons.arrowUpRightFromSquare,
-                                      size: 16,
-                                      color: Colors.white70,
-                                    ),
+                              if ((plan?.notes ?? '').isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  plan!.notes,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.75),
+                                    fontSize: 13,
+                                    height: 1.35,
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),
@@ -2448,6 +2420,36 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
                             },
                           ),
                         ],
+                        // Expand icon at bottom right
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            20,
+                            templates.isNotEmpty ? 8 : 0,
+                            20,
+                            20,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Material(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                shape: const CircleBorder(),
+                                child: InkWell(
+                                  onTap: () {},
+                                  customBorder: const CircleBorder(),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: FaIcon(
+                                      FontAwesomeIcons.arrowUpRightFromSquare,
+                                      size: 16,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ],
