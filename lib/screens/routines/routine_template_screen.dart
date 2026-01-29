@@ -816,8 +816,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                           "Moved ${template.name} to ${selectedPlan.name}");
                 }
               } finally {
-                if (mounted && AppConfig.isCoach)
+                if (mounted && AppConfig.isCoach) {
                   hideCoachLoadingOverlay(context);
+                }
               }
             },
             onCreatePlan: () async {

@@ -271,8 +271,9 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                               hideCoachLoadingOverlay(context);
                                             }
                                           }
-                                          if (!mounted || !context.mounted)
+                                          if (!mounted || !context.mounted) {
                                             return;
+                                          }
                                           if (widget
                                               .navigateToOverviewOnSelect) {
                                             context.go('/');

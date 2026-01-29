@@ -12,11 +12,10 @@ bool _tokenRefreshListenerAdded = false;
 String _expectedBundleId() =>
     AppConfig.isCoach ? 'com.notathletes.coach' : 'com.notathletes.client';
 
-/// Agora APNs cert name for current flavor + build (dev = sandbox, prod = production).
+/// Agora APNs cert name: only prod (160658273085-coach-prod, 160658273085-client-prod).
 String _agoraCertName() {
   final flavorSuffix = AppConfig.isCoach ? 'coach' : 'client';
-  final envSuffix = kDebugMode ? 'dev' : 'prod';
-  return '160658273085-$flavorSuffix-$envSuffix';
+  return '160658273085-$flavorSuffix-prod';
 }
 
 /// Upload APNs device token to Agora (iOS only). Required for push on iOS.

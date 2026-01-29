@@ -131,12 +131,10 @@ Future<void> main() async {
   await mainCommon(AppFlavor.client);
 }
 
-/// Get FCM certificate name based on app flavor and build mode
+/// Agora APNs cert name: only prod certs (160658273085-coach-prod, 160658273085-client-prod).
 String _getFCMCertificateName(AppFlavor flavor) {
-  final isDev = kDebugMode; // Debug mode = dev, Release/Profile = prod
   final flavorSuffix = flavor == AppFlavor.coach ? 'coach' : 'client';
-  final envSuffix = isDev ? 'dev' : 'prod';
-  return '160658273085-$flavorSuffix-$envSuffix';
+  return '160658273085-$flavorSuffix-prod';
 }
 
 Future<void> mainCommon(AppFlavor flavor) async {
@@ -160,12 +158,8 @@ Future<void> mainCommon(AppFlavor flavor) async {
     appKey: ChatConfig.agoraAppKey,
     autoLogin: false,
   );
-  // Enable FCM with certificate name based on flavor and build mode
-  // Certificate names in Agora Console:
-  // - 160658273085-coach-prod (Release/Profile for coach)
-  // - 160658273085-coach-dev (Debug for coach)
-  // - 160658273085-client-prod (Release/Profile for client)
-  // - 160658273085-client-dev (Debug for client)
+  // Enable FCM with certificate name based on flavor (prod only)
+  // Certificate names in Agora Console: 160658273085-coach-prod, 160658273085-client-prod
   final fcmCertificateName = _getFCMCertificateName(flavor);
   chatOptions.enableFCM("160658273085");
   chatOptions.enableAPNs(fcmCertificateName);
