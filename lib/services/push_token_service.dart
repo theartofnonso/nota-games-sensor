@@ -12,10 +12,15 @@ bool _tokenRefreshListenerAdded = false;
 String _expectedBundleId() =>
     AppConfig.isCoach ? 'com.notathletes.coach' : 'com.notathletes.client';
 
-/// Agora APNs cert name: only prod (160658273085-coach-prod, 160658273085-client-prod).
-String _agoraCertName() {
-  final flavorSuffix = AppConfig.isCoach ? 'coach' : 'client';
-  return '160658273085-$flavorSuffix-prod';
+/// Agora APNs cert name (must match Agora Console). Use this for enableAPNs and logging.
+/// Coach App Sandbox | Coach App Production | Client App Sandbox | Client App Production
+String agoraAPNsCertName() {
+  final isCoach = AppConfig.isCoach;
+  final isSandbox = kDebugMode;
+  if (isCoach && isSandbox) return 'Coach App Sandbox APNs Certificate';
+  if (isCoach && !isSandbox) return 'Coach App Production APNs Certificate';
+  if (!isCoach && isSandbox) return 'Client App Sandbox APNs Certificate';
+  return 'Client App Production APNs Certificate';
 }
 
 /// Upload APNs device token to Agora (iOS only). Required for push on iOS.
@@ -71,7 +76,7 @@ Future<void> setupPushToken() async {
     debugPrint('[Push] Bundle ID (expected): ${_expectedBundleId()}');
     debugPrint(
         '[Push] Build: ${kDebugMode ? "Debug (Sandbox)" : "Release (Production)"}');
-    debugPrint('[Push] Agora APNs cert: ${_agoraCertName()}');
+    debugPrint('[Push] Agora APNs cert: ${agoraAPNsCertName()}');
 
     await _uploadAPNsTokenToAgora();
 

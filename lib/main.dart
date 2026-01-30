@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -41,6 +42,7 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
+import 'package:trainware/services/push_token_service.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
@@ -131,12 +133,6 @@ Future<void> main() async {
   await mainCommon(AppFlavor.client);
 }
 
-/// Agora APNs cert name: only prod certs (160658273085-coach-prod, 160658273085-client-prod).
-String _getFCMCertificateName(AppFlavor flavor) {
-  final flavorSuffix = flavor == AppFlavor.coach ? 'coach' : 'client';
-  return '160658273085-$flavorSuffix-prod';
-}
-
 Future<void> mainCommon(AppFlavor flavor) async {
   AppConfig.setFlavor(flavor);
   final logger = getLogger(className: "main");
@@ -158,11 +154,13 @@ Future<void> mainCommon(AppFlavor flavor) async {
     appKey: ChatConfig.agoraAppKey,
     autoLogin: false,
   );
-  // Enable FCM with certificate name based on flavor (prod only)
-  // Certificate names in Agora Console: 160658273085-coach-prod, 160658273085-client-prod
-  final fcmCertificateName = _getFCMCertificateName(flavor);
-  chatOptions.enableFCM("160658273085");
-  chatOptions.enableAPNs(fcmCertificateName);
+  // Enable FCM (Android) / APNs (iOS) with platform guards
+  if (Platform.isAndroid) {
+    chatOptions.enableFCM("160658273085");
+  }
+  if (Platform.isIOS) {
+    chatOptions.enableAPNs(agoraAPNsCertName());
+  }
   await ChatClient.getInstance.init(chatOptions);
 
   await SharedPrefs().init();
