@@ -250,6 +250,9 @@
 			);
 			name = Runner;
 			productName = Runner;
+			packageProductDependencies = (
+				6B0F8D2C3E5A7C9B1D4F6E8A /* AgoraChat */,
+			);
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -284,12 +287,34 @@
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				5A9E7C1B2D4F6E8A0C3B5D7E /* XCRemoteSwiftPackageReference "AgoraChat_iOS" */,
+			);
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5A9E7C1B2D4F6E8A0C3B5D7E /* XCRemoteSwiftPackageReference "AgoraChat_iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AgoraIO/AgoraChat_iOS";
+			requirement = {
+				kind = branch;
+				branch = main;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6B0F8D2C3E5A7C9B1D4F6E8A /* AgoraChat */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgoraChat;
+			package = 5A9E7C1B2D4F6E8A0C3B5D7E /* XCRemoteSwiftPackageReference "AgoraChat_iOS" */;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin PBXResourcesBuildPhase section */
 		331C807F294A63A400263BE5 /* Resources */ = {

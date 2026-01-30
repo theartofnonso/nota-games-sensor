@@ -4,108 +4,70 @@ import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:trainware/app_flavor.dart';
+bool _androidTokenRefreshListenerAdded = false;
 
-bool _tokenRefreshListenerAdded = false;
+// ---------------------------------------------------------------------------
+// Permission (both platforms). Call at app startup so the prompt shows early.
+// ---------------------------------------------------------------------------
 
-/// Expected iOS bundle ID for current flavor (must match Xcode scheme + APNs topic).
-String _expectedBundleId() =>
-    AppConfig.isCoach ? 'com.notathletes.coach' : 'com.notathletes.client';
-
-/// Agora APNs cert name (must match Agora Console). Use this for enableAPNs and logging.
-/// Coach App Sandbox | Coach App Production | Client App Sandbox | Client App Production
-String agoraAPNsCertName() {
-  final isCoach = AppConfig.isCoach;
-  final isSandbox = kDebugMode;
-  if (isCoach && isSandbox) return 'Coach App Sandbox APNs Certificate';
-  if (isCoach && !isSandbox) return 'Coach App Production APNs Certificate';
-  if (!isCoach && isSandbox) return 'Client App Sandbox APNs Certificate';
-  return 'Client App Production APNs Certificate';
+/// Request notification permission. Call from [main] after Firebase init.
+/// Same behavior on iOS and Android; actual token handling is platform-specific below.
+Future<void> requestNotificationPermission() async {
+  await FirebaseMessaging.instance.requestPermission();
 }
 
-/// Upload APNs device token to Agora (iOS only). Required for push on iOS.
-Future<void> _uploadAPNsTokenToAgora() async {
-  if (ChatClient.getInstance.currentUserId == null) return;
+// ---------------------------------------------------------------------------
+// Token setup: call after user has logged in to Agora Chat.
+// ---------------------------------------------------------------------------
 
-  final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-  if (apnsToken == null) {
-    debugPrint('[Push] APNs token is null');
-    return;
-  }
-
-  debugPrint('[Push] APNs token: $apnsToken');
-  try {
-    await ChatClient.getInstance.pushManager.updateAPNsDeviceToken(apnsToken);
-    debugPrint('[Push] APNs token uploaded to Agora');
-  } catch (e) {
-    debugPrint('[Push] Error uploading APNs token: $e');
-  }
-}
-
-/// Upload FCM token to Agora (Android only). On iOS, Agora uses APNs token.
-Future<void> _uploadFCMTokenToAgora(String fcmToken) async {
-  if (ChatClient.getInstance.currentUserId == null) return;
-
-  try {
-    await ChatClient.getInstance.pushManager.updateFCMPushToken(fcmToken);
-    debugPrint('[Push] FCM token uploaded to Agora');
-  } catch (e) {
-    debugPrint('[Push] Error uploading FCM token: $e');
-  }
-}
-
-/// Call this **only** after user has successfully logged in to Agora Chat SDK
-/// (i.e., after `ChatClient.getInstance.login` / `loginWithToken` completes).
-/// Token upload requires a logged-in user; calling earlier will fail (e.g. 201).
+/// Register push token with Agora. Call only after [ChatClient] login.
 ///
-/// **iOS**: Uploads APNs device token (required). Agora does not use FCM for iOS push.
-/// **Android**: Uploads FCM token.
+/// **Android:** Get FCM token → upload to Agora → listen for token refresh.
+/// **iOS:** Nothing. APNs token is passed to Agora in native AppDelegate.
 Future<void> setupPushToken() async {
   if (ChatClient.getInstance.currentUserId == null) {
-    debugPrint(
-        '[Push] User not logged in; skipping. Call only after Agora login.');
+    debugPrint('[Push] Not logged in to Agora; skip token setup.');
     return;
   }
-
-  await FirebaseMessaging.instance.requestPermission();
 
   if (Platform.isIOS) {
-    // iOS: Agora needs APNs token, not FCM. BadDeviceToken = wrong token type.
-    final flavor = AppConfig.isCoach ? 'coach' : 'client';
-    debugPrint('[Push] Flavor: $flavor');
-    debugPrint('[Push] Bundle ID (expected): ${_expectedBundleId()}');
-    debugPrint(
-        '[Push] Build: ${kDebugMode ? "Debug (Sandbox)" : "Release (Production)"}');
-    debugPrint('[Push] Agora APNs cert: ${agoraAPNsCertName()}');
-
-    await _uploadAPNsTokenToAgora();
-
-    if (!_tokenRefreshListenerAdded) {
-      _tokenRefreshListenerAdded = true;
-      FirebaseMessaging.instance.onTokenRefresh.listen((_) async {
-        if (ChatClient.getInstance.currentUserId == null) return;
-        debugPrint('[Push] Token refresh (iOS): re-uploading APNs token');
-        await _uploadAPNsTokenToAgora();
-      });
-    }
+    // iOS: APNs token is registered in AppDelegate (didRegisterForRemoteNotificationsWithDeviceToken).
     return;
   }
 
-  // Android: FCM token only
+  if (Platform.isAndroid) {
+    await _setupAndroidPushToken();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Android: FCM token → Agora
+// ---------------------------------------------------------------------------
+
+Future<void> _setupAndroidPushToken() async {
   final fcmToken = await FirebaseMessaging.instance.getToken();
   if (fcmToken == null) {
-    debugPrint('[Push] FCM token is null');
+    debugPrint('[Push] Android: FCM token is null');
     return;
   }
-  debugPrint('[Push] Device token (FCM): $fcmToken');
+  debugPrint('[Push] Android: FCM token obtained');
   await _uploadFCMTokenToAgora(fcmToken);
 
-  if (!_tokenRefreshListenerAdded) {
-    _tokenRefreshListenerAdded = true;
+  if (!_androidTokenRefreshListenerAdded) {
+    _androidTokenRefreshListenerAdded = true;
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-      debugPrint('[Push] FCM token refreshed: $newToken');
+      debugPrint('[Push] Android: FCM token refreshed');
       if (ChatClient.getInstance.currentUserId == null) return;
       await _uploadFCMTokenToAgora(newToken);
     });
+  }
+}
+
+Future<void> _uploadFCMTokenToAgora(String fcmToken) async {
+  try {
+    await ChatClient.getInstance.pushManager.updateFCMPushToken(fcmToken);
+    debugPrint('[Push] Android: FCM token uploaded to Agora');
+  } catch (e) {
+    debugPrint('[Push] Android: Error uploading FCM token to Agora: $e');
   }
 }
