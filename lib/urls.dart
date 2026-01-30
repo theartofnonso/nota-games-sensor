@@ -18,5 +18,9 @@ const agoraBaseUrl = 'https://agora.notathletes.com';
 const agoraTokenPath = '/chat-token';
 const agoraVideoTokenPath = '/video-token';
 
+/// Nutrition estimate (OpenAI) – POST /nutrition, body { "meal": "string" }
+const nutritionEstimateBaseUrl = 'https://openai.notathletes.com';
+const nutritionEstimatePath = '/nutrition';
+
 /// App Store ID
 const appStoreId = "id6474073502";

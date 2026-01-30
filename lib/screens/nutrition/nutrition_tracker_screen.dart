@@ -18,6 +18,7 @@ import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 import 'package:trainware/widgets/nutrition/calorie_tracking_card.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
+import 'package:trainware/services/nutrition_estimate_service.dart';
 
 class NutritionTrackerScreen extends StatefulWidget {
   const NutritionTrackerScreen({super.key});
@@ -332,33 +333,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  if (!AppConfig.isCoach)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            _showAddEntrySheet(existingLog: log);
-                          },
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: (isDarkMode ? Colors.white : Colors.black)
-                                  .withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Icon(
-                              Icons.edit_rounded,
-                              color: isDarkMode ? Colors.white : Colors.black,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 16),
                   _MacroDetailRow(
                     label: 'Protein',
                     value: log.protein,
@@ -388,29 +362,14 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     );
   }
 
-  Future<void> _showAddEntrySheet({NutritionLogDto? existingLog}) async {
-    final titleController = TextEditingController(
-      text: existingLog?.foodName ?? '',
-    );
-    final proteinController = TextEditingController(
-      text: existingLog?.protein.toString() ?? '',
-    );
-    final carbsController = TextEditingController(
-      text: existingLog?.carbs.toString() ?? '',
-    );
-    final fatsController = TextEditingController(
-      text: existingLog?.fats.toString() ?? '',
-    );
-    final isEditing = existingLog != null;
-    if (isEditing && AppConfig.isCoach) {
-      showSnackbar(
-        context: context,
-        message: 'Coaches cannot edit nutrition logs.',
-      );
-      return;
-    }
+  Future<void> _showAddEntrySheet() async {
+    await _showLogMealByDescriptionSheet();
+  }
 
-    DateTime selectedLoggedAt = existingLog?.loggedAt ?? DateTime.now();
+  /// New entry: user describes the meal; we call the API and log the returned macros.
+  Future<void> _showLogMealByDescriptionSheet() async {
+    final mealController = TextEditingController();
+    DateTime selectedLoggedAt = DateTime.now();
 
     await showAppBottomSheet<void>(
       context: context,
@@ -438,69 +397,36 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isEditing ? 'Edit entry' : 'What did you eat?',
+                      'Log a meal',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      isEditing
-                          ? 'Update the food name, macros, and time.'
-                          : 'Add a food name, macros, and time to log this meal.',
+                      'Describe what you ate and we\'ll estimate the calories and macros.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: (isDarkMode ? Colors.white : Colors.black)
                                 .withValues(alpha: 0.6),
                           ),
                     ),
                     const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.only(
-                        left: 20,
-                        top: 6,
-                        bottom: 6,
-                        right: 6,
+                    TextField(
+                      controller: mealController,
+                      textInputAction: TextInputAction.done,
+                      cursorColor: isDarkMode ? Colors.white : Colors.black,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText:
+                            'e.g. two eggs, toast with butter, orange juice',
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
                       ),
-                      child: TextField(
-                        controller: titleController,
-                        textInputAction: TextInputAction.next,
-                        cursorColor: isDarkMode ? Colors.white : Colors.black,
-                        decoration: const InputDecoration(
-                          hintText: 'Food name',
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                        ),
-                        keyboardType: TextInputType.text,
-                        textCapitalization: TextCapitalization.words,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w400,
-                          color: isDarkMode ? Colors.white : Colors.black,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        children: [
-                          _MacroInputField(
-                            label: 'protein',
-                            controller: proteinController,
-                          ),
-                          _MacroInputField(
-                            label: 'carbs',
-                            controller: carbsController,
-                          ),
-                          _MacroInputField(
-                            label: 'fats',
-                            controller: fatsController,
-                          ),
-                        ],
+                      keyboardType: TextInputType.text,
+                      textCapitalization: TextCapitalization.sentences,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w400,
+                        color: isDarkMode ? Colors.white : Colors.black,
+                        fontSize: 14,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -550,55 +476,12 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
-                      child: OpacityButtonWidgetTwo(
-                        onPressed: () async {
-                          final userId = context
-                              .read<NutritionLogController>()
-                              .activeUserId;
-                          if (userId == null) {
-                            showSnackbar(
-                              context: context,
-                              message: 'Please sign in to log nutrition.',
-                            );
-                            return;
-                          }
-
-                          final name = titleController.text.trim();
-                          if (name.isEmpty) {
-                            showSnackbar(
-                              context: context,
-                              message: 'Please enter a food name.',
-                            );
-                            return;
-                          }
-
-                          final protein = _parseMacro(proteinController.text);
-                          final carbs = _parseMacro(carbsController.text);
-                          final fats = _parseMacro(fatsController.text);
-                          final now = DateTime.now();
-
-                          final log = NutritionLogDto(
-                            id: existingLog?.id ?? const Uuid().v4(),
-                            userId: userId,
-                            foodName: name,
-                            protein: protein,
-                            carbs: carbs,
-                            fats: fats,
-                            loggedAt: selectedLoggedAt,
-                            createdAt: existingLog?.createdAt ?? now,
-                            updatedAt: now,
-                          );
-
-                          await context
-                              .read<NutritionLogController>()
-                              .addLog(log: log);
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                          }
+                      child: _LogMealButton(
+                        mealController: mealController,
+                        selectedLoggedAt: selectedLoggedAt,
+                        onLogged: () {
+                          if (context.mounted) Navigator.of(context).pop();
                         },
-                        label: isEditing ? 'Update log' : 'Log calories',
-                        buttonColor: Theme.of(context).colors.vibrantAccent,
-                        showArrowRight: false,
                       ),
                     ),
                   ],
@@ -678,10 +561,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
   double _sumFatsToday(List<NutritionLogDto> logs) {
     return logs.fold(0.0, (sum, log) => sum + log.fats);
-  }
-
-  double _parseMacro(String value) {
-    return double.tryParse(value.trim()) ?? 0;
   }
 
   Future<void> _showNutritionTemplateSheet() async {
@@ -856,57 +735,82 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   }
 }
 
-class _MacroInputField extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
+/// Button that calls the nutrition API with the meal description and logs the result.
+class _LogMealButton extends StatefulWidget {
+  final TextEditingController mealController;
+  final DateTime selectedLoggedAt;
+  final VoidCallback onLogged;
 
-  const _MacroInputField({
-    required this.label,
-    required this.controller,
+  const _LogMealButton({
+    required this.mealController,
+    required this.selectedLoggedAt,
+    required this.onLogged,
   });
 
   @override
+  State<_LogMealButton> createState() => _LogMealButtonState();
+}
+
+class _LogMealButtonState extends State<_LogMealButton> {
+  bool _isLoading = false;
+
+  Future<void> _logMeal() async {
+    final userId = context.read<NutritionLogController>().activeUserId;
+    if (userId == null) {
+      showSnackbar(
+        context: context,
+        message: 'Please sign in to log nutrition.',
+      );
+      return;
+    }
+
+    final meal = widget.mealController.text.trim();
+    if (meal.isEmpty) {
+      showSnackbar(
+        context: context,
+        message: 'Describe what you ate.',
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final estimate = await estimateFromMealDescription(meal);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (estimate == null) {
+      showSnackbar(
+        context: context,
+        message:
+            'Could not estimate nutrition. Try again or check your connection.',
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+    final log = NutritionLogDto(
+      id: const Uuid().v4(),
+      userId: userId,
+      foodName: meal,
+      protein: estimate.protein,
+      carbs: estimate.carbs,
+      fats: estimate.fats,
+      loggedAt: widget.selectedLoggedAt,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    await context.read<NutritionLogController>().addLog(log: log);
+    if (mounted) widget.onLogged();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Row(
-        children: [
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-              ],
-              cursorColor: Colors.white,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                isDense: true,
-                hintText: '0',
-              ),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ),
-          const SizedBox(width: 6),
-        ],
-      ),
+    return OpacityButtonWidgetTwo(
+      onPressed: _isLoading ? null : _logMeal,
+      label: _isLoading ? 'Estimating…' : 'Log meal',
+      buttonColor: Theme.of(context).colors.vibrantAccent,
+      showArrowRight: false,
     );
   }
 }
