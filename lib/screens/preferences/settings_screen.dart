@@ -696,6 +696,12 @@ class _SettingsScreenState extends State<SettingsScreen>
       final accessController = context.read<ClientOverrideController>();
       if (AppConfig.isCoach) {
         ChatUnreadCountsService().refreshTotalUnreadCount();
+        // Sync FAB badge with current selected client's unread count when entering client experience
+        _handleChatUnreadChange();
+        final clientId = accessController.selectedClientId;
+        if (clientId != null) {
+          ChatUnreadCountsService().refreshUnreadCountForClient(clientId);
+        }
       } else {
         final userId = accessController.userId;
         if (userId == null) return;

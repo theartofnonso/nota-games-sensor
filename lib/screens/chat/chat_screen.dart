@@ -72,6 +72,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _initializeChat();
   }
 
+  @override
+  void didUpdateWidget(covariant ChatScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.clientUserId != widget.clientUserId ||
+        oldWidget.coachId != widget.coachId) {
+      _conversation = null;
+      _targetAgoraUserId = toAgoraUsername(_targetUserId());
+      _messages.clear();
+      _initializeChat();
+    }
+  }
+
   Future<void> _initializeChat() async {
     try {
       if (!mounted) return;
@@ -203,6 +215,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   /// Load cached messages from local DB. Must be called after Agora login (201 otherwise).
+  /// Uses createIfNeed: true so we always have a conversation and load (cached or empty).
   Future<void> _loadCachedMessages() async {
     final targetAgoraUserId = _targetAgoraUserId;
     if (targetAgoraUserId == null) return;
@@ -212,7 +225,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           await ChatClient.getInstance.chatManager.getConversation(
         targetAgoraUserId,
         type: ChatConversationType.Chat,
-        createIfNeed: false,
+        createIfNeed: true,
       );
 
       if (_conversation == null) return;
@@ -280,9 +293,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _scrollToBottom();
         _refreshUnreadBadges();
       }
+      // Always refresh UI after fetch so list reflects current _messages (e.g. after first load)
+      if (mounted) setState(() {});
     } catch (e) {
       debugPrint('Error fetching chat history from server: $e');
       // Silently fail - cached messages are already shown
+      if (mounted) setState(() {});
     }
   }
 

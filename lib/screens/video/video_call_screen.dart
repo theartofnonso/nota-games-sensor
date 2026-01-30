@@ -194,35 +194,48 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   /* --------------------------- UI --------------------------- */
 
+  static const double _videoPadding = 18;
+  static const double _videoRadius = 18;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Split screen: top half remote, bottom half local
-          Column(
-            children: [
-              // Remote video (top half)
-              Expanded(
-                child: _remoteVideoView(),
-              ),
-              // Local video (bottom half)
-              Expanded(
-                child: _isCameraEnabled && _localUserJoined
-                    ? _localVideoView()
-                    : Container(
-                        color: Colors.black,
-                        child: const Center(
-                          child: Icon(
-                            Icons.person,
-                            color: Colors.white54,
-                            size: 60,
+          // Split screen: top half remote, bottom half local (with padding and rounded corners)
+          Padding(
+            padding: const EdgeInsets.all(_videoPadding),
+            child: Column(
+              children: [
+                // Remote video (top half)
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(_videoRadius),
+                    child: _remoteVideoView(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Local video (bottom half)
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(_videoRadius),
+                    child: _isCameraEnabled && _localUserJoined
+                        ? _localVideoView()
+                        : Container(
+                            color: Colors.black,
+                            child: const Center(
+                              child: Icon(
+                                Icons.person,
+                                color: Colors.white54,
+                                size: 60,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-              ),
-            ],
+                  ),
+                ),
+              ],
+            ),
           ),
           // Control buttons at bottom
           Positioned(
