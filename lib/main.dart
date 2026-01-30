@@ -129,10 +129,6 @@ void _processPendingNotification() {
   _notificationRetryCount = 0;
 }
 
-Future<void> main() async {
-  await mainCommon(AppFlavor.client);
-}
-
 Future<void> mainCommon(AppFlavor flavor) async {
   AppConfig.setFlavor(flavor);
   final logger = getLogger(className: "main");
