@@ -128,18 +128,24 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                   )
                 else
                   ...logEntries.map(
-                    (entry) => entry.isDivider
-                        ? _LogDateDivider(
-                            label: entry.label!,
-                            totals: entry.totals ?? const _MacroTotals(),
-                          )
-                        : _MacroLogCard(
-                            log: entry.log!,
-                            isDarkMode: isDarkMode,
-                            calorieTarget: controller.calorieTarget,
-                            onDelete: () => _confirmDelete(entry.log!),
-                            onTap: () => _showMacroDetails(entry.log!),
-                          ),
+                    (entry) {
+                      if (entry.isWeekDivider) {
+                        return _LogWeekDivider(label: entry.label!);
+                      }
+                      if (entry.isDivider) {
+                        return _LogDateDivider(
+                          label: entry.label!,
+                          totals: entry.totals ?? const _MacroTotals(),
+                        );
+                      }
+                      return _MacroLogCard(
+                        log: entry.log!,
+                        isDarkMode: isDarkMode,
+                        calorieTarget: controller.calorieTarget,
+                        onDelete: () => _confirmDelete(entry.log!),
+                        onTap: () => _showMacroDetails(entry.log!),
+                      );
+                    },
                   ),
               ],
             ),
@@ -504,6 +510,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   List<_LogListEntry> _buildLogEntries(List<NutritionLogDto> logs) {
     final entries = <_LogListEntry>[];
     String? lastLabel;
+    String? lastWeekKey;
     final totalsByLabel = <String, _MacroTotals>{};
 
     for (final log in logs) {
@@ -513,7 +520,14 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     }
 
     for (final log in logs) {
-      final label = _dateBucketLabel(log.loggedAt.toLocal());
+      final logDate = log.loggedAt.toLocal();
+      final weekKey = _weekKey(logDate);
+      final label = _dateBucketLabel(logDate);
+
+      if (weekKey != lastWeekKey) {
+        entries.add(_LogListEntry.weekDivider(_weekLabel(logDate)));
+        lastWeekKey = weekKey;
+      }
       if (label != lastLabel) {
         entries.add(
           _LogListEntry.divider(
@@ -527,6 +541,26 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     }
 
     return entries;
+  }
+
+  String _weekKey(DateTime d) {
+    final day = DateTime(d.year, d.month, d.day);
+    final monday = day.subtract(Duration(days: day.weekday - 1));
+    return '${monday.year}-${monday.month}-${monday.day}';
+  }
+
+  String _weekLabel(DateTime d) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(d.year, d.month, d.day);
+    final monday = day.subtract(Duration(days: day.weekday - 1));
+    final currentMonday =
+        today.subtract(Duration(days: today.weekday - 1));
+    if (monday == currentMonday) return 'This Week';
+    final lastMonday =
+        currentMonday.subtract(const Duration(days: 7));
+    if (monday == lastMonday) return 'Last Week';
+    return 'Week of ${DateFormat('d MMM').format(monday)}';
   }
 
   String _dateBucketLabel(DateTime timestamp) {
@@ -1061,11 +1095,19 @@ class _LogListEntry {
   final NutritionLogDto? log;
   final String? label;
   final _MacroTotals? totals;
+  final bool isWeekDivider;
 
   const _LogListEntry.log(this.log)
       : label = null,
-        totals = null;
-  const _LogListEntry.divider(this.label, this.totals) : log = null;
+        totals = null,
+        isWeekDivider = false;
+  const _LogListEntry.divider(this.label, this.totals)
+      : log = null,
+        isWeekDivider = false;
+  const _LogListEntry.weekDivider(this.label)
+      : log = null,
+        totals = null,
+        isWeekDivider = true;
 
   bool get isDivider => label != null;
 }
@@ -1089,6 +1131,29 @@ class _MacroTotals {
       carbs: carbs + log.carbs,
       fats: fats + log.fats,
       calories: calories + log.calories,
+    );
+  }
+}
+
+class _LogWeekDivider extends StatelessWidget {
+  final String label;
+
+  const _LogWeekDivider({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 6),
+      child: Text(
+        label,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.7),
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
     );
   }
 }
