@@ -15,8 +15,14 @@ import 'push_token_service.dart';
 /// Call [ensureAgoraAndPushSetup] when the user becomes authenticated (e.g.
 /// from [ClientOverrideController] auth state). Safe to call multiple times;
 /// no-ops if already logged in as the same user.
+///
+/// [agoraLoggedIn] is set to true when Agora has successfully logged in (or
+/// was already logged in). Use it to run unread refresh etc. after login.
 class ChatBootstrapService {
   ChatBootstrapService._();
+
+  /// True once Agora Chat has logged in this session (or was already logged in).
+  static final ValueNotifier<bool> agoraLoggedIn = ValueNotifier(false);
 
   static Future<String?> _resolveAgoraToken(String agoraUserId) async {
     try {
@@ -50,6 +56,7 @@ class ChatBootstrapService {
     final agoraUserId = toAgoraUsername(supabaseUserId);
     if (ChatClient.getInstance.currentUserId == agoraUserId) {
       debugPrint('[ChatBootstrap] Already logged in as $agoraUserId');
+      agoraLoggedIn.value = true;
       return;
     }
 
@@ -66,6 +73,7 @@ class ChatBootstrapService {
         return;
       }
       debugPrint('[ChatBootstrap] Agora login OK');
+      agoraLoggedIn.value = true;
 
       await setupPushToken();
       debugPrint('[ChatBootstrap] Push token setup OK');

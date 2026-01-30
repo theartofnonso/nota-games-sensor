@@ -101,6 +101,10 @@ class _SettingsScreenState extends State<SettingsScreen>
   int _chatUnreadCount = 0;
   bool _nutritionInitialized = false;
 
+  /// Stored so [_handleChatUnreadChange] and [dispose] can use it without
+  /// [context.read], which can throw when this widget is not in the tree.
+  ClientOverrideController? _clientOverrideController;
+
   @override
   Widget build(BuildContext context) {
     Brightness systemBrightness = Theme.of(context).brightness;
@@ -681,8 +685,8 @@ class _SettingsScreenState extends State<SettingsScreen>
           .unreadByClientId
           .addListener(_handleChatUnreadChange);
       // Also listen to selectedClientId changes to update badge when client is selected
-      final accessController = context.read<ClientOverrideController>();
-      accessController.addListener(_handleChatUnreadChange);
+      _clientOverrideController = context.read<ClientOverrideController>();
+      _clientOverrideController!.addListener(_handleChatUnreadChange);
     } else {
       _chatUnreadCount = ChatUnreadService().unreadCount.value;
       ChatUnreadService().unreadCount.addListener(_handleChatUnreadChange);
@@ -721,7 +725,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _handleChatUnreadChange() {
     if (!mounted) return;
-    final accessController = context.read<ClientOverrideController>();
+    final accessController = _clientOverrideController;
+    if (accessController == null) return;
     setState(() {
       if (AppConfig.isCoach) {
         final clientId = accessController.selectedClientId;
@@ -745,9 +750,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       ChatUnreadCountsService()
           .unreadByClientId
           .removeListener(_handleChatUnreadChange);
-      // Remove listener from accessController
-      final accessController = context.read<ClientOverrideController>();
-      accessController.removeListener(_handleChatUnreadChange);
+      // Remove listener from accessController (use stored ref; context may be invalid)
+      _clientOverrideController?.removeListener(_handleChatUnreadChange);
+      _clientOverrideController = null;
     } else {
       ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
     }

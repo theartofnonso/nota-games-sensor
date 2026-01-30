@@ -121,10 +121,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       }
 
       _registerMessageHandler();
-      await _markConversationRead();
-      _refreshUnreadBadges();
 
       await _fetchRecentMessagesFromServer();
+      await _markConversationRead();
+      _refreshUnreadBadges();
     } catch (e) {
       debugPrint('Error during background login/fetch: $e');
     }
@@ -278,7 +278,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           _sortMessages();
         });
         _scrollToBottom();
-        await _markConversationRead();
         _refreshUnreadBadges();
       }
     } catch (e) {
@@ -688,9 +687,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     ChatClient.getInstance.chatManager.removeEventHandler(_messageHandlerId);
     _messageController.dispose();
-    // Only dispose if we created the controller ourselves
     if (widget.scrollController == null) {
       _scrollController.dispose();
+    }
+    // So coach list shows updated unread when returning from this chat
+    if (AppConfig.isCoach) {
+      ChatUnreadCountsService()
+          .refreshUnreadCountForClient(widget.clientUserId);
     }
     super.dispose();
   }
@@ -781,259 +784,266 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final displayInitials =
         AppConfig.isCoach ? _clientInitials() : _coachInitials();
 
-    return Column(
+    return Stack(
       children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: Row(
-            children: [
-              if (displayInitials.isNotEmpty) ...[
-                Container(
-                  width: 36,
-                  height: 36,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        (isDarkMode ? Colors.white : Colors.black).withValues(
-                          alpha: 0.18,
+        Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Row(
+                children: [
+                  if (displayInitials.isNotEmpty) ...[
+                    Container(
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            (isDarkMode ? Colors.white : Colors.black)
+                                .withValues(
+                              alpha: 0.18,
+                            ),
+                            (isDarkMode ? Colors.white : Colors.black)
+                                .withValues(
+                              alpha: 0.05,
+                            ),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        (isDarkMode ? Colors.white : Colors.black).withValues(
-                          alpha: 0.05,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        displayInitials,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.w700,
                         ),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    displayInitials,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: isDarkMode ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppConfig.isCoach
-                          ? widget.clientName
-                          : 'Coach ${widget.coachName}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: isDarkMode ? Colors.white : Colors.black,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 17,
                       ),
                     ),
-                    if (AppConfig.isCoach) const SizedBox.shrink(),
+                    const SizedBox(width: 12),
                   ],
-                ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppConfig.isCoach
+                              ? widget.clientName
+                              : 'Coach ${widget.coachName}',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 17,
+                          ),
+                        ),
+                        if (AppConfig.isCoach) const SizedBox.shrink(),
+                      ],
+                    ),
+                  ),
+                  // Video call button (always shown for coach and client)
+                  IconButton(
+                    icon: Icon(
+                      Icons.videocam,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                      size: 22,
+                    ),
+                    onPressed: () {
+                      if (!mounted) return;
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          fullscreenDialog: true,
+                          opaque: true,
+                          pageBuilder: (_, __, ___) => VideoCallScreen(
+                            targetUserId: _targetUserId(),
+                          ),
+                          transitionsBuilder: (_, animation, __, child) {
+                            const begin = Offset(0.0, 1.0);
+                            const end = Offset.zero;
+                            const curve = Curves.easeOutCubic;
+                            final tween = Tween(begin: begin, end: end)
+                                .chain(CurveTween(curve: curve));
+                            return SlideTransition(
+                              position: animation.drive(tween),
+                              child: child,
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                  // Close button
+                  IconButton(
+                    icon: FaIcon(
+                      FontAwesomeIcons.solidCircleXmark,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
               ),
-              // Video call button (always shown for coach and client)
-              IconButton(
-                icon: Icon(
-                  Icons.videocam,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                  size: 22,
-                ),
-                onPressed: () {
-                  if (!mounted) return;
-                  Navigator.of(context).push(
-                    PageRouteBuilder(
-                      fullscreenDialog: true,
-                      opaque: true,
-                      pageBuilder: (_, __, ___) => VideoCallScreen(
-                        targetUserId: _targetUserId(),
+            ),
+
+            // Messages list
+            Expanded(
+              child: _messages.isEmpty
+                  ? GestureDetector(
+                      onTap: () => FocusScope.of(context).unfocus(),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FaIcon(
+                              FontAwesomeIcons.message,
+                              size: 48,
+                              color: Colors.grey.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No messages yet',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: Colors.grey.withValues(alpha: 0.7),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Start a conversation with your coach',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: Colors.grey.withValues(alpha: 0.5),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      transitionsBuilder: (_, animation, __, child) {
-                        const begin = Offset(0.0, 1.0);
-                        const end = Offset.zero;
-                        const curve = Curves.easeOutCubic;
-                        final tween = Tween(begin: begin, end: end)
-                            .chain(CurveTween(curve: curve));
-                        return SlideTransition(
-                          position: animation.drive(tween),
-                          child: child,
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.manual,
+                      itemCount: _buildChatEntries().length,
+                      itemBuilder: (context, index) {
+                        final entries = _buildChatEntries();
+                        final entry = entries[index];
+
+                        if (entry.isDivider) {
+                          return _ChatDateDivider(label: entry.label!);
+                        }
+
+                        final message = entry.message!;
+                        final isCurrentUser = _isCurrentUserMessage(message);
+
+                        return _ChatMessageBubble(
+                          message: message,
+                          isCurrentUser: isCurrentUser,
+                          timestamp:
+                              _formatTimestamp(_messageTimestamp(message)),
+                          isDarkMode: isDarkMode,
+                          vibrantAccent: colors?.vibrantAccent ?? Colors.green,
                         );
                       },
                     ),
-                  );
-                },
-              ),
-              // Close button
-              IconButton(
-                icon: FaIcon(
-                  FontAwesomeIcons.solidCircleXmark,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.of(context).pop(),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-        ),
+            ),
 
-        // Messages list
-        Expanded(
-          child: _messages.isEmpty
-              ? GestureDetector(
-                  onTap: () => FocusScope.of(context).unfocus(),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+            // Message input - simplified
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                16 + MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SafeArea(
+                top: false,
+                child: GestureDetector(
+                  onVerticalDragUpdate: (details) {
+                    if (details.delta.dy > 6) {
+                      FocusScope.of(context).unfocus();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.only(top: 4),
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: isDarkMode
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : Colors.black.withValues(alpha: 0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Stack(
                       children: [
-                        FaIcon(
-                          FontAwesomeIcons.message,
-                          size: 48,
-                          color: Colors.grey.withValues(alpha: 0.5),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No messages yet',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: Colors.grey.withValues(alpha: 0.7),
+                        TextField(
+                          controller: _messageController,
+                          enabled: !_isSending,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: isDarkMode ? Colors.white : Colors.black,
                             fontSize: 16,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Type a message...',
+                            hintStyle: TextStyle(
+                              color: Colors.grey.withValues(alpha: 0.5),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: const EdgeInsets.fromLTRB(
+                              52,
+                              12,
+                              52,
+                              12,
+                            ),
+                          ),
+                          maxLines: null,
+                          textCapitalization: TextCapitalization.sentences,
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
+                        Positioned(
+                          left: 8,
+                          bottom: 8,
+                          child: _ChatInputIconButton(
+                            icon: Icons.add,
+                            isDarkMode: isDarkMode,
+                            onTap: _showAttachmentSheet,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Start a conversation with your coach',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.grey.withValues(alpha: 0.5),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
+                        Positioned(
+                          right: 8,
+                          bottom: 8,
+                          child: _ChatInputIconButton(
+                            icon: FontAwesomeIcons.arrowUp,
+                            isDarkMode: isDarkMode,
+                            onTap: _isSending ? null : _sendMessage,
+                            isLoading: _isSending,
                           ),
                         ),
                       ],
                     ),
                   ),
-                )
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.manual,
-                  itemCount: _buildChatEntries().length,
-                  itemBuilder: (context, index) {
-                    final entries = _buildChatEntries();
-                    final entry = entries[index];
-
-                    if (entry.isDivider) {
-                      return _ChatDateDivider(label: entry.label!);
-                    }
-
-                    final message = entry.message!;
-                    final isCurrentUser = _isCurrentUserMessage(message);
-
-                    return _ChatMessageBubble(
-                      message: message,
-                      isCurrentUser: isCurrentUser,
-                      timestamp: _formatTimestamp(_messageTimestamp(message)),
-                      isDarkMode: isDarkMode,
-                      vibrantAccent: colors?.vibrantAccent ?? Colors.green,
-                    );
-                  },
-                ),
-        ),
-
-        // Message input - simplified
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            16 + MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: SafeArea(
-            top: false,
-            child: GestureDetector(
-              onVerticalDragUpdate: (details) {
-                if (details.delta.dy > 6) {
-                  FocusScope.of(context).unfocus();
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.only(top: 4),
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.2)
-                        : Colors.black.withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    TextField(
-                      controller: _messageController,
-                      enabled: !_isSending,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDarkMode ? Colors.white : Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Type a message...',
-                        hintStyle: TextStyle(
-                          color: Colors.grey.withValues(alpha: 0.5),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: const EdgeInsets.fromLTRB(
-                          52,
-                          12,
-                          52,
-                          12,
-                        ),
-                      ),
-                      maxLines: null,
-                      textCapitalization: TextCapitalization.sentences,
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
-                    Positioned(
-                      left: 8,
-                      bottom: 8,
-                      child: _ChatInputIconButton(
-                        icon: Icons.add,
-                        isDarkMode: isDarkMode,
-                        onTap: _showAttachmentSheet,
-                      ),
-                    ),
-                    Positioned(
-                      right: 8,
-                      bottom: 8,
-                      child: _ChatInputIconButton(
-                        icon: FontAwesomeIcons.arrowUp,
-                        isDarkMode: isDarkMode,
-                        onTap: _isSending ? null : _sendMessage,
-                        isLoading: _isSending,
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ],
     );

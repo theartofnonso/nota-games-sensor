@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/dtos/coach_client_dto.dart';
+import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/widgets/search_bar.dart';
@@ -43,6 +44,31 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     _unreadByClientId = ChatUnreadCountsService().unreadByClientId.value;
     ChatUnreadCountsService().unreadByClientId.addListener(_handleUnreadChange);
     _getAppVersion();
+    _refreshUnreadWhenAgoraReady();
+  }
+
+  /// Refresh unread counts when Agora has logged in. If already logged in
+  /// (e.g. app wasn't killed), refresh immediately after clients load.
+  void _refreshUnreadWhenAgoraReady() {
+    void doRefresh() {
+      if (!mounted) return;
+      ChatUnreadCountsService().refreshUnreadCounts();
+    }
+
+    _clientsFuture.then((_) {
+      if (!mounted) return;
+      if (ChatBootstrapService.agoraLoggedIn.value) {
+        doRefresh();
+        return;
+      }
+      void listener() {
+        if (!ChatBootstrapService.agoraLoggedIn.value) return;
+        ChatBootstrapService.agoraLoggedIn.removeListener(listener);
+        doRefresh();
+      }
+
+      ChatBootstrapService.agoraLoggedIn.addListener(listener);
+    });
   }
 
   @override
