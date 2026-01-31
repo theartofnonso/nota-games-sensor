@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/config/video_config.dart';
 
 import '../../utils/agora_chat_utils.dart';
+import '../../utils/notathletes_auth_headers.dart';
 import '../../urls.dart';
 
 class VideoCallScreen extends StatefulWidget {
@@ -136,7 +137,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       String channelName, String userAccount) async {
     final res = await http.post(
       Uri.parse(agoraBaseUrl).resolve(agoraVideoTokenPath),
-      headers: const {'Content-Type': 'application/json'},
+      headers: notathletesAuthHeaders(),
       body: jsonEncode({
         'channelName': channelName,
         'userId': userAccount,

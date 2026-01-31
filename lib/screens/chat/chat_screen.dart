@@ -16,12 +16,16 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/agora_chat_utils.dart';
+import '../../utils/notathletes_auth_headers.dart';
 import '../../urls.dart';
 import '../../app_flavor.dart';
 import '../../services/chat_unread_service.dart';
 import '../../services/chat_unread_counts_service.dart';
 import '../../services/push_token_service.dart'
-    show isNotificationPermissionGranted, requestNotificationPermission, setupPushToken;
+    show
+        isNotificationPermissionGranted,
+        requestNotificationPermission,
+        setupPushToken;
 import '../../utils/uri_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -163,7 +167,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                   if (!context.mounted) return;
                   Navigator.of(context).pop();
                   if (statuses[Permission.camera] == PermissionStatus.granted &&
-                      statuses[Permission.microphone] == PermissionStatus.granted) {
+                      statuses[Permission.microphone] ==
+                          PermissionStatus.granted) {
                     _pushVideoCallScreen();
                   } else {
                     showErrorBottomSheet(
@@ -347,7 +352,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       final uri = Uri.parse(agoraBaseUrl).resolve(agoraTokenPath);
       final response = await http.post(
         uri,
-        headers: const {'Content-Type': 'application/json'},
+        headers: notathletesAuthHeaders(),
         body: jsonEncode({'userId': userId}),
       );
       if (response.statusCode != 200) {

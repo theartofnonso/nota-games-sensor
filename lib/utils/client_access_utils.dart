@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../utils/notathletes_auth_headers.dart';
 import '../utils/uri_utils.dart';
 import '../utils/theme/color_extensions.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -14,7 +15,7 @@ Future<bool> checkStripeSubscription({required String email}) async {
     final uri = Uri.parse(apiBaseUrl).resolve(checkClientAccessPath);
     final response = await http.post(
       uri,
-      headers: const {'Content-Type': 'application/json'},
+      headers: notathletesAuthHeaders(),
       body: jsonEncode({'email': email}),
     );
     if (response.statusCode != 200) {

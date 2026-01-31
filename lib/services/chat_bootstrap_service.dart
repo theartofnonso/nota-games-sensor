@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../urls.dart';
+import '../utils/notathletes_auth_headers.dart';
 import '../utils/agora_chat_utils.dart';
 import 'push_token_service.dart';
 
@@ -29,7 +30,7 @@ class ChatBootstrapService {
       final uri = Uri.parse(agoraBaseUrl).resolve(agoraTokenPath);
       final response = await http.post(
         uri,
-        headers: const {'Content-Type': 'application/json'},
+        headers: notathletesAuthHeaders(),
         body: jsonEncode({'userId': agoraUserId}),
       );
       if (response.statusCode != 200) return null;
