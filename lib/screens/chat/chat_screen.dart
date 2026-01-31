@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
@@ -19,10 +20,12 @@ import '../../urls.dart';
 import '../../app_flavor.dart';
 import '../../services/chat_unread_service.dart';
 import '../../services/chat_unread_counts_service.dart';
-import '../../services/push_token_service.dart';
+import '../../services/push_token_service.dart'
+    show isNotificationPermissionGranted, requestNotificationPermission, setupPushToken;
 import '../../utils/uri_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
+import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../video/video_call_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -88,6 +91,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     try {
       if (!mounted) return;
 
+      // Show permission bottom sheet if not yet granted; CTA triggers the request
+      unawaited(_showNotificationPermissionSheetIfNeeded());
+
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) {
         throw Exception('No user ID available. Please sign in again.');
@@ -106,6 +112,149 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         );
       }
     }
+  }
+
+  Future<void> _openVideoCall() async {
+    final cameraGranted = await Permission.camera.isGranted;
+    final micGranted = await Permission.microphone.isGranted;
+    if (cameraGranted && micGranted) {
+      _pushVideoCallScreen();
+      return;
+    }
+    if (!mounted) return;
+    await showAppBottomSheet<void>(
+      context: context,
+      isScrollControlled: false,
+      isDismissible: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Camera and microphone access',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Allow access to your camera and microphone to make video calls with your coach or client.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
+                  ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Allow',
+                buttonColor: Theme.of(context).colors.vibrantAccent,
+                showArrowRight: false,
+                onPressed: () async {
+                  final statuses = await [
+                    Permission.camera,
+                    Permission.microphone,
+                  ].request();
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                  if (statuses[Permission.camera] == PermissionStatus.granted &&
+                      statuses[Permission.microphone] == PermissionStatus.granted) {
+                    _pushVideoCallScreen();
+                  } else {
+                    showErrorBottomSheet(
+                      context: context,
+                      message:
+                          'Camera and microphone access is required for video calls.',
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _pushVideoCallScreen() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        fullscreenDialog: true,
+        opaque: true,
+        pageBuilder: (_, __, ___) => VideoCallScreen(
+          targetUserId: _targetUserId(),
+        ),
+        transitionsBuilder: (_, animation, __, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutCubic;
+          final tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  /// Show a bottom sheet explaining why we need notification permission.
+  /// CTA triggers the actual request. Only shown if permission not yet granted.
+  Future<void> _showNotificationPermissionSheetIfNeeded() async {
+    if (await isNotificationPermissionGranted()) return;
+    if (!mounted) return;
+
+    await showAppBottomSheet<void>(
+      context: context,
+      isScrollControlled: false,
+      isDismissible: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Get notified of new messages',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Allow notifications to receive alerts when your coach or client sends you a message.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
+                  ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Enable notifications',
+                buttonColor: Theme.of(context).colors.vibrantAccent,
+                showArrowRight: false,
+                onPressed: () async {
+                  await requestNotificationPermission();
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Login, then load cache + fetch messages. Cache requires login (201 otherwise).
@@ -866,29 +1015,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       color: isDarkMode ? Colors.white : Colors.black,
                       size: 22,
                     ),
-                    onPressed: () {
-                      if (!mounted) return;
-                      Navigator.of(context).push(
-                        PageRouteBuilder(
-                          fullscreenDialog: true,
-                          opaque: true,
-                          pageBuilder: (_, __, ___) => VideoCallScreen(
-                            targetUserId: _targetUserId(),
-                          ),
-                          transitionsBuilder: (_, animation, __, child) {
-                            const begin = Offset(0.0, 1.0);
-                            const end = Offset.zero;
-                            const curve = Curves.easeOutCubic;
-                            final tween = Tween(begin: begin, end: end)
-                                .chain(CurveTween(curve: curve));
-                            return SlideTransition(
-                              position: animation.drive(tween),
-                              child: child,
-                            );
-                          },
-                        ),
-                      );
-                    },
+                    onPressed: () => _openVideoCall(),
                   ),
                   // Close button
                   IconButton(

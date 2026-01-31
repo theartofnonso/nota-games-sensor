@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -14,7 +13,6 @@ import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
-import 'package:trainware/screens/request_screens/notifications_request.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/urls.dart';
@@ -31,7 +29,6 @@ import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/string_utils.dart';
-import '../../utils/notifications_utils.dart';
 import '../../services/training_prediction_service.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/uri_utils.dart';
@@ -42,7 +39,6 @@ import '../../widgets/badges/unread_badge.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
-import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_plan_grid_item.dart';
@@ -95,7 +91,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   String _appVersion = "";
 
-  bool _notificationEnabled = false;
   bool _hasCachedSession = false;
 
   int _chatUnreadCount = 0;
@@ -381,111 +376,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                       height: 20,
                     ),
                   ],
-                  if (Platform.isIOS && !isClientMode)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              LabelDivider(
-                                label: "Notifications",
-                                labelColor:
-                                    isDarkMode ? Colors.white : Colors.black,
-                                dividerColor:
-                                    Theme.of(context).colors.dividerColor,
-                                fontSize: 14,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
-                                textAlign: TextAlign.start,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                      color: isDarkMode
-                                          ? Colors.white70
-                                          : Colors.black,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(18),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color:
-                                      (isDarkMode ? Colors.white : Colors.black)
-                                          .withValues(
-                                              alpha: isDarkMode ? 0.06 : 0.05),
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(
-                                    color: Theme.of(context)
-                                        .colors
-                                        .borderLight
-                                        .withValues(alpha: 0.1),
-                                  ),
-                                ),
-                                child: ListTile(
-                                  onTap: _turnOnNotification,
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                  tileColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  title: Text(
-                                    _notificationEnabled
-                                        ? "Notification is on"
-                                        : "Turn on notifications",
-                                    textAlign: TextAlign.start,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: isDarkMode
-                                              ? Colors.white
-                                              : Colors.black,
-                                        ),
-                                  ),
-                                  trailing: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Theme.of(context).colors.glassLight,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: FaIcon(
-                                      FontAwesomeIcons.solidBell,
-                                      size: 14,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 16),
                   ListTile(
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 30.0),
@@ -556,32 +446,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _openWebpage() {
     final url = trackrWebUrl;
     openUrl(url: url, context: context);
-  }
-
-  void _turnOnNotification() async {
-    if (!_notificationEnabled) {
-      await navigateWithSlideTransition(
-          context: context,
-          child: NotificationsRequestScreen(onRequest: () {
-            requestNotificationPermission().then((status) {
-              if (!mounted) return;
-              setState(() {
-                _notificationEnabled = status;
-              });
-              if (mounted) {
-                context.pop();
-              }
-            });
-          }));
-    }
-  }
-
-  void _checkNotificationPermission() async {
-    final result = await checkIosNotificationPermission();
-    if (!mounted) return;
-    setState(() {
-      _notificationEnabled = result.isEnabled;
-    });
   }
 
   void _getAppVersion() async {
@@ -673,7 +537,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     WidgetsBinding.instance.addObserver(this);
     _weightUnit = WeightUnit.fromString(SharedPrefs().weightUnit);
     _getAppVersion();
-    _checkNotificationPermission();
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
     if (AppConfig.isCoach) {
@@ -767,10 +630,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    /// Uncomment this to enable notifications
     if (state == AppLifecycleState.resumed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _checkNotificationPermission();
         if (AppConfig.isCoach) {
           ChatUnreadCountsService().refreshTotalUnreadCount();
         } else {

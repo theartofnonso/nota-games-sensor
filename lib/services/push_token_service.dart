@@ -7,11 +7,18 @@ import 'package:flutter/foundation.dart';
 bool _androidTokenRefreshListenerAdded = false;
 
 // ---------------------------------------------------------------------------
-// Permission (both platforms). Call at app startup so the prompt shows early.
+// Permission (both platforms)
 // ---------------------------------------------------------------------------
 
-/// Request notification permission. Call from [main] after Firebase init.
-/// Same behavior on iOS and Android; actual token handling is platform-specific below.
+/// Returns true if notification permission is granted.
+Future<bool> isNotificationPermissionGranted() async {
+  final settings = await FirebaseMessaging.instance.getNotificationSettings();
+  return settings.authorizationStatus == AuthorizationStatus.authorized ||
+      settings.authorizationStatus == AuthorizationStatus.provisional;
+}
+
+/// Request notification permission. Show a bottom sheet with explanation first;
+/// the CTA in that sheet should call this.
 Future<void> requestNotificationPermission() async {
   await FirebaseMessaging.instance.requestPermission();
 }

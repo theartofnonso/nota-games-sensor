@@ -42,7 +42,6 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
-import 'package:trainware/services/push_token_service.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
@@ -144,9 +143,6 @@ Future<void> mainCommon(AppFlavor flavor) async {
   await Firebase.initializeApp(
     options: firebaseOptions,
   );
-
-  // Single place for push: request permission at startup (push_token_service).
-  await requestNotificationPermission();
 
   // Initialize Agora Chat SDK with FCM enabled
   final chatOptions = ChatOptions(

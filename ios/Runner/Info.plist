@@ -42,8 +42,6 @@
 	<string>Not Athletes needs permission to save photos to your library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Not Athletes needs photo access to share images in chat.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Not Athletes uses speech to text for hands-free logging of your sets, reps, and weights.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
