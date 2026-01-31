@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:ui';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -91,6 +94,10 @@ class _SettingsScreenState extends State<SettingsScreen>
   late WeightUnit _weightUnit;
 
   String _appVersion = "";
+
+  String _environment = "";
+  String _bundleId = "";
+  String _deviceToken = "";
 
   bool _hasCachedSession = false;
 
@@ -414,16 +421,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                       },
                     ),
                   ),
-                  if (isCoach) const SizedBox(height: 32),
-                  if (!isCoach) ...[
-                    Center(
-                      child: Text(
-                        _appVersion,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                  const SizedBox(height: 32),
+                  _buildDebugInfoSection(isDarkMode),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -450,13 +450,66 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   void _getAppVersion() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    final packageInfo = await PackageInfo.fromPlatform();
     final version = packageInfo.version;
     final buildNumber = packageInfo.buildNumber;
+    final bundleId = packageInfo.packageName;
+
+    String env;
+    if (kDebugMode) {
+      env = 'Debug';
+    } else if (kProfileMode) {
+      env = 'Profile';
+    } else {
+      env = 'Release';
+    }
+
+    String deviceToken = '—';
+    try {
+      String? token;
+      if (Platform.isIOS) {
+        token = await FirebaseMessaging.instance.getAPNSToken();
+      } else {
+        token = await FirebaseMessaging.instance.getToken();
+      }
+      if (token != null && token.isNotEmpty) {
+        deviceToken = token;
+      }
+    } catch (_) {}
+
     if (!mounted) return;
     setState(() {
       _appVersion = "APP VERSION: $version (BUILD $buildNumber)";
+      _environment = env;
+      _bundleId = bundleId;
+      _deviceToken = deviceToken;
     });
+  }
+
+  Widget _buildDebugInfoSection(bool isDarkMode) {
+    final mutedColor = (isDarkMode ? Colors.white : Colors.black)
+        .withValues(alpha: 0.5);
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: mutedColor,
+          fontSize: 11,
+          fontFamily: 'monospace',
+        );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_appVersion, style: style),
+          const SizedBox(height: 4),
+          Text('Environment: $_environment', style: style),
+          Text('Bundle ID: $_bundleId', style: style),
+          SelectableText(
+            '${Platform.isIOS ? 'APNs' : 'FCM'} token: $_deviceToken',
+            style: style,
+          ),
+        ],
+      ),
+    );
   }
 
   void _checkCachedSession() {

@@ -4,7 +4,7 @@ import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
-bool _androidTokenRefreshListenerAdded = false;
+bool _tokenRefreshListenerAdded = false;
 
 // ---------------------------------------------------------------------------
 // Permission (both platforms)
@@ -30,7 +30,7 @@ Future<void> requestNotificationPermission() async {
 /// Register push token with Agora. Call only after [ChatClient] login.
 ///
 /// **Android:** Get FCM token → upload to Agora → listen for token refresh.
-/// **iOS:** Nothing. APNs token is passed to Agora in native AppDelegate.
+/// **iOS:** Get APNs token via Firebase → upload to Agora → listen for refresh.
 Future<void> setupPushToken() async {
   if (ChatClient.getInstance.currentUserId == null) {
     debugPrint('[Push] Not logged in to Agora; skip token setup.');
@@ -38,12 +38,34 @@ Future<void> setupPushToken() async {
   }
 
   if (Platform.isIOS) {
-    // iOS: APNs token is registered in AppDelegate (didRegisterForRemoteNotificationsWithDeviceToken).
+    await _setupiOSPushToken();
+  } else if (Platform.isAndroid) {
+    await _setupAndroidPushToken();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// iOS: APNs token (via Firebase) → Agora
+// ---------------------------------------------------------------------------
+
+Future<void> _setupiOSPushToken() async {
+  final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+  if (apnsToken == null) {
+    debugPrint('[Push] iOS: APNs token is null');
     return;
   }
+  debugPrint('[Push] iOS: APNs token obtained');
+  await _uploadAPNSTokenToAgora(apnsToken);
 
-  if (Platform.isAndroid) {
-    await _setupAndroidPushToken();
+  _listenForTokenRefresh();
+}
+
+Future<void> _uploadAPNSTokenToAgora(String apnsToken) async {
+  try {
+    await ChatClient.getInstance.pushManager.updateAPNsDeviceToken(apnsToken);
+    debugPrint('[Push] iOS: APNs token uploaded to Agora');
+  } catch (e) {
+    debugPrint('[Push] iOS: Error uploading APNs token to Agora: $e');
   }
 }
 
@@ -60,14 +82,7 @@ Future<void> _setupAndroidPushToken() async {
   debugPrint('[Push] Android: FCM token obtained');
   await _uploadFCMTokenToAgora(fcmToken);
 
-  if (!_androidTokenRefreshListenerAdded) {
-    _androidTokenRefreshListenerAdded = true;
-    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-      debugPrint('[Push] Android: FCM token refreshed');
-      if (ChatClient.getInstance.currentUserId == null) return;
-      await _uploadFCMTokenToAgora(newToken);
-    });
-  }
+  _listenForTokenRefresh();
 }
 
 Future<void> _uploadFCMTokenToAgora(String fcmToken) async {
@@ -77,4 +92,29 @@ Future<void> _uploadFCMTokenToAgora(String fcmToken) async {
   } catch (e) {
     debugPrint('[Push] Android: Error uploading FCM token to Agora: $e');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Shared: token refresh listener (works for both platforms)
+// ---------------------------------------------------------------------------
+
+void _listenForTokenRefresh() {
+  if (_tokenRefreshListenerAdded) return;
+  _tokenRefreshListenerAdded = true;
+
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+    debugPrint('[Push] Token refreshed');
+    if (ChatClient.getInstance.currentUserId == null) return;
+
+    if (Platform.isAndroid) {
+      await _uploadFCMTokenToAgora(newToken);
+    } else if (Platform.isIOS) {
+      // On iOS, onTokenRefresh gives the FCM token, not APNs.
+      // Re-fetch APNs token and upload.
+      final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      if (apnsToken != null) {
+        await _uploadAPNSTokenToAgora(apnsToken);
+      }
+    }
+  });
 }
