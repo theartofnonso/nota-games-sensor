@@ -19,6 +19,7 @@ import 'package:trainware/urls.dart';
 import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
+import 'package:trainware/utils/notifications_utils.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../controllers/access_controller.dart';
