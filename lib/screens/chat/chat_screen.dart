@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
@@ -16,8 +14,7 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/agora_chat_utils.dart';
-import '../../utils/notathletes_auth_headers.dart';
-import '../../urls.dart';
+import '../../services/chat_bootstrap_service.dart';
 import '../../app_flavor.dart';
 import '../../services/chat_unread_service.dart';
 import '../../services/chat_unread_counts_service.dart';
@@ -326,7 +323,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       return;
     }
 
-    final token = await _resolveAgoraToken(userId);
+    final token = await ChatBootstrapService.resolveAgoraChatToken(userId);
     if (token == null || token.isEmpty) {
       throw Exception('Agora chat token is not available.');
     }
@@ -344,27 +341,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       debugPrint('Agora Chat login error: $e');
       // Re-throw to be handled by caller
       rethrow;
-    }
-  }
-
-  Future<String?> _resolveAgoraToken(String userId) async {
-    try {
-      final uri = Uri.parse(agoraBaseUrl).resolve(agoraTokenPath);
-      final response = await http.post(
-        uri,
-        headers: notathletesAuthHeaders(),
-        body: jsonEncode({'userId': userId}),
-      );
-      if (response.statusCode != 200) {
-        return null;
-      }
-      final data = jsonDecode(response.body);
-      if (data is Map<String, dynamic>) {
-        return data['token'] as String?;
-      }
-      return null;
-    } catch (_) {
-      return null;
     }
   }
 
