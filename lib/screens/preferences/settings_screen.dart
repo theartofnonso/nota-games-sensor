@@ -599,6 +599,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     _getAppVersion();
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
+    _clientOverrideController = context.read<ClientOverrideController>();
     if (AppConfig.isCoach) {
       _chatUnreadCount = 0;
       ChatUnreadCountsService()
@@ -607,8 +608,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       ChatUnreadCountsService()
           .unreadByClientId
           .addListener(_handleChatUnreadChange);
-      // Also listen to selectedClientId changes to update badge when client is selected
-      _clientOverrideController = context.read<ClientOverrideController>();
       _clientOverrideController!.addListener(_handleChatUnreadChange);
     } else {
       _chatUnreadCount = ChatUnreadService().unreadCount.value;
@@ -657,9 +656,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _handleChatUnreadChange() {
     if (!mounted) return;
     final accessController = _clientOverrideController;
-    if (accessController == null) return;
     setState(() {
       if (AppConfig.isCoach) {
+        if (accessController == null) return;
         final clientId = accessController.selectedClientId;
         _chatUnreadCount = clientId == null
             ? 0
@@ -681,12 +680,11 @@ class _SettingsScreenState extends State<SettingsScreen>
       ChatUnreadCountsService()
           .unreadByClientId
           .removeListener(_handleChatUnreadChange);
-      // Remove listener from accessController (use stored ref; context may be invalid)
       _clientOverrideController?.removeListener(_handleChatUnreadChange);
-      _clientOverrideController = null;
     } else {
       ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
     }
+    _clientOverrideController = null;
     super.dispose();
   }
 
