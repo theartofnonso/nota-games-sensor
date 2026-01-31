@@ -78,8 +78,13 @@ class ChatBootstrapService {
       debugPrint('[ChatBootstrap] Agora login OK');
       agoraLoggedIn.value = true;
 
-      await setupPushToken();
-      debugPrint('[ChatBootstrap] Push token setup OK');
+      final pushOk = await setupPushToken();
+      if (pushOk) {
+        debugPrint('[ChatBootstrap] Push token setup OK');
+      } else {
+        debugPrint(
+            '[ChatBootstrap] Push token setup failed (check Agora Console APNs config)');
+      }
     } catch (e) {
       debugPrint('[ChatBootstrap] Error: $e');
     }

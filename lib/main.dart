@@ -144,14 +144,16 @@ Future<void> mainCommon(AppFlavor flavor) async {
     options: firebaseOptions,
   );
 
-  // Initialize Agora Chat SDK with FCM enabled
+  // Initialize Agora Chat SDK
   final chatOptions = ChatOptions(
     appKey: ChatConfig.agoraAppKey,
     autoLogin: false,
   );
-  // Enable FCM (Android) only. iOS APNs tokens are not uploaded or handled from Flutter; handled natively.
   if (Platform.isAndroid) {
     chatOptions.enableFCM("160658273085");
+  } else if (Platform.isIOS) {
+    chatOptions.enableAPNs(ChatConfig.apnsCertName);
+    logger.d('APNs cert name for push: "${ChatConfig.apnsCertName}" (must match Agora Console Push Certificate)');
   }
   await ChatClient.getInstance.init(chatOptions);
 

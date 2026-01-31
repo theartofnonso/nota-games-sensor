@@ -31,41 +31,46 @@ Future<void> requestNotificationPermission() async {
 ///
 /// **Android:** Get FCM token → upload to Agora → listen for token refresh.
 /// **iOS:** Get APNs token via Firebase → upload to Agora → listen for refresh.
-Future<void> setupPushToken() async {
+///
+/// Returns true if the token was uploaded successfully, false otherwise.
+Future<bool> setupPushToken() async {
   if (ChatClient.getInstance.currentUserId == null) {
     debugPrint('[Push] Not logged in to Agora; skip token setup.');
-    return;
+    return false;
   }
 
   if (Platform.isIOS) {
-    await _setupiOSPushToken();
+    return _setupiOSPushToken();
   } else if (Platform.isAndroid) {
-    await _setupAndroidPushToken();
+    return _setupAndroidPushToken();
   }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
 // iOS: APNs token (via Firebase) → Agora
 // ---------------------------------------------------------------------------
 
-Future<void> _setupiOSPushToken() async {
+Future<bool> _setupiOSPushToken() async {
   final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
   if (apnsToken == null) {
     debugPrint('[Push] iOS: APNs token is null');
-    return;
+    return false;
   }
   debugPrint('[Push] iOS: APNs token obtained');
-  await _uploadAPNSTokenToAgora(apnsToken);
-
+  final ok = await _uploadAPNSTokenToAgora(apnsToken);
   _listenForTokenRefresh();
+  return ok;
 }
 
-Future<void> _uploadAPNSTokenToAgora(String apnsToken) async {
+Future<bool> _uploadAPNSTokenToAgora(String apnsToken) async {
   try {
     await ChatClient.getInstance.pushManager.updateAPNsDeviceToken(apnsToken);
     debugPrint('[Push] iOS: APNs token uploaded to Agora');
+    return true;
   } catch (e) {
     debugPrint('[Push] iOS: Error uploading APNs token to Agora: $e');
+    return false;
   }
 }
 
@@ -73,24 +78,26 @@ Future<void> _uploadAPNSTokenToAgora(String apnsToken) async {
 // Android: FCM token → Agora
 // ---------------------------------------------------------------------------
 
-Future<void> _setupAndroidPushToken() async {
+Future<bool> _setupAndroidPushToken() async {
   final fcmToken = await FirebaseMessaging.instance.getToken();
   if (fcmToken == null) {
     debugPrint('[Push] Android: FCM token is null');
-    return;
+    return false;
   }
   debugPrint('[Push] Android: FCM token obtained');
-  await _uploadFCMTokenToAgora(fcmToken);
-
+  final ok = await _uploadFCMTokenToAgora(fcmToken);
   _listenForTokenRefresh();
+  return ok;
 }
 
-Future<void> _uploadFCMTokenToAgora(String fcmToken) async {
+Future<bool> _uploadFCMTokenToAgora(String fcmToken) async {
   try {
     await ChatClient.getInstance.pushManager.updateFCMPushToken(fcmToken);
     debugPrint('[Push] Android: FCM token uploaded to Agora');
+    return true;
   } catch (e) {
     debugPrint('[Push] Android: Error uploading FCM token to Agora: $e');
+    return false;
   }
 }
 

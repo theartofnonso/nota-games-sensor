@@ -17,6 +17,7 @@ import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/app_flavor.dart';
+import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/urls.dart';
 import 'package:trainware/utils/coach_mapping_utils.dart';
@@ -503,10 +504,13 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 4),
           Text('Environment: $_environment', style: style),
           Text('Bundle ID: $_bundleId', style: style),
-          SelectableText(
-            '${Platform.isIOS ? 'APNs' : 'FCM'} token: $_deviceToken',
-            style: style,
-          ),
+          if (kDebugMode && Platform.isIOS)
+            Text('APNs cert: ${ChatConfig.apnsCertName}', style: style),
+          if (kDebugMode)
+            SelectableText(
+              '${Platform.isIOS ? 'APNs' : 'FCM'} token: $_deviceToken',
+              style: style,
+            ),
         ],
       ),
     );
@@ -632,11 +636,13 @@ class _SettingsScreenState extends State<SettingsScreen>
           coachId: coachId,
           coachName: coachName ?? '',
         );
-        ChatUnreadService().updateContext(
+        await ChatUnreadService().updateContext(
           userId: accessController.userId,
           coachId: coachId,
           userIdOverride: accessController.selectedClientId,
         );
+        // Update badge with initial unread count
+        _handleChatUnreadChange();
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
