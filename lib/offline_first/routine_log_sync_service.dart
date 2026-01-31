@@ -177,7 +177,7 @@ class OfflineRoutineLogRepository {
             final clientId = _client.auth.currentUser?.id;
             if (clientId != null && clientId.isNotEmpty) {
               unawaited(sendFcmNotification(
-                clientId: clientId,
+                userId: clientId,
                 title: 'Session logged',
                 body: 'Your client just logged a workout',
               ));

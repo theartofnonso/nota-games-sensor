@@ -14,13 +14,9 @@ Future<void> sendFcmNotification({
   required String body,
 }) async {
   try {
-    final uri = Uri.parse(_fcmBaseUrl).resolve('/by-id');
+    final uri = Uri.parse(_fcmBaseUrl).resolve('/notify-workout-log');
     final payload = jsonEncode({
       'userId': userId,
-      'notification': {
-        'title': title,
-        'body': body,
-      },
     });
     final response = await http.post(
       uri,
