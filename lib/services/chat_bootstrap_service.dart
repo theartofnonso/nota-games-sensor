@@ -4,9 +4,13 @@ import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../app_flavor.dart';
 import '../urls.dart';
+import '../utils/coach_mapping_utils.dart';
 import '../utils/notathletes_auth_headers.dart';
 import '../utils/agora_chat_utils.dart';
+import 'chat_background_notification_service.dart';
+import 'chat_unread_service.dart';
 import 'push_token_service.dart';
 
 /// Runs Agora Chat login and push token registration at app startup so that
@@ -77,6 +81,22 @@ class ChatBootstrapService {
       }
       debugPrint('[ChatBootstrap] Agora login OK');
       agoraLoggedIn.value = true;
+
+      ChatBackgroundNotificationService.registerHandler();
+
+      // Client app: set up unread tracking for coach→client messages so the
+      // chat badge updates without needing to open Settings first
+      if (AppConfig.isClient) {
+        final coachData = await fetchCoachForClient(supabaseUserId);
+        final coachId = coachData?['coachId'];
+        if (coachId != null && coachId.isNotEmpty) {
+          await ChatUnreadService().updateContext(
+            userId: supabaseUserId,
+            coachId: coachId,
+          );
+          debugPrint('[ChatBootstrap] Client unread service OK');
+        }
+      }
 
       final pushOk = await setupPushToken();
       if (pushOk) {

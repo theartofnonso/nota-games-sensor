@@ -1,12 +1,14 @@
 import 'dart:async';
 
+import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
-import 'package:posthog_flutter/posthog_flutter.dart';
+import 'package:trainware/app_flavor.dart';
 
 import '../enums/posthog_analytics_event.dart';
 import '../logger.dart';
 import '../repositories/supabase/supabase_routine_log_repository.dart';
+import '../services/fcm_push_service.dart';
 import 'routine_log_local_entry.dart';
 import 'routine_log_local_store.dart';
 
@@ -168,6 +170,19 @@ class OfflineRoutineLogRepository {
           await Posthog().capture(
             eventName: PostHogAnalyticsEvent.logRoutine.displayName,
           );
+
+          // Notify coach when client logs a session (client app only).
+          // Backend resolves coach from coach_clients, device tokens, and client name.
+          if (AppConfig.isClient) {
+            final clientId = _client.auth.currentUser?.id;
+            if (clientId != null && clientId.isNotEmpty) {
+              unawaited(sendFcmNotification(
+                clientId: clientId,
+                title: 'Session logged',
+                body: 'Your client just logged a workout',
+              ));
+            }
+          }
         }
       } catch (e, stackTrace) {
         _logger.w(

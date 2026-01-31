@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+
+import 'user_device_token_service.dart';
 
 bool _tokenRefreshListenerAdded = false;
 
@@ -59,6 +62,7 @@ Future<bool> _setupiOSPushToken() async {
   }
   debugPrint('[Push] iOS: APNs token obtained');
   final ok = await _uploadAPNSTokenToAgora(apnsToken);
+  unawaited(syncFcmTokenToSupabase());
   _listenForTokenRefresh();
   return ok;
 }
@@ -86,6 +90,7 @@ Future<bool> _setupAndroidPushToken() async {
   }
   debugPrint('[Push] Android: FCM token obtained');
   final ok = await _uploadFCMTokenToAgora(fcmToken);
+  unawaited(syncFcmTokenToSupabase());
   _listenForTokenRefresh();
   return ok;
 }
@@ -123,5 +128,6 @@ void _listenForTokenRefresh() {
         await _uploadAPNSTokenToAgora(apnsToken);
       }
     }
+    unawaited(syncFcmTokenToSupabase());
   });
 }

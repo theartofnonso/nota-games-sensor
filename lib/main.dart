@@ -41,7 +41,9 @@ import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
+import 'package:trainware/services/chat_background_notification_service.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
+import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
@@ -93,6 +95,13 @@ void _processPendingNotification() {
 
   final payload = _pendingNotificationPayload!;
   final type = payload['type'] as String?;
+
+  if (type == 'chat') {
+    _pendingNotificationPayload = null;
+    _notificationRetryCount = 0;
+    navigateToChat(context: context);
+    return;
+  }
 
   if (type == 'view_log') {
     final logId = payload['logId'] as String?;
@@ -183,6 +192,25 @@ Future<void> mainCommon(AppFlavor flavor) async {
 
   await FlutterLocalNotificationsPlugin().initialize(initializationSettings,
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
+
+  // Chat background notifications (when app is backgrounded, Agora delivers
+  // via WebSocket; we show a local notification)
+  ChatBackgroundNotificationService.setNotificationDetails(
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'chat_messages',
+        'Chat Messages',
+        channelDescription: 'New chat messages',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentSound: true,
+        presentBadge: true,
+      ),
+    ),
+  );
 
   final notificationLaunchDetails =
       await FlutterLocalNotificationsPlugin().getNotificationAppLaunchDetails();
@@ -409,7 +437,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   late final ClientOverrideController _accessController;
   late final GoRouter _router;
@@ -438,6 +466,16 @@ class _MyAppState extends State<MyApp> {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final inBackground = state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached;
+    ChatBackgroundNotificationService.setAppInBackground(inBackground);
   }
 
   void _handleAccessChanged() {
@@ -502,6 +540,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _accessController.removeListener(_handleAccessChanged);
     _connectivitySub?.cancel();
     super.dispose();

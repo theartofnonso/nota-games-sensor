@@ -502,8 +502,10 @@ class _SettingsScreenState extends State<SettingsScreen>
         children: [
           Text(_appVersion, style: style),
           const SizedBox(height: 4),
-          Text('Environment: $_environment', style: style),
-          Text('Bundle ID: $_bundleId', style: style),
+          if (kDebugMode) ...[
+            Text('Environment: $_environment', style: style),
+            Text('Bundle ID: $_bundleId', style: style),
+          ],
           if (kDebugMode && Platform.isIOS)
             Text('APNs cert: ${ChatConfig.apnsCertName}', style: style),
           if (kDebugMode)
