@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/extensions/duration_extension.dart';
+import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
@@ -20,25 +21,18 @@ import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 import 'package:trainware/widgets/share/shareable_routine_templates.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
-import '../../dtos/appsync/routine_plan_dto.dart';
-import '../../dtos/appsync/routine_template_dto.dart';
-import '../../dtos/set_dtos/set_dto.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
-import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
 import '../../app_flavor.dart';
-import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/personal_bests_utils.dart';
 import '../../utils/session_duration_selector.dart';
-import '../../utils/name_notes_bottom_sheet.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
-import '../../widgets/routine/preview/plan_picker.dart';
 
 class RoutineLogScreen extends StatefulWidget {
   static const routeName = '/routine_log_screen';
@@ -112,13 +106,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       currentLog: updatedLog,
       allHistoricalExerciseLogs: allHistoricalExerciseLogs,
     );
-
-    final logs = exerciseAndRoutineController
-        .whereLogsWithTemplateId(templateId: updatedLog.templateId)
-        .map((log) => routineWithLoggedExercises(log: log))
-        .toList();
-
-    logs.map((log) => log.volume).toList();
 
     final isCoach = AppConfig.isCoach;
 
@@ -313,13 +300,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.download, size: 18),
-              horizontalTitleGap: 6,
-              title: Text("Save as workout into..."),
-              onTap: _createTemplate,
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
               leading: const FaIcon(
                 FontAwesomeIcons.trash,
                 size: 18,
@@ -484,135 +464,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
           }
         },
       );
-    }
-  }
-
-  void _createTemplate() async {
-    Navigator.of(context).pop();
-
-    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context,
-        listen: false);
-    final log = controller.logWhereId(id: widget.id);
-
-    if (log == null) return;
-
-    // Get all plans
-    final plans = controller.plans;
-
-    // Show plan picker to select which plan to save template into
-    _showPlanPickerForTemplate(log: log, plans: plans.toList());
-  }
-
-  void _showPlanPickerForTemplate(
-      {required RoutineLogDto log, required List<RoutinePlanDto> plans}) {
-    // Filter out system plans - users cannot add templates to system plans
-    final userPlans = plans.where((plan) => !plan.isSystemPlan).toList();
-
-    showAppBottomSheet(
-      context: context,
-      isScrollControlled: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(26, 26, 26, 0),
-        child: PlanPicker(
-          title: "Save as workout into...",
-          plans: userPlans,
-          onSelect: (selectedPlan) async {
-            Navigator.of(context).pop();
-            await _doCreateTemplate(log: log, planId: selectedPlan.id);
-          },
-          onCreatePlan: () async {
-            Navigator.of(context).pop(); // Close bottom sheet
-            // Navigate to create a new plan
-            final emptyPlan = RoutinePlanDto(id: "", name: "", notes: "");
-            final arguments = RoutinePlanArguments(plan: emptyPlan);
-            final newPlan = await navigateToRoutinePlanEditor(
-              context: context,
-              arguments: arguments,
-            );
-            // If plan was created, show picker again with the new plan
-            if (newPlan != null && mounted) {
-              final controller =
-                  Provider.of<SupabaseExerciseAndRoutineController>(context,
-                      listen: false);
-              _showPlanPickerForTemplate(
-                  log: log, plans: controller.plans.toList());
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _doCreateTemplate(
-      {required RoutineLogDto log, required String planId}) async {
-    // Let the user confirm the template name and notes first, similar to plans.
-    final details = await showNameNotesBottomSheet(
-      context: context,
-      title: "Save as workout",
-      primaryButtonLabel: "Save Workout",
-      initialName: log.name,
-      // Routine logs currently have no top-level notes; start empty.
-      initialNotes: '',
-      emptyNameMessage: 'Please provide a name for this workout',
-    );
-
-    if (details == null) return;
-    if (!context.mounted) return;
-
-    if (!AppConfig.isCoach) _showLoadingScreen();
-    if (AppConfig.isCoach) showCoachLoadingOverlay(context);
-    try {
-      final exercises = log.exerciseLogs.map((exerciseLog) {
-        final uncheckedSets = exerciseLog.sets
-            .map((set) => set.copyWith(checked: false))
-            .toList();
-
-        /// [Exercise.duration] exercises do not have sets in templates
-        final List<SetDto> sets =
-            withDurationOnly(type: exerciseLog.exercise.type)
-                ? <SetDto>[]
-                : uncheckedSets;
-        return exerciseLog.copyWith(sets: sets);
-      }).toList();
-
-      final templateToCreate = RoutineTemplateDto(
-        planId: planId,
-        name: details.name,
-        notes: details.notes,
-        exerciseTemplates: exercises,
-      );
-
-      final createdTemplate =
-          await Provider.of<SupabaseExerciseAndRoutineController>(context,
-                  listen: false)
-              .saveTemplate(templateDto: templateToCreate);
-
-      if (mounted && context.mounted) {
-        if (createdTemplate != null) {
-          navigateToRoutineTemplatePreview(
-              context: context, template: createdTemplate);
-        } else {
-          showSnackbar(
-              context: context,
-              message: "Oops, we are unable to create template");
-        }
-      }
-    } catch (e) {
-      debugPrint('Error creating template: $e');
-      if (mounted && context.mounted) {
-        showSnackbar(
-            context: context,
-            message: "Oops, we are unable to create template: $e");
-      }
-    } finally {
-      if (mounted && context.mounted) {
-        if (AppConfig.isCoach) {
-          hideCoachLoadingOverlay(context);
-        } else {
-          _hideLoadingScreen();
-        }
-      }
     }
   }
 
