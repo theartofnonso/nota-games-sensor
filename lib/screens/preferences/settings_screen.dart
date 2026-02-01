@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show Platform;
 import 'dart:ui';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -14,13 +16,14 @@ import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
-import 'package:trainware/screens/request_screens/notifications_request.dart';
 import 'package:trainware/app_flavor.dart';
+import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/urls.dart';
 import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
+import 'package:trainware/utils/notifications_utils.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../controllers/access_controller.dart';
@@ -31,7 +34,6 @@ import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/string_utils.dart';
-import '../../utils/notifications_utils.dart';
 import '../../services/training_prediction_service.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/uri_utils.dart';
@@ -42,7 +44,6 @@ import '../../widgets/badges/unread_badge.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
-import '../../widgets/dividers/label_divider.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_plan_grid_item.dart';
@@ -95,7 +96,10 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   String _appVersion = "";
 
-  bool _notificationEnabled = false;
+  String _environment = "";
+  String _bundleId = "";
+  String _deviceToken = "";
+
   bool _hasCachedSession = false;
 
   int _chatUnreadCount = 0;
@@ -381,111 +385,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                       height: 20,
                     ),
                   ],
-                  if (Platform.isIOS && !isClientMode)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              LabelDivider(
-                                label: "Notifications",
-                                labelColor:
-                                    isDarkMode ? Colors.white : Colors.black,
-                                dividerColor:
-                                    Theme.of(context).colors.dividerColor,
-                                fontSize: 14,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                "Allow us to remind you about long-running workouts if you’ve become distracted. We’ll also send reminders on your training days.",
-                                textAlign: TextAlign.start,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.w400,
-                                      color: isDarkMode
-                                          ? Colors.white70
-                                          : Colors.black,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(18),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color:
-                                      (isDarkMode ? Colors.white : Colors.black)
-                                          .withValues(
-                                              alpha: isDarkMode ? 0.06 : 0.05),
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(
-                                    color: Theme.of(context)
-                                        .colors
-                                        .borderLight
-                                        .withValues(alpha: 0.1),
-                                  ),
-                                ),
-                                child: ListTile(
-                                  onTap: _turnOnNotification,
-                                  dense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
-                                  ),
-                                  tileColor: Colors.transparent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  title: Text(
-                                    _notificationEnabled
-                                        ? "Notification is on"
-                                        : "Turn on notifications",
-                                    textAlign: TextAlign.start,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: isDarkMode
-                                              ? Colors.white
-                                              : Colors.black,
-                                        ),
-                                  ),
-                                  trailing: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Theme.of(context).colors.glassLight,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: FaIcon(
-                                      FontAwesomeIcons.solidBell,
-                                      size: 14,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 16),
                   ListTile(
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 30.0),
@@ -523,16 +422,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                       },
                     ),
                   ),
-                  if (isCoach) const SizedBox(height: 32),
-                  if (!isCoach) ...[
-                    Center(
-                      child: Text(
-                        _appVersion,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                  const SizedBox(height: 32),
+                  _buildDebugInfoSection(isDarkMode),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -558,40 +450,72 @@ class _SettingsScreenState extends State<SettingsScreen>
     openUrl(url: url, context: context);
   }
 
-  void _turnOnNotification() async {
-    if (!_notificationEnabled) {
-      await navigateWithSlideTransition(
-          context: context,
-          child: NotificationsRequestScreen(onRequest: () {
-            requestNotificationPermission().then((status) {
-              if (!mounted) return;
-              setState(() {
-                _notificationEnabled = status;
-              });
-              if (mounted) {
-                context.pop();
-              }
-            });
-          }));
-    }
-  }
-
-  void _checkNotificationPermission() async {
-    final result = await checkIosNotificationPermission();
-    if (!mounted) return;
-    setState(() {
-      _notificationEnabled = result.isEnabled;
-    });
-  }
-
   void _getAppVersion() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    final packageInfo = await PackageInfo.fromPlatform();
     final version = packageInfo.version;
     final buildNumber = packageInfo.buildNumber;
+    final bundleId = packageInfo.packageName;
+
+    String env;
+    if (kDebugMode) {
+      env = 'Debug';
+    } else if (kProfileMode) {
+      env = 'Profile';
+    } else {
+      env = 'Release';
+    }
+
+    String deviceToken = '—';
+    try {
+      String? token;
+      if (Platform.isIOS) {
+        token = await FirebaseMessaging.instance.getAPNSToken();
+      } else {
+        token = await FirebaseMessaging.instance.getToken();
+      }
+      if (token != null && token.isNotEmpty) {
+        deviceToken = token;
+      }
+    } catch (_) {}
+
     if (!mounted) return;
     setState(() {
       _appVersion = "APP VERSION: $version (BUILD $buildNumber)";
+      _environment = env;
+      _bundleId = bundleId;
+      _deviceToken = deviceToken;
     });
+  }
+
+  Widget _buildDebugInfoSection(bool isDarkMode) {
+    final mutedColor =
+        (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.5);
+    final style = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: mutedColor,
+          fontSize: 11,
+          fontFamily: 'monospace',
+        );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_appVersion, style: style),
+          const SizedBox(height: 4),
+          if (kDebugMode) ...[
+            Text('Environment: $_environment', style: style),
+            Text('Bundle ID: $_bundleId', style: style),
+          ],
+          if (kDebugMode && Platform.isIOS)
+            Text('APNs cert: ${ChatConfig.apnsCertName}', style: style),
+          if (kDebugMode)
+            SelectableText(
+              '${Platform.isIOS ? 'APNs' : 'FCM'} token: $_deviceToken',
+              style: style,
+            ),
+        ],
+      ),
+    );
   }
 
   void _checkCachedSession() {
@@ -673,9 +597,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     WidgetsBinding.instance.addObserver(this);
     _weightUnit = WeightUnit.fromString(SharedPrefs().weightUnit);
     _getAppVersion();
-    _checkNotificationPermission();
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
+    _clientOverrideController = context.read<ClientOverrideController>();
     if (AppConfig.isCoach) {
       _chatUnreadCount = 0;
       ChatUnreadCountsService()
@@ -684,8 +608,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       ChatUnreadCountsService()
           .unreadByClientId
           .addListener(_handleChatUnreadChange);
-      // Also listen to selectedClientId changes to update badge when client is selected
-      _clientOverrideController = context.read<ClientOverrideController>();
       _clientOverrideController!.addListener(_handleChatUnreadChange);
     } else {
       _chatUnreadCount = ChatUnreadService().unreadCount.value;
@@ -715,11 +637,13 @@ class _SettingsScreenState extends State<SettingsScreen>
           coachId: coachId,
           coachName: coachName ?? '',
         );
-        ChatUnreadService().updateContext(
+        await ChatUnreadService().updateContext(
           userId: accessController.userId,
           coachId: coachId,
           userIdOverride: accessController.selectedClientId,
         );
+        // Update badge with initial unread count
+        _handleChatUnreadChange();
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -732,9 +656,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   void _handleChatUnreadChange() {
     if (!mounted) return;
     final accessController = _clientOverrideController;
-    if (accessController == null) return;
     setState(() {
       if (AppConfig.isCoach) {
+        if (accessController == null) return;
         final clientId = accessController.selectedClientId;
         _chatUnreadCount = clientId == null
             ? 0
@@ -756,21 +680,18 @@ class _SettingsScreenState extends State<SettingsScreen>
       ChatUnreadCountsService()
           .unreadByClientId
           .removeListener(_handleChatUnreadChange);
-      // Remove listener from accessController (use stored ref; context may be invalid)
       _clientOverrideController?.removeListener(_handleChatUnreadChange);
-      _clientOverrideController = null;
     } else {
       ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
     }
+    _clientOverrideController = null;
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    /// Uncomment this to enable notifications
     if (state == AppLifecycleState.resumed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _checkNotificationPermission();
         if (AppConfig.isCoach) {
           ChatUnreadCountsService().refreshTotalUnreadCount();
         } else {
@@ -2173,9 +2094,14 @@ class _RoutinePlansSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (AppConfig.isClient) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-        child: _ClientRoutinePlansFrostedCard(),
+      return Consumer<SupabaseExerciseAndRoutineController>(
+        builder: (context, controller, _) {
+          if (controller.plans.isEmpty) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: _ClientRoutinePlansFrostedCard(),
+          );
+        },
       );
     }
 
@@ -2495,7 +2421,7 @@ class _RoutinePlansEmptyState extends StatelessWidget {
         children: [
           // Title
           Text(
-            'Create Your First Routine Plan',
+            'Create Their First Routine Plan',
             textAlign: TextAlign.center,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
@@ -2504,7 +2430,7 @@ class _RoutinePlansEmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           // Description
           Text(
-            'Start building your workout routine by creating a plan. Add workouts, exercises, and track your progress.',
+            'Start building their workout routine by creating a plan. Add workouts, exercises, and track your progress.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.7),

@@ -1,13 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
@@ -15,14 +13,18 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/agora_chat_utils.dart';
-import '../../urls.dart';
+import '../../services/chat_bootstrap_service.dart';
 import '../../app_flavor.dart';
 import '../../services/chat_unread_service.dart';
 import '../../services/chat_unread_counts_service.dart';
-import '../../services/push_token_service.dart';
-import '../../utils/uri_utils.dart';
+import '../../services/push_token_service.dart'
+    show
+        isNotificationPermissionGranted,
+        requestNotificationPermission,
+        setupPushToken;
 import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
+import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../video/video_call_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -88,6 +90,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     try {
       if (!mounted) return;
 
+      // Show permission bottom sheet if not yet granted; CTA triggers the request
+      unawaited(_showNotificationPermissionSheetIfNeeded());
+
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) {
         throw Exception('No user ID available. Please sign in again.');
@@ -106,6 +111,150 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         );
       }
     }
+  }
+
+  Future<void> _openVideoCall() async {
+    final cameraGranted = await Permission.camera.isGranted;
+    final micGranted = await Permission.microphone.isGranted;
+    if (cameraGranted && micGranted) {
+      _pushVideoCallScreen();
+      return;
+    }
+    if (!mounted) return;
+    await showAppBottomSheet<void>(
+      context: context,
+      isScrollControlled: false,
+      isDismissible: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Camera and microphone access',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Allow access to your camera and microphone to make video calls with your coach or client.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
+                  ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Allow',
+                buttonColor: Theme.of(context).colors.vibrantAccent,
+                showArrowRight: false,
+                onPressed: () async {
+                  final statuses = await [
+                    Permission.camera,
+                    Permission.microphone,
+                  ].request();
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                  if (statuses[Permission.camera] == PermissionStatus.granted &&
+                      statuses[Permission.microphone] ==
+                          PermissionStatus.granted) {
+                    _pushVideoCallScreen();
+                  } else {
+                    showErrorBottomSheet(
+                      context: context,
+                      message:
+                          'Camera and microphone access is required for video calls.',
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _pushVideoCallScreen() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        fullscreenDialog: true,
+        opaque: true,
+        pageBuilder: (_, __, ___) => VideoCallScreen(
+          targetUserId: _targetUserId(),
+        ),
+        transitionsBuilder: (_, animation, __, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutCubic;
+          final tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
+  /// Show a bottom sheet explaining why we need notification permission.
+  /// CTA triggers the actual request. Only shown if permission not yet granted.
+  Future<void> _showNotificationPermissionSheetIfNeeded() async {
+    if (await isNotificationPermissionGranted()) return;
+    if (!mounted) return;
+
+    await showAppBottomSheet<void>(
+      context: context,
+      isScrollControlled: false,
+      isDismissible: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Get notified of new messages',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Allow notifications to receive alerts when your coach or client sends you a message.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
+                  ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Enable notifications',
+                buttonColor: Theme.of(context).colors.vibrantAccent,
+                showArrowRight: false,
+                onPressed: () async {
+                  await requestNotificationPermission();
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Login, then load cache + fetch messages. Cache requires login (201 otherwise).
@@ -172,7 +321,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       return;
     }
 
-    final token = await _resolveAgoraToken(userId);
+    final token = await ChatBootstrapService.resolveAgoraChatToken(userId);
     if (token == null || token.isEmpty) {
       throw Exception('Agora chat token is not available.');
     }
@@ -190,27 +339,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       debugPrint('Agora Chat login error: $e');
       // Re-throw to be handled by caller
       rethrow;
-    }
-  }
-
-  Future<String?> _resolveAgoraToken(String userId) async {
-    try {
-      final uri = Uri.parse(agoraBaseUrl).resolve(agoraTokenPath);
-      final response = await http.post(
-        uri,
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': userId}),
-      );
-      if (response.statusCode != 200) {
-        return null;
-      }
-      final data = jsonDecode(response.body);
-      if (data is Map<String, dynamic>) {
-        return data['token'] as String?;
-      }
-      return null;
-    } catch (_) {
-      return null;
     }
   }
 
@@ -333,11 +461,28 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     );
   }
 
+  bool _hasLocalAttachment(ChatMessage message) {
+    final body = message.body;
+    if (body is ChatImageMessageBody) {
+      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
+    }
+    if (body is ChatVideoMessageBody) {
+      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
+    }
+    return false;
+  }
+
   void _mergeMessage(ChatMessage message) {
     final msgId = message.msgId;
     if (msgId.isNotEmpty) {
       final index = _messages.indexWhere((m) => m.msgId == msgId);
       if (index != -1) {
+        final existing = _messages[index];
+        // Don't overwrite with server message if we have downloaded local data
+        // (server messages don't include localPath; we'd lose playable video/image)
+        if (_hasLocalAttachment(existing) && !_hasLocalAttachment(message)) {
+          return;
+        }
         _messages[index] = message;
         return;
       }
@@ -379,7 +524,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 .downloadAttachment(message);
           }).whenComplete(() {
             _attachmentDownloadsInFlight.remove(msgId);
-            _refreshMessages();
+            if (mounted) setState(() {});
           });
         }
         return;
@@ -395,13 +540,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         }
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
-        _refreshMessages();
+        if (mounted) setState(() {});
       });
       return;
     }
 
     if (body is ChatVideoMessageBody) {
-      if (_videoThumbnail(body) != null) return;
+      // For video: we need local file to play reliably (network playback may fail
+      // with Agora CDN). Trigger download if we don't have local video yet.
+      final hasLocalVideo =
+          body.localPath.isNotEmpty && File(body.localPath).existsSync();
+      if (hasLocalVideo) return;
+
       _attachmentDownloadsInFlight.add(msgId);
       Future<void>(() async {
         await ChatClient.getInstance.chatManager.downloadThumbnail(message);
@@ -410,7 +560,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         }
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
-        _refreshMessages();
+        if (mounted) setState(() {});
       });
     }
   }
@@ -558,17 +708,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ShareTile(
-                    icon: Icons.insert_drive_file,
-                    label: 'File',
-                    onTap: () async {
-                      Navigator.of(context).pop();
-                      await _pickFile();
-                    },
-                  ),
-                ),
               ],
             ),
           ],
@@ -594,16 +733,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final picked = await _imagePicker.pickVideo(source: ImageSource.gallery);
     if (picked == null) return;
     await _sendVideoMessage(targetAgoraUserId, picked.path);
-  }
-
-  Future<void> _pickFile() async {
-    final targetAgoraUserId = _targetAgoraUserId;
-    if (targetAgoraUserId == null) return;
-    final result = await FilePicker.platform.pickFiles();
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    if (file.path == null) return;
-    await _sendFileMessage(targetAgoraUserId, file.path!);
   }
 
   Future<void> _sendImageMessage(String targetId, String path) async {
@@ -659,25 +788,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       return thumbnail;
     } catch (_) {
       return null;
-    }
-  }
-
-  Future<void> _sendFileMessage(String targetId, String path) async {
-    try {
-      final message = ChatMessage.createFileSendMessage(
-        targetId: targetId,
-        filePath: path,
-      );
-      message.chatType = ChatType.Chat;
-      await ChatClient.getInstance.chatManager.sendMessage(message);
-      if (!mounted) return;
-      setState(() {
-        _mergeMessage(message);
-        _sortMessages();
-      });
-      _scrollToBottom();
-    } catch (e) {
-      _handleSendError(e, 'file');
     }
   }
 
@@ -855,7 +965,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             fontSize: 17,
                           ),
                         ),
-                        if (AppConfig.isCoach) const SizedBox.shrink(),
                       ],
                     ),
                   ),
@@ -866,29 +975,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                       color: isDarkMode ? Colors.white : Colors.black,
                       size: 22,
                     ),
-                    onPressed: () {
-                      if (!mounted) return;
-                      Navigator.of(context).push(
-                        PageRouteBuilder(
-                          fullscreenDialog: true,
-                          opaque: true,
-                          pageBuilder: (_, __, ___) => VideoCallScreen(
-                            targetUserId: _targetUserId(),
-                          ),
-                          transitionsBuilder: (_, animation, __, child) {
-                            const begin = Offset(0.0, 1.0);
-                            const end = Offset.zero;
-                            const curve = Curves.easeOutCubic;
-                            final tween = Tween(begin: begin, end: end)
-                                .chain(CurveTween(curve: curve));
-                            return SlideTransition(
-                              position: animation.drive(tween),
-                              child: child,
-                            );
-                          },
-                        ),
-                      );
-                    },
+                    onPressed: () => _openVideoCall(),
                   ),
                   // Close button
                   IconButton(
@@ -930,7 +1017,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Start a conversation with your coach',
+                              AppConfig.isCoach
+                                  ? 'Start a conversation with your client'
+                                  : 'Start a conversation with your coach',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: Colors.grey.withValues(alpha: 0.5),
                                 fontSize: 14,
@@ -941,33 +1030,36 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         ),
                       ),
                     )
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.manual,
-                      itemCount: _buildChatEntries().length,
-                      itemBuilder: (context, index) {
+                  : Builder(
+                      builder: (context) {
                         final entries = _buildChatEntries();
-                        final entry = entries[index];
-
-                        if (entry.isDivider) {
-                          return _ChatDateDivider(label: entry.label!);
-                        }
-
-                        final message = entry.message!;
-                        final isCurrentUser = _isCurrentUserMessage(message);
-
-                        return _ChatMessageBubble(
-                          message: message,
-                          isCurrentUser: isCurrentUser,
-                          timestamp:
-                              _formatTimestamp(_messageTimestamp(message)),
-                          isDarkMode: isDarkMode,
-                          vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+                        return ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.manual,
+                          itemCount: entries.length,
+                          itemBuilder: (context, index) {
+                            final entry = entries[index];
+                            if (entry.isDivider) {
+                              return _ChatDateDivider(label: entry.label!);
+                            }
+                            final message = entry.message!;
+                            final isCurrentUser =
+                                _isCurrentUserMessage(message);
+                            return _ChatMessageBubble(
+                              message: message,
+                              isCurrentUser: isCurrentUser,
+                              timestamp: _formatTimestamp(
+                                  _messageTimestamp(message)),
+                              isDarkMode: isDarkMode,
+                              vibrantAccent:
+                                  colors?.vibrantAccent ?? Colors.green,
+                            );
+                          },
                         );
                       },
                     ),
@@ -1180,15 +1272,6 @@ class _MessageBody extends StatelessWidget {
       return _VideoAttachment(body: body, textColor: textColor);
     }
 
-    if (body is ChatFileMessageBody) {
-      return _AttachmentTile(
-        icon: Icons.insert_drive_file,
-        label: body.displayName ?? 'File',
-        textColor: textColor,
-        onTap: () => _openAttachment(context, body.remotePath),
-      );
-    }
-
     return Text(
       'Unsupported message',
       style: theme.textTheme.bodyMedium?.copyWith(
@@ -1389,13 +1472,6 @@ class _ProgressiveImageWidgetState extends State<_ProgressiveImageWidget> {
   }
 }
 
-Future<void> _openAttachment(BuildContext context, String? remotePath) async {
-  if (remotePath == null || remotePath.isEmpty) {
-    return;
-  }
-  await openUrl(context: context, url: remotePath);
-}
-
 Future<void> _openImageViewer(
   BuildContext context,
   ChatImageMessageBody body,
@@ -1421,43 +1497,6 @@ Future<void> _openImageViewer(
       return _ImageViewerDialog(body: body);
     },
   );
-}
-
-class _AttachmentTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color textColor;
-  final VoidCallback? onTap;
-
-  const _AttachmentTile({
-    required this.icon,
-    required this.label,
-    required this.textColor,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: textColor),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _AttachmentFallback extends StatelessWidget {

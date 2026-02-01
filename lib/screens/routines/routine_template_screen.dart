@@ -15,7 +15,6 @@ import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_log_arguments.dart';
-import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../dtos/viewmodels/routine_template_arguments.dart';
 import '../../enums/routine_editor_type_enums.dart';
 import '../../utils/dialog_utils.dart';
@@ -35,7 +34,6 @@ import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
-import '../../widgets/routine/preview/plan_picker.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/empty_states/list_empty_state.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
@@ -702,21 +700,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: FaIcon(
-                      FontAwesomeIcons.arrowRightArrowLeft,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                    horizontalTitleGap: 6,
-                    title: Text("Move to another plan",
-                        style: Theme.of(context).textTheme.bodyLarge),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      _showPlanPicker();
-                    },
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(
                       FontAwesomeIcons.trash,
                       size: 16,
@@ -773,87 +756,4 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         ));
   }
 
-  void _showPlanPicker() {
-    final exerciseAndRoutineController =
-        Provider.of<SupabaseExerciseAndRoutineController>(context,
-            listen: false);
-    final template = exerciseAndRoutineController.templateWhere(id: widget.id);
-    final allPlans = exerciseAndRoutineController.plans;
-
-    if (template != null) {
-      // Filter out plans the template already belongs to and system plans
-      final eligiblePlans = allPlans
-          .where((plan) => plan.id != template.planId && !plan.isSystemPlan)
-          .toList();
-
-      showAppBottomSheet(
-        context: context,
-        isScrollControlled: false,
-        child: Padding(
-          padding: const EdgeInsets.all(26),
-          child: PlanPicker(
-            title: "Move ${template.name} to . . .",
-            plans: eligiblePlans,
-            onSelect: (selectedPlan) async {
-              Navigator.of(context).pop();
-
-              final templateProvider =
-                  Provider.of<SupabaseExerciseAndRoutineController>(context,
-                      listen: false);
-
-              final updatedRoutineTemplate =
-                  template.copyWith(planId: selectedPlan.id);
-
-              if (AppConfig.isCoach) showCoachLoadingOverlay(context);
-              try {
-                await templateProvider.updateTemplate(
-                    template: updatedRoutineTemplate);
-
-                if (mounted) {
-                  showSnackbar(
-                      context: context,
-                      message:
-                          "Moved ${template.name} to ${selectedPlan.name}");
-                }
-              } finally {
-                if (mounted && AppConfig.isCoach) {
-                  hideCoachLoadingOverlay(context);
-                }
-              }
-            },
-            onCreatePlan: () async {
-              Navigator.of(context).pop();
-              final arguments = RoutinePlanArguments(
-                  plan: RoutinePlanDto(id: "", name: "", notes: ""));
-              final newPlan = await navigateToRoutinePlanEditor(
-                context: context,
-                arguments: arguments,
-              );
-              if (newPlan != null && mounted) {
-                final templateProvider =
-                    Provider.of<SupabaseExerciseAndRoutineController>(context,
-                        listen: false);
-                final updatedRoutineTemplate =
-                    template.copyWith(planId: newPlan.id);
-                if (AppConfig.isCoach) showCoachLoadingOverlay(context);
-                try {
-                  await templateProvider.updateTemplate(
-                      template: updatedRoutineTemplate);
-                  if (mounted) {
-                    showSnackbar(
-                        context: context,
-                        message: "Moved ${template.name} to ${newPlan.name}");
-                  }
-                } finally {
-                  if (mounted && AppConfig.isCoach) {
-                    hideCoachLoadingOverlay(context);
-                  }
-                }
-              }
-            },
-          ),
-        ),
-      );
-    }
-  }
 }

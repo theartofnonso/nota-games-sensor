@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../urls.dart';
+import '../utils/notathletes_auth_headers.dart';
 
 /// Response from the nutrition estimate API.
 class NutritionEstimate {
@@ -21,8 +22,6 @@ class NutritionEstimate {
 }
 
 /// Calls openai.notathletes.com to estimate macros from a meal description.
-/// Request: POST /api, body { "meal": "string" }.
-/// Response: { "calories", "protein", "carbs", "fats" } (numeric).
 Future<NutritionEstimate?> estimateFromMealDescription(String meal) async {
   final trimmed = meal.trim();
   if (trimmed.isEmpty) return null;
@@ -32,7 +31,7 @@ Future<NutritionEstimate?> estimateFromMealDescription(String meal) async {
   try {
     final response = await http.post(
       uri,
-      headers: const {'Content-Type': 'application/json'},
+      headers: notathletesAuthHeaders(),
       body: jsonEncode({'meal': trimmed}),
     );
 

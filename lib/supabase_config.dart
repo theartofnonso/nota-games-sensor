@@ -8,6 +8,6 @@ class SupabaseConfig {
       : 'https://psblxphtjqyymlexuydi.supabase.co';
 
   static const String supabaseAnonKey = kDebugMode
-      ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzYmx4cGh0anF5eW1sZXh1eWRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MjU3NzcsImV4cCI6MjA3NDUwMTc3N30.JP8_bgmTvjO4_nqDSDddSfTtSmm45AxvK2zleuEgh10'
-      : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzYmx4cGh0anF5eW1sZXh1eWRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MjU3NzcsImV4cCI6MjA3NDUwMTc3N30.JP8_bgmTvjO4_nqDSDddSfTtSmm45AxvK2zleuEgh10';
+      ? 'sb_publishable_NMZlMh-S8c1rfIaREy4evQ_48QlPsxR'
+      : 'sb_publishable_NMZlMh-S8c1rfIaREy4evQ_48QlPsxR';
 }

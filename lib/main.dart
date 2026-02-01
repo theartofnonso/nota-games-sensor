@@ -42,7 +42,7 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
-import 'package:trainware/services/push_token_service.dart';
+import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
@@ -95,6 +95,13 @@ void _processPendingNotification() {
   final payload = _pendingNotificationPayload!;
   final type = payload['type'] as String?;
 
+  if (type == 'chat') {
+    _pendingNotificationPayload = null;
+    _notificationRetryCount = 0;
+    navigateToChat(context: context);
+    return;
+  }
+
   if (type == 'view_log') {
     final logId = payload['logId'] as String?;
     if (logId == null || logId.isEmpty) {
@@ -145,17 +152,16 @@ Future<void> mainCommon(AppFlavor flavor) async {
     options: firebaseOptions,
   );
 
-  // Single place for push: request permission at startup (push_token_service).
-  await requestNotificationPermission();
-
-  // Initialize Agora Chat SDK with FCM enabled
+  // Initialize Agora Chat SDK
   final chatOptions = ChatOptions(
     appKey: ChatConfig.agoraAppKey,
     autoLogin: false,
   );
-  // Enable FCM (Android) only. iOS APNs tokens are not uploaded or handled from Flutter; handled natively.
   if (Platform.isAndroid) {
     chatOptions.enableFCM("160658273085");
+  } else if (Platform.isIOS) {
+    chatOptions.enableAPNs(ChatConfig.apnsCertName);
+    logger.d('APNs cert name for push: "${ChatConfig.apnsCertName}" (must match Agora Console Push Certificate)');
   }
   await ChatClient.getInstance.init(chatOptions);
 
@@ -411,7 +417,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   late final ClientOverrideController _accessController;
   late final GoRouter _router;
@@ -440,6 +446,27 @@ class _MyAppState extends State<MyApp> {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // Disconnect Agora when going to background so Agora treats user as offline
+    // and sends APNs push for new messages. Reconnect when resuming.
+    if (state == AppLifecycleState.paused) {
+      if (ChatClient.getInstance.currentUserId != null) {
+        unawaited(ChatClient.getInstance.logout(false));
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_accessController.isAuthenticated &&
+          _accessController.userId != null &&
+          ChatClient.getInstance.currentUserId == null) {
+        unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
+            _accessController.userId));
+      }
+    }
   }
 
   void _handleAccessChanged() {
@@ -504,6 +531,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _accessController.removeListener(_handleAccessChanged);
     _connectivitySub?.cancel();
     super.dispose();
