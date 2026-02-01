@@ -41,7 +41,6 @@ import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
-import 'package:trainware/services/chat_background_notification_service.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
@@ -192,25 +191,6 @@ Future<void> mainCommon(AppFlavor flavor) async {
 
   await FlutterLocalNotificationsPlugin().initialize(initializationSettings,
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
-
-  // Chat background notifications (when app is backgrounded, Agora delivers
-  // via WebSocket; we show a local notification)
-  ChatBackgroundNotificationService.setNotificationDetails(
-    const NotificationDetails(
-      android: AndroidNotificationDetails(
-        'chat_messages',
-        'Chat Messages',
-        channelDescription: 'New chat messages',
-        importance: Importance.high,
-        priority: Priority.high,
-      ),
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentSound: true,
-        presentBadge: true,
-      ),
-    ),
-  );
 
   final notificationLaunchDetails =
       await FlutterLocalNotificationsPlugin().getNotificationAppLaunchDetails();
@@ -472,10 +452,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    final inBackground = state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.detached;
-    ChatBackgroundNotificationService.setAppInBackground(inBackground);
+
+    // Disconnect Agora when going to background so Agora treats user as offline
+    // and sends APNs push for new messages. Reconnect when resuming.
+    if (state == AppLifecycleState.paused) {
+      if (ChatClient.getInstance.currentUserId != null) {
+        unawaited(ChatClient.getInstance.logout(false));
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_accessController.isAuthenticated &&
+          _accessController.userId != null &&
+          ChatClient.getInstance.currentUserId == null) {
+        unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
+            _accessController.userId));
+      }
+    }
   }
 
   void _handleAccessChanged() {

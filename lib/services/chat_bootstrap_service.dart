@@ -9,7 +9,6 @@ import '../urls.dart';
 import '../utils/coach_mapping_utils.dart';
 import '../utils/notathletes_auth_headers.dart';
 import '../utils/agora_chat_utils.dart';
-import 'chat_background_notification_service.dart';
 import 'chat_unread_service.dart';
 import 'push_token_service.dart';
 
@@ -81,8 +80,6 @@ class ChatBootstrapService {
       }
       debugPrint('[ChatBootstrap] Agora login OK');
       agoraLoggedIn.value = true;
-
-      ChatBackgroundNotificationService.registerHandler();
 
       // Client app: set up unread tracking for coach→client messages so the
       // chat badge updates without needing to open Settings first

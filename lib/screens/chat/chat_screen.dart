@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -463,11 +462,31 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     );
   }
 
+  bool _hasLocalAttachment(ChatMessage message) {
+    final body = message.body;
+    if (body is ChatFileMessageBody) {
+      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
+    }
+    if (body is ChatImageMessageBody) {
+      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
+    }
+    if (body is ChatVideoMessageBody) {
+      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
+    }
+    return false;
+  }
+
   void _mergeMessage(ChatMessage message) {
     final msgId = message.msgId;
     if (msgId.isNotEmpty) {
       final index = _messages.indexWhere((m) => m.msgId == msgId);
       if (index != -1) {
+        final existing = _messages[index];
+        // Don't overwrite with server message if we have downloaded local data
+        // (server messages don't include localPath; we'd lose playable video/image)
+        if (_hasLocalAttachment(existing) && !_hasLocalAttachment(message)) {
+          return;
+        }
         _messages[index] = message;
         return;
       }
@@ -509,7 +528,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 .downloadAttachment(message);
           }).whenComplete(() {
             _attachmentDownloadsInFlight.remove(msgId);
-            _refreshMessages();
+            if (mounted) setState(() {});
           });
         }
         return;
@@ -525,13 +544,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         }
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
-        _refreshMessages();
+        if (mounted) setState(() {});
       });
       return;
     }
 
     if (body is ChatVideoMessageBody) {
-      if (_videoThumbnail(body) != null) return;
+      // For video: we need local file to play reliably (network playback may fail
+      // with Agora CDN). Trigger download if we don't have local video yet.
+      final hasLocalVideo =
+          body.localPath.isNotEmpty && File(body.localPath).existsSync();
+      if (hasLocalVideo) return;
+
       _attachmentDownloadsInFlight.add(msgId);
       Future<void>(() async {
         await ChatClient.getInstance.chatManager.downloadThumbnail(message);
@@ -540,7 +564,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         }
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
-        _refreshMessages();
+        if (mounted) setState(() {});
       });
     }
   }
@@ -688,17 +712,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ShareTile(
-                    icon: Icons.insert_drive_file,
-                    label: 'File',
-                    onTap: () async {
-                      Navigator.of(context).pop();
-                      await _pickFile();
-                    },
-                  ),
-                ),
               ],
             ),
           ],
@@ -724,16 +737,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final picked = await _imagePicker.pickVideo(source: ImageSource.gallery);
     if (picked == null) return;
     await _sendVideoMessage(targetAgoraUserId, picked.path);
-  }
-
-  Future<void> _pickFile() async {
-    final targetAgoraUserId = _targetAgoraUserId;
-    if (targetAgoraUserId == null) return;
-    final result = await FilePicker.platform.pickFiles();
-    if (result == null || result.files.isEmpty) return;
-    final file = result.files.first;
-    if (file.path == null) return;
-    await _sendFileMessage(targetAgoraUserId, file.path!);
   }
 
   Future<void> _sendImageMessage(String targetId, String path) async {
@@ -789,25 +792,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       return thumbnail;
     } catch (_) {
       return null;
-    }
-  }
-
-  Future<void> _sendFileMessage(String targetId, String path) async {
-    try {
-      final message = ChatMessage.createFileSendMessage(
-        targetId: targetId,
-        filePath: path,
-      );
-      message.chatType = ChatType.Chat;
-      await ChatClient.getInstance.chatManager.sendMessage(message);
-      if (!mounted) return;
-      setState(() {
-        _mergeMessage(message);
-        _sortMessages();
-      });
-      _scrollToBottom();
-    } catch (e) {
-      _handleSendError(e, 'file');
     }
   }
 

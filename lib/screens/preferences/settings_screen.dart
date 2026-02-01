@@ -488,8 +488,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _buildDebugInfoSection(bool isDarkMode) {
-    final mutedColor = (isDarkMode ? Colors.white : Colors.black)
-        .withValues(alpha: 0.5);
+    final mutedColor =
+        (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.5);
     final style = Theme.of(context).textTheme.bodySmall?.copyWith(
           color: mutedColor,
           fontSize: 11,
@@ -2094,9 +2094,14 @@ class _RoutinePlansSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (AppConfig.isClient) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-        child: _ClientRoutinePlansFrostedCard(),
+      return Consumer<SupabaseExerciseAndRoutineController>(
+        builder: (context, controller, _) {
+          if (controller.plans.isEmpty) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: _ClientRoutinePlansFrostedCard(),
+          );
+        },
       );
     }
 
@@ -2425,7 +2430,7 @@ class _RoutinePlansEmptyState extends StatelessWidget {
           const SizedBox(height: 8),
           // Description
           Text(
-            'Start building your workout routine by creating a plan. Add workouts, exercises, and track your progress.',
+            'Start building their workout routine by creating a plan. Add workouts, exercises, and track your progress.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.7),
