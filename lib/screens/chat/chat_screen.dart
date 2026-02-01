@@ -22,7 +22,6 @@ import '../../services/push_token_service.dart'
         isNotificationPermissionGranted,
         requestNotificationPermission,
         setupPushToken;
-import '../../utils/uri_utils.dart';
 import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
@@ -464,9 +463,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   bool _hasLocalAttachment(ChatMessage message) {
     final body = message.body;
-    if (body is ChatFileMessageBody) {
-      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
-    }
     if (body is ChatImageMessageBody) {
       return body.localPath.isNotEmpty && File(body.localPath).existsSync();
     }
@@ -969,7 +965,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             fontSize: 17,
                           ),
                         ),
-                        if (AppConfig.isCoach) const SizedBox.shrink(),
                       ],
                     ),
                   ),
@@ -1022,7 +1017,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Start a conversation with your coach',
+                              AppConfig.isCoach
+                                  ? 'Start a conversation with your client'
+                                  : 'Start a conversation with your coach',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: Colors.grey.withValues(alpha: 0.5),
                                 fontSize: 14,
@@ -1033,33 +1030,36 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         ),
                       ),
                     )
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.manual,
-                      itemCount: _buildChatEntries().length,
-                      itemBuilder: (context, index) {
+                  : Builder(
+                      builder: (context) {
                         final entries = _buildChatEntries();
-                        final entry = entries[index];
-
-                        if (entry.isDivider) {
-                          return _ChatDateDivider(label: entry.label!);
-                        }
-
-                        final message = entry.message!;
-                        final isCurrentUser = _isCurrentUserMessage(message);
-
-                        return _ChatMessageBubble(
-                          message: message,
-                          isCurrentUser: isCurrentUser,
-                          timestamp:
-                              _formatTimestamp(_messageTimestamp(message)),
-                          isDarkMode: isDarkMode,
-                          vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+                        return ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.manual,
+                          itemCount: entries.length,
+                          itemBuilder: (context, index) {
+                            final entry = entries[index];
+                            if (entry.isDivider) {
+                              return _ChatDateDivider(label: entry.label!);
+                            }
+                            final message = entry.message!;
+                            final isCurrentUser =
+                                _isCurrentUserMessage(message);
+                            return _ChatMessageBubble(
+                              message: message,
+                              isCurrentUser: isCurrentUser,
+                              timestamp: _formatTimestamp(
+                                  _messageTimestamp(message)),
+                              isDarkMode: isDarkMode,
+                              vibrantAccent:
+                                  colors?.vibrantAccent ?? Colors.green,
+                            );
+                          },
                         );
                       },
                     ),
@@ -1272,15 +1272,6 @@ class _MessageBody extends StatelessWidget {
       return _VideoAttachment(body: body, textColor: textColor);
     }
 
-    if (body is ChatFileMessageBody) {
-      return _AttachmentTile(
-        icon: Icons.insert_drive_file,
-        label: body.displayName ?? 'File',
-        textColor: textColor,
-        onTap: () => _openAttachment(context, body.remotePath),
-      );
-    }
-
     return Text(
       'Unsupported message',
       style: theme.textTheme.bodyMedium?.copyWith(
@@ -1481,13 +1472,6 @@ class _ProgressiveImageWidgetState extends State<_ProgressiveImageWidget> {
   }
 }
 
-Future<void> _openAttachment(BuildContext context, String? remotePath) async {
-  if (remotePath == null || remotePath.isEmpty) {
-    return;
-  }
-  await openUrl(context: context, url: remotePath);
-}
-
 Future<void> _openImageViewer(
   BuildContext context,
   ChatImageMessageBody body,
@@ -1513,43 +1497,6 @@ Future<void> _openImageViewer(
       return _ImageViewerDialog(body: body);
     },
   );
-}
-
-class _AttachmentTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color textColor;
-  final VoidCallback? onTap;
-
-  const _AttachmentTile({
-    required this.icon,
-    required this.label,
-    required this.textColor,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: textColor),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _AttachmentFallback extends StatelessWidget {
