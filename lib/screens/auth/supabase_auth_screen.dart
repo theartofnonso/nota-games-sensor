@@ -50,23 +50,25 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       return;
     }
 
-    // Check if this is the test account - completely bypass auth and auto-login
+    // Check if this is a demo account - bypass OTP and auto-login
     if (isTestAccountEmail(email)) {
+      final password = getDemoPassword(email);
+      if (password == null) return;
       setState(() => _isLoading = true);
 
       try {
         await Supabase.instance.client.auth.signInWithPassword(
-          email: testAccountEmail,
-          password: 'testaccount123',
+          email: email.trim(),
+          password: password,
         );
         // Success! User will be automatically navigated by the auth state listener
       } catch (error) {
-        debugPrint('[Test Account] Login failed: $error');
+        debugPrint('[Demo Account] Login failed: $error');
         if (mounted) {
           showSnackbar(
             context: context,
             message:
-                'Test account login failed. Please ensure the account exists in Supabase.',
+                'Demo account login failed. Please ensure the account exists in Supabase.',
             backgroundColor: Colors.red,
           );
         }
