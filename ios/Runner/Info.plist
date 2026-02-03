@@ -68,11 +68,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>com.posthog.posthog.API_KEY</key>
-	<string>phc_oLmuad146lylxGF2A45kOzRCMG5cJgnkv5oyedPf5A6</string>
-	<key>com.posthog.posthog.CAPTURE_APPLICATION_LIFECYCLE_EVENTS</key>
-	<true/>
-	<key>com.posthog.posthog.POSTHOG_HOST</key>
-	<string>https://us.i.posthog.com</string>
 </dict>
 </plist>

@@ -1,11 +1,9 @@
 import 'dart:async';
 
-import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/app_flavor.dart';
 
-import '../enums/posthog_analytics_event.dart';
 import '../logger.dart';
 import '../repositories/supabase/supabase_routine_log_repository.dart';
 import '../services/fcm_push_service.dart';
@@ -164,12 +162,6 @@ class OfflineRoutineLogRepository {
               ..._entries.sublist(index + 1),
             ];
           }
-
-          // Fire analytics for successfully synced workout logs from here so
-          // that we only track events once the server write has succeeded.
-          await Posthog().capture(
-            eventName: PostHogAnalyticsEvent.logRoutine.displayName,
-          );
 
           // Notify coach when client logs a session (client app only).
           // Backend resolves coach from coach_clients, device tokens, and client name.

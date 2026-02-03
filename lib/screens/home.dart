@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -48,9 +47,6 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         debugPrint('[UserSetup] No user logged in');
         return;
       }
-
-      // Analytics
-      Posthog().identify(userId: user.id);
 
       // Load app data
       final controller = Provider.of<SupabaseExerciseAndRoutineController>(
