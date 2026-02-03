@@ -7,6 +7,7 @@
 --   3. Create client@ware.health with password: demo123456
 --
 -- Data is populated up to 2026-02-03 for both coach and client.
+-- Re-running this script deletes existing demo data and repopulates (full overwrite).
 -- =============================================================================
 
 DO $$
@@ -18,6 +19,7 @@ DECLARE
   template1_id uuid := gen_random_uuid();
   template2_id uuid := gen_random_uuid();
   template3_id uuid := gen_random_uuid();
+  nutrition_template_id uuid := gen_random_uuid();
   log_id uuid;
   i int;
   log_date date;
@@ -29,6 +31,14 @@ BEGIN
   IF coach_uuid IS NULL OR client_uuid IS NULL THEN
     RAISE EXCEPTION 'Demo users must exist first. Create coach@ware.health and client@ware.health in Supabase Dashboard > Authentication > Users.';
   END IF;
+
+  -- Delete existing demo data (order respects foreign keys)
+  DELETE FROM public.routine_logs WHERE owner = client_uuid;
+  DELETE FROM public.routine_templates WHERE owner = coach_uuid OR "clientId" = client_uuid;
+  DELETE FROM public.routine_plans WHERE owner = coach_uuid OR "clientId" = client_uuid;
+  DELETE FROM public.nutrition_logs WHERE user_id = client_uuid;
+  DELETE FROM public.nutrition_templates WHERE client_id = client_uuid OR owner = coach_uuid;
+  DELETE FROM public.coach_clients WHERE coach_id = coach_uuid AND client_id = client_uuid;
 
   -- Upsert coaches table (if exists)
   INSERT INTO public.coaches (id, email, name)
@@ -52,46 +62,53 @@ BEGIN
     (plan2_id, 'Hybrid Training', 'Mix of strength and cardio', coach_uuid, NULL, now())
   ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, notes = EXCLUDED.notes;
 
-  -- Routine templates (workouts) - sample exercise structure
+  -- Routine templates (workouts) - using real exercises from lottie_exercises.json
   INSERT INTO public.routine_templates (id, "planId", name, notes, owner, "clientId", exercises, "createdAt")
   VALUES
     (template1_id, plan1_id, 'Upper Body', '', coach_uuid, client_uuid,
      '[
-       {"superSetId":"","exercise":{"id":"ex1","name":"Bench Press","type":"WR","notes":"","isSystem":false},"notes":"","sets":[{"value1":60,"value2":10,"checked":true},{"value1":60,"value2":8,"checked":true}],"alternatives":[]},
-       {"superSetId":"","exercise":{"id":"ex2","name":"Pull-ups","type":"BW","notes":"","isSystem":false},"notes":"","sets":[{"value1":0,"value2":12,"checked":true},{"value1":0,"value2":10,"checked":true}],"alternatives":[]}
+       {"superSetId":"","exercise":{"id":"ex-bench-press-db","name":"Bench Press (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":60,"value2":10,"checked":true},{"value1":60,"value2":8,"checked":true}],"alternatives":[]},
+       {"superSetId":"","exercise":{"id":"ex-row-bent-over-db","name":"Row (Bent-Over, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":25,"value2":12,"checked":true},{"value1":27,"value2":10,"checked":true}],"alternatives":[]}
      ]'::jsonb, now()),
     (template2_id, plan1_id, 'Lower Body', '', coach_uuid, client_uuid,
      '[
-       {"superSetId":"","exercise":{"id":"ex3","name":"Squat","type":"WR","notes":"","isSystem":false},"notes":"","sets":[{"value1":80,"value2":8,"checked":true},{"value1":80,"value2":8,"checked":true}],"alternatives":[]},
-       {"superSetId":"","exercise":{"id":"ex4","name":"Romanian Deadlift","type":"WR","notes":"","isSystem":false},"notes":"","sets":[{"value1":70,"value2":10,"checked":true}],"alternatives":[]}
+       {"superSetId":"","exercise":{"id":"ex-squat-db","name":"Squat (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":80,"value2":8,"checked":true},{"value1":80,"value2":8,"checked":true}],"alternatives":[]},
+       {"superSetId":"","exercise":{"id":"ex-deadlift-romanian-db","name":"Deadlift (Romanian, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":70,"value2":10,"checked":true}],"alternatives":[]}
      ]'::jsonb, now()),
     (template3_id, plan2_id, 'Full Body', '', coach_uuid, NULL,
      '[
-       {"superSetId":"","exercise":{"id":"ex5","name":"Deadlift","type":"WR","notes":"","isSystem":false},"notes":"","sets":[{"value1":100,"value2":5,"checked":true}],"alternatives":[]}
+       {"superSetId":"","exercise":{"id":"ex-deadlift-db","name":"Deadlift (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":100,"value2":5,"checked":true}],"alternatives":[]}
      ]'::jsonb, now())
   ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, exercises = EXCLUDED.exercises;
 
-  -- Routine logs for client - spread from mid-Jan 2026 to Feb 3, 2026
+  -- Routine logs for client - spread from mid-Jan 2026 to Feb 3, 2026 (using real exercises from library)
   FOR i IN 1..12 LOOP
     log_date := date '2026-01-15' + (i * 2);
     EXIT WHEN log_date > date '2026-02-03';
     log_id := gen_random_uuid();
-    INSERT INTO public.routine_logs (id, "templateId", name, "startTime", "endTime", exercises, owner, "createdAt")
+    INSERT INTO public.routine_logs (id, "templateId", name, notes, "startTime", "endTime", exercises, owner, "createdAt")
     VALUES (
       log_id,
-      CASE WHEN i % 2 = 0 THEN template1_id ELSE template2_id END,
+      (CASE WHEN i % 2 = 0 THEN template1_id ELSE template2_id END)::text,
       CASE WHEN i % 2 = 0 THEN 'Upper Body' ELSE 'Lower Body' END,
+      '',
       (log_date + time '09:00')::timestamptz,
       (log_date + time '10:15')::timestamptz,
-      '[
-        {"superSetId":"","exercise":{"id":"ex1","name":"Bench Press","type":"WR","notes":"","isSystem":false},"notes":"","sets":[{"value1":60,"value2":10,"checked":true},{"value1":62,"value2":8,"checked":true}],"alternatives":[]},
-        {"superSetId":"","exercise":{"id":"ex2","name":"Pull-ups","type":"BW","notes":"","isSystem":false},"notes":"","sets":[{"value1":0,"value2":12,"checked":true},{"value1":0,"value2":10,"checked":true}],"alternatives":[]}
-      ]'::jsonb,
+      CASE WHEN i % 2 = 0 THEN
+        '[{"superSetId":"","exercise":{"id":"ex-bench-press-db","name":"Bench Press (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":60,"value2":10,"checked":true},{"value1":62,"value2":8,"checked":true}],"alternatives":[]},{"superSetId":"","exercise":{"id":"ex-row-bent-over-db","name":"Row (Bent-Over, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":25,"value2":12,"checked":true},{"value1":27,"value2":10,"checked":true}],"alternatives":[]}]'
+      ELSE
+        '[{"superSetId":"","exercise":{"id":"ex-squat-db","name":"Squat (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":80,"value2":8,"checked":true},{"value1":82,"value2":8,"checked":true}],"alternatives":[]},{"superSetId":"","exercise":{"id":"ex-deadlift-romanian-db","name":"Deadlift (Romanian, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":70,"value2":10,"checked":true}],"alternatives":[]}]'
+      END::jsonb,
       client_uuid,
       now()
     )
     ON CONFLICT (id) DO NOTHING;
   END LOOP;
+
+  -- Nutrition template for client (macro targets set by coach)
+  INSERT INTO public.nutrition_templates (id, owner, client_id, calories_kcal, protein_g, carbs_g, fats_g, created_at, updated_at)
+  VALUES (nutrition_template_id, coach_uuid, client_uuid, 2200, 150, 250, 75, now(), now())
+  ON CONFLICT (id) DO UPDATE SET calories_kcal = EXCLUDED.calories_kcal, protein_g = EXCLUDED.protein_g, carbs_g = EXCLUDED.carbs_g, fats_g = EXCLUDED.fats_g, updated_at = now();
 
   -- Nutrition logs for client - sample entries up to Feb 3, 2026
   FOR i IN 0..14 LOOP
