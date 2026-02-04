@@ -212,177 +212,178 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     final calorieTarget = controller.calorieTarget;
     await showAppBottomSheet<void>(
       context: context,
-      isScrollControlled: false,
+      isScrollControlled: true,
       isDismissible: true,
+      enableDrag: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.06)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: (isDarkMode ? Colors.white : Colors.black)
-                      .withValues(alpha: 0.08),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: (isDarkMode ? Colors.white : Colors.black)
+                        .withValues(alpha: 0.08),
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 140),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    log.foodName,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                    textAlign: TextAlign.start,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    timeLabel,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: isDarkMode
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.6)
-                                              : Colors.black
-                                                  .withValues(alpha: 0.5),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${log.caloriesRounded}',
-                                    style: Theme.of(context)
-                                            .textTheme
-                                            .displaySmall
-                                            ?.copyWith(
-                                              color: isDarkMode
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                              fontWeight: FontWeight.w900,
-                                              height: 1.0,
-                                            ) ??
-                                        TextStyle(
-                                          color: isDarkMode
-                                              ? Colors.white
-                                              : Colors.black,
-                                          fontSize: 32,
-                                          fontWeight: FontWeight.w900,
-                                          height: 1.0,
-                                          fontFamily: 'Grift',
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${calorieTarget.toStringAsFixed(0)} kcal goal',
-                                    style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: isDarkMode
-                                                  ? Colors.white
-                                                      .withValues(alpha: 0.6)
-                                                  : Colors.black
-                                                      .withValues(alpha: 0.6),
-                                              fontWeight: FontWeight.w500,
-                                            ) ??
-                                        TextStyle(
-                                          color: isDarkMode
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.6)
-                                              : Colors.black
-                                                  .withValues(alpha: 0.6),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 140),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      log.foodName,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                      textAlign: TextAlign.start,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      timeLabel,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                    .withValues(alpha: 0.6)
+                                                : Colors.black
+                                                    .withValues(alpha: 0.5),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${log.caloriesRounded}',
+                                      style: Theme.of(context)
+                                              .textTheme
+                                              .displaySmall
+                                              ?.copyWith(
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                                fontWeight: FontWeight.w900,
+                                                height: 1.0,
+                                              ) ??
+                                          TextStyle(
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                : Colors.black,
+                                            fontSize: 32,
+                                            fontWeight: FontWeight.w900,
+                                            height: 1.0,
+                                            fontFamily: 'Grift',
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${calorieTarget.toStringAsFixed(0)} kcal goal',
+                                      style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                        .withValues(alpha: 0.6)
+                                                    : Colors.black
+                                                        .withValues(alpha: 0.6),
+                                                fontWeight: FontWeight.w500,
+                                              ) ??
+                                          TextStyle(
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                    .withValues(alpha: 0.6)
+                                                : Colors.black
+                                                    .withValues(alpha: 0.6),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      CalorieGauge(
-                        progress: calorieTarget <= 0
-                            ? 0
-                            : (log.calories / calorieTarget).clamp(0.0, 1.0),
-                        progressColor: Colors.white,
-                        trackColor: Colors.white.withValues(alpha: 0.08),
-                        knobColor: Colors.white,
-                        textColor: Colors.white,
+                        const SizedBox(width: 12),
+                        CalorieGauge(
+                          progress: calorieTarget <= 0
+                              ? 0
+                              : (log.calories / calorieTarget).clamp(0.0, 1.0),
+                          progressColor: Colors.white,
+                          trackColor: Colors.white.withValues(alpha: 0.08),
+                          knobColor: Colors.white,
+                          textColor: Colors.white,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _MacroDetailRow(
+                      label: 'Protein',
+                      value: log.protein,
+                      target: controller.proteinTarget,
+                      barColor: const Color(0xFF22c55e),
+                    ),
+                    const SizedBox(height: 20),
+                    _MacroDetailRow(
+                      label: 'Carbs',
+                      value: log.carbs,
+                      target: controller.carbsTarget,
+                      barColor: const Color(0xFF3b82f6),
+                    ),
+                    const SizedBox(height: 20),
+                    _MacroDetailRow(
+                      label: 'Fats',
+                      value: log.fats,
+                      target: controller.fatsTarget,
+                      barColor: const Color(0xFFf59e0b),
+                    ),
+                    if (log.summary != null &&
+                        log.summary!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      Text(
+                        log.summary!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: (isDarkMode ? Colors.white : Colors.black)
+                                  .withValues(alpha: 0.75),
+                              height: 1.4,
+                            ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 16),
-                  _MacroDetailRow(
-                    label: 'Protein',
-                    value: log.protein,
-                    target: controller.proteinTarget,
-                    barColor: const Color(0xFF22c55e),
-                  ),
-                  const SizedBox(height: 20),
-                  _MacroDetailRow(
-                    label: 'Carbs',
-                    value: log.carbs,
-                    target: controller.carbsTarget,
-                    barColor: const Color(0xFF3b82f6),
-                  ),
-                  const SizedBox(height: 20),
-                  _MacroDetailRow(
-                    label: 'Fats',
-                    value: log.fats,
-                    target: controller.fatsTarget,
-                    barColor: const Color(0xFFf59e0b),
-                  ),
-                  if (log.summary != null &&
-                      log.summary!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    const Divider(height: 1),
-                    const SizedBox(height: 16),
-                    Text(
-                      log.summary!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: (isDarkMode ? Colors.white : Colors.black)
-                                .withValues(alpha: 0.75),
-                            height: 1.4,
-                          ),
-                    ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

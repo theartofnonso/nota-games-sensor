@@ -104,6 +104,7 @@ Future<T?> showAppBottomSheet<T>({
   bool useBlurredTransparentBackground = true,
   double blurSigma = 16,
   Future<bool> Function()? onBarrierTap,
+  bool? enableDrag,
 }) {
   assert(builder != null || child != null,
       'Either builder or child must be provided');
@@ -114,10 +115,7 @@ Future<T?> showAppBottomSheet<T>({
     isScrollControlled: isScrollControlled,
     isDismissible: isDismissible,
     useRootNavigator: useRootNavigator,
-    // When using our own DraggableScrollableSheet, disable the modal's drag
-    // dismissal so slight pulls don't instantly close the sheet.
-    // When not dismissible, never allow drag-to-dismiss.
-    enableDrag: isDismissible && !isDraggable,
+    enableDrag: enableDrag ?? (isDismissible && !isDraggable),
     showDragHandle: false,
     useSafeArea: true,
     // Dim the backdrop so transparent sheets still pop against the content behind.

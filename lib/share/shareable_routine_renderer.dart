@@ -19,15 +19,16 @@ class ShareableRoutineRenderer {
     required ShareableRoutineSummary summary,
     ShareVariant variant = ShareVariant.standard,
   }) {
-    final widget = UnconstrainedBox(
-      clipBehavior: Clip.none,
-      child: switch (variant) {
-        ShareVariant.standard => ShareableRoutineVerticalCard(summary: summary),
-        ShareVariant.durationSplit =>
-          ShareableRoutineVerticalCardDurationSplit(summary: summary),
-        ShareVariant.durationSplitCentered =>
-          ShareableRoutineVerticalCardDurationSplitCentered(summary: summary),
-      },
+    final card = switch (variant) {
+      ShareVariant.standard => ShareableRoutineVerticalCard(summary: summary),
+      ShareVariant.durationSplit =>
+        ShareableRoutineVerticalCardDurationSplit(summary: summary),
+      ShareVariant.durationSplitCentered =>
+        ShareableRoutineVerticalCardDurationSplitCentered(summary: summary),
+    };
+    final widget = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 600, maxHeight: 800),
+      child: card,
     );
     return _renderWidgetToImage(context: context, widget: widget);
   }
@@ -42,7 +43,7 @@ class ShareableRoutineRenderer {
     final entry = OverlayEntry(
       builder: (_) => IgnorePointer(
         child: Opacity(
-          opacity: 0,
+          opacity: 0.01,
           child: Center(
             child: RepaintBoundary(
               key: repaintKey,
@@ -55,10 +56,8 @@ class ShareableRoutineRenderer {
 
     overlayState.insert(entry);
 
-    // Wait for the overlay entry to be laid out and painted before capturing.
     await Future<void>.delayed(Duration.zero);
     await WidgetsBinding.instance.endOfFrame;
-    await Future<void>.delayed(const Duration(milliseconds: 50));
 
     final boundary =
         repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;

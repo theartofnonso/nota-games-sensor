@@ -513,9 +513,10 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
   // PBs bottom sheet removed
 
-  Future<void> _shareLog(
-      {required RoutineLogDto log,
-      ShareVariant variant = ShareVariant.standard}) async {
+  Future<bool> _shareLog({
+    required RoutineLogDto log,
+    ShareVariant variant = ShareVariant.standard,
+  }) async {
     try {
       final exerciseAndRoutineController =
           Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -531,13 +532,16 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
       );
       await _shareService.shareRoutineLog(
           context: context, log: log, variant: variant, personalBests: pbs);
-    } catch (_) {
+      return true;
+    } catch (e, st) {
+      debugPrint('Share failed: $e\n$st');
       if (mounted) {
         showSnackbar(
           context: context,
           message: "Could not share this session. Please try again.",
         );
       }
+      return false;
     }
   }
 
@@ -561,6 +565,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         ShareableRoutineSummary.fromRoutineLog(log, personalBests: pbs);
     final pageController = PageController();
     int selectedVariant = 0;
+    final isSharing = ValueNotifier<bool>(false);
 
     showAppBottomSheet(
       context: context,
@@ -629,25 +634,39 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                 ),
                 const SizedBox(height: 20),
                 Center(
-                  child: SizedBox(
-                    width: 240,
-                    child: OpacityButtonWidgetTwo(
-                      solidBackground: true,
-                      buttonColor: Theme.of(context).colors.vibrantAccent,
-                      showArrowRight: false,
-                      label: "Share",
-                      onPressed: () async {
-                        final variant = switch (selectedVariant) {
-                          0 => ShareVariant.standard,
-                          1 => ShareVariant.durationSplit,
-                          _ => ShareVariant.durationSplitCentered,
-                        };
-                        // Capture while the sheet is still open so the preview
-                        // stays in context; then close and share
-                        await _shareLog(log: log, variant: variant);
-                        if (mounted) Navigator.of(context).pop();
-                      },
-                    ),
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: isSharing,
+                    builder: (context, sharing, _) {
+                      return SizedBox(
+                        width: 240,
+                        child: OpacityButtonWidgetTwo(
+                          solidBackground: true,
+                          buttonColor: Theme.of(context).colors.vibrantAccent,
+                          showArrowRight: false,
+                          label: sharing ? "Sharing…" : "Share",
+                          onPressed: sharing
+                              ? null
+                              : () async {
+                                  final variant = switch (selectedVariant) {
+                                    0 => ShareVariant.standard,
+                                    1 => ShareVariant.durationSplit,
+                                    _ => ShareVariant.durationSplitCentered,
+                                  };
+                                  isSharing.value = true;
+                                  try {
+                                    final success = await _shareLog(
+                                        log: log, variant: variant);
+                                    if (!context.mounted) return;
+                                    if (success) Navigator.of(context).pop();
+                                  } finally {
+                                    if (context.mounted) {
+                                      isSharing.value = false;
+                                    }
+                                  }
+                                },
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
