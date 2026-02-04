@@ -636,13 +636,17 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                       buttonColor: Theme.of(context).colors.vibrantAccent,
                       showArrowRight: false,
                       label: "Share",
-                      onPressed: () {
-                        Navigator.of(context).pop();
+                      onPressed: () async {
                         final variant = switch (selectedVariant) {
                           0 => ShareVariant.standard,
                           1 => ShareVariant.durationSplit,
                           _ => ShareVariant.durationSplitCentered,
                         };
+                        Navigator.of(context).pop();
+                        // Wait for bottom sheet to fully dismiss before sharing
+                        await Future<void>.delayed(
+                            const Duration(milliseconds: 300));
+                        if (!mounted) return;
                         _shareLog(log: log, variant: variant);
                       },
                     ),

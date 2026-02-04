@@ -8,6 +8,7 @@ class NutritionLogDto {
   final DateTime loggedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? summary;
 
   NutritionLogDto({
     required this.id,
@@ -19,6 +20,7 @@ class NutritionLogDto {
     required this.loggedAt,
     required this.createdAt,
     required this.updatedAt,
+    this.summary,
   });
 
   double get calories => (protein * 4) + (carbs * 4) + (fats * 9);
@@ -35,6 +37,7 @@ class NutritionLogDto {
       'logged_at': loggedAt.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      if (summary != null && summary!.trim().isNotEmpty) 'summary': summary,
     };
   }
 
@@ -53,6 +56,7 @@ class NutritionLogDto {
       loggedAt: DateTime.parse(json['logged_at'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      summary: json['summary'] as String?,
     );
   }
 
@@ -66,6 +70,7 @@ class NutritionLogDto {
     DateTime? loggedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? summary,
   }) {
     return NutritionLogDto(
       id: id ?? this.id,
@@ -77,6 +82,7 @@ class NutritionLogDto {
       loggedAt: loggedAt ?? this.loggedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      summary: summary ?? this.summary,
     );
   }
 }

@@ -12,12 +12,14 @@ class NutritionEstimate {
   final double protein;
   final double carbs;
   final double fats;
+  final String? summary;
 
   const NutritionEstimate({
     required this.calories,
     required this.protein,
     required this.carbs,
     required this.fats,
+    this.summary,
   });
 }
 
@@ -54,11 +56,16 @@ Future<NutritionEstimate?> estimateFromMealDescription(String meal) async {
       return null;
     }
 
+    final summary = data['summary'] as String?;
+    final summaryTrimmed =
+        summary != null && summary.trim().isNotEmpty ? summary.trim() : null;
+
     return NutritionEstimate(
       calories: calories,
       protein: protein,
       carbs: carbs,
       fats: fats,
+      summary: summaryTrimmed,
     );
   } catch (e) {
     debugPrint('[NutritionEstimate] Request failed: $e');

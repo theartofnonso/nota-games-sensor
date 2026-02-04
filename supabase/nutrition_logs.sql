@@ -8,7 +8,8 @@ create table if not exists public.nutrition_logs (
   fats_g numeric(8,2) not null default 0,
   logged_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  summary text null
 );
 
 create index if not exists nutrition_logs_user_logged_at_idx

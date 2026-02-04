@@ -80,7 +80,9 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
         actions: [
           IconButton(
             icon: FaIcon(
-              FontAwesomeIcons.circlePlus,
+              AppConfig.isCoach && controller.nutritionTemplate != null
+                  ? FontAwesomeIcons.solidPenToSquare
+                  : FontAwesomeIcons.circlePlus,
               color: isDarkMode ? Colors.white : Colors.black,
               size: 24,
             ),
@@ -93,7 +95,11 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            tooltip: AppConfig.isCoach ? 'Configure template' : 'Add entry',
+            tooltip: AppConfig.isCoach
+                ? (controller.nutritionTemplate != null
+                    ? 'Edit template'
+                    : 'Configure template')
+                : 'Add entry',
           ),
           const SizedBox(width: 6),
         ],
@@ -359,6 +365,20 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                     target: controller.fatsTarget,
                     barColor: const Color(0xFFf59e0b),
                   ),
+                  if (log.summary != null &&
+                      log.summary!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    const Divider(height: 1),
+                    const SizedBox(height: 16),
+                    Text(
+                      log.summary!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: (isDarkMode ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.75),
+                            height: 1.4,
+                          ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -554,11 +574,9 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     final today = DateTime(now.year, now.month, now.day);
     final day = DateTime(d.year, d.month, d.day);
     final monday = day.subtract(Duration(days: day.weekday - 1));
-    final currentMonday =
-        today.subtract(Duration(days: today.weekday - 1));
+    final currentMonday = today.subtract(Duration(days: today.weekday - 1));
     if (monday == currentMonday) return 'This Week';
-    final lastMonday =
-        currentMonday.subtract(const Duration(days: 7));
+    final lastMonday = currentMonday.subtract(const Duration(days: 7));
     if (monday == lastMonday) return 'Last Week';
     return 'Week of ${DateFormat('d MMM').format(monday)}';
   }
@@ -832,6 +850,7 @@ class _LogMealButtonState extends State<_LogMealButton> {
       loggedAt: widget.selectedLoggedAt,
       createdAt: now,
       updatedAt: now,
+      summary: estimate.summary,
     );
 
     await context.read<NutritionLogController>().addLog(log: log);
