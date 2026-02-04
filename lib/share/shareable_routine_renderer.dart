@@ -40,10 +40,15 @@ class ShareableRoutineRenderer {
     final overlayState = Overlay.of(context, rootOverlay: true);
 
     final entry = OverlayEntry(
-      builder: (_) => Center(
-        child: RepaintBoundary(
-          key: repaintKey,
-          child: widget,
+      builder: (_) => IgnorePointer(
+        child: Opacity(
+          opacity: 0,
+          child: Center(
+            child: RepaintBoundary(
+              key: repaintKey,
+              child: widget,
+            ),
+          ),
         ),
       ),
     );

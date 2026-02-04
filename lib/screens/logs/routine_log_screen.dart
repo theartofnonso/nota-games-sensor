@@ -642,12 +642,10 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                           1 => ShareVariant.durationSplit,
                           _ => ShareVariant.durationSplitCentered,
                         };
-                        Navigator.of(context).pop();
-                        // Wait for bottom sheet to fully dismiss before sharing
-                        await Future<void>.delayed(
-                            const Duration(milliseconds: 300));
-                        if (!mounted) return;
-                        _shareLog(log: log, variant: variant);
+                        // Capture while the sheet is still open so the preview
+                        // stays in context; then close and share
+                        await _shareLog(log: log, variant: variant);
+                        if (mounted) Navigator.of(context).pop();
                       },
                     ),
                   ),
