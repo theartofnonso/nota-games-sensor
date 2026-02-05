@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +27,7 @@ import '../utils/notifications_utils.dart';
 import '../utils/routine_utils.dart';
 import 'access_controller.dart';
 import '../app_flavor.dart';
+import '../services/fcm_push_service.dart';
 
 class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   bool isLoading = false;
@@ -630,6 +633,35 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating log", error: e);
+    } finally {
+      isLoading = false;
+      errorMessage = "";
+      notifyListeners();
+    }
+    return success;
+  }
+
+  /// Coach-only: update the coach note for a client's session. Writes directly
+  /// to Supabase (no offline layer). Refreshes client data and triggers a push
+  /// to the client.
+  Future<bool> updateCoachNote({
+    required String logId,
+    required String? note,
+  }) async {
+    if (!AppConfig.isCoach || !accessController.hasSelectedClient) {
+      return false;
+    }
+    final clientId = accessController.selectedClientId!;
+    isLoading = true;
+    bool success = false;
+    try {
+      await _logRepository.updateCoachNote(logId: logId, note: note);
+      await _loadRemoteForClient(clientId);
+      unawaited(sendFcmNotificationCoachFeedback(clientUserId: clientId));
+      success = true;
+    } catch (e) {
+      errorMessage = "Failed to save feedback. Please try again.";
+      logger.e("Error updating coach note", error: e);
     } finally {
       isLoading = false;
       errorMessage = "";

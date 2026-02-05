@@ -31,6 +31,7 @@ import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_plan_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_template_editor_screen.dart';
 import 'package:trainware/screens/home.dart';
+import 'package:trainware/screens/logs/coach_feedback_feed_screen.dart';
 import 'package:trainware/screens/logs/routine_log_screen.dart';
 import 'package:trainware/screens/welcome_screen.dart';
 import 'package:trainware/screens/coach/coach_clients_screen.dart';
@@ -372,6 +373,28 @@ GoRouter _createRouter(ClientOverrideController accessController) {
                   child: child,
                 );
               });
+        },
+      ),
+      GoRoute(
+        path: CoachFeedbackFeedScreen.routeName,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const CoachFeedbackFeedScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              const begin = Offset(0.0, 1.0);
+              const end = Offset.zero;
+              const curve = Curves.ease;
+              final tween = Tween(begin: begin, end: end)
+                  .chain(CurveTween(curve: curve));
+              final offsetAnimation = animation.drive(tween);
+              return SlideTransition(
+                position: offsetAnimation,
+                child: child,
+              );
+            },
+          );
         },
       ),
       GoRoute(

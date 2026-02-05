@@ -1040,6 +1040,7 @@ class _MacroLogCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(width: 12),
                     Text(
                       timeLabel,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -1051,7 +1052,7 @@ class _MacroLogCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(999),
                   child: LinearProgressIndicator(
