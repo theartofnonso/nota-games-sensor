@@ -170,8 +170,7 @@ class OfflineRoutineLogRepository {
             if (clientId != null && clientId.isNotEmpty) {
               unawaited(sendFcmNotification(
                 userId: clientId,
-                title: 'Session logged',
-                body: 'Your client just logged a workout',
+                logId: entry.log.id,
               ));
             }
           }

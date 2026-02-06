@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
 
+import 'package:app_links/app_links.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,7 @@ import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'firebase_options_coach.dart' as coach_options;
@@ -114,6 +116,11 @@ void _processPendingNotification() {
     final log = controller.logWhereId(id: logId);
 
     if (log == null) {
+      // Coach app: log may be for a client we haven't loaded yet — fetch owner and load client
+      if (AppConfig.isCoach) {
+        _processCoachViewLog(context, logId);
+        return;
+      }
       if (_notificationRetryCount < _maxNotificationRetries) {
         _notificationRetryCount++;
         Future.delayed(const Duration(milliseconds: 350), () {
@@ -130,11 +137,37 @@ void _processPendingNotification() {
 
     _pendingNotificationPayload = null;
     _notificationRetryCount = 0;
+    navigatorKey.currentContext?.push('/log/$logId');
     return;
   }
 
   _pendingNotificationPayload = null;
   _notificationRetryCount = 0;
+}
+
+void _processCoachViewLog(BuildContext context, String logId) async {
+  final controller = context.read<SupabaseExerciseAndRoutineController>();
+  final ownerId = await controller.fetchLogOwnerId(logId);
+  if (ownerId == null) {
+    if (_notificationRetryCount < _maxNotificationRetries) {
+      _notificationRetryCount++;
+      Future.delayed(const Duration(milliseconds: 350), () {
+        _processPendingNotification();
+      });
+    } else {
+      _notificationLogger
+          .w("Failed to find log $logId for notification deep link.");
+      _pendingNotificationPayload = null;
+      _notificationRetryCount = 0;
+    }
+    return;
+  }
+  await controller.loadClientData(clientId: ownerId);
+  _pendingNotificationPayload = null;
+  _notificationRetryCount = 0;
+  if (navigatorKey.currentContext != null) {
+    navigatorKey.currentContext!.push('/log/$logId');
+  }
 }
 
 Future<void> mainCommon(AppFlavor flavor) async {
@@ -202,6 +235,28 @@ Future<void> mainCommon(AppFlavor flavor) async {
     }
   }
 
+  // FCM: app opened from terminated state by tapping notification
+  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    final data = initialMessage.data;
+    if (data.isNotEmpty) {
+      _pendingNotificationPayload = Map<String, dynamic>.from(data);
+      _notificationRetryCount = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _processPendingNotification();
+      });
+    }
+  }
+
+  // FCM: app in background, user tapped notification
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    final data = message.data;
+    if (data.isEmpty) return;
+    _pendingNotificationPayload = Map<String, dynamic>.from(data);
+    _notificationRetryCount = 0;
+    _processPendingNotification();
+  });
+
   tz.initializeTimeZones();
   await configureLocalTimezone();
 
@@ -259,8 +314,10 @@ GoRouter _createRouter(ClientOverrideController accessController) {
       }
 
       // Coach app: if no client selected, must be on client selection screen
+      // Allow /log/:logId from deep links (user may need to select client after)
       if (!accessController.hasSelectedClient &&
-          state.matchedLocation != '/coach') {
+          state.matchedLocation != '/coach' &&
+          !state.matchedLocation.startsWith('/log/')) {
         return '/coach';
       }
       return null;
@@ -345,6 +402,32 @@ GoRouter _createRouter(ClientOverrideController accessController) {
         builder: (context, state) {
           final plan = state.extra as RoutinePlanDto?;
           return RoutinePlanScreen(id: plan?.id ?? "");
+        },
+      ),
+      // Deep link route for universal links (iOS): /log/:logId
+      // Used for: (1) client opening session feedback from coach, (2) coach opening client's logged session
+      GoRoute(
+        path: '/log/:logId',
+        pageBuilder: (context, state) {
+          final logId = state.pathParameters['logId'] ?? '';
+          return CustomTransitionPage(
+              child: RoutineLogScreen(
+                  id: logId,
+                  isEditable: true,
+                  showShareOnLoad: false),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                const begin = Offset(0.0, 1.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+                final tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
+                final offsetAnimation = animation.drive(tween);
+                return SlideTransition(
+                  position: offsetAnimation,
+                  child: child,
+                );
+              });
         },
       ),
       GoRoute(
@@ -442,6 +525,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  StreamSubscription<Uri>? _appLinksSub;
   late final ClientOverrideController _accessController;
   late final GoRouter _router;
   bool _lastAuthenticated = false;
@@ -457,6 +541,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _lastCoach = AppConfig.isCoach;
     _accessController.addListener(_handleAccessChanged);
     _listenToConnectivity();
+    if (Platform.isIOS) {
+      _initDeepLinks();
+    }
     // Warm up chat when already authenticated at startup (listener may have fired before we attached)
     if (_accessController.isAuthenticated && _accessController.userId != null) {
       unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
@@ -533,6 +620,29 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _lastCoach = isCoach;
   }
 
+  void _initDeepLinks() {
+    final appLinks = AppLinks();
+    // Handle app opened from universal link (cold start)
+    appLinks.getInitialLink().then((Uri? uri) {
+      if (!mounted || uri == null) return;
+      _navigateFromDeepLink(uri);
+    });
+    // Handle link while app is running
+    _appLinksSub = appLinks.uriLinkStream.listen((Uri uri) {
+      if (!mounted) return;
+      _navigateFromDeepLink(uri);
+    });
+  }
+
+  void _navigateFromDeepLink(Uri uri) {
+    final path = uri.path;
+    if (path.startsWith('/log/') && path.length > 5) {
+      if (_accessController.isAuthenticated) {
+        _router.go(path);
+      }
+    }
+  }
+
   void _listenToConnectivity() {
     _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
       if (!mounted) return;
@@ -557,6 +667,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _accessController.removeListener(_handleAccessChanged);
     _connectivitySub?.cancel();
+    _appLinksSub?.cancel();
     super.dispose();
   }
 

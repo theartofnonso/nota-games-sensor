@@ -78,6 +78,7 @@ dependencies:
   video_thumbnail: ^0.5.3
   firebase_core: ^4.4.0
   firebase_messaging: ^16.1.1
+  app_links: ^6.3.2
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1

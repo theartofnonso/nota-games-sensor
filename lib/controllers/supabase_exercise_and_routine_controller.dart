@@ -657,7 +657,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     try {
       await _logRepository.updateCoachNote(logId: logId, note: note);
       await _loadRemoteForClient(clientId);
-      unawaited(sendFcmNotificationCoachFeedback(clientUserId: clientId));
+      unawaited(sendFcmNotificationCoachFeedback(clientUserId: clientId, logId: logId));
       success = true;
     } catch (e) {
       errorMessage = "Failed to save feedback. Please try again.";
@@ -917,6 +917,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       allSets.addAll(log.sets);
     }
     return allSets;
+  }
+
+  /// Fetches the owner (client) user id for a routine log. Used when opening a
+  /// log from a notification so the coach app can load that client's data first.
+  Future<String?> fetchLogOwnerId(String logId) async {
+    return _logRepository.getOwnerIdForLog(logId);
   }
 
   Future<void> loadClientData({

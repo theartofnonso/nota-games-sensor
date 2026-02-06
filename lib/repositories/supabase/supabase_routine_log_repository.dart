@@ -14,6 +14,23 @@ class SupabaseRoutineLogRepository {
 
   UnmodifiableListView<RoutineLogDto> get logs => UnmodifiableListView(_logs);
 
+  /// Returns the owner (user id) of a routine log by id, or null if not found.
+  /// Used by coach app to load the correct client when opening a log from a notification.
+  Future<String?> getOwnerIdForLog(String logId) async {
+    try {
+      final res = await _client
+          .from('routine_logs')
+          .select('owner')
+          .eq('id', logId)
+          .maybeSingle();
+      if (res == null) return null;
+      return res['owner'] as String?;
+    } catch (e) {
+      logger.e('Error fetching owner for log $logId: $e');
+      return null;
+    }
+  }
+
   /// Load logs from Supabase (read-only; writes go through offline layer).
   /// Only loads logs within date range: last year to end of current year.
   Future<void> loadLogs({String? userIdOverride}) async {
