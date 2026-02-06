@@ -155,6 +155,18 @@ void _processClientViewLog(BuildContext context, String logId) async {
     await controller.refreshRoutineLogsFromCloudForCurrentUser();
   } catch (e) {
     _notificationLogger.w("Failed to refresh logs for deep link: $e");
+    _pendingNotificationPayload = null;
+    _notificationRetryCount = 0;
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Couldn't load session. Check your connection and try again.",
+          ),
+        ),
+      );
+    }
+    return;
   }
   _pendingNotificationPayload = null;
   _notificationRetryCount = 0;
