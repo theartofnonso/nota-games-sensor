@@ -12,38 +12,59 @@ import '../../urls.dart';
 import '../bottom_sheets/app_bottom_sheet.dart';
 import '../buttons/opacity_button_widget_two.dart';
 
-/// Client-only: tile that triggers account deletion flow.
-class DeleteAccountTile extends StatelessWidget {
-  final VoidCallback onTap;
+/// Client-only: danger-zone section that contains the delete account action.
+/// Visually separated so the entry point is clear and intentional.
+class DeleteAccountSection extends StatelessWidget {
+  final VoidCallback onDeleteTap;
 
-  const DeleteAccountTile({super.key, required this.onTap});
+  const DeleteAccountSection({
+    super.key,
+    required this.onDeleteTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
+    final onSurface = theme.colorScheme.onSurface;
+    final surfaceOpacity = theme.brightness == Brightness.dark
+        ? onSurface.withValues(alpha: 0.08)
+        : onSurface.withValues(alpha: 0.06);
+    final contentColor = onSurface.withValues(alpha: 0.75);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Material(
+        color: surfaceOpacity,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-          child: Row(
-            children: [
-              Icon(
-                FontAwesomeIcons.userMinus,
-                size: 18,
-                color: Colors.red.shade400,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Delete account',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.red.shade400,
-                  fontWeight: FontWeight.w500,
+        child: InkWell(
+          onTap: onDeleteTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.userMinus,
+                  size: 18,
+                  color: contentColor,
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Delete my account',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: contentColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: contentColor.withValues(alpha: 0.6),
+                  size: 22,
+                ),
+              ],
+            ),
           ),
         ),
       ),

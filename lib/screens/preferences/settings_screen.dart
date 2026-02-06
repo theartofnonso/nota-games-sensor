@@ -424,18 +424,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   // Delete account (client app only; required by App Store Guideline 5.1.1(v))
                   if (!isCoach) ...[
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: DeleteAccountTile(
-                        onTap: () => requestAccountDeletion(
-                          context,
-                          setLoading: (v) =>
-                              setState(() => _loading = v),
-                        ),
+                    const SizedBox(height: 24),
+                    DeleteAccountSection(
+                      onDeleteTap: () => requestAccountDeletion(
+                        context,
+                        setLoading: (v) => setState(() => _loading = v),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                   ],
                   const SizedBox(height: 16),
                   _buildDebugInfoSection(isDarkMode),

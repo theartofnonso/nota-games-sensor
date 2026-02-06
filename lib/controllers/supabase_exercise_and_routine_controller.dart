@@ -925,6 +925,14 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return _logRepository.getOwnerIdForLog(logId);
   }
 
+  /// Refreshes routine logs from the cloud for the current user (client app).
+  /// Used when opening a log from a notification so the log is loaded from the
+  /// server rather than relying on cache.
+  Future<void> refreshRoutineLogsFromCloudForCurrentUser() async {
+    await _offlineLogRepository.syncNow();
+    notifyListeners();
+  }
+
   Future<void> loadClientData({
     required String clientId,
     String? clientName,

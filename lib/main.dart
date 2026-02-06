@@ -111,33 +111,12 @@ void _processPendingNotification() {
       _pendingNotificationPayload = null;
       return;
     }
-
-    final controller = context.read<SupabaseExerciseAndRoutineController>();
-    final log = controller.logWhereId(id: logId);
-
-    if (log == null) {
-      // Coach app: log may be for a client we haven't loaded yet — fetch owner and load client
-      if (AppConfig.isCoach) {
-        _processCoachViewLog(context, logId);
-        return;
-      }
-      if (_notificationRetryCount < _maxNotificationRetries) {
-        _notificationRetryCount++;
-        Future.delayed(const Duration(milliseconds: 350), () {
-          _processPendingNotification();
-        });
-      } else {
-        _notificationLogger
-            .w("Failed to find log $logId for notification deep link.");
-        _pendingNotificationPayload = null;
-        _notificationRetryCount = 0;
-      }
-      return;
+    // Same journey for coach and client: load log from cloud, then navigate.
+    if (AppConfig.isCoach) {
+      _processCoachViewLog(context, logId);
+    } else {
+      _processClientViewLog(context, logId);
     }
-
-    _pendingNotificationPayload = null;
-    _notificationRetryCount = 0;
-    navigatorKey.currentContext?.push('/log/$logId');
     return;
   }
 
@@ -163,6 +142,20 @@ void _processCoachViewLog(BuildContext context, String logId) async {
     return;
   }
   await controller.loadClientData(clientId: ownerId);
+  _pendingNotificationPayload = null;
+  _notificationRetryCount = 0;
+  if (navigatorKey.currentContext != null) {
+    navigatorKey.currentContext!.push('/log/$logId');
+  }
+}
+
+void _processClientViewLog(BuildContext context, String logId) async {
+  final controller = context.read<SupabaseExerciseAndRoutineController>();
+  try {
+    await controller.refreshRoutineLogsFromCloudForCurrentUser();
+  } catch (e) {
+    _notificationLogger.w("Failed to refresh logs for deep link: $e");
+  }
   _pendingNotificationPayload = null;
   _notificationRetryCount = 0;
   if (navigatorKey.currentContext != null) {
