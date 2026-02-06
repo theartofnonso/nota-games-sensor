@@ -1,0 +1,267 @@
+import 'dart:convert';
+
+import 'package:agora_chat_sdk/agora_chat_sdk.dart';
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../utils/notathletes_auth_headers.dart';
+import '../../utils/dialog_utils.dart';
+import '../../urls.dart';
+import '../bottom_sheets/app_bottom_sheet.dart';
+import '../buttons/opacity_button_widget_two.dart';
+
+/// Client-only: tile that triggers account deletion flow.
+class DeleteAccountTile extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const DeleteAccountTile({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          child: Row(
+            children: [
+              Icon(
+                FontAwesomeIcons.userMinus,
+                size: 18,
+                color: Colors.red.shade400,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Delete account',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.red.shade400,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+const String _deleteAccountConfirmationPhrase = 'Delete my account';
+
+/// Runs the full account deletion flow: two confirmation sheets, then
+/// Stripe → Agora → Supabase delete → sign out. Calls [setLoading] with
+/// true/false so the parent can show a loading overlay.
+Future<void> requestAccountDeletion(
+  BuildContext context, {
+  required void Function(bool) setLoading,
+}) async {
+  final proceeded = await showAppBottomSheet<bool>(
+    context: context,
+    isScrollControlled: false,
+    isDismissible: true,
+    child: Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Delete account',
+            style: Theme.of(context).textTheme.titleLarge,
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your account and all associated data (workouts, plans, nutrition logs) will be permanently deleted. This cannot be undone.',
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              onPressed: () => Navigator.of(context).pop(true),
+              label: 'Proceed',
+              buttonColor: Colors.red,
+              showArrowRight: false,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (proceeded != true) return;
+
+  final confirmed = await _showDeleteAccountConfirmSheet(context);
+  if (confirmed != true) return;
+
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return;
+
+  const defaultErrorMessage =
+      'Something went wrong. Please try again or contact support at notathletes.com.';
+
+  setLoading(true);
+
+  try {
+    // 1. Stripe
+    final stripeUri =
+        Uri.parse(stripeBaseUrl).resolve(stripeCustomerDeletePath);
+    final stripeResponse = await http.post(
+      stripeUri,
+      headers: notathletesAuthHeaders(),
+      body: jsonEncode({'userId': userId}),
+    );
+    if (stripeResponse.statusCode != 200 && stripeResponse.statusCode != 204) {
+      if (!context.mounted) return;
+      setLoading(false);
+      showErrorBottomSheet(
+        context: context,
+        title: 'Could not delete account',
+        message: _errorMessageFromBody(stripeResponse.body) ?? defaultErrorMessage,
+      );
+      return;
+    }
+  } catch (_) {
+    if (!context.mounted) return;
+    setLoading(false);
+    showErrorBottomSheet(
+      context: context,
+      title: 'Could not delete account',
+      message: defaultErrorMessage,
+    );
+    return;
+  }
+
+  // 2. Agora
+  try {
+    final agoraUri = Uri.parse(agoraBaseUrl).resolve(agoraUserDeletePath);
+    final agoraResponse = await http.post(
+      agoraUri,
+      headers: notathletesAuthHeaders(),
+      body: jsonEncode({'userId': userId}),
+    );
+    if (agoraResponse.statusCode != 200 && agoraResponse.statusCode != 204) {
+      if (!context.mounted) return;
+      setLoading(false);
+      showErrorBottomSheet(
+        context: context,
+        title: 'Could not delete account',
+        message: _errorMessageFromBody(agoraResponse.body) ?? defaultErrorMessage,
+      );
+      return;
+    }
+  } catch (_) {
+    if (!context.mounted) return;
+    setLoading(false);
+    showErrorBottomSheet(
+      context: context,
+      title: 'Could not delete account',
+      message: defaultErrorMessage,
+    );
+    return;
+  }
+
+  // 3. Supabase
+  try {
+    final uri = Uri.parse(accountDeletionBaseUrl).resolve(accountDeletionPath);
+    final response = await http.post(
+      uri,
+      headers: notathletesAuthHeaders(),
+      body: jsonEncode({'userId': userId}),
+    );
+    if (!context.mounted) return;
+    setLoading(false);
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      showErrorBottomSheet(
+        context: context,
+        title: 'Could not delete account',
+        message: _errorMessageFromBody(response.body) ?? defaultErrorMessage,
+      );
+      return;
+    }
+  } catch (_) {
+    if (!context.mounted) return;
+    setLoading(false);
+    showErrorBottomSheet(
+      context: context,
+      title: 'Could not delete account',
+      message: defaultErrorMessage,
+    );
+    return;
+  }
+
+  // 4. Sign out
+  if (!context.mounted) return;
+  setLoading(false);
+  try {
+    await ChatClient.getInstance.logout(true);
+  } catch (_) {}
+  await Supabase.instance.client.auth.signOut();
+}
+
+Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
+  String typed = '';
+  return showAppBottomSheet<bool>(
+    context: context,
+    isScrollControlled: false,
+    isDismissible: true,
+    child: StatefulBuilder(
+      builder: (context, setSheetState) {
+        final matches = typed.trim() == _deleteAccountConfirmationPhrase;
+        return Padding(
+          padding: const EdgeInsets.all(26),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'To confirm, type "$_deleteAccountConfirmationPhrase" below.',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.start,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                onChanged: (value) => setSheetState(() => typed = value),
+                decoration: InputDecoration(
+                  hintText: _deleteAccountConfirmationPhrase,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  onPressed: matches
+                      ? () => Navigator.of(context).pop(true)
+                      : null,
+                  label: 'Delete my account',
+                  buttonColor: Colors.red,
+                  showArrowRight: false,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+}
+
+String? _errorMessageFromBody(String body) {
+  if (body.isEmpty) return null;
+  try {
+    final decoded = jsonDecode(body) as Map<String, dynamic>?;
+    final err = decoded?['error'] ?? decoded?['message'];
+    return err?.toString();
+  } catch (_) {
+    return null;
+  }
+}

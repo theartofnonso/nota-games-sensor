@@ -3,14 +3,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:trainware/extensions/datetime/datetime_extension.dart';
-import 'package:trainware/extensions/duration_extension.dart';
-import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
-import 'package:trainware/utils/string_utils.dart';
 
 import '../../dtos/appsync/routine_log_dto.dart';
-import '../../utils/theme/color_extensions.dart';
 import '../logs/routine_log_screen.dart';
 
 /// Client-only screen: chronological list of sessions where the coach has
@@ -54,11 +49,13 @@ class CoachFeedbackFeedScreen extends StatelessWidget {
                 child: withNotes.isEmpty
                     ? _EmptyState()
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                         itemCount: withNotes.length,
                         itemBuilder: (context, index) {
                           final log = withNotes[index];
                           return _FeedbackCard(
+                            index: index,
+                            totalCount: withNotes.length,
                             log: log,
                             onTap: () => _openSession(context, log),
                           );
@@ -86,31 +83,43 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final muted =
+        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.45);
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(
-              FontAwesomeIcons.solidCommentDots,
-              size: 56,
-              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.25),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: (isDark ? Colors.white : Colors.black)
+                    .withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+              ),
+              child: FaIcon(
+                FontAwesomeIcons.solidCommentDots,
+                size: 48,
+                color: muted,
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               'No coach feedback yet',
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : Colors.black87,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
-              'When your coach adds feedback to a session, it will appear here.',
+              'When your coach adds feedback to a session, it will appear here as a note.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                color: muted,
+                height: 1.4,
               ),
               textAlign: TextAlign.center,
             ),
@@ -122,10 +131,14 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _FeedbackCard extends StatelessWidget {
+  final int index;
+  final int totalCount;
   final RoutineLogDto log;
   final VoidCallback onTap;
 
   const _FeedbackCard({
+    required this.index,
+    required this.totalCount,
     required this.log,
     required this.onTap,
   });
@@ -134,89 +147,102 @@ class _FeedbackCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final dateLabel = log.endTime.formattedDayMonthTime();
     final note = log.coachNote ?? '';
+    final noteSnippet =
+        note.length > 120 ? '${note.substring(0, 120).trim()}…' : note;
 
-    final completedExercises = loggedExercises(exerciseLogs: log.exerciseLogs);
-    final setCount = completedExercises.expand((e) => e.sets).length;
-    final durationStr = log.duration().hmsAnalog();
-    final volumeStr = log.volume > 0 ? volumeInKOrM(log.volume) : null;
-    final summaryParts = <String>[
-      '${completedExercises.length} exercise${completedExercises.length == 1 ? '' : 's'}',
-      '$setCount set${setCount == 1 ? '' : 's'}',
-      durationStr,
-      if (volumeStr != null) volumeStr,
-    ];
-    final summaryLabel = summaryParts.join(' · ');
+    final primaryColor = isDark ? Colors.white : Colors.black87;
+    final secondaryColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5);
+    final dividerColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.12);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: isDark
-          ? Colors.white.withValues(alpha: 0.06)
-          : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    final indexLabel =
+        '${(index + 1).toString().padLeft(2, '0')}/$totalCount';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (index > 0) ...[
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: dividerColor,
+          ),
+          const SizedBox(height: 20),
+        ] else
+          const SizedBox(height: 20),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FaIcon(
-                    FontAwesomeIcons.calendarDay,
-                    size: 14,
-                    color: theme.colors.vibrantAccent,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              indexLabel,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: secondaryColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                log.name,
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.2,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 0),
+                          child: Text(
+                            noteSnippet,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: secondaryColor,
+                              height: 1.45,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    dateLabel,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(width: 12),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(
+                      Icons.open_in_new_rounded,
+                      size: 20,
+                      color: primaryColor.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Text(
-                log.name,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                summaryLabel,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.55),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                note,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.85),
-                  height: 1.4,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }

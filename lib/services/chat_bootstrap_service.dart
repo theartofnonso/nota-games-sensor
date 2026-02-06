@@ -28,15 +28,15 @@ class ChatBootstrapService {
   /// True once Agora Chat has logged in this session (or was already logged in).
   static final ValueNotifier<bool> agoraLoggedIn = ValueNotifier(false);
 
-  /// Fetches an Agora Chat token for the given [agoraUserId] (Agora username format).
-  /// Shared by bootstrap and ChatScreen. Returns null on failure.
-  static Future<String?> resolveAgoraChatToken(String agoraUserId) async {
+  /// Fetches an Agora Chat token for the given [supabaseUserId] (raw auth user id).
+  /// Backend derives the Agora username. Shared by bootstrap and ChatScreen. Returns null on failure.
+  static Future<String?> resolveAgoraChatToken(String supabaseUserId) async {
     try {
       final uri = Uri.parse(agoraBaseUrl).resolve(agoraTokenPath);
       final response = await http.post(
         uri,
         headers: notathletesAuthHeaders(),
-        body: jsonEncode({'userId': agoraUserId}),
+        body: jsonEncode({'userId': supabaseUserId}),
       );
       if (response.statusCode != 200) return null;
       final data = jsonDecode(response.body);
@@ -67,7 +67,7 @@ class ChatBootstrapService {
     }
 
     try {
-      final token = await resolveAgoraChatToken(agoraUserId);
+      final token = await resolveAgoraChatToken(supabaseUserId);
       if (token == null || token.isEmpty) {
         debugPrint('[ChatBootstrap] No Agora token; skipping login');
         return;
