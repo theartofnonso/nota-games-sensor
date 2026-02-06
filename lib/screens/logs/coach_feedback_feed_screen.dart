@@ -49,7 +49,7 @@ class CoachFeedbackFeedScreen extends StatelessWidget {
                 child: withNotes.isEmpty
                     ? _EmptyState()
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         itemCount: withNotes.length,
                         itemBuilder: (context, index) {
                           final log = withNotes[index];
@@ -160,7 +160,7 @@ class _FeedbackCard extends StatelessWidget {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (index > 0) ...[
           Divider(
@@ -171,14 +171,16 @@ class _FeedbackCard extends StatelessWidget {
           const SizedBox(height: 20),
         ] else
           const SizedBox(height: 20),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
@@ -200,9 +202,9 @@ class _FeedbackCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 log.name,
-                                style: theme.textTheme.headlineSmall?.copyWith(
+                                style: theme.textTheme.titleMedium?.copyWith(
                                   color: primaryColor,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w600,
                                   height: 1.2,
                                 ),
                                 maxLines: 2,
@@ -237,6 +239,7 @@ class _FeedbackCard extends StatelessWidget {
                     ),
                   ),
                 ],
+                ),
               ),
             ),
           ),
