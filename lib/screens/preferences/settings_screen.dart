@@ -28,9 +28,7 @@ import 'package:trainware/utils/notifications_utils.dart';
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../controllers/access_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
-import '../../dtos/appsync/routine_plan_dto.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
-import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/string_utils.dart';
@@ -46,9 +44,9 @@ import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
 import '../../widgets/icons/custom_icon.dart';
-import '../../widgets/routine/preview/routine_plan_grid_item.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
-import '../../widgets/buttons/opacity_button_widget_two.dart';
+import '../../widgets/settings/delete_account_section.dart';
+import '../../widgets/settings/coach_feedback_card.dart';
 import '../../screens/routines/routine_plan.dart';
 
 enum WeightUnit {
@@ -367,7 +365,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                         );
                       },
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
+                  ],
+                  if (AppConfig.isClient) ...[
+                    const CoachFeedbackCard(),
+                    const SizedBox(height: 16),
                   ],
                   if (!isClientMode) ...[
                     Padding(
@@ -381,9 +383,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         alignmentGeometry: Alignment.center,
                       ),
                     ),
-                    const SizedBox(
-                      height: 20,
-                    ),
+                    const SizedBox(height: 16),
                   ],
                   ListTile(
                     contentPadding:
@@ -422,7 +422,18 @@ class _SettingsScreenState extends State<SettingsScreen>
                       },
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  // Delete account (client app only; required by App Store Guideline 5.1.1(v))
+                  if (!isCoach) ...[
+                    const SizedBox(height: 24),
+                    DeleteAccountSection(
+                      onDeleteTap: () => requestAccountDeletion(
+                        context,
+                        setLoading: (v) => setState(() => _loading = v),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  const SizedBox(height: 16),
                   _buildDebugInfoSection(isDarkMode),
                   const SizedBox(height: 16),
                 ],
@@ -743,103 +754,132 @@ class _SettingsScreenState extends State<SettingsScreen>
       dateLabel = DateFormat('EEEE').format(date).toLowerCase();
     }
 
+    // Size sheet by content: header + list items (or empty state), capped at 55% of screen
+    const double kHeaderHeight = 100;
+    const double kListItemHeight = 72;
+    const double kListItemSpacing = 12;
+    const double kListPaddingVertical = 16;
+    const double kEmptyStateHeight = 200;
+    const double kMinSheetHeight = 320; // Ensure single log is comfortable
+    const double kMaxSheetFraction = 0.55;
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final contentHeight = hasLogs
+        ? kHeaderHeight +
+            kListPaddingVertical +
+            logs.length * (kListItemHeight + kListItemSpacing)
+        : kHeaderHeight + kEmptyStateHeight;
+    final preferredHeight = contentHeight.clamp(kMinSheetHeight, double.infinity);
+    final maxSheetHeight = preferredHeight.clamp(0.0, screenHeight * kMaxSheetFraction);
+
     showAppBottomSheet(
       context: context,
-      isDraggable: true,
+      isDraggable: false,
+      enableDrag: false,
       builder: (sheetContext, scrollController) {
         final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
 
-        return Column(
-          children: [
-            // Header row with date and "Log workout" button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Date display
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          dateLabel,
-                          style: Theme.of(sheetContext)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        Text(
-                          DateFormat('MMMM d').format(date),
-                          style: Theme.of(sheetContext)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(
-                                color: Colors.grey.shade400,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Log workout button (only show for today)
-                  if (isToday && !isClientMode)
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pop(sheetContext); // Close bottom sheet
-                        logEmptyRoutine(context: context);
-                      },
-                      icon: FaIcon(
-                        FontAwesomeIcons.circlePlus,
-                        size: 22,
-                        color: isDarkMode ? Colors.white : Colors.black,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: hasLogs
-                  ? ListView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      itemCount: logs.length,
-                      itemBuilder: (context, index) {
-                        final log = logs[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: RoutineLogWidget(
-                            log: log,
-                            trailing: log.duration().hmsAnalog(),
-                            onTap: () {
-                              Navigator.pop(sheetContext);
-                              navigateToRoutineLogPreview(
-                                context: context,
-                                log: log,
-                                isEditable: true,
-                              );
-                            },
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxSheetHeight),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header row with date and "Log workout" button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Date display
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            dateLabel,
+                            style: Theme.of(sheetContext)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
-                        );
-                      },
-                    )
-                  : Center(
-                      child: Text(
-                        isPredicted
-                            ? 'This is a day you\'re likely to train based on your previous workout history.'
-                            : 'No workouts logged this date',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.grey.shade400,
-                            ),
+                          Text(
+                            DateFormat('MMMM d').format(date),
+                            style: Theme.of(sheetContext)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Colors.grey.shade400,
+                                ),
+                          ),
+                        ],
                       ),
                     ),
-            ),
-          ],
+                    // Log workout button (only show for today)
+                    if (isToday && !isClientMode)
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext); // Close bottom sheet
+                          logEmptyRoutine(context: context);
+                        },
+                        icon: FaIcon(
+                          FontAwesomeIcons.circlePlus,
+                          size: 22,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: hasLogs
+                    ? ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        itemCount: logs.length,
+                        itemBuilder: (context, index) {
+                          final log = logs[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: RoutineLogWidget(
+                              log: log,
+                              trailing: log.duration().hmsAnalog(),
+                              onTap: () {
+                                Navigator.pop(sheetContext);
+                                navigateToRoutineLogPreview(
+                                  context: context,
+                                  log: log,
+                                  isEditable: true,
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      )
+                    : Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            isPredicted
+                                ? 'This is a day you\'re likely to train based on your previous workout history.'
+                                : 'No workouts logged this date',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyLarge
+                                ?.copyWith(
+                                  color: Colors.grey.shade400,
+                                ),
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -882,7 +922,7 @@ class _TrainingInsightsSection extends StatelessWidget {
         const SizedBox(height: 12),
         // Edge-to-edge horizontal scroll view for progress cards
         SizedBox(
-          height: 220,
+          height: 200,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -897,6 +937,7 @@ class _TrainingInsightsSection extends StatelessWidget {
                     Colors.black.withValues(alpha: 0.5),
                   ],
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Header row with title
@@ -913,7 +954,7 @@ class _TrainingInsightsSection extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 12),
                       // Large percentage display
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -976,6 +1017,7 @@ class _TrainingInsightsSection extends StatelessWidget {
                     Colors.black.withValues(alpha: 0.5),
                   ],
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Header row with title
@@ -992,7 +1034,7 @@ class _TrainingInsightsSection extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 12),
                       // Hours left display
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -2093,109 +2135,12 @@ class _RoutinePlansSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (AppConfig.isClient) {
-      return Consumer<SupabaseExerciseAndRoutineController>(
-        builder: (context, controller, _) {
-          if (controller.plans.isEmpty) return const SizedBox.shrink();
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: _ClientRoutinePlansFrostedCard(),
-          );
-        },
-      );
-    }
-
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
-        final plans = controller.plans;
-
-        if (plans.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: _RoutinePlansEmptyState(
-              onCreatePlan: () {
-                final plan = RoutinePlanDto(
-                  id: "",
-                  name: "",
-                  notes: "",
-                );
-                final arguments = RoutinePlanArguments(plan: plan);
-                navigateToRoutinePlanEditor(
-                  context: context,
-                  arguments: arguments,
-                ).then((createdPlan) {
-                  if (createdPlan != null && context.mounted) {
-                    navigateWithSlideTransition(
-                      context: context,
-                      child: RoutinePlanScreen(id: createdPlan.id),
-                    );
-                  }
-                });
-              },
-            ),
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 188,
-              child: GridView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.zero,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 1,
-                  childAspectRatio: 1.0,
-                ),
-                itemCount: plans.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 10),
-                      child: _CreatePlanCard(
-                        onTap: () {
-                          final plan = RoutinePlanDto(
-                            id: "",
-                            name: "",
-                            notes: "",
-                          );
-                          final arguments = RoutinePlanArguments(plan: plan);
-                          navigateToRoutinePlanEditor(
-                            context: context,
-                            arguments: arguments,
-                          ).then((createdPlan) {
-                            if (createdPlan != null && context.mounted) {
-                              navigateWithSlideTransition(
-                                context: context,
-                                child: RoutinePlanScreen(id: createdPlan.id),
-                              );
-                            }
-                          });
-                        },
-                      ),
-                    );
-                  }
-                  final plan = plans[index - 1];
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      left: 10,
-                      right: index == plans.length ? 10 : 0,
-                    ),
-                    child: RoutinePlanGridItemWidget(
-                      plan: plan,
-                      onTap: () {
-                        navigateWithSlideTransition(
-                          context: context,
-                          child: RoutinePlanScreen(id: plan.id),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+        if (controller.plans.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          child: _ClientRoutinePlansFrostedCard(),
         );
       },
     );
@@ -2404,85 +2349,3 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
   }
 }
 
-class _RoutinePlansEmptyState extends StatelessWidget {
-  final VoidCallback onCreatePlan;
-
-  const _RoutinePlansEmptyState({required this.onCreatePlan});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final vibrantAccent = theme.colors.vibrantAccent;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Title
-          Text(
-            'Create Their First Routine Plan',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Description
-          Text(
-            'Start building their workout routine by creating a plan. Add workouts, exercises, and track your progress.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.7),
-            ),
-          ),
-          const SizedBox(height: 24),
-          // CTA Button
-          SizedBox(
-            width: double.infinity,
-            child: OpacityButtonWidgetTwo(
-              onPressed: onCreatePlan,
-              label: 'Create Routine Plan',
-              buttonColor: vibrantAccent,
-              solidBackground: false,
-              showArrowRight: true,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CreatePlanCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _CreatePlanCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Center(
-              child: FaIcon(
-                FontAwesomeIcons.circlePlus,
-                size: 32,
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -12,7 +12,7 @@ import '../urls.dart';
 
 Future<bool> checkStripeSubscription({required String email}) async {
   try {
-    final uri = Uri.parse(apiBaseUrl).resolve(checkClientAccessPath);
+    final uri = Uri.parse(stripeBaseUrl).resolve(checkStripeSubscriptionPath);
     final response = await http.post(
       uri,
       headers: notathletesAuthHeaders(),

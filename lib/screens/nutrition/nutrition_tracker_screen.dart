@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -616,21 +616,17 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     return logs.fold(0.0, (sum, log) => sum + log.fats);
   }
 
+  static const double _maxCalories = 5000;
+  static const double _maxMacro = 500;
+
   Future<void> _showNutritionTemplateSheet() async {
     final nutritionController = context.read<NutritionLogController>();
     final template = nutritionController.nutritionTemplate;
-    final caloriesController = TextEditingController(
-      text: template?.calories.toStringAsFixed(0) ?? '',
-    );
-    final proteinController = TextEditingController(
-      text: template?.protein.toStringAsFixed(1) ?? '',
-    );
-    final carbsController = TextEditingController(
-      text: template?.carbs.toStringAsFixed(1) ?? '',
-    );
-    final fatsController = TextEditingController(
-      text: template?.fats.toStringAsFixed(1) ?? '',
-    );
+
+    double calories = (template?.calories ?? 0).clamp(0, _maxCalories);
+    double protein = (template?.protein ?? 0).clamp(0, _maxMacro);
+    double carbs = (template?.carbs ?? 0).clamp(0, _maxMacro);
+    double fats = (template?.fats ?? 0).clamp(0, _maxMacro);
 
     await showAppBottomSheet<void>(
       context: context,
@@ -639,148 +635,181 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
         builder: (ctx) {
           final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final textColor = isDark ? Colors.white : Colors.black;
+          final mutedColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6);
+          final accent = Theme.of(ctx).colors.vibrantAccent;
 
-          Widget buildNumberField({
+          // Colours to match calories/macros (common nutrition app convention)
+          const colorCalories = Color(0xFFF59E0B); // amber
+          const colorProtein = Color(0xFFEF4444);  // red
+          const colorCarbs = Color(0xFF3B82F6);    // blue
+          const colorFats = Color(0xFF22C55E);     // green
+
+          Widget buildSliderRow({
             required String label,
-            required TextEditingController controller,
+            required double value,
+            required double max,
+            required Color trackColor,
+            required ValueChanged<double> onChanged,
+            String? unit,
           }) {
+            final displayValue = value == value.roundToDouble()
+                ? value.round().toString()
+                : value.toStringAsFixed(1);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: controller,
-                  cursorColor: isDark ? Colors.white : Colors.black,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d*\.?\d*$'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      label,
+                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                            color: mutedColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    Text(
+                      unit != null ? '$displayValue $unit' : displayValue,
+                      style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                            color: textColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ],
-                  decoration: const InputDecoration(
-                    hintText: '0',
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
+                ),
+                SliderTheme(
+                  data: SliderTheme.of(ctx).copyWith(
+                    activeTrackColor: trackColor,
+                    inactiveTrackColor: trackColor.withValues(alpha: 0.2),
+                    thumbColor: trackColor,
+                    overlayColor: trackColor.withValues(alpha: 0.2),
                   ),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    color: isDark ? Colors.white : Colors.black,
-                    fontSize: 14,
+                  child: Slider(
+                    value: value.clamp(0.0, max),
+                    min: 0,
+                    max: max,
+                    divisions: max == _maxCalories ? 500 : 50,
+                    onChanged: (v) {
+                      HapticFeedback.selectionClick();
+                      onChanged(v);
+                    },
                   ),
                 ),
               ],
             );
           }
 
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 26,
-              right: 26,
-              top: 26,
-              bottom: 26 + bottomInset,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Nutrition template',
-                  style: Theme.of(ctx)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w600),
+          return StatefulBuilder(
+            builder: (ctx, setSheetState) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 26,
+                  right: 26,
+                  top: 26,
+                  bottom: 26 + bottomInset,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Set target calories and macros for this client.',
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: (isDark ? Colors.white : Colors.black)
-                            .withValues(alpha: 0.6),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nutrition template',
+                      style: Theme.of(ctx)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Set target calories and macros for this client.',
+                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                            color: mutedColor,
+                          ),
+                    ),
+                    const SizedBox(height: 20),
+                    buildSliderRow(
+                      label: 'Calories',
+                      value: calories,
+                      max: _maxCalories,
+                      trackColor: colorCalories,
+                      unit: 'kcal',
+                      onChanged: (v) => setSheetState(() => calories = v),
+                    ),
+                    const SizedBox(height: 8),
+                    buildSliderRow(
+                      label: 'Protein',
+                      value: protein,
+                      max: _maxMacro,
+                      trackColor: colorProtein,
+                      unit: 'g',
+                      onChanged: (v) => setSheetState(() => protein = v),
+                    ),
+                    const SizedBox(height: 8),
+                    buildSliderRow(
+                      label: 'Carbs',
+                      value: carbs,
+                      max: _maxMacro,
+                      trackColor: colorCarbs,
+                      unit: 'g',
+                      onChanged: (v) => setSheetState(() => carbs = v),
+                    ),
+                    const SizedBox(height: 8),
+                    buildSliderRow(
+                      label: 'Fats',
+                      value: fats,
+                      max: _maxMacro,
+                      trackColor: colorFats,
+                      unit: 'g',
+                      onChanged: (v) => setSheetState(() => fats = v),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OpacityButtonWidgetTwo(
+                        buttonColor: accent,
+                        label: 'Save template',
+                        onPressed: () async {
+                          final ownerId =
+                              Supabase.instance.client.auth.currentUser?.id;
+                          final clientId = nutritionController.activeUserId;
+                          if (ownerId == null || clientId == null) {
+                            showSnackbar(
+                              context: ctx,
+                              message: 'Unable to save template.',
+                            );
+                            return;
+                          }
+
+                          final now = DateTime.now();
+                          final updated = NutritionTemplateDto(
+                            id: template?.id ?? const Uuid().v4(),
+                            owner: ownerId,
+                            clientId: clientId,
+                            calories: calories,
+                            protein: protein,
+                            carbs: carbs,
+                            fats: fats,
+                            createdAt: template?.createdAt ?? now,
+                            updatedAt: now,
+                          );
+
+                          showCoachLoadingOverlay(ctx);
+                          try {
+                            await nutritionController.upsertTemplate(
+                              template: updated,
+                            );
+                            if (ctx.mounted) Navigator.of(ctx).pop();
+                          } finally {
+                            if (ctx.mounted) hideCoachLoadingOverlay(ctx);
+                          }
+                        },
                       ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                buildNumberField(
-                  label: 'Calories',
-                  controller: caloriesController,
-                ),
-                const SizedBox(height: 12),
-                buildNumberField(
-                  label: 'Protein (g)',
-                  controller: proteinController,
-                ),
-                const SizedBox(height: 12),
-                buildNumberField(
-                  label: 'Carbs (g)',
-                  controller: carbsController,
-                ),
-                const SizedBox(height: 12),
-                buildNumberField(
-                  label: 'Fats (g)',
-                  controller: fatsController,
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: OpacityButtonWidgetTwo(
-                    buttonColor: Theme.of(ctx).colors.vibrantAccent,
-                    label: 'Save template',
-                    onPressed: () async {
-                      final ownerId =
-                          Supabase.instance.client.auth.currentUser?.id;
-                      final clientId = nutritionController.activeUserId;
-                      if (ownerId == null || clientId == null) {
-                        showSnackbar(
-                          context: ctx,
-                          message: 'Unable to save template.',
-                        );
-                        return;
-                      }
-
-                      final calories =
-                          double.tryParse(caloriesController.text.trim()) ?? 0;
-                      final protein =
-                          double.tryParse(proteinController.text.trim()) ?? 0;
-                      final carbs =
-                          double.tryParse(carbsController.text.trim()) ?? 0;
-                      final fats =
-                          double.tryParse(fatsController.text.trim()) ?? 0;
-                      final now = DateTime.now();
-
-                      final updated = NutritionTemplateDto(
-                        id: template?.id ?? const Uuid().v4(),
-                        owner: ownerId,
-                        clientId: clientId,
-                        calories: calories,
-                        protein: protein,
-                        carbs: carbs,
-                        fats: fats,
-                        createdAt: template?.createdAt ?? now,
-                        updatedAt: now,
-                      );
-
-                      showCoachLoadingOverlay(ctx);
-                      try {
-                        await nutritionController.upsertTemplate(
-                          template: updated,
-                        );
-                        if (ctx.mounted) Navigator.of(ctx).pop();
-                      } finally {
-                        if (ctx.mounted) hideCoachLoadingOverlay(ctx);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
@@ -1040,6 +1069,7 @@ class _MacroLogCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(width: 12),
                     Text(
                       timeLabel,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -1051,7 +1081,7 @@ class _MacroLogCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(999),
                   child: LinearProgressIndicator(

@@ -57,6 +57,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   late final ScrollController _scrollController;
   final List<ChatMessage> _messages = [];
   ChatConversation? _conversation;
+  String? _supabaseUserId;
   String? _currentAgoraUserId;
   String? _targetAgoraUserId;
   late final String _messageHandlerId;
@@ -97,6 +98,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (userId == null) {
         throw Exception('No user ID available. Please sign in again.');
       }
+      _supabaseUserId = userId;
       _currentAgoraUserId = toAgoraUsername(userId);
       _targetAgoraUserId = toAgoraUsername(_targetUserId());
 
@@ -260,10 +262,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   /// Login, then load cache + fetch messages. Cache requires login (201 otherwise).
   Future<void> _loginAndFetchMessages() async {
     try {
-      final currentUserId = _currentAgoraUserId;
-      if (currentUserId == null) return;
+      final supabaseUserId = _supabaseUserId;
+      if (supabaseUserId == null) return;
 
-      await _ensureAgoraLoggedIn(currentUserId);
+      await _ensureAgoraLoggedIn(supabaseUserId);
 
       // Load cached messages only after login (getConversation/loadMessages require login)
       await _loadCachedMessages();
@@ -315,21 +317,24 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   /// Ensure user is logged in. Login happens once when chat opens.
-  Future<void> _ensureAgoraLoggedIn(String userId) async {
+  /// [supabaseUserId] is the raw auth user id; backend derives Agora username for the token.
+  Future<void> _ensureAgoraLoggedIn(String supabaseUserId) async {
+    final agoraUserId = toAgoraUsername(supabaseUserId);
     // Check if already logged in as the correct user
-    if (ChatClient.getInstance.currentUserId == userId) {
+    if (ChatClient.getInstance.currentUserId == agoraUserId) {
       return;
     }
 
-    final token = await ChatBootstrapService.resolveAgoraChatToken(userId);
+    final token =
+        await ChatBootstrapService.resolveAgoraChatToken(supabaseUserId);
     if (token == null || token.isEmpty) {
       throw Exception('Agora chat token is not available.');
     }
 
     try {
-      await ChatClient.getInstance.loginWithToken(userId, token);
+      await ChatClient.getInstance.loginWithToken(agoraUserId, token);
       // Verify login succeeded
-      if (ChatClient.getInstance.currentUserId != userId) {
+      if (ChatClient.getInstance.currentUserId != agoraUserId) {
         throw Exception('Login verification failed. Please try again.');
       }
 
@@ -1053,8 +1058,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                             return _ChatMessageBubble(
                               message: message,
                               isCurrentUser: isCurrentUser,
-                              timestamp: _formatTimestamp(
-                                  _messageTimestamp(message)),
+                              timestamp:
+                                  _formatTimestamp(_messageTimestamp(message)),
                               isDarkMode: isDarkMode,
                               vibrantAccent:
                                   colors?.vibrantAccent ?? Colors.green,

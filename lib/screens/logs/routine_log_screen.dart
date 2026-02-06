@@ -27,6 +27,7 @@ import '../../utils/dialog_utils.dart';
 import '../../app_flavor.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/personal_bests_utils.dart';
+import '../../utils/name_notes_bottom_sheet.dart';
 import '../../utils/session_duration_selector.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -248,25 +249,39 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Column(
-                      spacing: 20,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ExerciseLogListView(
+                  Column(
+                    spacing: 20,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        child: ExerciseLogListView(
                             exerciseLogs: completedExerciseLogs),
-                        const SizedBox(
-                          height: 60,
-                        )
-                      ],
-                    ),
+                      ),
+                      _CoachNoteSection(
+                        log: log,
+                        isCoach: isCoach,
+                        onSaveNote: _saveCoachNote,
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10.0),
+                        child: SizedBox(height: 60),
+                      ),
+                    ],
                   )
                 ],
               ),
             ),
           ),
         ));
+  }
+
+  Future<void> _saveCoachNote(String? note) async {
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    await controller.updateCoachNote(
+      logId: widget.id,
+      note: note,
+    );
   }
 
   void _showBottomSheet() {
@@ -969,6 +984,175 @@ class _StatisticWidget extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CoachNoteSection extends StatelessWidget {
+  final RoutineLogDto log;
+  final bool isCoach;
+  final void Function(String? note) onSaveNote;
+
+  const _CoachNoteSection({
+    required this.log,
+    required this.isCoach,
+    required this.onSaveNote,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasNote = log.coachNote != null && log.coachNote!.trim().isNotEmpty;
+    final isDark = theme.brightness == Brightness.dark;
+
+    if (isCoach) {
+      return _CoachNoteSectionCoach(
+        note: log.coachNote,
+        onSaveNote: onSaveNote,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 0, bottom: 12),
+          child: Divider(
+            thickness: 0.5,
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.black.withValues(alpha: 0.06),
+            height: 16,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Coach feedback',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color:
+                      isDark ? Colors.white.withValues(alpha: 0.9) : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (hasNote)
+                Text(
+                  log.coachNote!,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : Colors.black87,
+                    height: 1.4,
+                  ),
+                )
+              else
+                Text(
+                  'No feedback from your coach yet.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color:
+                        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CoachNoteSectionCoach extends StatelessWidget {
+  final String? note;
+  final void Function(String? note) onSaveNote;
+
+  const _CoachNoteSectionCoach({
+    required this.note,
+    required this.onSaveNote,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasNote = note != null && note!.trim().isNotEmpty;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final dividerColor = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.black.withValues(alpha: 0.06);
+
+    Future<void> openFeedbackSheet() async {
+      final result = await showSingleTextAreaBottomSheet(
+        context: context,
+        title: 'Session feedback',
+        description:
+            'Add or edit feedback for your client. They\'ll see this when they open the session.',
+        hintText:
+            'e.g. Great consistency on squats. Try adding one more set next time.',
+        initialValue: note ?? '',
+        primaryButtonLabel: 'Save',
+      );
+      if (result != null && context.mounted) {
+        onSaveNote(result.isEmpty ? null : result);
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 0, bottom: 12),
+          child: Divider(
+            thickness: 0.5,
+            color: dividerColor,
+            height: 16,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Coach feedback',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.9)
+                      : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: openFeedbackSheet,
+                behavior: HitTestBehavior.opaque,
+                child: hasNote
+                    ? Text(
+                        note!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.85)
+                              : Colors.black87,
+                          height: 1.4,
+                        ),
+                      )
+                    : Text(
+                        'No feedback added yet.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: (isDark ? Colors.white : Colors.black)
+                              .withValues(alpha: 0.5),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

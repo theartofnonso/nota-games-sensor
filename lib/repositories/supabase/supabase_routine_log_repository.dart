@@ -14,6 +14,23 @@ class SupabaseRoutineLogRepository {
 
   UnmodifiableListView<RoutineLogDto> get logs => UnmodifiableListView(_logs);
 
+  /// Returns the owner (user id) of a routine log by id, or null if not found.
+  /// Used by coach app to load the correct client when opening a log from a notification.
+  Future<String?> getOwnerIdForLog(String logId) async {
+    try {
+      final res = await _client
+          .from('routine_logs')
+          .select('owner')
+          .eq('id', logId)
+          .maybeSingle();
+      if (res == null) return null;
+      return res['owner'] as String?;
+    } catch (e) {
+      logger.e('Error fetching owner for log $logId: $e');
+      return null;
+    }
+  }
+
   /// Load logs from Supabase (read-only; writes go through offline layer).
   /// Only loads logs within date range: last year to end of current year.
   Future<void> loadLogs({String? userIdOverride}) async {
@@ -54,16 +71,35 @@ class SupabaseRoutineLogRepository {
         'id': map['id'],
         'templateId': map['templateId'] ?? '',
         'name': map['name'] ?? '',
-        'notes': map['notes'] ?? '',
         'startTime': map['startTime'],
         'endTime': map['endTime'],
         'exercises': map['exercises'] ?? [],
+        'coach_note': map['coach_note'],
       };
 
       return RoutineLogDto.fromJson(json: data);
     } catch (e) {
       logger.e('Error converting map to RoutineLogDto: $e');
       rethrow;
+    }
+  }
+
+  /// Updates only the coach_note for a log (used by coaches). Does not touch
+  /// exercises, times, or other fields. Throws if no row was updated (e.g. RLS).
+  Future<void> updateCoachNote({
+    required String logId,
+    required String? note,
+  }) async {
+    final res = await _client.from('routine_logs').update({
+      'coach_note': note?.trim().isEmpty ?? true ? null : note!.trim(),
+      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', logId).select('id');
+
+    final list = res as List<dynamic>;
+    if (list.isEmpty) {
+      throw Exception(
+        'updateCoachNote: no row updated for logId=$logId (check RLS: coach must have update policy on client logs)',
+      );
     }
   }
 }

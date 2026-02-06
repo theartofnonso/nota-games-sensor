@@ -11,6 +11,8 @@ class RoutineLogDto {
   final DateTime startTime;
   final DateTime endTime;
   final List<ExerciseLogDto> exerciseLogs;
+  /// Single note from the coach for this session. Coaches can add/edit; clients read-only.
+  final String? coachNote;
 
   RoutineLogDto({
     required this.id,
@@ -19,6 +21,7 @@ class RoutineLogDto {
     required this.exerciseLogs,
     required this.startTime,
     required this.endTime,
+    this.coachNote,
   });
 
   Duration duration() {
@@ -33,6 +36,7 @@ class RoutineLogDto {
       'startTime': startTime.toIso8601String(),
       'endTime': endTime.toIso8601String(),
       'exercises': exerciseLogs.map((exercise) => exercise.toJson()).toList(),
+      'coach_note': coachNote,
     };
   }
 
@@ -42,6 +46,7 @@ class RoutineLogDto {
     final name = json["name"] as String;
     final startTime = DateTime.parse(json["startTime"] as String);
     final endTime = DateTime.parse(json["endTime"] as String);
+    final coachNote = json["coach_note"] as String?;
 
     final exerciseLogJsons = json["exercises"] as List;
     final exerciseLogs = exerciseLogJsons
@@ -59,6 +64,7 @@ class RoutineLogDto {
       exerciseLogs: exerciseLogs,
       startTime: startTime,
       endTime: endTime,
+      coachNote: coachNote != null && coachNote.trim().isNotEmpty ? coachNote : null,
     );
   }
 
@@ -69,6 +75,7 @@ class RoutineLogDto {
     DateTime? startTime,
     DateTime? endTime,
     List<ExerciseLogDto>? exerciseLogs,
+    String? coachNote,
   }) {
     return RoutineLogDto(
       id: id ?? this.id,
@@ -79,6 +86,7 @@ class RoutineLogDto {
       exerciseLogs: exerciseLogs != null
           ? exerciseLogs.map((e) => e.copyWith()).toList()
           : this.exerciseLogs.map((e) => e.copyWith()).toList(),
+      coachNote: coachNote ?? this.coachNote,
     );
   }
 

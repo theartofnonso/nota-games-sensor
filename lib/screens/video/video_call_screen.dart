@@ -100,14 +100,14 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) throw StateError('User not authenticated');
 
-    final agoraUserAccount = toAgoraUsername(userId);
     final channelName = _generateChannelName();
-    final token = await _fetchAgoraToken(channelName, agoraUserAccount);
+    final token = await _fetchAgoraToken(channelName, userId);
 
     if (token == null || token.isEmpty) {
       throw StateError('Failed to retrieve Agora token');
     }
 
+    final agoraUserAccount = toAgoraUsername(userId);
     await _engine.joinChannelWithUserAccount(
       token: token,
       channelId: channelName,
@@ -133,14 +133,15 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     return 'call_${a}_$b';
   }
 
+  /// [supabaseUserId] is the raw auth user id; backend derives Agora username for the token.
   Future<String?> _fetchAgoraToken(
-      String channelName, String userAccount) async {
+      String channelName, String supabaseUserId) async {
     final res = await http.post(
       Uri.parse(agoraBaseUrl).resolve(agoraVideoTokenPath),
       headers: notathletesAuthHeaders(),
       body: jsonEncode({
         'channelName': channelName,
-        'userId': userAccount,
+        'userId': supabaseUserId,
       }),
     );
 

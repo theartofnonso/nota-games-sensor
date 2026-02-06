@@ -124,5 +124,92 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
   return result;
 }
 
+/// Shared bottom sheet for a single multiline text field (e.g. session feedback).
+/// Uses [Builder] + viewInsets so the sheet stays visible when the keyboard opens.
+///
+/// Returns the trimmed text when the user taps the primary button, or null if dismissed.
+Future<String?> showSingleTextAreaBottomSheet({
+  required BuildContext context,
+  required String title,
+  required String description,
+  required String hintText,
+  String initialValue = '',
+  String primaryButtonLabel = 'Save',
+}) async {
+  final controller = TextEditingController(text: initialValue);
+
+  final result = await showAppBottomSheet<String?>(
+    context: context,
+    isScrollControlled: true,
+    enableDrag: false,
+    child: Builder(
+      builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 26,
+            right: 26,
+            top: 26,
+            bottom: 26 + bottomInset,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                title,
+                style: Theme.of(ctx)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                description,
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                      color: (isDark ? Colors.white : Colors.black)
+                          .withValues(alpha: 0.6),
+                    ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                maxLines: 4,
+                cursorColor: isDark ? Colors.white : Colors.black,
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  alignLabelWithHint: true,
+                ),
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  buttonColor: Theme.of(ctx).colors.vibrantAccent,
+                  showArrowRight: false,
+                  label: primaryButtonLabel,
+                  onPressed: () =>
+                      Navigator.of(ctx).pop<String?>(controller.text.trim()),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+
+  return result;
+}
+
 
 
