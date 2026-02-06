@@ -230,13 +230,16 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
   String typed = '';
   return showAppBottomSheet<bool>(
     context: context,
-    isScrollControlled: false,
+    isScrollControlled: true,
     isDismissible: true,
     child: StatefulBuilder(
       builder: (context, setSheetState) {
         final matches = typed.trim() == _deleteAccountConfirmationPhrase;
+        final viewInsets = MediaQuery.of(context).viewInsets;
         return Padding(
-          padding: const EdgeInsets.all(26),
+          padding: const EdgeInsets.all(26).add(EdgeInsets.only(
+            bottom: viewInsets.bottom,
+          )),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
