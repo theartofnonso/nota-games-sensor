@@ -10,6 +10,97 @@ import '../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../enums/exercise_type_enums.dart';
 import '../enums/template_changes_type_message_enums.dart';
 
+/// Entries for a specific set index across all exercise logs.
+/// Returns (ExerciseLogDto, SetDto) pairs for logs that have that set.
+/// setIndex is 0-based (0 = Set 1, 1 = Set 2, 2 = Set 3).
+List<(ExerciseLogDto, SetDto)> getSetIndexEntries({
+  required List<ExerciseLogDto> exerciseLogs,
+  required int setIndex,
+}) {
+  final result = <(ExerciseLogDto, SetDto)>[];
+  for (final log in exerciseLogs) {
+    if (log.sets.length > setIndex) {
+      result.add((log, log.sets[setIndex]));
+    }
+  }
+  result.sort((a, b) => a.$1.createdAt.compareTo(b.$1.createdAt));
+  return result;
+}
+
+/// Returns the maximum number of sets across all exercise logs.
+int maxSetCountAcrossLogs({required List<ExerciseLogDto> exerciseLogs}) {
+  if (exerciseLogs.isEmpty) return 0;
+  return exerciseLogs
+      .map((log) => log.sets.length)
+      .reduce((a, b) => a > b ? a : b);
+}
+
+/// Top N distinct weights across all weight-based sets.
+/// Returns heaviest first, descending.
+List<double> getTopWeights({
+  required List<ExerciseLogDto> exerciseLogs,
+  int count = 3,
+}) {
+  final weights = <double>{};
+  for (final log in exerciseLogs) {
+    for (final set in log.sets) {
+      if (set is WeightAndRepsSetDto && set.weight > 0) {
+        weights.add(set.weight);
+      }
+    }
+  }
+  final sorted = weights.toList()..sort((a, b) => b.compareTo(a));
+  return sorted.take(count).toList();
+}
+
+/// Entries for a specific weight across all exercise logs.
+/// Returns (ExerciseLogDto, WeightAndRepsSetDto) pairs where set.weight matches.
+List<(ExerciseLogDto, WeightAndRepsSetDto)> getEntriesForWeight({
+  required List<ExerciseLogDto> exerciseLogs,
+  required double weight,
+}) {
+  const epsilon = 1e-6;
+  final result = <(ExerciseLogDto, WeightAndRepsSetDto)>[];
+  for (final log in exerciseLogs) {
+    for (final set in log.sets) {
+      if (set is WeightAndRepsSetDto &&
+          (set.weight - weight).abs() < epsilon) {
+        result.add((log, set));
+      }
+    }
+  }
+  result.sort((a, b) => a.$1.createdAt.compareTo(b.$1.createdAt));
+  return result;
+}
+
+/// One entry per session for a weight: the set with highest reps at that weight.
+/// Returns (ExerciseLogDto, WeightAndRepsSetDto, int setIndex) - setIndex is 1-based.
+List<(ExerciseLogDto, WeightAndRepsSetDto, int)> getEntriesForWeightMaxRepsPerSession({
+  required List<ExerciseLogDto> exerciseLogs,
+  required double weight,
+}) {
+  const epsilon = 1e-6;
+  final result = <(ExerciseLogDto, WeightAndRepsSetDto, int)>[];
+  for (final log in exerciseLogs) {
+    WeightAndRepsSetDto? bestSet;
+    int bestIndex = -1;
+    for (var i = 0; i < log.sets.length; i++) {
+      final set = log.sets[i];
+      if (set is WeightAndRepsSetDto &&
+          (set.weight - weight).abs() < epsilon &&
+          (bestSet == null || set.reps > bestSet.reps)) {
+        bestSet = set;
+        bestIndex = i;
+      }
+    }
+    if (bestSet != null && bestIndex >= 0) {
+      result.add((log, bestSet, bestIndex + 1));
+    }
+  }
+  result.sort((a, b) => a.$1.createdAt.compareTo(b.$1.createdAt));
+  return result;
+}
+
 /// Highest value per [ExerciseLogDto]
 
 WeightAndRepsSetDto heaviestWeightInSetForExerciseLog(
@@ -462,6 +553,39 @@ bool withDurationOnly({required ExerciseType type}) {
   return type == ExerciseType.duration;
 }
 
+/// Time periods for filtering exercise logs.
+enum ExerciseLogTimePeriod {
+  last30Days('Last 30 days'),
+  quarter('Quarter'),
+  lastYear('Last year');
+
+  const ExerciseLogTimePeriod(this.label);
+  final String label;
+}
+
+/// Returns logs whose createdAt is within the given time period.
+List<ExerciseLogDto> filterExerciseLogsByTimePeriod({
+  required List<ExerciseLogDto> exerciseLogs,
+  required ExerciseLogTimePeriod period,
+}) {
+  final now = DateTime.now();
+  final DateTime cutoff;
+  switch (period) {
+    case ExerciseLogTimePeriod.last30Days:
+      cutoff = now.subtract(const Duration(days: 30));
+      break;
+    case ExerciseLogTimePeriod.quarter:
+      cutoff = now.subtract(const Duration(days: 90));
+      break;
+    case ExerciseLogTimePeriod.lastYear:
+      cutoff = now.subtract(const Duration(days: 365));
+      break;
+  }
+  return exerciseLogs
+      .where((log) => !log.createdAt.isBefore(cutoff))
+      .toList();
+}
+
 List<ExerciseLogDto> loggedExercises(
     {required List<ExerciseLogDto> exerciseLogs}) {
   return exerciseLogs.where((exerciseLog) {
@@ -487,4 +611,132 @@ RoutineLogDto routineWithLoggedExercises({required RoutineLogDto log}) {
   }).toList();
 
   return log.copyWith(exerciseLogs: loggedExerciseLogs);
+}
+
+// --- Progression / compare helpers ---
+
+double totalSessionVolumeForExerciseLog({required ExerciseLogDto exerciseLog}) {
+  final type = exerciseLog.exercise.type;
+  if (type == ExerciseType.weights) {
+    return exerciseLog.sets
+        .whereType<WeightAndRepsSetDto>()
+        .where((s) => s.weight > 0 && s.reps > 0 && s.checked)
+        .fold<double>(0.0, (sum, s) => sum + s.volume());
+  }
+  if (type == ExerciseType.bodyWeight) {
+    return exerciseLog.sets
+        .whereType<RepsSetDto>()
+        .where((s) => s.reps > 0 && s.checked)
+        .fold<double>(0.0, (sum, s) => sum + s.reps);
+  }
+  if (type == ExerciseType.duration) {
+    return exerciseLog.sets
+        .whereType<DurationSetDto>()
+        .where((s) => s.duration.inMilliseconds > 0 && s.checked)
+        .fold<double>(0.0, (sum, s) => sum + s.duration.inMilliseconds);
+  }
+  return 0.0;
+}
+
+enum ProgressionTrend { improving, stable, regressing }
+
+List<ExerciseLogDto> _distinctSessionsByRoutineLogId(List<ExerciseLogDto> logs) {
+  final byId = <String?, ExerciseLogDto>{};
+  for (final log in logs) {
+    if (!byId.containsKey(log.routineLogId)) byId[log.routineLogId] = log;
+  }
+  return byId.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+}
+
+double _avgHeaviestWeightPerSession(List<ExerciseLogDto> logs) {
+  if (logs.isEmpty) return 0.0;
+  double sum = 0.0;
+  for (final log in logs) {
+    final set = heaviestWeightInSetForExerciseLog(exerciseLog: log);
+    if (set.weight > 0) sum += set.weight;
+  }
+  return sum / logs.length;
+}
+
+ProgressionTrend getProgressionTrendForWeightLogs(List<ExerciseLogDto> sortedLogs, {int recentCount = 4}) {
+  if (sortedLogs.length < 2 || recentCount < 1) return ProgressionTrend.stable;
+  final distinct = _distinctSessionsByRoutineLogId(sortedLogs);
+  if (distinct.length < 2) return ProgressionTrend.stable;
+  final recent = distinct.reversed.take(recentCount).toList();
+  final previous = distinct.reversed.skip(recentCount).take(recentCount).toList();
+  if (previous.isEmpty) return ProgressionTrend.stable;
+  double recentAvg = _avgHeaviestWeightPerSession(recent);
+  double previousAvg = _avgHeaviestWeightPerSession(previous);
+  if (recentAvg > previousAvg * 1.02) return ProgressionTrend.improving;
+  if (recentAvg < previousAvg * 0.98) return ProgressionTrend.regressing;
+  return ProgressionTrend.stable;
+}
+
+ProgressionTrend getProgressionTrendForVolumeLogs(List<ExerciseLogDto> sortedLogs, {int recentCount = 4}) {
+  if (sortedLogs.length < 2 || recentCount < 1) return ProgressionTrend.stable;
+  final distinct = _distinctSessionsByRoutineLogId(sortedLogs);
+  if (distinct.length < 2) return ProgressionTrend.stable;
+  final recent = distinct.reversed.take(recentCount).toList();
+  final previous = distinct.reversed.skip(recentCount).take(recentCount).toList();
+  if (previous.isEmpty) return ProgressionTrend.stable;
+  double recentAvg = recent.fold<double>(0.0, (s, log) => s + totalSessionVolumeForExerciseLog(exerciseLog: log)) / recent.length;
+  double previousAvg = previous.fold<double>(0.0, (s, log) => s + totalSessionVolumeForExerciseLog(exerciseLog: log)) / previous.length;
+  if (recentAvg > previousAvg * 1.05) return ProgressionTrend.improving;
+  if (recentAvg < previousAvg * 0.95) return ProgressionTrend.regressing;
+  return ProgressionTrend.stable;
+}
+
+ProgressionTrend getProgressionTrendForRepsLogs(List<ExerciseLogDto> sortedLogs, {int recentCount = 4}) {
+  if (sortedLogs.length < 2 || recentCount < 1) return ProgressionTrend.stable;
+  final distinct = _distinctSessionsByRoutineLogId(sortedLogs);
+  if (distinct.length < 2) return ProgressionTrend.stable;
+  final recent = distinct.reversed.take(recentCount).toList();
+  final previous = distinct.reversed.skip(recentCount).take(recentCount).toList();
+  if (previous.isEmpty) return ProgressionTrend.stable;
+  double recentAvg = recent.fold<double>(0.0, (s, log) => s + totalRepsForExerciseLog(exerciseLog: log)) / recent.length;
+  double previousAvg = previous.fold<double>(0.0, (s, log) => s + totalRepsForExerciseLog(exerciseLog: log)) / previous.length;
+  if (recentAvg > previousAvg * 1.05) return ProgressionTrend.improving;
+  if (recentAvg < previousAvg * 0.95) return ProgressionTrend.regressing;
+  return ProgressionTrend.stable;
+}
+
+ProgressionTrend getProgressionTrendForDurationLogs(List<ExerciseLogDto> sortedLogs, {int recentCount = 4}) {
+  if (sortedLogs.length < 2 || recentCount < 1) return ProgressionTrend.stable;
+  final distinct = _distinctSessionsByRoutineLogId(sortedLogs);
+  if (distinct.length < 2) return ProgressionTrend.stable;
+  final recent = distinct.reversed.take(recentCount).toList();
+  final previous = distinct.reversed.skip(recentCount).take(recentCount).toList();
+  if (previous.isEmpty) return ProgressionTrend.stable;
+  double recentAvg = recent.fold<double>(0.0, (s, log) => s + totalDurationExerciseLog(exerciseLog: log).inMilliseconds) / recent.length;
+  double previousAvg = previous.fold<double>(0.0, (s, log) => s + totalDurationExerciseLog(exerciseLog: log).inMilliseconds) / previous.length;
+  if (recentAvg > previousAvg * 1.05) return ProgressionTrend.improving;
+  if (recentAvg < previousAvg * 0.95) return ProgressionTrend.regressing;
+  return ProgressionTrend.stable;
+}
+
+(double weight, List<int> reps)? repsAtSameWeightSummary(List<ExerciseLogDto> sortedLogs, {int minSessionsAtWeight = 2}) {
+  if (sortedLogs.isEmpty) return null;
+  final distinct = _distinctSessionsByRoutineLogId(sortedLogs);
+  if (distinct.length < minSessionsAtWeight) return null;
+  final weightSetsByLog = <ExerciseLogDto, WeightAndRepsSetDto>{};
+  for (final log in distinct) {
+    final sets = log.sets.whereType<WeightAndRepsSetDto>().where((s) => s.weight > 0 && s.reps > 0 && s.checked).toList();
+    if (sets.isEmpty) continue;
+    weightSetsByLog[log] = sets.reduce((a, b) => a.weight >= b.weight ? a : b);
+  }
+  if (weightSetsByLog.length < minSessionsAtWeight) return null;
+  final weights = weightSetsByLog.values.map((s) => s.weight).toList();
+  double bucketWeight = weights.first;
+  int maxCount = 0;
+  for (final w in weights) {
+    final count = weights.where((x) => (x - w).abs() < 1.0).length;
+    if (count > maxCount) { maxCount = count; bucketWeight = w; }
+  }
+  if (maxCount < minSessionsAtWeight) return null;
+  final sessionsWithWeight = distinct.where((log) {
+    final s = weightSetsByLog[log];
+    return s != null && (s.weight - bucketWeight).abs() < 1.0;
+  }).toList();
+  sessionsWithWeight.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  return (bucketWeight, sessionsWithWeight.map((log) => weightSetsByLog[log]!.reps).toList());
 }

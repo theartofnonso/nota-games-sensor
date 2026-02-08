@@ -208,7 +208,6 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
                       child: OpacityButtonWidgetTwo(
                           buttonColor: Theme.of(context).colors.vibrantAccent,
                           solidBackground: true,
-                          showArrowRight: false,
                           label: widget.plan?.id.isNotEmpty ?? false
                               ? "Update Plan"
                               : "Create Plan",

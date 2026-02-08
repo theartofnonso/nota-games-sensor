@@ -67,7 +67,6 @@ Future<void> _showCoachAccessRequiredSheet(BuildContext context) async {
               },
               label: "Got it",
               buttonColor: Theme.of(context).colors.vibrantAccent,
-              showArrowRight: false,
             ),
           ),
         ],

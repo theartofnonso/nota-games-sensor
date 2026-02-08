@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/colors.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
@@ -26,9 +27,6 @@ class CoachFeedbackCard extends StatelessWidget {
         if (latest == null) return const SizedBox.shrink();
 
         final theme = Theme.of(context);
-        // Purple for coach feedback (distinct from green progress / blue hours cards)
-        const feedbackAccent = Color(0xFF7C3AED);
-
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Material(
@@ -40,14 +38,14 @@ class CoachFeedbackCard extends StatelessWidget {
                 borderRadius: 20,
                 padding: const EdgeInsets.all(20),
                 gradientColors: [
-                  feedbackAccent.withValues(alpha: 0.35),
-                  feedbackAccent.withValues(alpha: 0.15),
+                  sapphireDark80.withValues(alpha: 0.35),
+                  sapphireDark80.withValues(alpha: 0.15),
                   Colors.black.withValues(alpha: 0.45),
                 ],
                 child: _LatestNoteContent(
                   log: latest,
                   theme: theme,
-                  accent: feedbackAccent,
+                  accent: sapphireDark80,
                 ),
               ),
             ),
@@ -127,7 +125,7 @@ class _LatestNoteContent extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border(
               left: BorderSide(
-                color: accent.withValues(alpha: 0.8),
+                color: Colors.white.withValues(alpha: 0.5),
                 width: 3,
               ),
             ),

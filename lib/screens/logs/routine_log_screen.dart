@@ -657,7 +657,6 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                         child: OpacityButtonWidgetTwo(
                           solidBackground: true,
                           buttonColor: Theme.of(context).colors.vibrantAccent,
-                          showArrowRight: false,
                           label: sharing ? "Sharing…" : "Share",
                           onPressed: sharing
                               ? null

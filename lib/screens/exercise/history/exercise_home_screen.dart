@@ -9,7 +9,16 @@ import 'package:trainware/screens/exercise/history/history_screen.dart';
 
 import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../utils/dialog_utils.dart';
-import '../../../utils/exercise_logs_utils.dart';
+import '../../../utils/exercise_logs_utils.dart'
+    show
+        loggedExercises,
+        filterExerciseLogsByTimePeriod,
+        ExerciseLogTimePeriod,
+        heaviestSetVolume,
+        heaviestWeight,
+        longestDuration,
+        mostRepsInSet,
+        mostRepsInSession;
 import '../../../utils/general_utils.dart';
 import '../../../utils/name_notes_bottom_sheet.dart';
 import '../../../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -27,6 +36,7 @@ class ExerciseHomeScreen extends StatefulWidget {
 
 class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   ExerciseDto? _exercise;
+  ExerciseLogTimePeriod _timePeriod = ExerciseLogTimePeriod.last30Days;
 
   bool get _isSystemExercise {
     final exercise = _exercise ?? widget.exercise;
@@ -136,21 +146,25 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
             [];
 
     final completedExerciseLogs = loggedExercises(exerciseLogs: exerciseLogs);
+    final filteredLogs = filterExerciseLogsByTimePeriod(
+      exerciseLogs: completedExerciseLogs,
+      period: _timePeriod,
+    );
 
     final heaviestSetVolumeRecord =
-        heaviestSetVolume(exerciseLogs: completedExerciseLogs);
+        heaviestSetVolume(exerciseLogs: filteredLogs);
 
     final heaviestWeightRecord =
-        heaviestWeight(exerciseLogs: completedExerciseLogs);
+        heaviestWeight(exerciseLogs: filteredLogs);
 
     final longestDurationRecord =
-        longestDuration(exerciseLogs: completedExerciseLogs);
+        longestDuration(exerciseLogs: filteredLogs);
 
     final mostRepsSetRecord =
-        mostRepsInSet(exerciseLogs: completedExerciseLogs);
+        mostRepsInSet(exerciseLogs: filteredLogs);
 
     final mostRepsSessionRecord =
-        mostRepsInSession(exerciseLogs: completedExerciseLogs);
+        mostRepsInSession(exerciseLogs: filteredLogs);
 
     return DefaultTabController(
         length: 2,
@@ -211,9 +225,13 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
                     mostRepsSet: mostRepsSetRecord,
                     mostRepsSession: mostRepsSessionRecord,
                     exercise: exercise,
-                    exerciseLogs: completedExerciseLogs,
+                    exerciseLogs: filteredLogs,
+                    timePeriod: _timePeriod,
+                    onTimePeriodChanged: (period) {
+                      setState(() => _timePeriod = period);
+                    },
                   ),
-                  ExerciseLogHistoryScreen(exerciseLogs: completedExerciseLogs),
+                  ExerciseLogHistoryScreen(exerciseLogs: filteredLogs),
                 ],
               ),
             ),

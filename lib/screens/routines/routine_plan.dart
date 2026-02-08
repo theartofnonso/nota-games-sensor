@@ -356,37 +356,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     );
   }
 
-  void _deleteRoutinePlan({required RoutinePlanDto plan}) async {
-    if (AppConfig.isCoach) {
-      showCoachLoadingOverlay(context);
-    } else {
-      _toggleLoadingState();
-    }
-    try {
-      final exerciseAndRoutineController =
-          Provider.of<SupabaseExerciseAndRoutineController>(context,
-              listen: false);
-
-      await exerciseAndRoutineController.removePlan(plan: plan);
-
-      if (mounted) {
-        context.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        showSnackbar(context: context, message: "Unable to remove plan");
-      }
-    } finally {
-      if (mounted) {
-        if (AppConfig.isCoach) {
-          hideCoachLoadingOverlay(context);
-        } else {
-          _toggleLoadingState();
-        }
-      }
-    }
-  }
-
   Future<void> _navigateToRoutinePlanEditor() async {
     final exerciseAndRoutineController =
         Provider.of<SupabaseExerciseAndRoutineController>(context,
@@ -490,35 +459,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                           _showMenuBottomSheet();
                         }
                       }),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const FaIcon(
-                      FontAwesomeIcons.trash,
-                      size: 16,
-                      color: Colors.redAccent,
-                    ),
-                    horizontalTitleGap: 6,
-                    title: Text("Delete",
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(color: Colors.red)),
-                    onTap: () {
-                      Navigator.of(context).pop();
-
-                      showBottomSheetWithSingleAction(
-                          context: context,
-                          title: "Delete plan?",
-                          description:
-                              "Are you sure you want to delete this plan?",
-                          action: () {
-                            Navigator.of(context).pop();
-                            _deleteRoutinePlan(plan: plan);
-                          },
-                          actionLabel: 'Delete',
-                          isDestructive: true);
-                    },
-                  ),
                 ] else
                   ListTile(
                     contentPadding: EdgeInsets.zero,

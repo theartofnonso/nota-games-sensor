@@ -13,6 +13,26 @@ import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 
+/// Navigates directly to the unsaved session (no bottom sheet).
+/// Use from settings or when a single tap should open the session.
+void navigateToUnsavedSession(BuildContext context) {
+  final cache = SharedPrefs().routineLog;
+  if (cache.isEmpty) return;
+
+  try {
+    final json = jsonDecode(cache);
+    final routineLog = RoutineLogDto.fromJson(json: json);
+    final arguments = RoutineLogArguments(
+      log: routineLog,
+      editorMode: RoutineEditorMode.log,
+      cached: true,
+    );
+    navigateToRoutineLogEditor(context: context, arguments: arguments);
+  } catch (e) {
+    debugPrint('[UnsavedSession] Error navigating to session: $e');
+  }
+}
+
 /// Shows the "unsaved workout" bottom sheet and lets the user
 /// resume the cached session.
 Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
@@ -179,7 +199,6 @@ class _UnsavedWorkoutBottomSheetContentState
                 label: 'Resume workout',
                 buttonColor: theme.colors.vibrantAccent,
                 solidBackground: true,
-                showArrowRight: false,
                 onPressed: widget.onResume,
               ),
             ),

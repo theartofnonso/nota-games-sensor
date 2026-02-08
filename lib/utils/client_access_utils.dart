@@ -64,7 +64,7 @@ Future<void> _showClientAccessRequiredSheet(BuildContext context) async {
           ),
           const SizedBox(height: 8),
           Text(
-            "To use the app, complete the survey, set up your subscription, and book a consultation call. Then come back and sign in using the same email you used for payment.",
+            "To use the app, complete the survey, set up your subscription. Your coach will be waiting for you in the app.",
             style: Theme.of(context).textTheme.bodyMedium,
             textAlign: TextAlign.start,
           ),
@@ -87,7 +87,6 @@ Future<void> _showClientAccessRequiredSheet(BuildContext context) async {
                   },
                   label: "Open survey",
                   buttonColor: buttonColor,
-                  showArrowRight: false,
                 );
               },
             ),

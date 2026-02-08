@@ -148,8 +148,6 @@ class _OverviewScreenState extends State<OverviewScreen>
       });
     }
 
-    final hasCachedSession = currentCachedSessionState;
-
     return Scaffold(
       backgroundColor: appBarBackgroundColor(context: context),
       body: Stack(
@@ -160,29 +158,6 @@ class _OverviewScreenState extends State<OverviewScreen>
               onDateTap: (date) => _showLogsForDate(context, date),
             ),
           ),
-          // Notification icon overlay (only when cached session exists)
-          if (hasCachedSession)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
-              right: 72, // Position to left of settings icon
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFf59e0b).withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: IconButton(
-                    icon: const FaIcon(FontAwesomeIcons.bell, size: 18),
-                    onPressed: _showRetryBottomSheet,
-                    tooltip: 'Unsaved workout',
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(12),
-                    constraints: const BoxConstraints(),
-                  ),
-                ),
-              ),
-            ),
           // Settings icon overlay
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,

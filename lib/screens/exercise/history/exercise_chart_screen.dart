@@ -20,11 +20,13 @@ import '../../../dtos/set_dtos/set_dto.dart';
 import '../../../enums/chart_unit_enum.dart';
 import '../../../enums/exercise_type_enums.dart';
 import '../../../utils/exercise_logs_utils.dart';
+import '../../../utils/theme/color_extensions.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/lottie_exercise_registry.dart';
 import '../../../widgets/chart/line_chart_widget.dart';
+import '../../../widgets/exercise_history/set_breakdown_section.dart';
+import '../../../widgets/exercise_history/top_weights_breakdown_section.dart';
 import '../../logs/routine_log_screen.dart';
-import 'package:trainware/utils/theme/color_extensions.dart';
 
 enum SummaryType {
   weight("Heaviest Weight"),
@@ -47,6 +49,8 @@ class ExerciseChartScreen extends StatefulWidget {
   final (String?, int) mostRepsSession;
   final ExerciseDto exercise;
   final List<ExerciseLogDto> exerciseLogs;
+  final ExerciseLogTimePeriod timePeriod;
+  final void Function(ExerciseLogTimePeriod) onTimePeriodChanged;
 
   const ExerciseChartScreen(
       {super.key,
@@ -56,7 +60,9 @@ class ExerciseChartScreen extends StatefulWidget {
       required this.mostRepsSet,
       required this.mostRepsSession,
       required this.exercise,
-      required this.exerciseLogs});
+      required this.exerciseLogs,
+      required this.timePeriod,
+      required this.onTimePeriodChanged});
 
   @override
   State<ExerciseChartScreen> createState() => _ExerciseChartScreenState();
@@ -243,6 +249,53 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: CupertinoSlidingSegmentedControl<ExerciseLogTimePeriod>(
+                  groupValue: widget.timePeriod,
+                  backgroundColor: isDarkMode
+                      ? Theme.of(context).colors.sapphireDark
+                      : Colors.grey.shade400,
+                  thumbColor: isDarkMode
+                      ? Theme.of(context).colors.sapphireDark80
+                      : Colors.white,
+                  children: {
+                    ExerciseLogTimePeriod.last30Days: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 4),
+                      child: Text(
+                        ExerciseLogTimePeriod.last30Days.label,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    ExerciseLogTimePeriod.quarter: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 4),
+                      child: Text(
+                        ExerciseLogTimePeriod.quarter.label,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    ExerciseLogTimePeriod.lastYear: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 4),
+                      child: Text(
+                        ExerciseLogTimePeriod.lastYear.label,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  },
+                  onValueChanged: (value) {
+                    if (value != null) {
+                      widget.onTimePeriodChanged(value);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
               AspectRatio(
                 aspectRatio: 2,
                 child: Center(
@@ -485,6 +538,16 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           _navigateTo(routineLogId: widget.mostRepsSession.$1),
                       enabled: widget.exerciseLogs.isNotEmpty),
                 ),
+              SetBreakdownSection(
+                exercise: exercise,
+                exerciseLogs: widget.exerciseLogs,
+                selectedType: currentType,
+              ),
+              TopWeightsBreakdownSection(
+                exercise: exercise,
+                exerciseLogs: widget.exerciseLogs,
+                selectedType: currentType,
+              ),
             ],
           ),
         ),

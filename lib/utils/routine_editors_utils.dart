@@ -224,7 +224,6 @@ Future<bool> confirmRemoveExerciseBottomSheet({
             child: OpacityButtonWidgetTwo(
               label: 'Remove',
               buttonColor: Colors.red,
-              showArrowRight: false,
               onPressed: () {
                 Navigator.of(context).pop();
                 shouldRemove = true;

@@ -642,7 +642,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
               child: OpacityButtonWidgetTwo(
                 label: 'Replace',
                 buttonColor: vibrantGreen,
-                showArrowRight: false,
                 onPressed: () {
                   Navigator.of(context).pop();
                   shouldReplace = true;
@@ -1094,9 +1093,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                             ],
                           ),
                         ),
-                        // Alternatives section - always show in template mode and live log mode
-                        if (isTemplateMode ||
-                            (isLogMode && widget.showSetCheck)) ...[
+                        // Alternatives section - only show when at least one alternative exists
+                        if ((isTemplateMode ||
+                                (isLogMode && widget.showSetCheck)) &&
+                            exerciseLog.alternatives.isNotEmpty) ...[
                           Builder(builder: (context) {
                             final isDark =
                                 Theme.of(context).brightness == Brightness.dark;

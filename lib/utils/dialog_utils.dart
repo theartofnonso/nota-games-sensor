@@ -151,8 +151,7 @@ void showBottomSheetWithSingleAction(
                   label: actionLabel,
                   buttonColor: isDestructive
                       ? Colors.red
-                      : (actionColor ?? vibrantGreen),
-                  showArrowRight: false),
+                      : (actionColor ?? vibrantGreen)),
             ),
           ],
         ),
@@ -254,7 +253,6 @@ Future<bool> showSimilarExercisesDialog({
               },
               label: 'Proceed',
               buttonColor: vibrantGreen,
-              showArrowRight: false,
             ),
           ),
         ],
@@ -304,7 +302,6 @@ Future<bool> confirmDiscardChangesBottomSheet({
               },
               label: 'Leave',
               buttonColor: Colors.red,
-              showArrowRight: false,
             ),
           ),
         ],

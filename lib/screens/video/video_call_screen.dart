@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/config/video_config.dart';
 
 import '../../utils/agora_chat_utils.dart';
+import '../../utils/dialog_utils.dart';
 import '../../utils/notathletes_auth_headers.dart';
 import '../../urls.dart';
 
@@ -89,6 +90,23 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         },
         onError: (err, msg) {
           debugPrint('Agora error: $err, $msg');
+          if (err == ErrorCodeType.errInvalidToken) {
+            _engine.leaveChannel();
+            if (mounted) {
+              showBottomSheetWithSingleAction(
+                context: context,
+                title: 'Unable to join call',
+                description:
+                    'The connection could not be established. Please try again.',
+                action: () {
+                  Navigator.of(context).pop(); // close sheet
+                  if (mounted) Navigator.of(context).pop(); // close video screen
+                },
+                actionLabel: 'Got it',
+                isDismissible: false,
+              );
+            }
+          }
         },
       ),
     );
@@ -168,17 +186,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   Future<void> _toggleCamera() async {
     final newState = !_isCameraEnabled;
 
-    // Update channel media options to stop/start publishing camera track
-    // When camera is off, stop publishing so remote user doesn't see the stream
-    await _engine.updateChannelMediaOptions(
-      ChannelMediaOptions(
-        autoSubscribeVideo: true,
-        autoSubscribeAudio: true,
-        publishCameraTrack: newState, // false when camera is off
-        publishMicrophoneTrack: true,
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-      ),
-    );
+    // Use enableLocalVideo to turn capture on/off. Avoids updateChannelMediaOptions
+    // which can throw AgoraRtcException(-8) when channel state doesn't allow it.
+    await _engine.enableLocalVideo(newState);
 
     setState(() => _isCameraEnabled = newState);
   }

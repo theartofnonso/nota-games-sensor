@@ -47,6 +47,9 @@ import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/settings/delete_account_section.dart';
 import '../../widgets/settings/coach_feedback_card.dart';
+import '../../widgets/buttons/opacity_button_widget_two.dart';
+import '../../widgets/empty_states/list_empty_state.dart';
+import '../../utils/lottie_exercise_registry.dart';
 import '../../screens/routines/routine_plan.dart';
 
 enum WeightUnit {
@@ -106,6 +109,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   /// Stored so [_handleChatUnreadChange] and [dispose] can use it without
   /// [context.read], which can throw when this widget is not in the tree.
   ClientOverrideController? _clientOverrideController;
+
+  static const double _sectionSpacing = 16.0;
 
   @override
   Widget build(BuildContext context) {
@@ -214,230 +219,243 @@ class _SettingsScreenState extends State<SettingsScreen>
         child: Stack(
           children: [
             SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isCoach)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                      child: Row(
-                        children: [
-                          if (headerInitials != null) ...[
-                            Container(
-                              width: 36,
-                              height: 36,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    (isDarkMode ? Colors.white : Colors.black)
-                                        .withValues(alpha: 0.18),
-                                    (isDarkMode ? Colors.white : Colors.black)
-                                        .withValues(alpha: 0.05),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                headerInitials,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelLarge
-                                    ?.copyWith(
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                          ],
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+              child: controller.plans.isEmpty
+                  ? _buildNoPlanEmptyState(
+                      isCoach: isCoach,
+                      isDarkMode: isDarkMode,
+                      headerName: headerName,
+                      headerEmail: headerEmail,
+                      headerInitials: headerInitials,
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isCoach)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            child: Row(
                               children: [
-                                Text(
-                                  headerName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black,
-                                        fontWeight: FontWeight.w500,
+                                if (headerInitials != null) ...[
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          (isDarkMode ? Colors.white : Colors.black)
+                                              .withValues(alpha: 0.18),
+                                          (isDarkMode ? Colors.white : Colors.black)
+                                              .withValues(alpha: 0.05),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
                                       ),
-                                ),
-                                if (headerEmail.trim().isNotEmpty)
-                                  Text(
-                                    headerEmail,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: isDarkMode
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.6)
-                                              : Colors.black
-                                                  .withValues(alpha: 0.6),
-                                        ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      headerInitials,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                : Colors.black,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
                                   ),
+                                  const SizedBox(width: 12),
+                                ],
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        headerName,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              color: isDarkMode
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                      if (headerEmail.trim().isNotEmpty)
+                                        Text(
+                                          headerEmail,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: isDarkMode
+                                                    ? Colors.white
+                                                        .withValues(alpha: 0.6)
+                                                    : Colors.black
+                                                        .withValues(alpha: 0.6),
+                                              ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: FaIcon(
+                                    FontAwesomeIcons.users,
+                                    color: isDarkMode ? Colors.white70 : Colors.black,
+                                    size: 18,
+                                  ),
+                                  onPressed: _goBackToCoachList,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
                               ],
                             ),
                           ),
-                          IconButton(
-                            icon: FaIcon(
-                              FontAwesomeIcons.users,
-                              color: isDarkMode ? Colors.white70 : Colors.black,
-                              size: 18,
+                        // Calendar widget at top
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                          child: Calendar(
+                            logs: logs,
+                            onSelectDate: (date) => _showLogsForDate(context, date),
+                            onChevronTap: () {
+                              if (widget.onClose != null) {
+                                widget.onClose!();
+                              } else {
+                                context.pop();
+                              }
+                            },
+                          ),
+                        ),
+                        // Unsaved session card
+                        if (_hasCachedSession) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                            child: _UnsavedSessionCard(
+                              onTap: () => navigateToUnsavedSession(context),
                             ),
-                            onPressed: _goBackToCoachList,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
                           ),
                         ],
-                      ),
-                    ),
-                  // Calendar widget at top
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Calendar(
-                      logs: logs,
-                      onSelectDate: (date) => _showLogsForDate(context, date),
-                      onChevronTap: () {
-                        if (widget.onClose != null) {
-                          widget.onClose!();
-                        } else {
-                          context.pop();
-                        }
-                      },
-                    ),
-                  ),
-                  // Unsaved session card
-                  if (_hasCachedSession) ...[
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: _UnsavedSessionCard(
-                        onTap: () => showUnsavedWorkoutBottomSheet(context),
-                      ),
-                    ),
-                  ],
-                  _TrainingInsightsSection(
-                    yearStats: yearStats,
-                    yearHoursStats: yearHoursStats,
-                    predictionInfo: predictionInfo,
-                  ),
-                  const SizedBox(height: 16),
-                  _RoutinePlansSection(),
-                  const SizedBox(height: 16),
-                  if (!AppConfig.isClient ||
-                      nutritionController.nutritionTemplate != null) ...[
-                    NutritionTrackingCarousel(
-                      goalCalories: goalCalories,
-                      remainingCalories: remainingCalories,
-                      proteinTarget: nutritionController.proteinTarget,
-                      carbsTarget: nutritionController.carbsTarget,
-                      fatsTarget: nutritionController.fatsTarget,
-                      consumedProtein: consumedProtein,
-                      consumedCarbs: consumedCarbs,
-                      consumedFats: consumedFats,
-                      hasLogsToday: hasLogsToday,
-                      onCardTap: () {
-                        Navigator.of(context).push(
-                          PageRouteBuilder(
-                            pageBuilder: (_, __, ___) =>
-                                const NutritionTrackerScreen(),
-                            transitionsBuilder: (_, animation, __, child) {
-                              final tween = Tween(
-                                begin: const Offset(0, 1),
-                                end: Offset.zero,
-                              ).chain(CurveTween(curve: Curves.easeOutCubic));
-                              return SlideTransition(
-                                position: animation.drive(tween),
-                                child: child,
+                        _TrainingInsightsSection(
+                          yearStats: yearStats,
+                          yearHoursStats: yearHoursStats,
+                          predictionInfo: predictionInfo,
+                        ),
+                        SizedBox(height: _sectionSpacing),
+                        _RoutinePlansSection(),
+                        SizedBox(height: _sectionSpacing),
+                        if (!AppConfig.isClient ||
+                            nutritionController.nutritionTemplate != null) ...[
+                          NutritionTrackingCarousel(
+                            goalCalories: goalCalories,
+                            remainingCalories: remainingCalories,
+                            proteinTarget: nutritionController.proteinTarget,
+                            carbsTarget: nutritionController.carbsTarget,
+                            fatsTarget: nutritionController.fatsTarget,
+                            consumedProtein: consumedProtein,
+                            consumedCarbs: consumedCarbs,
+                            consumedFats: consumedFats,
+                            hasLogsToday: hasLogsToday,
+                            onCardTap: () {
+                              // Coach with no client logs: only create/manage template sheet (no nav to nutrition screen).
+                              if (AppConfig.isCoach &&
+                                  nutritionController.logs.isEmpty) {
+                                showNutritionTemplateSheet(context);
+                                return;
+                              }
+                              Navigator.of(context).push(
+                                PageRouteBuilder(
+                                  pageBuilder: (_, __, ___) =>
+                                      const NutritionTrackerScreen(),
+                                  transitionsBuilder: (_, animation, __, child) {
+                                    final tween = Tween(
+                                      begin: const Offset(0, 1),
+                                      end: Offset.zero,
+                                    ).chain(CurveTween(curve: Curves.easeOutCubic));
+                                    return SlideTransition(
+                                      position: animation.drive(tween),
+                                      child: child,
+                                    );
+                                  },
+                                ),
                               );
                             },
                           ),
-                        );
-                      },
+                          SizedBox(height: _sectionSpacing),
+                        ],
+                        if (AppConfig.isClient) ...[
+                          const CoachFeedbackCard(),
+                          SizedBox(height: _sectionSpacing),
+                        ],
+                        if (!isClientMode) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                            child: InformationContainerWithBackgroundImage(
+                              image: 'images/background.jpg',
+                              subtitle:
+                                  "Loving the app? Learn more about us and our mission.",
+                              color: Colors.black,
+                              onTap: _openWebpage,
+                              alignmentGeometry: Alignment.center,
+                            ),
+                          ),
+                          SizedBox(height: _sectionSpacing),
+                        ],
+                        ListTile(
+                          contentPadding:
+                              const EdgeInsets.symmetric(horizontal: 30.0),
+                          tileColor: Colors.transparent,
+                          title: Text("Weight",
+                              style: Theme.of(context).textTheme.titleMedium),
+                          subtitle: const Text("Choose kg or lbs"),
+                          trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
+                            backgroundColor: isDarkMode
+                                ? Theme.of(context).colors.sapphireDark
+                                : Colors.grey.shade400,
+                            thumbColor: isDarkMode
+                                ? Theme.of(context).colors.sapphireDark80
+                                : Colors.white,
+                            groupValue: _weightUnit,
+                            children: {
+                              WeightUnit.kg: SizedBox(
+                                  width: 30,
+                                  child: Text(WeightUnit.kg.display,
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                      textAlign: TextAlign.center)),
+                              WeightUnit.lbs: SizedBox(
+                                  width: 30,
+                                  child: Text(WeightUnit.lbs.display,
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                      textAlign: TextAlign.center)),
+                            },
+                            onValueChanged: (WeightUnit? value) {
+                              if (value != null) {
+                                setState(() {
+                                  _weightUnit = value;
+                                });
+                                toggleWeightUnit(unit: value);
+                              }
+                            },
+                          ),
+                        ),
+                        // Delete account (client app only; required by App Store Guideline 5.1.1(v))
+                        if (!isCoach) ...[
+                          SizedBox(height: _sectionSpacing),
+                          DeleteAccountSection(
+                            onDeleteTap: () => requestAccountDeletion(
+                              context,
+                              setLoading: (v) => setState(() => _loading = v),
+                            ),
+                          ),
+                          SizedBox(height: _sectionSpacing),
+                        ],
+                        SizedBox(height: _sectionSpacing),
+                        _buildDebugInfoSection(isDarkMode),
+                        SizedBox(height: _sectionSpacing),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                  ],
-                  if (AppConfig.isClient) ...[
-                    const CoachFeedbackCard(),
-                    const SizedBox(height: 16),
-                  ],
-                  if (!isClientMode) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: InformationContainerWithBackgroundImage(
-                        image: 'images/background.jpg',
-                        subtitle:
-                            "Loving the app? Learn more about us and our mission.",
-                        color: Colors.black,
-                        onTap: _openWebpage,
-                        alignmentGeometry: Alignment.center,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  ListTile(
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 30.0),
-                    tileColor: Colors.transparent,
-                    title: Text("Weight",
-                        style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: const Text("Choose kg or lbs"),
-                    trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
-                      backgroundColor: isDarkMode
-                          ? Theme.of(context).colors.sapphireDark
-                          : Colors.grey.shade400,
-                      thumbColor: isDarkMode
-                          ? Theme.of(context).colors.sapphireDark80
-                          : Colors.white,
-                      groupValue: _weightUnit,
-                      children: {
-                        WeightUnit.kg: SizedBox(
-                            width: 30,
-                            child: Text(WeightUnit.kg.display,
-                                style: Theme.of(context).textTheme.bodySmall,
-                                textAlign: TextAlign.center)),
-                        WeightUnit.lbs: SizedBox(
-                            width: 30,
-                            child: Text(WeightUnit.lbs.display,
-                                style: Theme.of(context).textTheme.bodySmall,
-                                textAlign: TextAlign.center)),
-                      },
-                      onValueChanged: (WeightUnit? value) {
-                        if (value != null) {
-                          setState(() {
-                            _weightUnit = value;
-                          });
-                          toggleWeightUnit(unit: value);
-                        }
-                      },
-                    ),
-                  ),
-                  // Delete account (client app only; required by App Store Guideline 5.1.1(v))
-                  if (!isCoach) ...[
-                    const SizedBox(height: 24),
-                    DeleteAccountSection(
-                      onDeleteTap: () => requestAccountDeletion(
-                        context,
-                        setLoading: (v) => setState(() => _loading = v),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  const SizedBox(height: 16),
-                  _buildDebugInfoSection(isDarkMode),
-                  const SizedBox(height: 16),
-                ],
-              ),
             ),
           ],
         ),
@@ -526,6 +544,125 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
         ],
       ),
+    );
+  }
+
+  /// Empty state when there is no routine plan (same style as RoutineLogEditor).
+  /// Coach sees header + CTA to create plan; client sees only the message.
+  Widget _buildNoPlanEmptyState({
+    required bool isCoach,
+    required bool isDarkMode,
+    required String headerName,
+    required String headerEmail,
+    required String? headerInitials,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isCoach)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Row(
+              children: [
+                if (headerInitials != null) ...[
+                  Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          (isDarkMode ? Colors.white : Colors.black)
+                              .withValues(alpha: 0.18),
+                          (isDarkMode ? Colors.white : Colors.black)
+                              .withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      headerInitials,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: isDarkMode ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        headerName,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: isDarkMode ? Colors.white : Colors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                      if (headerEmail.trim().isNotEmpty)
+                        Text(
+                          headerEmail,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.6)
+                                    : Colors.black.withValues(alpha: 0.6),
+                              ),
+                        ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: FaIcon(
+                    FontAwesomeIcons.users,
+                    color: isDarkMode ? Colors.white70 : Colors.black,
+                    size: 18,
+                  ),
+                  onPressed: _goBackToCoachList,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ),
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.sizeOf(context).height - 180,
+          ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListEmptyState(
+                  message: isCoach
+                      ? "No routine plan for this client yet.\nCreate one to get started."
+                      : "No routine plan yet.\nAfter a consultation call with your coach, a plan is created and you can start training.",
+                  lottieFuture: LottieExerciseRegistry.randomLottie(),
+                ),
+                if (isCoach) ...[
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OpacityButtonWidgetTwo(
+                        buttonColor: Theme.of(context).colors.vibrantAccent,
+                        label: "Create routine plan",
+                        onPressed: () =>
+                            navigateToRoutinePlanEditor(context: context),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -769,8 +906,10 @@ class _SettingsScreenState extends State<SettingsScreen>
             kListPaddingVertical +
             logs.length * (kListItemHeight + kListItemSpacing)
         : kHeaderHeight + kEmptyStateHeight;
-    final preferredHeight = contentHeight.clamp(kMinSheetHeight, double.infinity);
-    final maxSheetHeight = preferredHeight.clamp(0.0, screenHeight * kMaxSheetFraction);
+    final preferredHeight =
+        contentHeight.clamp(kMinSheetHeight, double.infinity);
+    final maxSheetHeight =
+        preferredHeight.clamp(0.0, screenHeight * kMaxSheetFraction);
 
     showAppBottomSheet(
       context: context,
@@ -868,12 +1007,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 ? 'This is a day you\'re likely to train based on your previous workout history.'
                                 : 'No workouts logged this date',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyLarge
-                                ?.copyWith(
-                                  color: Colors.grey.shade400,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Colors.grey.shade400,
+                                    ),
                           ),
                         ),
                       ),
@@ -2137,12 +2274,74 @@ class _RoutinePlansSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
-        if (controller.plans.isEmpty) return const SizedBox.shrink();
+        final isCoach = AppConfig.isCoach;
+        final plansEmpty = controller.plans.isEmpty;
+
+        if (!isCoach && plansEmpty) return const SizedBox.shrink();
+
+        if (isCoach && plansEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: _RoutinePlansCreateRow(),
+          );
+        }
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10.0),
           child: _ClientRoutinePlansFrostedCard(),
         );
       },
+    );
+  }
+}
+
+/// Coach only: empty state with title, description, and bottom-sheet-style CTA.
+class _RoutinePlansCreateRow extends StatelessWidget {
+  const _RoutinePlansCreateRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = theme.colors.vibrantAccent;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final descriptionColor = isDark
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.black54;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Routine Plan',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: titleColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Build a custom routine plan for this client from the ground up.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: descriptionColor,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              onPressed: () =>
+                  navigateToRoutinePlanEditor(context: context),
+              label: 'Create routine plan',
+              buttonColor: accent,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2348,4 +2547,3 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
     );
   }
 }
-

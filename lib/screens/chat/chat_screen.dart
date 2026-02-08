@@ -155,7 +155,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               child: OpacityButtonWidgetTwo(
                 label: 'Allow',
                 buttonColor: Theme.of(context).colors.vibrantAccent,
-                showArrowRight: false,
                 onPressed: () async {
                   final statuses = await [
                     Permission.camera,
@@ -244,7 +243,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               child: OpacityButtonWidgetTwo(
                 label: 'Enable notifications',
                 buttonColor: Theme.of(context).colors.vibrantAccent,
-                showArrowRight: false,
                 onPressed: () async {
                   await requestNotificationPermission();
                   if (context.mounted) {

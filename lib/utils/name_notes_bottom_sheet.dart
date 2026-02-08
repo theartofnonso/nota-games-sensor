@@ -195,7 +195,6 @@ Future<String?> showSingleTextAreaBottomSheet({
                 width: double.infinity,
                 child: OpacityButtonWidgetTwo(
                   buttonColor: Theme.of(ctx).colors.vibrantAccent,
-                  showArrowRight: false,
                   label: primaryButtonLabel,
                   onPressed: () =>
                       Navigator.of(ctx).pop<String?>(controller.text.trim()),
