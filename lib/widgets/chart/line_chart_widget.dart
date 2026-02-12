@@ -27,101 +27,153 @@ class LineChartWidget extends StatelessWidget {
   final Color Function(double value)? leftAxisTitlesColor;
   final Color Function(double value)? rightAxisTitlesColor;
   final bool belowBarData;
-  const LineChartWidget(
-      {super.key,
-      required this.chartPoints,
-      required this.periods,
-      required this.unit,
-      this.interval = 10,
-      this.maxY,
-      this.aspectRation,
-      this.lineChartSide = LineChartSide.left,
-      this.colors = const [],
-      this.hasRightAxisTitles = false,
-      this.hasLeftAxisTitles = true,
-      this.leftAxisTitlesColor,
-      this.rightAxisTitlesColor,
-      this.leftReservedSize = 40,
-      this.rightReservedSize = 40,
-      this.belowBarData = true});
+  /// Multiple series to plot (e.g. Set 1, Set 2, Set 3). When provided,
+  /// [chartPoints] is ignored and each series gets its own line.
+  final List<({List<ChartPointDto> points, Color? color})>? multiSeries;
+
+  const LineChartWidget({
+    super.key,
+    required this.chartPoints,
+    required this.periods,
+    required this.unit,
+    this.interval = 10,
+    this.maxY,
+    this.aspectRation,
+    this.lineChartSide = LineChartSide.left,
+    this.colors = const [],
+    this.hasRightAxisTitles = false,
+    this.hasLeftAxisTitles = true,
+    this.leftAxisTitlesColor,
+    this.rightAxisTitlesColor,
+    this.leftReservedSize = 40,
+    this.rightReservedSize = 40,
+    this.belowBarData = true,
+    this.multiSeries,
+  });
+
+  static const List<Color> _multiSeriesColors = [
+    Color(0xFF4CAF50), // green
+    Color(0xFF2196F3), // blue
+    Color(0xFFFF9800), // orange
+  ];
+
+  bool get _hasData {
+    if (multiSeries != null && multiSeries!.isNotEmpty) {
+      return multiSeries!.any((s) => s.points.isNotEmpty);
+    }
+    return chartPoints.isNotEmpty;
+  }
+
+  List<LineChartBarData> _buildLineBars(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final defaultColor =
+        isDarkMode ? Colors.white70 : Colors.grey.shade600;
+
+    if (multiSeries != null && multiSeries!.isNotEmpty) {
+      var idx = 0;
+      return multiSeries!
+          .where((s) => s.points.isNotEmpty)
+          .map((series) {
+            final color = series.color ??
+                (idx < _multiSeriesColors.length
+                    ? _multiSeriesColors[idx]
+                    : defaultColor);
+            idx++;
+            return LineChartBarData(
+              spots: series.points
+                  .map((p) => FlSpot(p.x.toDouble(), p.y.toDouble()))
+                  .toList(),
+              dotData: FlDotData(show: false),
+              color: color,
+              belowBarData: BarAreaData(
+                show: false,
+                gradient: LinearGradient(
+                  colors: [
+                    color.withValues(alpha: 0.1),
+                    color.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+              isCurved: true,
+            );
+          })
+          .toList();
+    }
+
+    return [
+      LineChartBarData(
+        spots: chartPoints
+            .map((p) => FlSpot(p.x.toDouble(), p.y.toDouble()))
+            .toList(),
+        dotData: FlDotData(show: false),
+        color: isDarkMode ? Colors.white70 : Colors.grey.shade600,
+        gradient: colors.length >= 2 ? LinearGradient(colors: colors) : null,
+        belowBarData: BarAreaData(
+          show: belowBarData,
+          gradient: LinearGradient(
+            colors: [
+              isDarkMode ? Colors.white : Colors.black,
+              isDarkMode ? Colors.white : Colors.black,
+            ]
+                .map((color) =>
+                    color.withValues(alpha: isDarkMode ? 0.02 : 0.05))
+                .toList(),
+          ),
+        ),
+        isCurved: true,
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = Theme.of(context).brightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
-    return chartPoints.isNotEmpty
+    return _hasData
         ? Center(
             child: AspectRatio(
               aspectRatio: aspectRation ?? 1.5,
               child: LineChart(
-                  duration: Duration(milliseconds: 500),
-                  LineChartData(
-                      gridData: FlGridData(
-                          drawVerticalLine: false,
-                          getDrawingHorizontalLine: (_) => FlLine(
-                              strokeWidth: 0.5, color: Colors.transparent)),
-                      minY: 0,
-                      maxY: maxY,
-                      titlesData: FlTitlesData(
-                        rightTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: hasRightAxisTitles,
-                            getTitlesWidget: _rightTitleWidgets,
-                            reservedSize: rightReservedSize,
-                          ),
-                        ),
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            interval: interval,
-                            showTitles: hasLeftAxisTitles,
-                            getTitlesWidget: _leftTitleWidgets,
-                            reservedSize: leftReservedSize,
-                          ),
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            interval: interval,
-                            getTitlesWidget: periods.isNotEmpty
-                                ? _bottomTitleWidgets
-                                : (_, __) => SizedBox.shrink(),
-                          ),
-                        ),
+                duration: const Duration(milliseconds: 500),
+                LineChartData(
+                  gridData: FlGridData(
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (_) => FlLine(
+                        strokeWidth: 0.5, color: Colors.transparent),
+                  ),
+                  minY: 0,
+                  maxY: maxY,
+                  titlesData: FlTitlesData(
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: hasRightAxisTitles,
+                        getTitlesWidget: _rightTitleWidgets,
+                        reservedSize: rightReservedSize,
                       ),
-                      borderData: FlBorderData(
-                        show: false,
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        interval: interval,
+                        showTitles: hasLeftAxisTitles,
+                        getTitlesWidget: _leftTitleWidgets,
+                        reservedSize: leftReservedSize,
                       ),
-                      lineBarsData: [
-                        LineChartBarData(
-                            spots: chartPoints.map((point) {
-                              return FlSpot(
-                                  point.x.toDouble(), point.y.toDouble());
-                            }).toList(),
-                            dotData: FlDotData(show: false),
-                            color: isDarkMode
-                                ? Colors.white70
-                                : Colors.grey.shade600,
-                            gradient: colors.length >= 2
-                                ? LinearGradient(colors: colors)
-                                : null,
-                            belowBarData: BarAreaData(
-                              show: belowBarData,
-                              gradient: LinearGradient(
-                                colors: [
-                                  isDarkMode ? Colors.white : Colors.black,
-                                  isDarkMode ? Colors.white : Colors.black
-                                ]
-                                    .map((color) => color.withValues(
-                                        alpha: isDarkMode ? 0.02 : 0.05))
-                                    .toList(),
-                              ),
-                            ),
-                            isCurved: true)
-                      ])),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: interval,
+                        getTitlesWidget: periods.isNotEmpty
+                            ? _bottomTitleWidgets
+                            : (_, __) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: _buildLineBars(context),
+                ),
+              ),
             ),
           )
         : Center(

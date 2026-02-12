@@ -69,7 +69,10 @@ class _TopWeightsBreakdownSectionState
     return _buildSection(
       topWeights: topWeights,
       child: _TopWeightsBreakdownContent(
+        exerciseLogs: widget.exerciseLogs,
+        topWeights: topWeights,
         entries: entries,
+        selectedWeightIndex: _selectedWeightIndex,
       ),
     );
   }
@@ -134,10 +137,16 @@ class _TopWeightsBreakdownSectionState
 }
 
 class _TopWeightsBreakdownContent extends StatelessWidget {
+  final List<ExerciseLogDto> exerciseLogs;
+  final List<double> topWeights;
   final List<(ExerciseLogDto, WeightAndRepsSetDto, int)> entries;
+  final int selectedWeightIndex;
 
   const _TopWeightsBreakdownContent({
+    required this.exerciseLogs,
+    required this.topWeights,
     required this.entries,
+    required this.selectedWeightIndex,
   });
 
   @override

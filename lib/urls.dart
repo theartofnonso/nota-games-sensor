@@ -11,8 +11,16 @@ const routineLogs = '/routine-logs';
 
 /// Stripe Endpoints
 const stripeBaseUrl = 'https://stripe.notathletes.com';
+/// POST /checkSubscription - body: {email}, response: {hasActiveSubscription, isCustomer}
 const checkStripeSubscriptionPath = '/checkSubscription';
-/// Unsubscribe/delete Stripe customer (e.g. on account deletion). Backend performs the actual Stripe logic.
+/// GET /products - returns {products: [{priceId, productId, productName, amount, currency, interval, intervalCount}, ...]}
+const stripeProductsPath = '/products';
+/// POST /subscription/resubscribe - body: {email, price_id}. Backend handles success page.
+/// Response (201): {checkout_url, session_id}. Client opens checkout_url in browser.
+const stripeResubscribePath = '/subscription/resubscribe';
+/// POST /subscription/cancel - auth required, body: {userId}, response: 204
+const stripeSubscriptionCancelPath = '/subscription/cancel';
+/// POST /customer/delete - auth required, body: {userId}, response: 204
 const stripeCustomerDeletePath = '/customer/delete';
 
 /// Agora Endpoints

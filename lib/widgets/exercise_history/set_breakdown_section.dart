@@ -64,6 +64,7 @@ class _SetBreakdownSectionState extends State<SetBreakdownSection> {
       setIndicesToShow: setIndicesToShow,
       child: _SetBreakdownContent(
         exercise: widget.exercise,
+        exerciseLogs: widget.exerciseLogs,
         entries: entries,
         selectedType: widget.selectedType,
         selectedSetIndex: _selectedSetIndex,
@@ -131,12 +132,14 @@ class _SetBreakdownSectionState extends State<SetBreakdownSection> {
 
 class _SetBreakdownContent extends StatelessWidget {
   final ExerciseDto exercise;
+  final List<ExerciseLogDto> exerciseLogs;
   final List<(ExerciseLogDto, SetDto)> entries;
   final ExerciseType selectedType;
   final int selectedSetIndex;
 
   const _SetBreakdownContent({
     required this.exercise,
+    required this.exerciseLogs,
     required this.entries,
     required this.selectedType,
     required this.selectedSetIndex,
