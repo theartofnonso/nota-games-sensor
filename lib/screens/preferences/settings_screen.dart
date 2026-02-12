@@ -209,203 +209,202 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                        if (isCoach)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                            child: Row(
+                  if (isCoach)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: Row(
+                        children: [
+                          if (headerInitials != null) ...[
+                            Container(
+                              width: 36,
+                              height: 36,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    (isDarkMode ? Colors.white : Colors.black)
+                                        .withValues(alpha: 0.18),
+                                    (isDarkMode ? Colors.white : Colors.black)
+                                        .withValues(alpha: 0.05),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                headerInitials,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (headerInitials != null) ...[
-                                  Container(
-                                    width: 36,
-                                    height: 36,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          (isDarkMode ? Colors.white : Colors.black)
-                                              .withValues(alpha: 0.18),
-                                          (isDarkMode ? Colors.white : Colors.black)
-                                              .withValues(alpha: 0.05),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
+                                Text(
+                                  headerName,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      headerInitials,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge
-                                          ?.copyWith(
-                                            color: isDarkMode
-                                                ? Colors.white
-                                                : Colors.black,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                ],
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        headerName,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              color: isDarkMode
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                      ),
-                                      if (headerEmail.trim().isNotEmpty)
-                                        Text(
-                                          headerEmail,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: isDarkMode
-                                                    ? Colors.white
-                                                        .withValues(alpha: 0.6)
-                                                    : Colors.black
-                                                        .withValues(alpha: 0.6),
-                                              ),
+                                ),
+                                if (headerEmail.trim().isNotEmpty)
+                                  Text(
+                                    headerEmail,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: isDarkMode
+                                              ? Colors.white
+                                                  .withValues(alpha: 0.6)
+                                              : Colors.black
+                                                  .withValues(alpha: 0.6),
                                         ),
-                                    ],
                                   ),
-                                ),
-                                IconButton(
-                                  icon: FaIcon(
-                                    FontAwesomeIcons.users,
-                                    color: isDarkMode ? Colors.white70 : Colors.black,
-                                    size: 18,
-                                  ),
-                                  onPressed: _goBackToCoachList,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                ),
                               ],
                             ),
                           ),
-                        // Calendar widget at top
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: Calendar(
-                            logs: logs,
-                            onSelectDate: (date) => _showLogsForDate(context, date),
-                            onChevronTap: () {
-                              if (widget.onClose != null) {
-                                widget.onClose!();
-                              } else {
-                                context.pop();
-                              }
-                            },
-                          ),
-                        ),
-                        // Unsaved session card
-                        if (_hasCachedSession) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                            child: _UnsavedSessionCard(
-                              onTap: () => navigateToUnsavedSession(context),
+                          IconButton(
+                            icon: FaIcon(
+                              FontAwesomeIcons.users,
+                              color: isDarkMode ? Colors.white70 : Colors.black,
+                              size: 18,
                             ),
+                            onPressed: _goBackToCoachList,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
                         ],
-                        _TrainingInsightsSection(
-                          yearStats: yearStats,
-                          yearHoursStats: yearHoursStats,
-                          predictionInfo: predictionInfo,
-                        ),
-                        SizedBox(height: _sectionSpacing),
-                        _RoutinePlansSection(),
-                        SizedBox(height: _sectionSpacing),
-                        _NutritionSection(),
-                        SizedBox(height: _sectionSpacing),
-                        if (AppConfig.isClient) ...[
-                          const CoachFeedbackCard(),
-                          SizedBox(height: _sectionSpacing),
-                        ],
-                        if (!isClientMode) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                            child: InformationContainerWithBackgroundImage(
-                              image: 'images/background.jpg',
-                              subtitle:
-                                  "Loving the app? Learn more about us and our mission.",
-                              color: Colors.black,
-                              onTap: _openWebpage,
-                              alignmentGeometry: Alignment.center,
-                            ),
-                          ),
-                          SizedBox(height: _sectionSpacing),
-                        ],
-                        ListTile(
-                          contentPadding:
-                              const EdgeInsets.symmetric(horizontal: 30.0),
-                          tileColor: Colors.transparent,
-                          title: Text("Weight",
-                              style: Theme.of(context).textTheme.titleMedium),
-                          subtitle: const Text("Choose kg or lbs"),
-                          trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
-                            backgroundColor: isDarkMode
-                                ? Theme.of(context).colors.sapphireDark
-                                : Colors.grey.shade400,
-                            thumbColor: isDarkMode
-                                ? Theme.of(context).colors.sapphireDark80
-                                : Colors.white,
-                            groupValue: _weightUnit,
-                            children: {
-                              WeightUnit.kg: SizedBox(
-                                  width: 30,
-                                  child: Text(WeightUnit.kg.display,
-                                      style: Theme.of(context).textTheme.bodySmall,
-                                      textAlign: TextAlign.center)),
-                              WeightUnit.lbs: SizedBox(
-                                  width: 30,
-                                  child: Text(WeightUnit.lbs.display,
-                                      style: Theme.of(context).textTheme.bodySmall,
-                                      textAlign: TextAlign.center)),
-                            },
-                            onValueChanged: (WeightUnit? value) {
-                              if (value != null) {
-                                setState(() {
-                                  _weightUnit = value;
-                                });
-                                toggleWeightUnit(unit: value);
-                              }
-                            },
-                          ),
-                        ),
-                        // Cancel membership & Delete account (client app only)
-                        if (!isCoach) ...[
-                          SizedBox(height: _sectionSpacing),
-                          UnsubscribeSection(
-                            onUnsubscribeTap: () =>
-                                requestSubscriptionCancellation(
-                              context,
-                              setLoading: (v) => setState(() => _loading = v),
-                            ),
-                          ),
-                          SizedBox(height: _sectionSpacing),
-                          DeleteAccountSection(
-                            onDeleteTap: () => requestAccountDeletion(
-                              context,
-                              setLoading: (v) => setState(() => _loading = v),
-                            ),
-                          ),
-                          SizedBox(height: _sectionSpacing),
-                        ],
-                        SizedBox(height: _sectionSpacing),
-                        _buildDebugInfoSection(isDarkMode),
-                        SizedBox(height: _sectionSpacing),
-                      ],
+                      ),
                     ),
+                  // Calendar widget at top
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Calendar(
+                      logs: logs,
+                      onSelectDate: (date) => _showLogsForDate(context, date),
+                      onChevronTap: () {
+                        if (widget.onClose != null) {
+                          widget.onClose!();
+                        } else {
+                          context.pop();
+                        }
+                      },
+                    ),
+                  ),
+                  // Unsaved session card
+                  if (_hasCachedSession) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: _UnsavedSessionCard(
+                        onTap: () => navigateToUnsavedSession(context),
+                      ),
+                    ),
+                  ],
+                  _TrainingInsightsSection(
+                    yearStats: yearStats,
+                    yearHoursStats: yearHoursStats,
+                    predictionInfo: predictionInfo,
+                  ),
+                  SizedBox(height: _sectionSpacing),
+                  _RoutinePlansSection(),
+                  SizedBox(height: _sectionSpacing),
+                  _NutritionSection(),
+                  //SizedBox(height: _sectionSpacing),
+                  if (AppConfig.isClient) ...[
+                    const CoachFeedbackCard(),
+                    SizedBox(height: _sectionSpacing),
+                  ],
+                  if (!isClientMode) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: InformationContainerWithBackgroundImage(
+                        image: 'images/background.jpg',
+                        subtitle:
+                            "Loving the app? Learn more about us and our mission.",
+                        color: Colors.black,
+                        onTap: _openWebpage,
+                        alignmentGeometry: Alignment.center,
+                      ),
+                    ),
+                    SizedBox(height: _sectionSpacing),
+                  ],
+                  ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 30.0),
+                    tileColor: Colors.transparent,
+                    title: Text("Weight",
+                        style: Theme.of(context).textTheme.titleMedium),
+                    subtitle: const Text("Choose kg or lbs"),
+                    trailing: CupertinoSlidingSegmentedControl<WeightUnit>(
+                      backgroundColor: isDarkMode
+                          ? Theme.of(context).colors.sapphireDark
+                          : Colors.grey.shade400,
+                      thumbColor: isDarkMode
+                          ? Theme.of(context).colors.sapphireDark80
+                          : Colors.white,
+                      groupValue: _weightUnit,
+                      children: {
+                        WeightUnit.kg: SizedBox(
+                            width: 30,
+                            child: Text(WeightUnit.kg.display,
+                                style: Theme.of(context).textTheme.bodySmall,
+                                textAlign: TextAlign.center)),
+                        WeightUnit.lbs: SizedBox(
+                            width: 30,
+                            child: Text(WeightUnit.lbs.display,
+                                style: Theme.of(context).textTheme.bodySmall,
+                                textAlign: TextAlign.center)),
+                      },
+                      onValueChanged: (WeightUnit? value) {
+                        if (value != null) {
+                          setState(() {
+                            _weightUnit = value;
+                          });
+                          toggleWeightUnit(unit: value);
+                        }
+                      },
+                    ),
+                  ),
+                  // Cancel membership & Delete account (client app only)
+                  if (!isCoach) ...[
+                    SizedBox(height: _sectionSpacing),
+                    UnsubscribeSection(
+                      onUnsubscribeTap: () => requestSubscriptionCancellation(
+                        context,
+                        setLoading: (v) => setState(() => _loading = v),
+                      ),
+                    ),
+                    SizedBox(height: _sectionSpacing),
+                    DeleteAccountSection(
+                      onDeleteTap: () => requestAccountDeletion(
+                        context,
+                        setLoading: (v) => setState(() => _loading = v),
+                      ),
+                    ),
+                    SizedBox(height: _sectionSpacing),
+                  ],
+                  SizedBox(height: _sectionSpacing),
+                  _buildDebugInfoSection(isDarkMode),
+                  SizedBox(height: _sectionSpacing),
+                ],
+              ),
             ),
           ],
         ),
@@ -2145,8 +2144,7 @@ class _NutritionSection extends StatelessWidget {
               }
               Navigator.of(context).push(
                 PageRouteBuilder(
-                  pageBuilder: (_, __, ___) =>
-                      const NutritionTrackerScreen(),
+                  pageBuilder: (_, __, ___) => const NutritionTrackerScreen(),
                   transitionsBuilder: (_, animation, __, child) {
                     final tween = Tween(
                       begin: const Offset(0, 1),
@@ -2177,12 +2175,18 @@ class _NutritionCreateRow extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final accent = theme.colors.vibrantAccent;
     final titleColor = isDark ? Colors.white : Colors.black87;
-    final descriptionColor = isDark
-        ? Colors.white.withValues(alpha: 0.7)
-        : Colors.black54;
+    final descriptionColor =
+        isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.black.withValues(alpha: 0.12);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2258,12 +2262,18 @@ class _RoutinePlansCreateRow extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final accent = theme.colors.vibrantAccent;
     final titleColor = isDark ? Colors.white : Colors.black87;
-    final descriptionColor = isDark
-        ? Colors.white.withValues(alpha: 0.7)
-        : Colors.black54;
+    final descriptionColor =
+        isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.black.withValues(alpha: 0.12);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2287,8 +2297,7 @@ class _RoutinePlansCreateRow extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OpacityButtonWidgetTwo(
-              onPressed: () =>
-                  navigateToRoutinePlanEditor(context: context),
+              onPressed: () => navigateToRoutinePlanEditor(context: context),
               label: 'Create routine plan',
               buttonColor: accent,
             ),

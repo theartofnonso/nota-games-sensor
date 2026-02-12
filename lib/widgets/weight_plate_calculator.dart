@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../colors.dart';
@@ -14,14 +15,49 @@ class WeightPlateCalculator extends StatefulWidget {
   State<WeightPlateCalculator> createState() => _WeightCalculatorState();
 }
 
+/// Bar weights in kg from 1 to 25 (no bar weighs more); 0.5 kg increments.
+final List<double> _barWeightOptions = List.generate(49, (i) => 1.0 + i * 0.5);
+
 class _WeightCalculatorState extends State<WeightPlateCalculator> {
   // Available plate types (which plates the user has access to)
   final List<_PlatesEnum> _availablePlates = [];
-  _BarsEnum _selectedBar = _BarsEnum.twenty;
+  double _selectedBarWeight = 20; // Default to 20 kg (Olympic bar)
+  late final FixedExtentScrollController _barPickerController;
 
   // Calculated plate quantities needed to reach target (computed on demand)
   Map<_PlatesEnum, int> get _calculatedPlateQuantities {
     return _calculateOptimalCombination();
+  }
+
+  static const double _barPickerItemExtent = 36;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialIndex = ((_selectedBarWeight - 1) / 0.5)
+        .round()
+        .clamp(0, _barWeightOptions.length - 1);
+    _barPickerController =
+        FixedExtentScrollController(initialItem: initialIndex);
+    _barPickerController.addListener(_syncBarWeightFromScroll);
+  }
+
+  void _syncBarWeightFromScroll() {
+    if (!_barPickerController.hasClients) return;
+    final index = (_barPickerController.offset / _barPickerItemExtent)
+        .round()
+        .clamp(0, _barWeightOptions.length - 1);
+    final newWeight = _barWeightOptions[index];
+    if (_selectedBarWeight != newWeight) {
+      setState(() => _selectedBarWeight = newWeight);
+    }
+  }
+
+  @override
+  void dispose() {
+    _barPickerController.removeListener(_syncBarWeightFromScroll);
+    _barPickerController.dispose();
+    super.dispose();
   }
 
   @override
@@ -78,292 +114,219 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
             ))
         .toList();
 
-    final bars = _BarsEnum.values
-        .map(
-          (bar) => Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: GestureDetector(
-              onTap: () => _onSelectBar(newBar: bar),
-              child: Opacity(
-                opacity: _selectedBar == bar ? 1.0 : 0.4,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Weight label with metallic background
-                    Container(
-                      width: 100,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            const Color(0xFFB0B0B0),
-                            const Color(0xFF8B8B8B),
-                            const Color(0xFF707070),
-                          ],
-                          stops: const [0.0, 0.5, 1.0],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          "${weightWithConversion(value: bar.weight)}",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF1A1A1A),
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                color: Colors.white,
-                                offset: Offset(0.5, 0.5),
-                                blurRadius: 1,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Mini bar visualization
-                    CustomPaint(
-                      size: const Size(15, 40),
-                      painter: _BarPainter(),
-                    ),
-                    // End cap with metallic gradient
-                    Container(
-                      width: 10,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(5),
-                          bottomRight: Radius.circular(5),
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            const Color(0xFFB0B0B0),
-                            const Color(0xFF8B8B8B),
-                            const Color(0xFF707070),
-                          ],
-                          stops: const [0.0, 0.5, 1.0],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 2,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        )
-        .toList();
-
     // Calculate actual weight from calculated plate quantities and bar
     final actualWeight = _calculatedPlateQuantities.entries.fold(
                 0.0, (sum, entry) => sum + (entry.key.weight * entry.value)) *
             2 +
-        _selectedBar.weight;
+        _selectedBarWeight;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (_availablePlates.isNotEmpty &&
-              _calculatedPlateQuantities.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-              child: _buildWeightBreakdown(actualWeight),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Text(
-                "Target: ${weightWithConversion(value: widget.target)}${weightUnit()}"
-                    .toUpperCase(),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                child: _buildWeightBreakdown(actualWeight),
               ),
             ),
-          const SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LabelDivider(
-                label: "Available Weights (${weightUnit()})".toUpperCase(),
-                labelColor: isDarkMode ? Colors.white70 : Colors.black,
-                dividerColor: sapphireLighter),
-          ),
-          const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: plates,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: LabelDivider(
+                  label: "Available Weights (${weightUnit()})".toUpperCase(),
+                  labelColor: isDarkMode ? Colors.white70 : Colors.black,
+                  dividerColor: sapphireLighter),
             ),
-          ),
-          const SizedBox(height: 40),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LabelDivider(
-              label: "Available Bar (${weightUnit()})".toUpperCase(),
-              labelColor: isDarkMode ? Colors.white70 : Colors.black,
-              dividerColor: sapphireLighter,
-              leftToRight: true,
-            ),
-          ),
-          const SizedBox(height: 6),
-          SingleChildScrollView(
+            const SizedBox(height: 10),
+            SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(children: bars)),
-        ],
+              child: Row(
+                children: plates,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: LabelDivider(
+                label: "Available Bar (${weightUnit()})".toUpperCase(),
+                labelColor: isDarkMode ? Colors.white70 : Colors.black,
+                dividerColor: sapphireLighter,
+                leftToRight: true,
+              ),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              height: 120,
+              child: CupertinoTheme(
+                data: CupertinoTheme.of(context).copyWith(
+                  textTheme: CupertinoTextThemeData(
+                    pickerTextStyle: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+                child: CupertinoPicker(
+                  selectionOverlay: null,
+                  itemExtent: _barPickerItemExtent,
+                  scrollController: _barPickerController,
+                  onSelectedItemChanged: (index) {
+                    final newWeight = _barWeightOptions[index];
+                    if (_selectedBarWeight != newWeight) {
+                      setState(() => _selectedBarWeight = newWeight);
+                    }
+                  },
+                  children: _barWeightOptions.map((w) {
+                    final displayValue = weightWithConversion(value: w);
+                    return Center(
+                      child: Text(
+                        displayValue.toStringAsFixed(
+                            displayValue == displayValue.roundToDouble()
+                                ? 0
+                                : 1),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildWeightBreakdown(double totalWeight) {
+    final theme = Theme.of(context);
+    final greyStyle = theme.textTheme.bodyMedium?.copyWith(color: Colors.grey);
+    final boldStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w600,
+    );
+    final unit = weightUnit();
+
     // Get plates with quantities, sorted by weight descending
     final platesWithQuantities = _calculatedPlateQuantities.entries
         .where((entry) => entry.value > 0)
         .toList()
       ..sort((a, b) => b.key.weight.compareTo(a.key.weight));
 
+    // Weight from plates on one side
+    final platesPerSide = platesWithQuantities.fold<double>(
+      0,
+      (sum, e) => sum + (e.key.weight * e.value),
+    );
+    final platesBothSides = platesPerSide * 2;
+    final metTarget = totalWeight == widget.target;
+    final shortfall = (widget.target - totalWeight).clamp(0.0, double.infinity);
+    final overshoot = (totalWeight - widget.target).clamp(0.0, double.infinity);
+
+    // Build "per side" description: e.g. "2×25 + 1×10"
+    String perSideDesc;
+    if (platesWithQuantities.isEmpty) {
+      perSideDesc = '0';
+    } else {
+      perSideDesc = platesWithQuantities.map((e) {
+        final w = weightWithConversion(value: e.key.weight);
+        final wStr = w == w.roundToDouble()
+            ? w.toInt().toString()
+            : w.toStringAsFixed(1);
+        return e.value > 1 ? '${e.value}×$wStr' : wStr;
+      }).join(' + ');
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            // Plates on one side
-            if (platesWithQuantities.isNotEmpty) ...[
-              ...platesWithQuantities.asMap().entries.expand((mapEntry) {
-                final index = mapEntry.key;
-                final entry = mapEntry.value;
-                final plate = entry.key;
-                final quantity = entry.value;
-                final isLast = index == platesWithQuantities.length - 1;
-                return [
-                  if (quantity > 1) ...[
-                    Text(
-                      quantity.toString(),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '×',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.grey,
-                          ),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  Text(
-                    "${weightWithConversion(value: plate.weight)}${weightUnit()}",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  if (!isLast) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      '+',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.grey,
-                          ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                ];
-              }),
-              const SizedBox(width: 8),
-              Text(
-                '× 2',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.grey,
-                    ),
-              ),
-            ] else
-              Text(
-                '0',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            // Plus sign
-            if (platesWithQuantities.isNotEmpty) ...[
-              const SizedBox(width: 8),
-              Text(
-                '+',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.grey,
-                    ),
+        // Line 1: Plates per side
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.bodyMedium,
+            children: [
+              TextSpan(text: 'Plates per side: ', style: greyStyle),
+              TextSpan(text: '$perSideDesc $unit', style: boldStyle),
+              TextSpan(text: ' = ', style: greyStyle),
+              TextSpan(
+                text: '${weightWithConversion(value: platesPerSide)} $unit',
+                style: boldStyle,
               ),
             ],
-            // Bar weight
-            const SizedBox(width: 8),
-            Text(
-              "${weightWithConversion(value: _selectedBar.weight)}${weightUnit()}",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '(bar)',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey,
-                  ),
-            ),
-            // Equals sign
-            const SizedBox(width: 8),
-            Text(
-              '=',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.grey,
-                  ),
-            ),
-            // Total weight
-            const SizedBox(width: 8),
-            Text(
-              "${weightWithConversion(value: totalWeight)}${weightUnit()}",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: totalWeight == widget.target
-                        ? vibrantGreen
-                        : Theme.of(context).colorScheme.error,
-                  ),
-            ),
-          ],
+          ),
         ),
-        if (totalWeight != widget.target)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              'Target: ${weightWithConversion(value: widget.target)}${weightUnit()}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey,
-                  ),
+        const SizedBox(height: 4),
+        // Line 2: Both sides
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.bodyMedium,
+            children: [
+              TextSpan(text: 'Both sides: ', style: greyStyle),
+              TextSpan(
+                text:
+                    '${weightWithConversion(value: platesPerSide)} × 2 = ${weightWithConversion(value: platesBothSides)} $unit',
+                style: boldStyle,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Line 3: + Bar
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.bodyMedium,
+            children: [
+              TextSpan(text: '+ Bar: ', style: greyStyle),
+              TextSpan(
+                text:
+                    '${weightWithConversion(value: _selectedBarWeight)} $unit',
+                style: boldStyle,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Line 4: Total
+        RichText(
+          text: TextSpan(
+            style: theme.textTheme.bodyMedium,
+            children: [
+              TextSpan(text: 'Total: ', style: greyStyle),
+              TextSpan(
+                text: '${weightWithConversion(value: totalWeight)} $unit',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: metTarget
+                      ? vibrantGreen
+                      : Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!metTarget) ...[
+          const SizedBox(height: 6),
+          RichText(
+            text: TextSpan(
+              style: greyStyle,
+              children: [
+                TextSpan(
+                  text:
+                      'Target: ${weightWithConversion(value: widget.target)} $unit. ',
+                ),
+                TextSpan(
+                  text: shortfall > 0
+                      ? 'Need ${weightWithConversion(value: shortfall)} more (${weightWithConversion(value: shortfall / 2)} per side).'
+                      : overshoot > 0
+                          ? 'Over by ${weightWithConversion(value: overshoot)}. Use fewer or different plates.'
+                          : 'Add plates above to reach target.',
+                  style: greyStyle?.copyWith(fontStyle: FontStyle.italic),
+                ),
+              ],
             ),
           ),
+        ],
       ],
     );
   }
@@ -381,12 +344,6 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
     });
   }
 
-  void _onSelectBar({required _BarsEnum newBar}) {
-    setState(() {
-      _selectedBar = newBar;
-    });
-  }
-
   bool _isPlateAvailable({required _PlatesEnum plate}) =>
       _availablePlates.any((p) => p.weight == plate.weight);
 
@@ -401,7 +358,7 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
     // Calculate weight needed from plates (on one side)
     // Total weight = (plates on one side × 2) + bar weight
     // So: plates on one side = (target - bar weight) / 2
-    final barWeight = _selectedBar.weight;
+    final barWeight = _selectedBarWeight;
     final targetPlateWeight = (widget.target - barWeight) / 2;
 
     if (targetPlateWeight <= 0) {
@@ -431,106 +388,6 @@ class _WeightCalculatorState extends State<WeightPlateCalculator> {
 
     return quantities;
   }
-}
-
-class _BarPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-
-    // Metallic gradient for the bar (darker for contrast)
-    final barGradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        const Color(0xFF707070), // Darker silver
-        const Color(0xFF5A5A5A), // Dark gray
-        const Color(0xFF4A4A4A), // Very dark gray
-        const Color(0xFF555555), // Medium dark
-      ],
-      stops: const [0.0, 0.3, 0.7, 1.0],
-    );
-
-    final barPaint = Paint()
-      ..shader = barGradient.createShader(rect)
-      ..style = PaintingStyle.fill;
-
-    // Create RRect with completely square edges (no rounded corners)
-    final rrect = RRect.fromRectAndCorners(
-      rect,
-      topLeft: Radius.zero,
-      bottomLeft: Radius.zero,
-      topRight: Radius.zero,
-      bottomRight: Radius.zero,
-    );
-
-    // Draw main bar body
-    canvas.drawRRect(rrect, barPaint);
-
-    // Add border
-    final borderPaint = Paint()
-      ..color = const Color(0xFF404040)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    canvas.drawRRect(rrect, borderPaint);
-
-    // Add highlight on top for 3D effect
-    final highlightGradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.center,
-      colors: [
-        Colors.white.withValues(alpha: 0.25),
-        Colors.white.withValues(alpha: 0.0),
-      ],
-    );
-
-    final highlightPaint = Paint()
-      ..shader = highlightGradient.createShader(rect)
-      ..style = PaintingStyle.fill;
-
-    final highlightRect = Rect.fromLTWH(0, 0, size.width, size.height / 2);
-    final highlightRrect = RRect.fromRectAndCorners(
-      highlightRect,
-      topLeft: Radius.zero,
-      bottomLeft: Radius.zero,
-      topRight: Radius.zero,
-      bottomRight: Radius.zero,
-    );
-    canvas.drawRRect(highlightRrect, highlightPaint);
-
-    // Add subtle shadow on bottom
-    final shadowGradient = LinearGradient(
-      begin: Alignment.center,
-      end: Alignment.bottomCenter,
-      colors: [
-        Colors.transparent,
-        Colors.black.withValues(alpha: 0.2),
-      ],
-    );
-
-    final shadowPaint = Paint()
-      ..shader = shadowGradient.createShader(rect)
-      ..style = PaintingStyle.fill;
-
-    final shadowRect = Rect.fromLTWH(
-      0,
-      size.height / 2,
-      size.width,
-      size.height / 2,
-    );
-    final shadowRrect = RRect.fromRectAndCorners(
-      shadowRect,
-      topLeft: Radius.zero,
-      bottomLeft: Radius.zero,
-      topRight: Radius.zero,
-      bottomRight: Radius.zero,
-    );
-    canvas.drawRRect(shadowRrect, shadowPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class WeightPlateIcon extends StatelessWidget {
@@ -826,16 +683,4 @@ enum _PlatesEnum {
 
   const _PlatesEnum(
       {required this.weight, required this.height, required this.width});
-}
-
-enum _BarsEnum {
-  twenty(weight: 20),
-  fifteen(weight: 15),
-  ten(weight: 10),
-  sevenFive(weight: 7.5),
-  five(weight: 5);
-
-  final double weight;
-
-  const _BarsEnum({required this.weight});
 }

@@ -58,11 +58,6 @@ class UnsubscribeSection extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: contentColor.withValues(alpha: 0.6),
-                  size: 22,
-                ),
               ],
             ),
           ),

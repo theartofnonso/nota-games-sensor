@@ -459,6 +459,7 @@ class _RoutineTemplateEditorScreenState
         context: context,
         isScrollControlled: false,
         useBlurredTransparentBackground: false,
+        enableDrag: false,
         child: WeightPlateCalculator(
             target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0));
   }

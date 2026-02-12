@@ -181,27 +181,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             (log) => log.sets.any((set) => set.isNotEmpty() && set.checked));
   }
 
-  /// Calculates workout progress percentage based on completed sets
-  double _calculateWorkoutProgress(List<ExerciseLogDto> exerciseLogs) {
-    if (exerciseLogs.isEmpty) return 0.0;
-
-    int totalSets = 0;
-    int completedSets = 0;
-
-    for (final exerciseLog in exerciseLogs) {
-      final exerciseTotalSets = exerciseLog.sets.length;
-      final exerciseCompletedSets =
-          exerciseLog.sets.where((set) => set.checked).length;
-
-      totalSets += exerciseTotalSets;
-      completedSets += exerciseCompletedSets;
-    }
-
-    if (totalSets == 0) return 0.0;
-
-    return (completedSets / totalSets * 100).clamp(0.0, 100.0);
-  }
-
   /// Handles back navigation for edit mode - always shows confirmation
   Future<bool> _handleBackNavigation() async {
     final shouldLeave = await confirmDiscardChangesBottomSheet(
@@ -361,53 +340,6 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                         );
                                       },
                                     ),
-                                  ),
-                                  Builder(
-                                    builder: (context) {
-                                      final progress =
-                                          _calculateWorkoutProgress(
-                                              exerciseLogs);
-                                      if (exerciseLogs.isEmpty) {
-                                        return const SizedBox.shrink();
-                                      }
-                                      return Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '${progress.toStringAsFixed(0)}% Complete',
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodyLarge
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.white70,
-                                                  ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                              child: LinearProgressIndicator(
-                                                value: progress / 100,
-                                                minHeight: 6,
-                                                backgroundColor: Colors.white
-                                                    .withValues(alpha: 0.2),
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                        Color>(
-                                                  Theme.of(context)
-                                                      .colors
-                                                      .vibrantAccent,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
                                   ),
                                   const SizedBox(height: 8),
                                   TextButton(
