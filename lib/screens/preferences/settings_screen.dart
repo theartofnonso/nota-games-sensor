@@ -49,8 +49,6 @@ import '../../widgets/settings/delete_account_section.dart';
 import '../../widgets/settings/unsubscribe_section.dart';
 import '../../widgets/settings/coach_feedback_card.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
-import '../../widgets/empty_states/list_empty_state.dart';
-import '../../utils/lottie_exercise_registry.dart';
 import '../../screens/routines/routine_plan.dart';
 
 enum WeightUnit {
@@ -220,17 +218,9 @@ class _SettingsScreenState extends State<SettingsScreen>
         child: Stack(
           children: [
             SingleChildScrollView(
-              child: controller.plans.isEmpty
-                  ? _buildNoPlanEmptyState(
-                      isCoach: isCoach,
-                      isDarkMode: isDarkMode,
-                      headerName: headerName,
-                      headerEmail: headerEmail,
-                      headerInitials: headerInitials,
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                         if (isCoach)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -553,125 +543,6 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
         ],
       ),
-    );
-  }
-
-  /// Empty state when there is no routine plan (same style as RoutineLogEditor).
-  /// Coach sees header + CTA to create plan; client sees only the message.
-  Widget _buildNoPlanEmptyState({
-    required bool isCoach,
-    required bool isDarkMode,
-    required String headerName,
-    required String headerEmail,
-    required String? headerInitials,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (isCoach)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: Row(
-              children: [
-                if (headerInitials != null) ...[
-                  Container(
-                    width: 36,
-                    height: 36,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          (isDarkMode ? Colors.white : Colors.black)
-                              .withValues(alpha: 0.18),
-                          (isDarkMode ? Colors.white : Colors.black)
-                              .withValues(alpha: 0.05),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      headerInitials,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: isDarkMode ? Colors.white : Colors.black,
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        headerName,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: isDarkMode ? Colors.white : Colors.black,
-                              fontWeight: FontWeight.w500,
-                            ),
-                      ),
-                      if (headerEmail.trim().isNotEmpty)
-                        Text(
-                          headerEmail,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: isDarkMode
-                                    ? Colors.white.withValues(alpha: 0.6)
-                                    : Colors.black.withValues(alpha: 0.6),
-                              ),
-                        ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: FaIcon(
-                    FontAwesomeIcons.users,
-                    color: isDarkMode ? Colors.white70 : Colors.black,
-                    size: 18,
-                  ),
-                  onPressed: _goBackToCoachList,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-          ),
-        ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: MediaQuery.sizeOf(context).height - 180,
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListEmptyState(
-                  message: isCoach
-                      ? "No routine plan for this client yet.\nCreate one to get started."
-                      : "No routine plan yet.\nAfter a consultation call with your coach, a plan is created and you can start training.",
-                  lottieFuture: LottieExerciseRegistry.randomLottie(),
-                ),
-                if (isCoach) ...[
-                  const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: OpacityButtonWidgetTwo(
-                        buttonColor: Theme.of(context).colors.vibrantAccent,
-                        label: "Create routine plan",
-                        onPressed: () =>
-                            navigateToRoutinePlanEditor(context: context),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -2286,6 +2157,7 @@ class _RoutinePlansSection extends StatelessWidget {
         final isCoach = AppConfig.isCoach;
         final plansEmpty = controller.plans.isEmpty;
 
+        // Clients: hide routine plan section when no plan exists
         if (!isCoach && plansEmpty) return const SizedBox.shrink();
 
         if (isCoach && plansEmpty) {
