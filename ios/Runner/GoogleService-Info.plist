@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.notathletes.client</string>
+	<string>com.notathletes.coach</string>
 	<key>PROJECT_ID</key>
 	<string>not-athletes</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:160658273085:ios:d724400351f789da6d0b54</string>
+	<string>1:160658273085:ios:dd8077eb9cbc59d86d0b54</string>
 </dict>
 </plist>

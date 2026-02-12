@@ -127,21 +127,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       );
     }
 
-    final nutritionController = context.watch<NutritionLogController>();
     final accessController = context.watch<ClientOverrideController>();
     final isClientMode = accessController.hasSelectedClient;
     final isCoach = AppConfig.isCoach;
-    final consumedCalories = _sumCaloriesToday(nutritionController.logs);
-    final goalCalories = nutritionController.calorieTarget;
-    final hasLogsToday = _hasLogsToday(nutritionController.logs);
-    final remainingCalories = goalCalories > 0
-        ? (hasLogsToday
-            ? (goalCalories - consumedCalories).clamp(0.0, goalCalories)
-            : goalCalories)
-        : 0.0;
-    final consumedProtein = _sumProteinToday(nutritionController.logs);
-    final consumedCarbs = _sumCarbsToday(nutritionController.logs);
-    final consumedFats = _sumFatsToday(nutritionController.logs);
 
     final userEmail =
         Supabase.instance.client.auth.currentUser?.email ?? "User";
@@ -337,45 +325,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                         SizedBox(height: _sectionSpacing),
                         _RoutinePlansSection(),
                         SizedBox(height: _sectionSpacing),
-                        if (!AppConfig.isClient ||
-                            nutritionController.nutritionTemplate != null) ...[
-                          NutritionTrackingCarousel(
-                            goalCalories: goalCalories,
-                            remainingCalories: remainingCalories,
-                            proteinTarget: nutritionController.proteinTarget,
-                            carbsTarget: nutritionController.carbsTarget,
-                            fatsTarget: nutritionController.fatsTarget,
-                            consumedProtein: consumedProtein,
-                            consumedCarbs: consumedCarbs,
-                            consumedFats: consumedFats,
-                            hasLogsToday: hasLogsToday,
-                            onCardTap: () {
-                              // Coach with no client logs: only create/manage template sheet (no nav to nutrition screen).
-                              if (AppConfig.isCoach &&
-                                  nutritionController.logs.isEmpty) {
-                                showNutritionTemplateSheet(context);
-                                return;
-                              }
-                              Navigator.of(context).push(
-                                PageRouteBuilder(
-                                  pageBuilder: (_, __, ___) =>
-                                      const NutritionTrackerScreen(),
-                                  transitionsBuilder: (_, animation, __, child) {
-                                    final tween = Tween(
-                                      begin: const Offset(0, 1),
-                                      end: Offset.zero,
-                                    ).chain(CurveTween(curve: Curves.easeOutCubic));
-                                    return SlideTransition(
-                                      position: animation.drive(tween),
-                                      child: child,
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                          SizedBox(height: _sectionSpacing),
-                        ],
+                        _NutritionSection(),
+                        SizedBox(height: _sectionSpacing),
                         if (AppConfig.isClient) ...[
                           const CoachFeedbackCard(),
                           SizedBox(height: _sectionSpacing),
@@ -558,43 +509,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         }
       });
     }
-  }
-
-  double _sumCaloriesToday(List<NutritionLogDto> logs) {
-    final now = DateTime.now();
-    final todayLogs =
-        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
-    return todayLogs.fold(0.0, (sum, log) => sum + log.calories);
-  }
-
-  bool _hasLogsToday(List<NutritionLogDto> logs) {
-    final now = DateTime.now();
-    return logs.any((log) => _isSameDay(log.loggedAt.toLocal(), now));
-  }
-
-  double _sumProteinToday(List<NutritionLogDto> logs) {
-    final now = DateTime.now();
-    final todayLogs =
-        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
-    return todayLogs.fold(0.0, (sum, log) => sum + log.protein);
-  }
-
-  double _sumCarbsToday(List<NutritionLogDto> logs) {
-    final now = DateTime.now();
-    final todayLogs =
-        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
-    return todayLogs.fold(0.0, (sum, log) => sum + log.carbs);
-  }
-
-  double _sumFatsToday(List<NutritionLogDto> logs) {
-    final now = DateTime.now();
-    final todayLogs =
-        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
-    return todayLogs.fold(0.0, (sum, log) => sum + log.fats);
-  }
-
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   String? _initialsForName(String name, String? email) {
@@ -2141,6 +2055,164 @@ class _LegendItem extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+}
+
+// --- Nutrition section (mirrors routine plans) ---
+
+class _NutritionSection extends StatelessWidget {
+  const _NutritionSection();
+
+  static bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  static double _sumCaloriesToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
+    return todayLogs.fold(0.0, (sum, log) => sum + log.calories);
+  }
+
+  static bool _hasLogsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    return logs.any((log) => _isSameDay(log.loggedAt.toLocal(), now));
+  }
+
+  static double _sumProteinToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
+    return todayLogs.fold(0.0, (sum, log) => sum + log.protein);
+  }
+
+  static double _sumCarbsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
+    return todayLogs.fold(0.0, (sum, log) => sum + log.carbs);
+  }
+
+  static double _sumFatsToday(List<NutritionLogDto> logs) {
+    final now = DateTime.now();
+    final todayLogs =
+        logs.where((log) => _isSameDay(log.loggedAt.toLocal(), now));
+    return todayLogs.fold(0.0, (sum, log) => sum + log.fats);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<NutritionLogController>(
+      builder: (context, nutritionController, _) {
+        final isCoach = AppConfig.isCoach;
+        final template = nutritionController.nutritionTemplate;
+
+        // Clients: hide nutrition section when no template exists
+        if (!isCoach && template == null) return const SizedBox.shrink();
+
+        if (isCoach && template == null) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: _NutritionCreateRow(),
+          );
+        }
+
+        final consumedCalories = _sumCaloriesToday(nutritionController.logs);
+        final goalCalories = nutritionController.calorieTarget;
+        final hasLogsToday = _hasLogsToday(nutritionController.logs);
+        final remainingCalories = goalCalories > 0
+            ? (hasLogsToday
+                ? (goalCalories - consumedCalories).clamp(0.0, goalCalories)
+                : goalCalories)
+            : 0.0;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          child: NutritionTrackingCarousel(
+            goalCalories: goalCalories,
+            remainingCalories: remainingCalories,
+            proteinTarget: nutritionController.proteinTarget,
+            carbsTarget: nutritionController.carbsTarget,
+            fatsTarget: nutritionController.fatsTarget,
+            consumedProtein: _sumProteinToday(nutritionController.logs),
+            consumedCarbs: _sumCarbsToday(nutritionController.logs),
+            consumedFats: _sumFatsToday(nutritionController.logs),
+            hasLogsToday: hasLogsToday,
+            onCardTap: () {
+              if (isCoach && nutritionController.logs.isEmpty) {
+                showNutritionTemplateSheet(context);
+                return;
+              }
+              Navigator.of(context).push(
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) =>
+                      const NutritionTrackerScreen(),
+                  transitionsBuilder: (_, animation, __, child) {
+                    final tween = Tween(
+                      begin: const Offset(0, 1),
+                      end: Offset.zero,
+                    ).chain(CurveTween(curve: Curves.easeOutCubic));
+                    return SlideTransition(
+                      position: animation.drive(tween),
+                      child: child,
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Coach only: empty state with CTA to create nutrition template.
+class _NutritionCreateRow extends StatelessWidget {
+  const _NutritionCreateRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = theme.colors.vibrantAccent;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final descriptionColor = isDark
+        ? Colors.white.withValues(alpha: 0.7)
+        : Colors.black54;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Nutrition',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: titleColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Create a nutrition template to set calorie and macro targets for this client.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: descriptionColor,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              onPressed: () => showNutritionTemplateSheet(context),
+              label: 'Create nutrition template',
+              buttonColor: accent,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
