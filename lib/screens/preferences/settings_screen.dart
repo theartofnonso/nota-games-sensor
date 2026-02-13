@@ -48,6 +48,7 @@ import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/settings/delete_account_section.dart';
 import '../../widgets/settings/unsubscribe_section.dart';
 import '../../widgets/settings/coach_feedback_card.dart';
+import '../../widgets/settings/coach_ai_chat_card.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../screens/routines/routine_plan.dart';
 
@@ -317,6 +318,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     ),
                   ],
+                  if (isCoach && isClientMode) ...[
+                    SizedBox(height: _sectionSpacing),
+                    const CoachAiChatCard(),
+                    SizedBox(height: _sectionSpacing),
+                  ],
                   _TrainingInsightsSection(
                     yearStats: yearStats,
                     yearHoursStats: yearHoursStats,
@@ -324,9 +330,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   SizedBox(height: _sectionSpacing),
                   _RoutinePlansSection(),
-                  SizedBox(height: _sectionSpacing),
+                  _SpacerIfRoutinePlansVisible(),
                   _NutritionSection(),
-                  //SizedBox(height: _sectionSpacing),
+                  _SpacerIfNutritionVisible(),
                   if (AppConfig.isClient) ...[
                     const CoachFeedbackCard(),
                     SizedBox(height: _sectionSpacing),
@@ -2125,9 +2131,7 @@ class _NutritionSection extends StatelessWidget {
                 : goalCalories)
             : 0.0;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-          child: NutritionTrackingCarousel(
+        return NutritionTrackingCarousel(
             goalCalories: goalCalories,
             remainingCalories: remainingCalories,
             proteinTarget: nutritionController.proteinTarget,
@@ -2158,8 +2162,7 @@ class _NutritionSection extends StatelessWidget {
                 ),
               );
             },
-          ),
-        );
+          );
       },
     );
   }
@@ -2222,6 +2225,40 @@ class _NutritionCreateRow extends StatelessWidget {
 }
 
 // This function is no longer used - replaced by TrainingPredictionService.deriveTypicalTimeForWeekday
+
+/// Spacer after routine plans - only when that section rendered content.
+/// Avoids double gap when client has no plans (section shrinks).
+class _SpacerIfRoutinePlansVisible extends StatelessWidget {
+  const _SpacerIfRoutinePlansVisible();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SupabaseExerciseAndRoutineController>(
+      builder: (context, controller, _) {
+        final isCoach = AppConfig.isCoach;
+        final hasContent = isCoach || controller.plans.isNotEmpty;
+        return hasContent ? SizedBox(height: _SettingsScreenState._sectionSpacing) : const SizedBox.shrink();
+      },
+    );
+  }
+}
+
+/// Spacer after nutrition - only when that section rendered content.
+/// Avoids double gap when client has no template (section shrinks).
+class _SpacerIfNutritionVisible extends StatelessWidget {
+  const _SpacerIfNutritionVisible();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<NutritionLogController>(
+      builder: (context, controller, _) {
+        final isCoach = AppConfig.isCoach;
+        final hasContent = isCoach || controller.nutritionTemplate != null;
+        return hasContent ? SizedBox(height: _SettingsScreenState._sectionSpacing) : const SizedBox.shrink();
+      },
+    );
+  }
+}
 
 class _RoutinePlansSection extends StatelessWidget {
   const _RoutinePlansSection();

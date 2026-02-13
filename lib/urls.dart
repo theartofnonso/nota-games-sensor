@@ -11,15 +11,20 @@ const routineLogs = '/routine-logs';
 
 /// Stripe Endpoints
 const stripeBaseUrl = 'https://stripe.notathletes.com';
+
 /// POST /checkSubscription - body: {email}, response: {hasActiveSubscription, isCustomer}
 const checkStripeSubscriptionPath = '/checkSubscription';
+
 /// GET /products - returns {products: [{priceId, productId, productName, amount, currency, interval, intervalCount}, ...]}
 const stripeProductsPath = '/products';
+
 /// POST /subscription/resubscribe - body: {email, price_id}. Backend handles success page.
 /// Response (201): {checkout_url, session_id}. Client opens checkout_url in browser.
 const stripeResubscribePath = '/subscription/resubscribe';
+
 /// POST /subscription/cancel - auth required, body: {userId}, response: 204
 const stripeSubscriptionCancelPath = '/subscription/cancel';
+
 /// POST /customer/delete - auth required, body: {userId}, response: 204
 const stripeCustomerDeletePath = '/customer/delete';
 
@@ -31,9 +36,14 @@ const agoraVideoTokenPath = '/video-token';
 /// Delete current user from Agora Chat (called during account deletion; backend performs the Agora REST delete).
 const agoraUserDeletePath = '/user/delete';
 
-/// Nutrition estimate (OpenAI) – POST /nutrition, body { "meal": "string" }
-const nutritionEstimateBaseUrl = 'https://openai.notathletes.com';
+/// OpenAI (openai.notathletes.com)
+const openAiBaseUrl = 'https://openai.notathletes.com';
+
+/// POST /nutrition – body { "meal": "string" }
 const nutritionEstimatePath = '/nutrition';
+
+/// POST /query – body { "query": "string", "client_id": "UUID" }, response { "answer": "..." }
+const aiQueryPath = '/query';
 
 /// Account deletion (client only). Backend deletes auth user and relies on DB CASCADE.
 const accountDeletionBaseUrl = 'https://api.notathletes.com';

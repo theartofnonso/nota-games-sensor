@@ -25,6 +25,7 @@ import '../../services/push_token_service.dart'
 import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
+import '../../widgets/chat/chat_layout.dart';
 import '../video/video_call_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -909,252 +910,89 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final colors = theme.extension<TRKRColors>();
-
     final displayInitials =
         AppConfig.isCoach ? _clientInitials() : _coachInitials();
 
+    final headerLeading = displayInitials.isNotEmpty
+        ? Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.18),
+                  (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              displayInitials,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: isDarkMode ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          )
+        : const SizedBox(width: 36, height: 36);
+
     return Stack(
       children: [
-        Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-              child: Row(
-                children: [
-                  if (displayInitials.isNotEmpty) ...[
-                    Container(
-                      width: 36,
-                      height: 36,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            (isDarkMode ? Colors.white : Colors.black)
-                                .withValues(
-                              alpha: 0.18,
-                            ),
-                            (isDarkMode ? Colors.white : Colors.black)
-                                .withValues(
-                              alpha: 0.05,
-                            ),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        displayInitials,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: isDarkMode ? Colors.white : Colors.black,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppConfig.isCoach
-                              ? widget.clientName
-                              : 'Coach ${widget.coachName}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: isDarkMode ? Colors.white : Colors.black,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 17,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Video call button (always shown for coach and client)
-                  IconButton(
-                    icon: Icon(
-                      Icons.videocam,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                      size: 22,
-                    ),
-                    onPressed: () => _openVideoCall(),
-                  ),
-                  // Close button
-                  IconButton(
-                    icon: FaIcon(
-                      FontAwesomeIcons.solidCircleXmark,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
+        ChatLayout(
+          headerLeading: headerLeading,
+          title: AppConfig.isCoach ? widget.clientName : 'Coach ${widget.coachName}',
+          headerActions: [
+            IconButton(
+              icon: Icon(Icons.videocam, color: isDarkMode ? Colors.white : Colors.black, size: 22),
+              onPressed: () => _openVideoCall(),
             ),
-
-            // Messages list
-            Expanded(
-              child: _messages.isEmpty
-                  ? GestureDetector(
-                      onTap: () => FocusScope.of(context).unfocus(),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            FaIcon(
-                              FontAwesomeIcons.message,
-                              size: 48,
-                              color: Colors.grey.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No messages yet',
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: Colors.grey.withValues(alpha: 0.7),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              AppConfig.isCoach
-                                  ? 'Start a conversation with your client'
-                                  : 'Start a conversation with your coach',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: Colors.grey.withValues(alpha: 0.5),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : Builder(
-                      builder: (context) {
-                        final entries = _buildChatEntries();
-                        return ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.manual,
-                          itemCount: entries.length,
-                          itemBuilder: (context, index) {
-                            final entry = entries[index];
-                            if (entry.isDivider) {
-                              return _ChatDateDivider(label: entry.label!);
-                            }
-                            final message = entry.message!;
-                            final isCurrentUser =
-                                _isCurrentUserMessage(message);
-                            return _ChatMessageBubble(
-                              message: message,
-                              isCurrentUser: isCurrentUser,
-                              timestamp:
-                                  _formatTimestamp(_messageTimestamp(message)),
-                              isDarkMode: isDarkMode,
-                              vibrantAccent:
-                                  colors?.vibrantAccent ?? Colors.green,
-                            );
-                          },
-                        );
-                      },
-                    ),
-            ),
-
-            // Message input - simplified
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                16 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: SafeArea(
-                top: false,
-                child: GestureDetector(
-                  onVerticalDragUpdate: (details) {
-                    if (details.delta.dy > 6) {
-                      FocusScope.of(context).unfocus();
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.only(top: 4),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.1)
-                          : Colors.black.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: isDarkMode
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : Colors.black.withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        TextField(
-                          controller: _messageController,
-                          enabled: !_isSending,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: isDarkMode ? Colors.white : Colors.black,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Type a message...',
-                            hintStyle: TextStyle(
-                              color: Colors.grey.withValues(alpha: 0.5),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            contentPadding: const EdgeInsets.fromLTRB(
-                              52,
-                              12,
-                              52,
-                              12,
-                            ),
-                          ),
-                          maxLines: null,
-                          textCapitalization: TextCapitalization.sentences,
-                          onSubmitted: (_) => _sendMessage(),
-                        ),
-                        Positioned(
-                          left: 8,
-                          bottom: 8,
-                          child: _ChatInputIconButton(
-                            icon: Icons.add,
-                            isDarkMode: isDarkMode,
-                            onTap: _showAttachmentSheet,
-                          ),
-                        ),
-                        Positioned(
-                          right: 8,
-                          bottom: 8,
-                          child: _ChatInputIconButton(
-                            icon: FontAwesomeIcons.arrowUp,
-                            isDarkMode: isDarkMode,
-                            onTap: _isSending ? null : _sendMessage,
-                            isLoading: _isSending,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            IconButton(
+              icon: FaIcon(FontAwesomeIcons.solidCircleXmark, color: isDarkMode ? Colors.white : Colors.black, size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
             ),
           ],
+          messagesContent: _messages.isEmpty
+              ? ChatEmptyState(
+                  title: 'No messages yet',
+                  subtitle: AppConfig.isCoach
+                      ? 'Start a conversation with your client'
+                      : 'Start a conversation with your coach',
+                )
+              : Builder(
+                  builder: (context) {
+                    final entries = _buildChatEntries();
+                    return ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+                      itemCount: entries.length,
+                      itemBuilder: (context, index) {
+                        final entry = entries[index];
+                        if (entry.isDivider) {
+                          return _ChatDateDivider(label: entry.label!);
+                        }
+                        final message = entry.message!;
+                        return _ChatMessageBubble(
+                          message: message,
+                          isCurrentUser: _isCurrentUserMessage(message),
+                          timestamp: _formatTimestamp(_messageTimestamp(message)),
+                          isDarkMode: isDarkMode,
+                          vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+                        );
+                      },
+                    );
+                  },
+                ),
+          messageController: _messageController,
+          onSend: _sendMessage,
+          isSending: _isSending,
+          showAttachmentButton: true,
+          onAttachmentTap: _showAttachmentSheet,
         ),
       ],
     );
@@ -1984,55 +1822,6 @@ class _ChatListEntry {
   const _ChatListEntry.divider(this.label) : message = null;
 
   bool get isDivider => label != null;
-}
-
-class _ChatInputIconButton extends StatelessWidget {
-  final IconData icon;
-  final bool isDarkMode;
-  final VoidCallback? onTap;
-  final bool isLoading;
-
-  const _ChatInputIconButton({
-    required this.icon,
-    required this.isDarkMode,
-    required this.onTap,
-    this.isLoading = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final background = isDarkMode
-        ? Colors.white.withValues(alpha: 0.18)
-        : Colors.black.withValues(alpha: 0.08);
-    return SizedBox(
-      width: 36,
-      height: 36,
-      child: Material(
-        color: background,
-        shape: const CircleBorder(),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Center(
-            child: isLoading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Icon(
-                    icon,
-                    color: isDarkMode ? Colors.white : Colors.black,
-                    size: 16,
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _ShareTile extends StatelessWidget {

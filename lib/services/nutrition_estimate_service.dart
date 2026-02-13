@@ -29,7 +29,7 @@ Future<NutritionEstimate?> estimateFromMealDescription(String meal) async {
   if (trimmed.isEmpty) return null;
 
   final uri =
-      Uri.parse(nutritionEstimateBaseUrl).resolve(nutritionEstimatePath);
+      Uri.parse(openAiBaseUrl).resolve(nutritionEstimatePath);
   try {
     final response = await http.post(
       uri,
