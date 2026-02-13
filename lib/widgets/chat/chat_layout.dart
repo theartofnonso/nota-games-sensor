@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:lottie/lottie.dart';
+
+import '../../utils/lottie_exercise_registry.dart';
 
 /// Shared chat UI layout used by both coach-client chat and coach-AI chat.
 /// Same header structure, empty state, and input area.
@@ -16,6 +19,7 @@ class ChatLayout extends StatelessWidget {
   final bool showAttachmentButton;
   final VoidCallback? onAttachmentTap;
   final String inputHint;
+  final Widget? widgetAboveInput;
 
   const ChatLayout({
     super.key,
@@ -29,6 +33,7 @@ class ChatLayout extends StatelessWidget {
     this.showAttachmentButton = false,
     this.onAttachmentTap,
     this.inputHint = 'Type a message...',
+    this.widgetAboveInput,
   });
 
   @override
@@ -66,6 +71,8 @@ class ChatLayout extends StatelessWidget {
         ),
         // Messages
         Expanded(child: messagesContent),
+        // Optional widget above input (e.g. attached exercise chip)
+        if (widgetAboveInput != null) widgetAboveInput!,
         // Input
         Padding(
           padding: EdgeInsets.fromLTRB(
@@ -310,6 +317,12 @@ class ChatTextBubble extends StatelessWidget {
   final String text;
   final String timestamp;
   final bool isMarkdown;
+  /// Optional: show attachment indicator (e.g. "Exercise: Bench Press").
+  final String? attachedExerciseName;
+  /// Optional: exercise ID for Lottie lookup. Only system exercises have Lottie.
+  final String? attachedExerciseId;
+  /// Optional: whether exercise is system (has Lottie in registry).
+  final bool attachedExerciseIsSystem;
 
   const ChatTextBubble({
     super.key,
@@ -317,6 +330,9 @@ class ChatTextBubble extends StatelessWidget {
     required this.text,
     required this.timestamp,
     this.isMarkdown = false,
+    this.attachedExerciseName,
+    this.attachedExerciseId,
+    this.attachedExerciseIsSystem = false,
   });
 
   @override
@@ -360,6 +376,55 @@ class ChatTextBubble extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (attachedExerciseName != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: attachedExerciseIsSystem &&
+                                          attachedExerciseId != null
+                                      ? FutureBuilder<String?>(
+                                          future: LottieExerciseRegistry.lottieFor(
+                                              attachedExerciseId!),
+                                          builder: (context, snapshot) {
+                                            final asset = snapshot.data;
+                                            if (asset != null) {
+                                              return Lottie.asset(
+                                                asset,
+                                                width: 20,
+                                                height: 20,
+                                                fit: BoxFit.contain,
+                                                repeat: true,
+                                              );
+                                            }
+                                            return Icon(
+                                              Icons.fitness_center,
+                                              size: 14,
+                                              color: textColor.withValues(alpha: 0.8),
+                                            );
+                                          },
+                                        )
+                                      : Icon(
+                                          Icons.fitness_center,
+                                          size: 14,
+                                          color: textColor.withValues(alpha: 0.8),
+                                        ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  attachedExerciseName!,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: textColor.withValues(alpha: 0.8),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         isMarkdown
                             ? MarkdownBody(
                                 data: text,

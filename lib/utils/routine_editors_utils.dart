@@ -113,6 +113,25 @@ void showExerciseLogEditor({
   );
 }
 
+/// Opens exercise library to select exactly one exercise for AI chat.
+/// Returns the exercise or null if dismissed/empty.
+Future<ExerciseDto?> showExercisePickerForAiChat(
+    {required BuildContext context}) async {
+  final selected = await showAppBottomSheet<List<ExerciseDto>>(
+    context: context,
+    isDraggable: true,
+    initialChildSize: 0.9,
+    minChildSize: 0.6,
+    maxChildSize: 0.98,
+    child: ExerciseLibraryScreen(
+      excludeExercises: const [],
+      selectionPurpose: ExerciseSelectionPurpose.forAiQuery,
+    ),
+  );
+  if (selected == null || selected.isEmpty) return null;
+  return selected.first;
+}
+
 void showExercisesInLibrary(
     {required BuildContext context,
     required List<ExerciseDto> exercisesToExclude,

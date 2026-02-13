@@ -2132,37 +2132,37 @@ class _NutritionSection extends StatelessWidget {
             : 0.0;
 
         return NutritionTrackingCarousel(
-            goalCalories: goalCalories,
-            remainingCalories: remainingCalories,
-            proteinTarget: nutritionController.proteinTarget,
-            carbsTarget: nutritionController.carbsTarget,
-            fatsTarget: nutritionController.fatsTarget,
-            consumedProtein: _sumProteinToday(nutritionController.logs),
-            consumedCarbs: _sumCarbsToday(nutritionController.logs),
-            consumedFats: _sumFatsToday(nutritionController.logs),
-            hasLogsToday: hasLogsToday,
-            onCardTap: () {
-              if (isCoach && nutritionController.logs.isEmpty) {
-                showNutritionTemplateSheet(context);
-                return;
-              }
-              Navigator.of(context).push(
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => const NutritionTrackerScreen(),
-                  transitionsBuilder: (_, animation, __, child) {
-                    final tween = Tween(
-                      begin: const Offset(0, 1),
-                      end: Offset.zero,
-                    ).chain(CurveTween(curve: Curves.easeOutCubic));
-                    return SlideTransition(
-                      position: animation.drive(tween),
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            },
-          );
+          goalCalories: goalCalories,
+          remainingCalories: remainingCalories,
+          proteinTarget: nutritionController.proteinTarget,
+          carbsTarget: nutritionController.carbsTarget,
+          fatsTarget: nutritionController.fatsTarget,
+          consumedProtein: _sumProteinToday(nutritionController.logs),
+          consumedCarbs: _sumCarbsToday(nutritionController.logs),
+          consumedFats: _sumFatsToday(nutritionController.logs),
+          hasLogsToday: hasLogsToday,
+          onCardTap: () {
+            if (isCoach && nutritionController.logs.isEmpty) {
+              showNutritionTemplateSheet(context);
+              return;
+            }
+            Navigator.of(context).push(
+              PageRouteBuilder(
+                pageBuilder: (_, __, ___) => const NutritionTrackerScreen(),
+                transitionsBuilder: (_, animation, __, child) {
+                  final tween = Tween(
+                    begin: const Offset(0, 1),
+                    end: Offset.zero,
+                  ).chain(CurveTween(curve: Curves.easeOutCubic));
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: child,
+                  );
+                },
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -2180,15 +2180,12 @@ class _NutritionCreateRow extends StatelessWidget {
     final titleColor = isDark ? Colors.white : Colors.black87;
     final descriptionColor =
         isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
-    final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.15)
-        : Colors.black.withValues(alpha: 0.12);
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
+        color: theme.colors.borderLight.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -2237,7 +2234,9 @@ class _SpacerIfRoutinePlansVisible extends StatelessWidget {
       builder: (context, controller, _) {
         final isCoach = AppConfig.isCoach;
         final hasContent = isCoach || controller.plans.isNotEmpty;
-        return hasContent ? SizedBox(height: _SettingsScreenState._sectionSpacing) : const SizedBox.shrink();
+        return hasContent
+            ? SizedBox(height: _SettingsScreenState._sectionSpacing)
+            : const SizedBox.shrink();
       },
     );
   }
@@ -2254,7 +2253,9 @@ class _SpacerIfNutritionVisible extends StatelessWidget {
       builder: (context, controller, _) {
         final isCoach = AppConfig.isCoach;
         final hasContent = isCoach || controller.nutritionTemplate != null;
-        return hasContent ? SizedBox(height: _SettingsScreenState._sectionSpacing) : const SizedBox.shrink();
+        return hasContent
+            ? SizedBox(height: _SettingsScreenState._sectionSpacing)
+            : const SizedBox.shrink();
       },
     );
   }
@@ -2301,15 +2302,12 @@ class _RoutinePlansCreateRow extends StatelessWidget {
     final titleColor = isDark ? Colors.white : Colors.black87;
     final descriptionColor =
         isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
-    final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.15)
-        : Colors.black.withValues(alpha: 0.12);
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
+        color: Colors.black12.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

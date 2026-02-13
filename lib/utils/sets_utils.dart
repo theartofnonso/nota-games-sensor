@@ -24,7 +24,7 @@ List<SetDto> personalBestSets({required List<SetDto> sets}) {
         dateTime: DateTime.now()));
   }
 
-  // Sort by value2
+  // Sort by reps
   setsWithHeaviestWeight.sort((a, b) => (a as WeightAndRepsSetDto)
       .reps
       .compareTo((b as WeightAndRepsSetDto).reps));

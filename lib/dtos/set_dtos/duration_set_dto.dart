@@ -51,12 +51,7 @@ class DurationSetDto extends SetDto {
   String summary() => duration.hmsAnalog();
 
   @override
-  Map<String, dynamic> toJson() {
-    return super.toJson()
-      ..addAll({
-        'duration': duration.inMilliseconds,
-      });
-  }
+  Map<String, dynamic> toJson() => super.toJson();
 
   @override
   String toString() => 'DurationSetDto('

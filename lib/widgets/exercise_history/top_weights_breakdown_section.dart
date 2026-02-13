@@ -103,31 +103,40 @@ class _TopWeightsBreakdownSectionState
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: CupertinoSlidingSegmentedControl<int>(
-            groupValue: _selectedWeightIndex,
-            backgroundColor: isDark
-                ? Theme.of(context).colors.sapphireDark
-                : Colors.grey.shade400,
-            thumbColor:
-                isDark ? Theme.of(context).colors.sapphireDark80 : Colors.white,
-            children: {
-              for (var i = 0; i < topWeights.length; i++)
-                i: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  child: Text(
-                    '${topWeights[i]}$unitLabel',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+          child: topWeights.length >= 2
+              ? CupertinoSlidingSegmentedControl<int>(
+                  groupValue: _selectedWeightIndex,
+                  backgroundColor: isDark
+                      ? Theme.of(context).colors.sapphireDark
+                      : Colors.grey.shade400,
+                  thumbColor: isDark
+                      ? Theme.of(context).colors.sapphireDark80
+                      : Colors.white,
+                  children: {
+                    for (var i = 0; i < topWeights.length; i++)
+                      i: Padding(
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        child: Text(
+                          '${topWeights[i]}$unitLabel',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                  },
+                  onValueChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedWeightIndex = value);
+                    }
+                  },
+                )
+              : Text(
+                  '${topWeights[0]}$unitLabel',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
                 ),
-            },
-            onValueChanged: (value) {
-              if (value != null) {
-                setState(() => _selectedWeightIndex = value);
-              }
-            },
-          ),
         ),
         const SizedBox(height: 20),
         child,

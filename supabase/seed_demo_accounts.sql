@@ -67,17 +67,17 @@ BEGIN
   VALUES
     (template1_id, plan1_id, 'Upper Body', '', coach_uuid, client_uuid,
      '[
-       {"superSetId":"","exercise":{"id":"ex-bench-press-db","name":"Bench Press (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":60,"value2":10,"checked":true},{"value1":60,"value2":8,"checked":true}],"alternatives":[]},
-       {"superSetId":"","exercise":{"id":"ex-row-bent-over-db","name":"Row (Bent-Over, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":25,"value2":12,"checked":true},{"value1":27,"value2":10,"checked":true}],"alternatives":[]}
+       {"superSetId":"","exercise":{"id":"ex-bench-press-db","name":"Bench Press (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":60,"reps":10,"checked":true},{"weight":60,"reps":8,"checked":true}],"alternatives":[]},
+       {"superSetId":"","exercise":{"id":"ex-row-bent-over-db","name":"Row (Bent-Over, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":25,"reps":12,"checked":true},{"weight":27,"reps":10,"checked":true}],"alternatives":[]}
      ]'::jsonb, now()),
     (template2_id, plan1_id, 'Lower Body', '', coach_uuid, client_uuid,
      '[
-       {"superSetId":"","exercise":{"id":"ex-squat-db","name":"Squat (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":80,"value2":8,"checked":true},{"value1":80,"value2":8,"checked":true}],"alternatives":[]},
-       {"superSetId":"","exercise":{"id":"ex-deadlift-romanian-db","name":"Deadlift (Romanian, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":70,"value2":10,"checked":true}],"alternatives":[]}
+       {"superSetId":"","exercise":{"id":"ex-squat-db","name":"Squat (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":80,"reps":8,"checked":true},{"weight":80,"reps":8,"checked":true}],"alternatives":[]},
+       {"superSetId":"","exercise":{"id":"ex-deadlift-romanian-db","name":"Deadlift (Romanian, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":70,"reps":10,"checked":true}],"alternatives":[]}
      ]'::jsonb, now()),
     (template3_id, plan2_id, 'Full Body', '', coach_uuid, NULL,
      '[
-       {"superSetId":"","exercise":{"id":"ex-deadlift-db","name":"Deadlift (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":100,"value2":5,"checked":true}],"alternatives":[]}
+       {"superSetId":"","exercise":{"id":"ex-deadlift-db","name":"Deadlift (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":100,"reps":5,"checked":true}],"alternatives":[]}
      ]'::jsonb, now())
   ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, exercises = EXCLUDED.exercises;
 
@@ -95,9 +95,9 @@ BEGIN
       (log_date + time '09:00')::timestamptz,
       (log_date + time '10:15')::timestamptz,
       CASE WHEN i % 2 = 0 THEN
-        '[{"superSetId":"","exercise":{"id":"ex-bench-press-db","name":"Bench Press (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":60,"value2":10,"checked":true},{"value1":62,"value2":8,"checked":true}],"alternatives":[]},{"superSetId":"","exercise":{"id":"ex-row-bent-over-db","name":"Row (Bent-Over, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":25,"value2":12,"checked":true},{"value1":27,"value2":10,"checked":true}],"alternatives":[]}]'
+        '[{"superSetId":"","exercise":{"id":"ex-bench-press-db","name":"Bench Press (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":60,"reps":10,"checked":true},{"weight":62,"reps":8,"checked":true}],"alternatives":[]},{"superSetId":"","exercise":{"id":"ex-row-bent-over-db","name":"Row (Bent-Over, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":25,"reps":12,"checked":true},{"weight":27,"reps":10,"checked":true}],"alternatives":[]}]'
       ELSE
-        '[{"superSetId":"","exercise":{"id":"ex-squat-db","name":"Squat (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":80,"value2":8,"checked":true},{"value1":82,"value2":8,"checked":true}],"alternatives":[]},{"superSetId":"","exercise":{"id":"ex-deadlift-romanian-db","name":"Deadlift (Romanian, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"value1":70,"value2":10,"checked":true}],"alternatives":[]}]'
+        '[{"superSetId":"","exercise":{"id":"ex-squat-db","name":"Squat (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":80,"reps":8,"checked":true},{"weight":82,"reps":8,"checked":true}],"alternatives":[]},{"superSetId":"","exercise":{"id":"ex-deadlift-romanian-db","name":"Deadlift (Romanian, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":70,"reps":10,"checked":true}],"alternatives":[]}]'
       END::jsonb,
       client_uuid,
       now()

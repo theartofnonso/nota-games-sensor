@@ -6,11 +6,16 @@ import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
+import 'package:lottie/lottie.dart';
+
 import '../../controllers/access_controller.dart';
+import '../../dtos/appsync/exercise_dto.dart';
 import '../../logger.dart';
+import '../../utils/lottie_exercise_registry.dart';
 import '../../utils/notathletes_auth_headers.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/theme/color_extensions.dart';
+import '../../utils/routine_editors_utils.dart';
 import '../../urls.dart';
 import '../../widgets/chat/chat_layout.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -20,11 +25,13 @@ class _AiChatMessage {
   final bool isUser;
   final String text;
   final DateTime timestamp;
+  final ExerciseDto? attachedExercise;
 
   _AiChatMessage({
     required this.isUser,
     required this.text,
     required this.timestamp,
+    this.attachedExercise,
   });
 }
 
@@ -50,6 +57,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final List<_AiChatMessage> _messages = [];
   bool _isLoading = false;
+  ExerciseDto? _attachedExercise;
 
   @override
   void dispose() {
@@ -62,13 +70,16 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty || _isLoading) return;
 
-    _messageController.clear();
+    final exercise = _attachedExercise;
 
+    _messageController.clear();
     setState(() {
+      _attachedExercise = null;
       _messages.add(_AiChatMessage(
         isUser: true,
         text: text,
         timestamp: DateTime.now(),
+        attachedExercise: exercise,
       ));
       _isLoading = true;
     });
@@ -76,15 +87,19 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
 
     try {
       final uri = Uri.parse(openAiBaseUrl).resolve(aiQueryPath);
-      _logger.i('[AI Chat] POST $uri query="$text" client_id=${widget.clientId}');
+      final body = <String, dynamic>{
+        'query': text,
+        'client_id': widget.clientId,
+      };
+      if (exercise != null) {
+        body['exercise_ids'] = [exercise.id];
+      }
+      _logger.i('[AI Chat] POST $uri query="$text" client_id=${widget.clientId} exercise_ids=${body['exercise_ids'] ?? 'null'}');
 
       final response = await http.post(
         uri,
         headers: notathletesAuthHeaders(),
-        body: jsonEncode({
-          'query': text,
-          'client_id': widget.clientId,
-        }),
+        body: jsonEncode(body),
       );
 
       _logger.i('[AI Chat] Response statusCode=${response.statusCode} body=${response.body.length > 500 ? "${response.body.substring(0, 500)}..." : response.body}');
@@ -126,6 +141,13 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
       title: 'Something went wrong',
       message: 'Please try again later.',
     );
+  }
+
+  Future<void> _showExercisePicker() async {
+    final exercise = await showExercisePickerForAiChat(context: context);
+    if (exercise != null && mounted) {
+      setState(() => _attachedExercise = exercise);
+    }
   }
 
   void _scrollToBottom() {
@@ -218,14 +240,87 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
                   text: msg.text,
                   timestamp: _formatTimestamp(msg.timestamp),
                   isMarkdown: !msg.isUser,
+                  attachedExerciseName: msg.attachedExercise?.name,
+                  attachedExerciseId: msg.attachedExercise?.id,
+                  attachedExerciseIsSystem: msg.attachedExercise?.isSystem ?? false,
                 );
               },
             ),
       messageController: _messageController,
       onSend: _sendMessage,
       isSending: _isLoading,
-      showAttachmentButton: false,
+      showAttachmentButton: true,
+      onAttachmentTap: _showExercisePicker,
       inputHint: 'Ask a question',
+      widgetAboveInput: _attachedExercise != null
+          ? _buildAttachedExerciseChip(context)
+          : null,
+    );
+  }
+
+  Widget _buildAttachedExerciseChip(BuildContext context) {
+    final ex = _attachedExercise!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = Theme.of(context).extension<TRKRColors>();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: ex.isSystem
+                ? FutureBuilder<String?>(
+                    future: LottieExerciseRegistry.lottieFor(ex.id),
+                    builder: (context, snapshot) {
+                      final asset = snapshot.data;
+                      if (asset != null) {
+                        return Lottie.asset(
+                          asset,
+                          width: 28,
+                          height: 28,
+                          fit: BoxFit.contain,
+                          repeat: true,
+                        );
+                      }
+                      return Icon(
+                        Icons.fitness_center,
+                        size: 20,
+                        color: colors?.vibrantAccent ?? Colors.green,
+                      );
+                    },
+                  )
+                : Icon(
+                    Icons.fitness_center,
+                    size: 20,
+                    color: colors?.vibrantAccent ?? Colors.green,
+                  ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              ex.name,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: isDark ? Colors.white70 : Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          GestureDetector(
+            onTap: () => setState(() => _attachedExercise = null),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                Icons.close,
+                size: 18,
+                color: isDark ? Colors.white54 : Colors.black54,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -28,8 +28,7 @@ class LottieExerciseRegistry {
   }
 
   /// Returns the lottie asset path for the given exercise [id].
-  /// The ID must match the exercise ID from lottie_exercises.json
-  /// (e.g., "ex-lever-seated-row").
+  /// The ID must match the exercise ID from lottie_exercises.json.
   /// Returns null if none is available.
   static Future<String?> lottieFor(String id) async {
     _cache ??= _load();

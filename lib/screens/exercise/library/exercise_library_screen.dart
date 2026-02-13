@@ -14,16 +14,28 @@ import '../../../utils/name_notes_bottom_sheet.dart';
 import '../../../widgets/empty_states/list_empty_state.dart';
 import '../../../widgets/exercise/exercise_grid_item.dart';
 
+/// Purpose when selecting an exercise from the library.
+enum ExerciseSelectionPurpose {
+  /// Add to workout/template (prompts log type).
+  addToWorkout,
+  /// View-only (settings, etc.) – no selection.
+  viewOnly,
+  /// Select for AI chat – tap returns exercise immediately for query scoping.
+  forAiQuery,
+}
+
 class ExerciseLibraryScreen extends StatefulWidget {
   final bool readOnly;
   final List<ExerciseDto> excludeExercises;
   final ExerciseType? type;
+  final ExerciseSelectionPurpose selectionPurpose;
 
   const ExerciseLibraryScreen(
       {super.key,
       this.readOnly = false,
       this.excludeExercises = const [],
-      this.type});
+      this.type,
+      this.selectionPurpose = ExerciseSelectionPurpose.addToWorkout});
 
   @override
   State<ExerciseLibraryScreen> createState() => _ExerciseLibraryScreenState();
@@ -247,13 +259,15 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     final allExercises = _filteredExercises;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        heroTag: UniqueKey(),
-        backgroundColor: themeGradient(context: context).colors.first,
-        elevation: 8.0,
-        onPressed: _showCreateExerciseSheet,
-        child: const FaIcon(FontAwesomeIcons.plus, size: 24),
-      ),
+      floatingActionButton: widget.selectionPurpose == ExerciseSelectionPurpose.forAiQuery
+          ? null
+          : FloatingActionButton(
+              heroTag: UniqueKey(),
+              backgroundColor: themeGradient(context: context).colors.first,
+              elevation: 8.0,
+              onPressed: _showCreateExerciseSheet,
+              child: const FaIcon(FontAwesomeIcons.plus, size: 24),
+            ),
       body: Container(
         decoration: BoxDecoration(
           gradient: themeGradient(context: context),
@@ -319,14 +333,19 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   // ────────────────────────────────────────────────────────────────────
 
   /// Handle exercise tap - show bottom sheet with context-aware options
-  /// - If readOnly = false (from session/template): Show "Add to workout" and "View history"
-  /// - If readOnly = true (from settings): Show only "View history"
+  /// - forAiQuery: tap directly selects and returns (single-choice picker)
+  /// - addToWorkout/viewOnly: Show "Add to workout" and "View history"
   void _handleExerciseTap(ExerciseDto exercise) {
     _dismissKeyboard(context);
+    if (widget.selectionPurpose == ExerciseSelectionPurpose.forAiQuery) {
+      _navigateBackWithSelectedExercise(exercise);
+      return;
+    }
     _showExerciseOptionsBottomSheet(exercise);
   }
 
   void _showExerciseOptionsBottomSheet(ExerciseDto exercise) {
+    // forAiQuery is handled in _handleExerciseTap (direct tap selects)
     showAppBottomSheet(
       context: context,
       isScrollControlled: false,

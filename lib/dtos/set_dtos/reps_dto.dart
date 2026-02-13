@@ -50,12 +50,7 @@ class RepsSetDto extends SetDto {
   String summary() => 'x$reps';
 
   @override
-  Map<String, dynamic> toJson() {
-    return super.toJson()
-      ..addAll({
-        'reps': reps,
-      });
-  }
+  Map<String, dynamic> toJson() => super.toJson();
 
   @override
   String toString() => 'RepsSetDto('

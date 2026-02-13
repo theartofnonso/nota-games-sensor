@@ -36,11 +36,8 @@ class CoachAiChatCard extends StatelessWidget {
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: colors.borderLight,
-                    width: 1,
-                  ),
+                  color: Colors.black12.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(100),
                 ),
                 child: Row(
                   children: [
@@ -59,11 +56,6 @@ class CoachAiChatCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 18,
-                      color: colors.textSecondary,
                     ),
                   ],
                 ),

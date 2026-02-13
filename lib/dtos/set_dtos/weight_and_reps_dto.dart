@@ -58,13 +58,7 @@ class WeightAndRepsSetDto extends SetDto {
   String summary() => '$weight${weightUnit()} x $reps reps';
 
   @override
-  Map<String, dynamic> toJson() {
-    return super.toJson()
-      ..addAll({
-        'weight': weight,
-        'reps': reps,
-      });
-  }
+  Map<String, dynamic> toJson() => super.toJson();
 
   double volume() {
     final convertedWeight = weightWithConversion(value: weight);
