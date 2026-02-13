@@ -94,7 +94,8 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
       if (exercise != null) {
         body['exercise_ids'] = [exercise.id];
       }
-      _logger.i('[AI Chat] POST $uri query="$text" client_id=${widget.clientId} exercise_ids=${body['exercise_ids'] ?? 'null'}');
+      _logger.i(
+          '[AI Chat] POST $uri query="$text" client_id=${widget.clientId} exercise_ids=${body['exercise_ids'] ?? 'null'}');
 
       final response = await http.post(
         uri,
@@ -102,7 +103,8 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
         body: jsonEncode(body),
       );
 
-      _logger.i('[AI Chat] Response statusCode=${response.statusCode} body=${response.body.length > 500 ? "${response.body.substring(0, 500)}..." : response.body}');
+      _logger.i(
+          '[AI Chat] Response statusCode=${response.statusCode} body=${response.body.length > 500 ? "${response.body.substring(0, 500)}..." : response.body}');
 
       if (!mounted) return;
 
@@ -122,7 +124,8 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
           _isLoading = false;
         });
       } else {
-        _logger.w('[AI Chat] Non-200 status=${response.statusCode} body=${response.body}');
+        _logger.w(
+            '[AI Chat] Non-200 status=${response.statusCode} body=${response.body}');
         _handleError();
       }
     } catch (e, stack) {
@@ -223,8 +226,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
       messagesContent: _messages.isEmpty && !_isLoading
           ? ChatEmptyState(
               title: 'Ask about this client',
-              subtitle:
-                  'Get insights on training, nutrition, and progress. Try questions like: Has calorie intake changed in the last 14 days? What are the main trends?',
+              subtitle: 'Get insights on training, nutrition, and progress.',
             )
           : ListView.builder(
               controller: _scrollController,
@@ -242,7 +244,8 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
                   isMarkdown: !msg.isUser,
                   attachedExerciseName: msg.attachedExercise?.name,
                   attachedExerciseId: msg.attachedExercise?.id,
-                  attachedExerciseIsSystem: msg.attachedExercise?.isSystem ?? false,
+                  attachedExerciseIsSystem:
+                      msg.attachedExercise?.isSystem ?? false,
                 );
               },
             ),
