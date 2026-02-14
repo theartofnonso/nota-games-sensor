@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../controllers/access_controller.dart';
+import '../../controllers/coach_ai_chat_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../logger.dart';
 import '../../utils/lottie_exercise_registry.dart';
@@ -19,21 +20,6 @@ import '../../utils/routine_editors_utils.dart';
 import '../../urls.dart';
 import '../../widgets/chat/chat_layout.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
-
-/// AI chat message: either from the coach (user) or the AI.
-class _AiChatMessage {
-  final bool isUser;
-  final String text;
-  final DateTime timestamp;
-  final ExerciseDto? attachedExercise;
-
-  _AiChatMessage({
-    required this.isUser,
-    required this.text,
-    required this.timestamp,
-    this.attachedExercise,
-  });
-}
 
 /// Coach-only: chat interface with AI. Uses same ChatLayout as coach-client chat.
 /// No attachments, no video. AI responses rendered as Markdown.
@@ -55,8 +41,6 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
   final _logger = getLogger(className: 'CoachAiChatScreen');
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<_AiChatMessage> _messages = [];
-  bool _isLoading = false;
   ExerciseDto? _attachedExercise;
 
   @override
@@ -68,21 +52,18 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty || _isLoading) return;
+    final chatController = context.read<CoachAiChatController>();
+    if (text.isEmpty || chatController.isLoadingFor(widget.clientId)) return;
 
     final exercise = _attachedExercise;
 
     _messageController.clear();
-    setState(() {
-      _attachedExercise = null;
-      _messages.add(_AiChatMessage(
-        isUser: true,
-        text: text,
-        timestamp: DateTime.now(),
-        attachedExercise: exercise,
-      ));
-      _isLoading = true;
-    });
+    setState(() => _attachedExercise = null);
+    chatController.addUserMessage(
+      clientId: widget.clientId,
+      text: text,
+      attachedExercise: exercise,
+    );
     _scrollToBottom();
 
     try {
@@ -115,18 +96,14 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
 
         _logger.i('[AI Chat] Parsed answer length=${answerText.length}');
 
-        setState(() {
-          _messages.add(_AiChatMessage(
-            isUser: false,
-            text: answerText.isNotEmpty ? answerText : 'No response received.',
-            timestamp: DateTime.now(),
-          ));
-          _isLoading = false;
-        });
+        chatController.addAiResponse(
+          clientId: widget.clientId,
+          text: answerText.isNotEmpty ? answerText : 'No response received.',
+        );
       } else {
         _logger.w(
             '[AI Chat] Non-200 status=${response.statusCode} body=${response.body}');
-        _handleError();
+        if (mounted) _handleError();
       }
     } catch (e, stack) {
       _logger.e('[AI Chat] Request failed: $e', error: e, stackTrace: stack);
@@ -138,7 +115,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
 
   void _handleError() {
     _logger.w('[AI Chat] Showing error bottom sheet');
-    setState(() => _isLoading = false);
+    context.read<CoachAiChatController>().setLoading(widget.clientId, false);
     showErrorBottomSheet(
       context: context,
       title: 'Something went wrong',
@@ -181,6 +158,24 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return Consumer<CoachAiChatController>(
+      builder: (context, chatController, _) {
+        final messages = chatController.messagesFor(widget.clientId);
+        final isLoading = chatController.isLoadingFor(widget.clientId);
+        return _buildContent(
+          context: context,
+          messages: messages,
+          isLoading: isLoading,
+        );
+      },
+    );
+  }
+
+  Widget _buildContent({
+    required BuildContext context,
+    required List<AiChatMessage> messages,
+    required bool isLoading,
+  }) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final colors = theme.extension<TRKRColors>();
@@ -223,7 +218,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
           constraints: const BoxConstraints(),
         ),
       ],
-      messagesContent: _messages.isEmpty && !_isLoading
+      messagesContent: messages.isEmpty && !isLoading
           ? ChatEmptyState(
               title: 'Ask about this client',
               subtitle: 'Get insights on training, nutrition, and progress.',
@@ -231,12 +226,12 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
           : ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: _messages.length + (_isLoading ? 1 : 0),
+              itemCount: messages.length + (isLoading ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index == _messages.length) {
+                if (index == messages.length) {
                   return _buildLoadingBubble(theme, isDarkMode);
                 }
-                final msg = _messages[index];
+                final msg = messages[index];
                 return ChatTextBubble(
                   isCurrentUser: msg.isUser,
                   text: msg.text,
@@ -251,7 +246,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
             ),
       messageController: _messageController,
       onSend: _sendMessage,
-      isSending: _isLoading,
+      isSending: isLoading,
       showAttachmentButton: true,
       onAttachmentTap: _showExercisePicker,
       inputHint: 'Ask a question',

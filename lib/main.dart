@@ -16,6 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/controllers/access_controller.dart';
+import 'package:trainware/controllers/coach_ai_chat_controller.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
@@ -298,6 +299,9 @@ Future<void> mainCommon(AppFlavor flavor) async {
         ChangeNotifierProvider<ExerciseLogController>(
             create: (BuildContext context) =>
                 ExerciseLogController(ExerciseLogRepository())),
+        ChangeNotifierProvider<CoachAiChatController>(
+          create: (_) => CoachAiChatController(),
+        ),
       ], child: const MyApp()));
     },
   );
