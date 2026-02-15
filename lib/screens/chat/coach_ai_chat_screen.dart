@@ -11,7 +11,9 @@ import 'package:lottie/lottie.dart';
 import '../../controllers/access_controller.dart';
 import '../../controllers/coach_ai_chat_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
+import '../../extensions/datetime/datetime_extension.dart';
 import '../../logger.dart';
+import '../../utils/ai_chat_date_range_selector.dart';
 import '../../utils/lottie_exercise_registry.dart';
 import '../../utils/notathletes_auth_headers.dart';
 import '../../utils/dialog_utils.dart';
@@ -43,6 +45,17 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
   final ScrollController _scrollController = ScrollController();
   ExerciseDto? _attachedExercise;
 
+  late DateTime _dateFrom;
+  late DateTime _dateTo;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _dateTo = DateTime(now.year, now.month, now.day);
+    _dateFrom = _dateTo.subtract(const Duration(days: 13));
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
@@ -71,12 +84,14 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
       final body = <String, dynamic>{
         'query': text,
         'client_id': widget.clientId,
+        'date_from': DateFormat('yyyy-MM-dd').format(_dateFrom),
+        'date_to': DateFormat('yyyy-MM-dd').format(_dateTo),
       };
       if (exercise != null) {
-        body['exercise_ids'] = [exercise.id];
+        body['exercise_ids'] = [exercise.name];
       }
       _logger.i(
-          '[AI Chat] POST $uri query="$text" client_id=${widget.clientId} exercise_ids=${body['exercise_ids'] ?? 'null'}');
+          '[AI Chat] POST $uri query="$text" client_id=${widget.clientId} date_from=${body['date_from']} date_to=${body['date_to']} exercise_ids=${body['exercise_ids'] ?? 'null'}');
 
       final response = await http.post(
         uri,
@@ -123,11 +138,82 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
     );
   }
 
+  void _onPlusTap() {
+    final theme = Theme.of(context);
+    final colors = theme.extension<TRKRColors>();
+    final accentColor = colors?.vibrantAccent ?? Colors.green;
+    final fromStr = '${_dateFrom.day} ${_dateFrom.abbreviatedMonth()}';
+    final toStr = '${_dateTo.day} ${_dateTo.abbreviatedMonth()} ${_dateTo.year}';
+    final rangeLabel = _dateFrom.year == _dateTo.year && _dateFrom.month == _dateTo.month
+        ? '$fromStr – ${_dateTo.day} ${_dateTo.abbreviatedMonth()} ${_dateTo.year}'
+        : '$fromStr – $toStr';
+
+    showAppBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Image.asset(
+                'icons/dumbbells.png',
+                height: 20,
+                width: 20,
+                color: theme.iconTheme.color,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.fitness_center, size: 20, color: theme.iconTheme.color),
+              ),
+              horizontalTitleGap: 12,
+              title: const Text('Add exercise'),
+              subtitle: _attachedExercise != null
+                  ? Text(_attachedExercise!.name, style: TextStyle(color: accentColor.withValues(alpha: 0.9)))
+                  : null,
+              onTap: () async {
+                Navigator.of(context).pop();
+                await _showExercisePicker();
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.calendar_today, size: 20, color: theme.iconTheme.color),
+              horizontalTitleGap: 12,
+              title: const Text('Select date range'),
+              subtitle: Text(rangeLabel, style: TextStyle(color: accentColor.withValues(alpha: 0.9))),
+              onTap: () async {
+                Navigator.of(context).pop();
+                await _showDateRangeSelector();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _showExercisePicker() async {
     final exercise = await showExercisePickerForAiChat(context: context);
     if (exercise != null && mounted) {
       setState(() => _attachedExercise = exercise);
     }
+  }
+
+  Future<void> _showDateRangeSelector() async {
+    await showAiChatDateRangeSelectorBottomSheet(
+      context: context,
+      initialDateFrom: _dateFrom,
+      initialDateTo: _dateTo,
+      onConfirm: (dateFrom, dateTo) async {
+        if (mounted) {
+          setState(() {
+            _dateFrom = DateTime(dateFrom.year, dateFrom.month, dateFrom.day);
+            _dateTo = DateTime(dateTo.year, dateTo.month, dateTo.day);
+          });
+        }
+      },
+    );
   }
 
   void _scrollToBottom() {
@@ -248,11 +334,17 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
       onSend: _sendMessage,
       isSending: isLoading,
       showAttachmentButton: true,
-      onAttachmentTap: _showExercisePicker,
+      onAttachmentTap: _onPlusTap,
       inputHint: 'Ask a question',
-      widgetAboveInput: _attachedExercise != null
-          ? _buildAttachedExerciseChip(context)
-          : null,
+      widgetAboveInput: _buildWidgetAboveInput(context),
+    );
+  }
+
+  Widget _buildWidgetAboveInput(BuildContext context) {
+    if (_attachedExercise == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: _buildAttachedExerciseChip(context),
     );
   }
 
@@ -260,9 +352,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
     final ex = _attachedExercise!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = Theme.of(context).extension<TRKRColors>();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Row(
+    return Row(
         children: [
           SizedBox(
             width: 28,
@@ -318,7 +408,6 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
             ),
           ),
         ],
-      ),
     );
   }
 

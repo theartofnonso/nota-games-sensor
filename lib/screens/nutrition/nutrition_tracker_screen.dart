@@ -765,6 +765,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     return entries;
   }
 
+  /// Week runs Monday–Sunday (Monday first, Sunday last).
+  /// Key = Monday that starts the week.
   String _weekKey(DateTime d) {
     final day = DateTime(d.year, d.month, d.day);
     final monday = day.subtract(Duration(days: day.weekday - 1));
@@ -776,11 +778,12 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     final today = DateTime(now.year, now.month, now.day);
     final day = DateTime(d.year, d.month, d.day);
     final monday = day.subtract(Duration(days: day.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
     final currentMonday = today.subtract(Duration(days: today.weekday - 1));
     if (monday == currentMonday) return 'This Week';
     final lastMonday = currentMonday.subtract(const Duration(days: 7));
     if (monday == lastMonday) return 'Last Week';
-    return 'Week of ${DateFormat('d MMM').format(monday)}';
+    return 'Week ending Sun ${DateFormat('d MMM').format(sunday)}';
   }
 
   String _dateBucketLabel(DateTime timestamp) {
@@ -816,7 +819,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   double _sumFatsToday(List<NutritionLogDto> logs) {
     return logs.fold(0.0, (sum, log) => sum + log.fats);
   }
-
 }
 
 /// Button that calls the nutrition API with the meal description and logs the result.
