@@ -78,8 +78,11 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
   late SummaryType _summaryType;
   late ExerciseType _selectedType;
 
-  void _heaviestWeightPerLog() {
-    final sets = widget.exerciseLogs
+  List<ExerciseLogDto> get _sortedLogs => List<ExerciseLogDto>.from(widget.exerciseLogs)
+    ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+  void _heaviestWeightPerLog(List<ExerciseLogDto> logs) {
+    final sets = logs
         .map((log) => heaviestWeightInSetForExerciseLog(exerciseLog: log))
         .toList();
     setState(() {
@@ -91,8 +94,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
     });
   }
 
-  void _heaviestSetVolumePerLog() {
-    final values = widget.exerciseLogs
+  void _heaviestSetVolumePerLog(List<ExerciseLogDto> logs) {
+    final values = logs
         .map((log) => heaviestVolumeForExerciseLog(exerciseLog: log))
         .toList();
     setState(() {
@@ -104,8 +107,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
     });
   }
 
-  void _totalRepsForLog() {
-    final values = widget.exerciseLogs
+  void _totalRepsForLog(List<ExerciseLogDto> logs) {
+    final values = logs
         .map((log) => totalRepsForExerciseLog(exerciseLog: log))
         .toList();
     setState(() {
@@ -117,8 +120,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
     });
   }
 
-  void _highestRepsForLog() {
-    final values = widget.exerciseLogs
+  void _highestRepsForLog(List<ExerciseLogDto> logs) {
+    final values = logs
         .map((log) => highestRepsForExerciseLog(exerciseLog: log))
         .toList();
     setState(() {
@@ -130,8 +133,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
     });
   }
 
-  void _longestDurationPerLog() {
-    final values = widget.exerciseLogs
+  void _longestDurationPerLog(List<ExerciseLogDto> logs) {
+    final values = logs
         .map((log) => longestDurationForExerciseLog(exerciseLog: log))
         .toList();
     setState(() {
@@ -144,8 +147,8 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
     });
   }
 
-  void _totalTimePerLog() {
-    final values = widget.exerciseLogs
+  void _totalTimePerLog(List<ExerciseLogDto> logs) {
+    final values = logs
         .map((log) => totalDurationExerciseLog(exerciseLog: log))
         .toList();
     setState(() {
@@ -166,28 +169,32 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
       ExerciseType.none => SummaryType.weight,
     };
 
-    _dateTimes = widget.exerciseLogs
+    // Sort oldest to newest so x-axis shows progression left-to-right
+    final sortedLogs = List<ExerciseLogDto>.from(widget.exerciseLogs)
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+    _dateTimes = sortedLogs
         .map((log) => log.createdAt.formattedDayAndMonth())
         .toList();
 
     switch (_summaryType) {
       case SummaryType.weight:
-        _heaviestWeightPerLog();
+        _heaviestWeightPerLog(sortedLogs);
         break;
       case SummaryType.setVolume:
-        _heaviestSetVolumePerLog();
+        _heaviestSetVolumePerLog(sortedLogs);
         break;
       case SummaryType.mostReps:
-        _highestRepsForLog();
+        _highestRepsForLog(sortedLogs);
         break;
       case SummaryType.sessionReps:
-        _totalRepsForLog();
+        _totalRepsForLog(sortedLogs);
         break;
       case SummaryType.bestTime:
-        _longestDurationPerLog();
+        _longestDurationPerLog(sortedLogs);
         break;
       case SummaryType.sessionTimes:
-        _totalTimePerLog();
+        _totalTimePerLog(sortedLogs);
         break;
     }
   }
@@ -417,7 +424,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                       children: [
                         if (withWeightsOnly(type: currentType))
                           OpacityButtonWidget(
-                            onPressed: _heaviestWeightPerLog,
+                            onPressed: () => _heaviestWeightPerLog(_sortedLogs),
                             label: SummaryType.weight.label,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 8),
@@ -426,7 +433,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           ),
                         if (withWeightsOnly(type: currentType))
                           OpacityButtonWidget(
-                            onPressed: _heaviestSetVolumePerLog,
+                            onPressed: () => _heaviestSetVolumePerLog(_sortedLogs),
                             label: SummaryType.setVolume.label,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 8),
@@ -436,7 +443,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           ),
                         if (withReps(type: currentType))
                           OpacityButtonWidget(
-                            onPressed: _highestRepsForLog,
+                            onPressed: () => _highestRepsForLog(_sortedLogs),
                             label: SummaryType.mostReps.label,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 8),
@@ -446,7 +453,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           ),
                         if (withReps(type: currentType))
                           OpacityButtonWidget(
-                            onPressed: _totalRepsForLog,
+                            onPressed: () => _totalRepsForLog(_sortedLogs),
                             label: SummaryType.sessionReps.label,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 8),
@@ -456,7 +463,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           ),
                         if (withDurationOnly(type: currentType))
                           OpacityButtonWidget(
-                            onPressed: _longestDurationPerLog,
+                            onPressed: () => _longestDurationPerLog(_sortedLogs),
                             label: SummaryType.bestTime.label,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 8),
@@ -466,7 +473,7 @@ class _ExerciseChartScreenState extends State<ExerciseChartScreen> {
                           ),
                         if (withDurationOnly(type: currentType))
                           OpacityButtonWidget(
-                            onPressed: _totalTimePerLog,
+                            onPressed: () => _totalTimePerLog(_sortedLogs),
                             label: SummaryType.sessionTimes.label,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 8),

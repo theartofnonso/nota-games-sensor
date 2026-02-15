@@ -1094,10 +1094,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                             ],
                           ),
                         ),
-                        // Alternatives section - only show when at least one alternative exists
+                        // Alternatives section - in template mode always show (so coaches can add);
+                        // in log mode only show when alternatives exist (add disabled during logging)
                         if ((isTemplateMode ||
                                 (isLogMode && widget.showSetCheck)) &&
-                            exerciseLog.alternatives.isNotEmpty) ...[
+                            (exerciseLog.alternatives.isNotEmpty || canAddAlternatives)) ...[
                           Builder(builder: (context) {
                             final isDark =
                                 Theme.of(context).brightness == Brightness.dark;

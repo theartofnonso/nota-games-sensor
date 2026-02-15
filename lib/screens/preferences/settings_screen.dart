@@ -2445,69 +2445,67 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Expanded(
-                                    child: templates.isEmpty
-                                        ? const SizedBox.shrink()
-                                        : Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Wrap(
-                                                children: [
-                                                  CustomIcon(
-                                                    FontAwesomeIcons
-                                                        .personWalking,
-                                                    color: theme
-                                                        .colors.vibrantAccent,
-                                                    width: 20,
-                                                    height: 20,
-                                                    iconSize: 10.5,
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    '$exerciseCount ${pluralize(word: 'Exercise', count: exerciseCount)}',
-                                                    style: theme
-                                                        .textTheme.bodyMedium
-                                                        ?.copyWith(
-                                                      color: Colors.white
-                                                          .withValues(
-                                                              alpha: 0.85),
-                                                    ),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    maxLines: 2,
-                                                  ),
-                                                ],
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Wrap(
+                                          children: [
+                                            CustomIcon(
+                                              FontAwesomeIcons
+                                                  .personWalking,
+                                              color: theme
+                                                  .colors.vibrantAccent,
+                                              width: 20,
+                                              height: 20,
+                                              iconSize: 10.5,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              '$exerciseCount ${pluralize(word: 'Exercise', count: exerciseCount)}',
+                                              style: theme
+                                                  .textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                color: Colors.white
+                                                    .withValues(
+                                                        alpha: 0.85),
                                               ),
-                                              const SizedBox(height: 6),
-                                              Wrap(
-                                                children: [
-                                                  CustomIcon(
-                                                    FontAwesomeIcons.hashtag,
-                                                    color: theme
-                                                        .colorScheme.secondary,
-                                                    width: 20,
-                                                    height: 20,
-                                                    iconSize: 10.5,
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    '${templates.length} ${pluralize(word: 'Session', count: templates.length)}',
-                                                    style: theme
-                                                        .textTheme.bodyMedium
-                                                        ?.copyWith(
-                                                      color: Colors.white
-                                                          .withValues(
-                                                              alpha: 0.85),
-                                                    ),
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    maxLines: 2,
-                                                  ),
-                                                ],
+                                              overflow:
+                                                  TextOverflow.ellipsis,
+                                              maxLines: 2,
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Wrap(
+                                          children: [
+                                            CustomIcon(
+                                              FontAwesomeIcons.hashtag,
+                                              color: theme
+                                                  .colorScheme.secondary,
+                                              width: 20,
+                                              height: 20,
+                                              iconSize: 10.5,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              '${templates.length} ${pluralize(word: 'Session', count: templates.length)}',
+                                              style: theme
+                                                  .textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                color: Colors.white
+                                                    .withValues(
+                                                        alpha: 0.85),
                                               ),
-                                            ],
-                                          ),
+                                              overflow:
+                                                  TextOverflow.ellipsis,
+                                              maxLines: 2,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Material(
