@@ -88,7 +88,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
         'date_to': DateFormat('yyyy-MM-dd').format(_dateTo),
       };
       if (exercise != null) {
-        body['exercise_ids'] = [exercise.name];
+        body['exercise_ids'] = [exercise.id];
       }
       _logger.i(
           '[AI Chat] POST $uri query="$text" client_id=${widget.clientId} date_from=${body['date_from']} date_to=${body['date_to']} exercise_ids=${body['exercise_ids'] ?? 'null'}');
