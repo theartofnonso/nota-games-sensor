@@ -154,17 +154,13 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
     final heaviestSetVolumeRecord =
         heaviestSetVolume(exerciseLogs: filteredLogs);
 
-    final heaviestWeightRecord =
-        heaviestWeight(exerciseLogs: filteredLogs);
+    final heaviestWeightRecord = heaviestWeight(exerciseLogs: filteredLogs);
 
-    final longestDurationRecord =
-        longestDuration(exerciseLogs: filteredLogs);
+    final longestDurationRecord = longestDuration(exerciseLogs: filteredLogs);
 
-    final mostRepsSetRecord =
-        mostRepsInSet(exerciseLogs: filteredLogs);
+    final mostRepsSetRecord = mostRepsInSet(exerciseLogs: filteredLogs);
 
-    final mostRepsSessionRecord =
-        mostRepsInSession(exerciseLogs: filteredLogs);
+    final mostRepsSessionRecord = mostRepsInSession(exerciseLogs: filteredLogs);
 
     return DefaultTabController(
         length: 2,

@@ -18,6 +18,7 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		B3F7737B3A6B81B3D03796BE /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6CFB8105D87D1CB885A5D90D /* Pods_RunnerTests.framework */; };
 		F32728AD2F2D8AF00098B545 /* AgoraChat in Frameworks */ = {isa = PBXBuildFile; productRef = 6B0F8D2C3E5A7C9B1D4F6E8A /* AgoraChat */; };
+		F34FE38E2F4374C500D5A7B5 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F34FE38D2F4374C500D5A7B5 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,6 +80,7 @@
 		D317E22CC9D96C8D5D55DB4E /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Runner/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D61C90018566C33BE25A596B /* Pods-RunnerTests.debug-client.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-client.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-client.xcconfig"; sourceTree = "<group>"; };
 		E6AD6D12220D8FB8DBABC262 /* Pods-Runner.release-coach.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-coach.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-coach.xcconfig"; sourceTree = "<group>"; };
+		F34FE38D2F4374C500D5A7B5 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		F39C1A122BA65BE6008A4FC5 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		F3B77BFC2B2CC958007D0009 /* RunnerDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RunnerDebug.entitlements; sourceTree = "<group>"; };
 		F3B77BFD2B2CC958007D0009 /* RunnerRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RunnerRelease.entitlements; sourceTree = "<group>"; };
@@ -104,6 +106,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F34FE38E2F4374C500D5A7B5 /* StoreKit.framework in Frameworks */,
 				F32728AD2F2D8AF00098B545 /* AgoraChat in Frameworks */,
 				7247E570E99CBBE4857738EB /* Pods_Runner.framework in Frameworks */,
 			);
@@ -205,6 +208,7 @@
 		C919ED515C7DCF84717B4D50 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F34FE38D2F4374C500D5A7B5 /* StoreKit.framework */,
 				52CCDF6221215F6901378384 /* Pods_Runner.framework */,
 				6CFB8105D87D1CB885A5D90D /* Pods_RunnerTests.framework */,
 			);

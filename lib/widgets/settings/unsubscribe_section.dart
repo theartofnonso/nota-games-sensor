@@ -69,8 +69,9 @@ class UnsubscribeSection extends StatelessWidget {
 
 const String _unsubscribeConfirmationPhrase = 'Cancel my membership';
 
-/// Runs the subscription cancellation flow: two confirmation sheets, then
-/// Stripe cancel → sign out and cleanup (no account/data deletion).
+/// Runs the subscription cancellation flow.
+/// Stripe cancel → sign out and cleanup.
+/// Not shown on iOS (UnsubscribeSection is hidden—users manage via App Store).
 Future<void> requestSubscriptionCancellation(
   BuildContext context, {
   required void Function(bool) setLoading,
@@ -110,9 +111,11 @@ Future<void> requestSubscriptionCancellation(
     ),
   );
   if (proceeded != true) return;
+  if (!context.mounted) return;
 
   final confirmed = await _showUnsubscribeConfirmSheet(context);
   if (confirmed != true) return;
+  if (!context.mounted) return;
 
   final userId = Supabase.instance.client.auth.currentUser?.id;
   if (userId == null) return;

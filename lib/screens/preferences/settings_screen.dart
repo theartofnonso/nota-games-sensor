@@ -391,13 +391,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // Cancel membership & Delete account (client app only)
                   if (!isCoach) ...[
                     SizedBox(height: _sectionSpacing),
-                    UnsubscribeSection(
-                      onUnsubscribeTap: () => requestSubscriptionCancellation(
-                        context,
-                        setLoading: (v) => setState(() => _loading = v),
+                    // Hide on iOS—users manage subscriptions in App Store
+                    if (!Platform.isIOS) ...[
+                      UnsubscribeSection(
+                        onUnsubscribeTap: () => requestSubscriptionCancellation(
+                          context,
+                          setLoading: (v) => setState(() => _loading = v),
+                        ),
                       ),
-                    ),
-                    SizedBox(height: _sectionSpacing),
+                      SizedBox(height: _sectionSpacing),
+                    ],
                     DeleteAccountSection(
                       onDeleteTap: () => requestAccountDeletion(
                         context,

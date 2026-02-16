@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../dtos/resubscription_response_dto.dart';
+import '../services/iap_service.dart';
 import '../urls.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/theme/color_extensions.dart';
@@ -113,11 +117,17 @@ Future<bool> requireClientAccess({
   bool signOutOnFail = false,
   Future<void> Function()? onDenied,
 }) async {
+  // On iOS, use Apple In-App Purchase instead of Stripe (App Store requirement).
+  if (Platform.isIOS) {
+    return _requireClientAccessIos(context: context, signOutOnFail: signOutOnFail, onDenied: onDenied);
+  }
+
   final result = await checkStripeSubscription(email: email);
   if (result.hasActiveSubscription) return true;
 
   if (result.isCustomer) {
     final products = await fetchStripeProducts();
+    if (!context.mounted) return false;
     final verified = await _showResubscribeRequiredSheet(
       context: context,
       email: email,
@@ -125,6 +135,7 @@ Future<bool> requireClientAccess({
     );
     if (verified) return true;
   } else {
+    if (!context.mounted) return false;
     await _showClientAccessRequiredSheet(context);
   }
 
@@ -132,6 +143,93 @@ Future<bool> requireClientAccess({
     await onDenied();
   }
   return false;
+}
+
+Future<bool> _requireClientAccessIos({
+  required BuildContext context,
+  bool signOutOnFail = false,
+  Future<void> Function()? onDenied,
+}) async {
+  final service = iapService;
+  final available = await service.isAvailable();
+  if (!available) {
+    if (context.mounted) {
+      showErrorBottomSheet(
+        context: context,
+        title: 'Store unavailable',
+        message: 'In-app purchases are not available. Please try again later.',
+      );
+    }
+    if (signOutOnFail && onDenied != null) await onDenied();
+    return false;
+  }
+
+  // Check for existing subscription via restore
+  final hasSub = await service.checkHasActiveSubscription();
+  if (hasSub) return true;
+  if (!context.mounted) return false;
+
+  // Go straight to Apple purchase flow (no custom sheet)
+  final verified = await _startIapPurchase(context: context);
+  if (verified) return true;
+
+  if (signOutOnFail && onDenied != null) {
+    await onDenied();
+  }
+  return false;
+}
+
+/// Loads the subscription product, starts the Apple purchase flow directly,
+/// and waits for the result. No custom sheet—Apple's native UI is shown immediately.
+Future<bool> _startIapPurchase({required BuildContext context}) async {
+  final service = iapService;
+  final products = await service.loadProducts();
+  if (!context.mounted) return false;
+  if (products.isEmpty) {
+    showErrorBottomSheet(
+      context: context,
+      title: 'Subscription unavailable',
+      message: 'Unable to load subscription. Please try again later.',
+    );
+    return false;
+  }
+
+  final product = products.first;
+  final completer = Completer<bool>();
+  late final StreamSubscription<PurchaseDetails> purchaseSub;
+  purchaseSub = service.purchaseUpdates.listen((details) {
+    if (completer.isCompleted) return;
+    if (details.status == PurchaseStatus.purchased ||
+        details.status == PurchaseStatus.restored) {
+      purchaseSub.cancel();
+      completer.complete(true);
+    } else if (details.status == PurchaseStatus.error) {
+      purchaseSub.cancel();
+      completer.complete(false);
+      if (context.mounted) {
+        showErrorBottomSheet(
+          context: context,
+          title: 'Purchase failed',
+          message: details.error?.message ?? 'Something went wrong. Please try again.',
+        );
+      }
+    } else if (details.status == PurchaseStatus.canceled) {
+      purchaseSub.cancel();
+      completer.complete(false);
+    }
+  });
+
+  await service.buySubscription(product);
+
+  final success = await completer.future.timeout(
+    const Duration(minutes: 5),
+    onTimeout: () {
+      purchaseSub.cancel();
+      return false;
+    },
+  );
+  purchaseSub.cancel();
+  return success;
 }
 
 Future<bool> _showResubscribeRequiredSheet({

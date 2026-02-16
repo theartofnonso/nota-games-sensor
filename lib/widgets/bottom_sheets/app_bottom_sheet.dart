@@ -162,8 +162,12 @@ Future<T?> showAppBottomSheet<T>({
               ),
             ),
           ),
-        // Sheet content on top (so taps on sheet don't hit barrier)
-        AppBottomSheet(
+        // Sheet content on top (so taps on sheet don't hit barrier), full width
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: AppBottomSheet(
           isDraggable: isDraggable,
           isDismissible: isDismissible,
           initialChildSize: initialChildSize,
@@ -174,6 +178,7 @@ Future<T?> showAppBottomSheet<T>({
           builder: builder,
           child: child,
         ),
+          ),
       ],
     ),
   );
