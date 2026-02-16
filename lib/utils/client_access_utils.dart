@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+import '../services/client_active_service.dart';
 import '../services/iap_service.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/theme/color_extensions.dart';
@@ -16,8 +18,18 @@ Future<bool> requireClientAccess({
   bool signOutOnFail = false,
   Future<void> Function()? onDenied,
 }) async {
+  final check = await ClientActiveService().checkActive(email);
+  if (check.canSignIn) return true;
+  if (!check.exists) {
+    if (context.mounted) {
+      await _showClientAccessRequiredSheet(context);
+    }
+    if (signOutOnFail && onDenied != null) await onDenied();
+    return false;
+  }
   return _requireClientAccessIap(
     context: context,
+    email: email,
     signOutOnFail: signOutOnFail,
     onDenied: onDenied,
   );
@@ -25,6 +37,7 @@ Future<bool> requireClientAccess({
 
 Future<bool> _requireClientAccessIap({
   required BuildContext context,
+  required String email,
   bool signOutOnFail = false,
   Future<void> Function()? onDenied,
 }) async {
@@ -48,7 +61,7 @@ Future<bool> _requireClientAccessIap({
   if (!context.mounted) return false;
 
   // Go straight to Apple purchase flow (no custom sheet)
-  final verified = await _startIapPurchase(context: context);
+  final verified = await _startIapPurchase(context: context, email: email);
   if (verified) return true;
 
   if (signOutOnFail && onDenied != null) {
@@ -59,7 +72,11 @@ Future<bool> _requireClientAccessIap({
 
 /// Loads the subscription product, starts the Apple purchase flow directly,
 /// and waits for the result. No custom sheet—Apple's native UI is shown immediately.
-Future<bool> _startIapPurchase({required BuildContext context}) async {
+/// On success, calls backend to set clients.is_active = true (validates receipt server-side).
+Future<bool> _startIapPurchase({
+  required BuildContext context,
+  required String email,
+}) async {
   final service = iapService;
   final products = await service.loadProducts();
   if (!context.mounted) return false;
@@ -75,12 +92,28 @@ Future<bool> _startIapPurchase({required BuildContext context}) async {
   final product = products.first;
   final completer = Completer<bool>();
   late final StreamSubscription<PurchaseDetails> purchaseSub;
-  purchaseSub = service.purchaseUpdates.listen((details) {
+  purchaseSub = service.purchaseUpdates.listen((details) async {
     if (completer.isCompleted) return;
     if (details.status == PurchaseStatus.purchased ||
         details.status == PurchaseStatus.restored) {
       purchaseSub.cancel();
-      completer.complete(true);
+      bool activated = false;
+      final receipt = details.verificationData.serverVerificationData;
+      if (receipt.isNotEmpty) {
+        activated = await ClientActiveService().activateClient(
+          email: email,
+          receiptData: receipt,
+          platform: Platform.isIOS ? 'ios' : 'android',
+        );
+      }
+      completer.complete(activated);
+      if (!activated && context.mounted) {
+        showErrorBottomSheet(
+          context: context,
+          title: 'Activation failed',
+          message: 'Purchase succeeded but we couldn\'t activate your account. Please contact support.',
+        );
+      }
     } else if (details.status == PurchaseStatus.error) {
       purchaseSub.cancel();
       completer.complete(false);

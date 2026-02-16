@@ -45,10 +45,10 @@ BEGIN
   VALUES (coach_uuid, 'coach@ware.health', 'Demo Coach')
   ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name;
 
-  -- Upsert clients table (if exists)
-  INSERT INTO public.clients (id, email, name)
-  VALUES (client_uuid, 'client@ware.health', 'Demo Client')
-  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name;
+  -- Upsert clients table (if exists). Demo client must be active to sign in.
+  INSERT INTO public.clients (id, email, name, is_active)
+  VALUES (client_uuid, 'client@ware.health', 'Demo Client', true)
+  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name, is_active = true;
 
   -- Coach-client relationship
   INSERT INTO public.coach_clients (coach_id, client_id)

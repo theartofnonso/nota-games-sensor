@@ -26,6 +26,12 @@ const nutritionEstimatePath = '/nutrition';
 /// POST /query – body { "query": "string", "client_id": "UUID" }, response { "answer": "..." }
 const aiQueryPath = '/query';
 
-/// Account deletion (client only). Backend deletes auth user and relies on DB CASCADE.
-const accountDeletionBaseUrl = 'https://api.notathletes.com';
+/// api.notathletes.com – account and client endpoints.
+const apiNotathletesBaseUrl = 'https://api.notathletes.com';
 const accountDeletionPath = '/account/delete';
+
+/// Client active status. Check before OTP; activate after IAP.
+/// GET /account/check-active?email=... -> { "exists": bool, "is_active": bool }
+/// POST /account/activate -> body { "email": string, "receipt": string, "platform": "ios" }
+const clientCheckActivePath = '/account/check-active';
+const clientActivatePath = '/account/activate';

@@ -154,7 +154,7 @@ Future<void> requestAccountDeletion(
 
   // 2. Supabase
   try {
-    final uri = Uri.parse(accountDeletionBaseUrl).resolve(accountDeletionPath);
+    final uri = Uri.parse(apiNotathletesBaseUrl).resolve(accountDeletionPath);
     final response = await http.post(
       uri,
       headers: notathletesAuthHeaders(),
