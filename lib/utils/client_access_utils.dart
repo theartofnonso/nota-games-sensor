@@ -8,7 +8,6 @@ import '../services/client_active_service.dart';
 import '../services/iap_service.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/theme/color_extensions.dart';
-import '../utils/uri_utils.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
 
@@ -20,24 +19,143 @@ Future<bool> requireClientAccess({
 }) async {
   final check = await ClientActiveService().checkActive(email);
   if (check.canSignIn) return true;
+  String firstName = '';
+  String lastName = '';
   if (!check.exists) {
-    if (context.mounted) {
-      await _showClientAccessRequiredSheet(context);
+    final names = await _showNameCollectionSheet(context, email);
+    if (names == null) {
+      if (signOutOnFail && onDenied != null) await onDenied();
+      return false;
     }
-    if (signOutOnFail && onDenied != null) await onDenied();
-    return false;
+    firstName = names.firstName;
+    lastName = names.lastName;
   }
   return _requireClientAccessIap(
     context: context,
     email: email,
+    firstName: firstName,
+    lastName: lastName,
     signOutOnFail: signOutOnFail,
     onDenied: onDenied,
   );
 }
 
+Future<({String firstName, String lastName})?> _showNameCollectionSheet(
+  BuildContext context,
+  String email,
+) async {
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  final result =
+      await showAppBottomSheet<({String firstName, String lastName})?>(
+    context: context,
+    isScrollControlled: true,
+    isDismissible: true,
+    isDraggable: false,
+    child: Builder(
+      builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final theme = Theme.of(ctx);
+        final buttonColor = theme.extension<TRKRColors>()?.vibrantAccent ??
+            theme.colorScheme.primary;
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 26,
+            right: 26,
+            top: 26,
+            bottom: 26 + bottomInset,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Almost there',
+                style: theme.textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Enter your name to continue with your setup.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                email,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: firstNameController,
+                cursorColor: isDark ? Colors.white : Colors.black,
+                decoration: const InputDecoration(
+                  hintText: 'First name',
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                ),
+                textCapitalization: TextCapitalization.words,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: lastNameController,
+                cursorColor: isDark ? Colors.white : Colors.black,
+                decoration: const InputDecoration(
+                  hintText: 'Last name',
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                ),
+                textCapitalization: TextCapitalization.words,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  onPressed: () {
+                    FocusScope.of(ctx).unfocus();
+                    final fn = firstNameController.text.trim();
+                    final ln = lastNameController.text.trim();
+                    if (fn.isEmpty || ln.isEmpty) {
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter first and last name'),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.of(ctx).pop((firstName: fn, lastName: ln));
+                  },
+                  label: 'Continue to payment',
+                  buttonColor: buttonColor,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+  firstNameController.dispose();
+  lastNameController.dispose();
+  return result;
+}
+
 Future<bool> _requireClientAccessIap({
   required BuildContext context,
   required String email,
+  String firstName = '',
+  String lastName = '',
   bool signOutOnFail = false,
   Future<void> Function()? onDenied,
 }) async {
@@ -61,7 +179,12 @@ Future<bool> _requireClientAccessIap({
   if (!context.mounted) return false;
 
   // Go straight to Apple purchase flow (no custom sheet)
-  final verified = await _startIapPurchase(context: context, email: email);
+  final verified = await _startIapPurchase(
+    context: context,
+    email: email,
+    firstName: firstName,
+    lastName: lastName,
+  );
   if (verified) return true;
 
   if (signOutOnFail && onDenied != null) {
@@ -72,10 +195,12 @@ Future<bool> _requireClientAccessIap({
 
 /// Loads the subscription product, starts the Apple purchase flow directly,
 /// and waits for the result. No custom sheet—Apple's native UI is shown immediately.
-/// On success, calls backend to set clients.is_active = true (validates receipt server-side).
+/// On success, calls activate API; backend creates client (if new) and sets is_active.
 Future<bool> _startIapPurchase({
   required BuildContext context,
   required String email,
+  String firstName = '',
+  String lastName = '',
 }) async {
   final service = iapService;
   final products = await service.loadProducts();
@@ -104,6 +229,8 @@ Future<bool> _startIapPurchase({
           email: email,
           receiptData: receipt,
           platform: Platform.isIOS ? 'ios' : 'android',
+          firstName: firstName,
+          lastName: lastName,
         );
       }
       completer.complete(activated);
@@ -111,7 +238,8 @@ Future<bool> _startIapPurchase({
         showErrorBottomSheet(
           context: context,
           title: 'Activation failed',
-          message: 'Purchase succeeded but we couldn\'t activate your account. Please contact support.',
+          message:
+              'Purchase succeeded but we couldn\'t activate your account. Please contact support.',
         );
       }
     } else if (details.status == PurchaseStatus.error) {
@@ -121,7 +249,8 @@ Future<bool> _startIapPurchase({
         showErrorBottomSheet(
           context: context,
           title: 'Purchase failed',
-          message: details.error?.message ?? 'Something went wrong. Please try again.',
+          message: details.error?.message ??
+              'Something went wrong. Please try again.',
         );
       }
     } else if (details.status == PurchaseStatus.canceled) {
@@ -141,56 +270,4 @@ Future<bool> _startIapPurchase({
   );
   purchaseSub.cancel();
   return success;
-}
-
-Future<void> _showClientAccessRequiredSheet(BuildContext context) async {
-  await showAppBottomSheet<void>(
-    context: context,
-    isScrollControlled: false,
-    isDismissible: false,
-    isDraggable: false,
-    child: Padding(
-      padding: const EdgeInsets.all(26),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Complete your signup",
-            style: Theme.of(context).textTheme.titleLarge,
-            textAlign: TextAlign.start,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "To use the app, complete the survey, set up your subscription. Your coach will be waiting for you in the app.",
-            style: Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.start,
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: Builder(
-              builder: (ctx) {
-                final theme = Theme.of(ctx);
-                final buttonColor =
-                    theme.extension<TRKRColors>()?.vibrantAccent ??
-                        theme.colorScheme.primary;
-                return OpacityButtonWidgetTwo(
-                  onPressed: () async {
-                    Navigator.of(ctx).pop();
-                    await openUrl(
-                      context: ctx,
-                      url: 'https://www.notathletes.com/survey',
-                    );
-                  },
-                  label: "Open survey",
-                  buttonColor: buttonColor,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 }

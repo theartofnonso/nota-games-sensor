@@ -23,8 +23,7 @@ Returns `{ "exists": bool, "is_active": bool }`.
 
 **Behavior:**
 - If `exists && is_active`: Client may proceed to OTP
-- If `exists && !is_active`: App shows IAP flow; on success, calls activate
-- If `!exists`: App shows survey/signup message
+- If `!exists` or `exists && !is_active`: App shows IAP flow; on success, calls activate. Backend creates client if new.
 
 ### 2. Activate Client (post-IAP)
 
@@ -36,14 +35,18 @@ Returns `{ "exists": bool, "is_active": bool }`.
 {
   "email": "client@example.com",
   "receipt": "<JWS_from_StoreKit2_serverVerificationData>",
-  "platform": "ios"
+  "platform": "ios",
+  "first_name": "Jane",
+  "last_name": "Doe"
 }
 ```
 
 **Backend must:**
 
 1. Validate receipt with Apple (App Store Server API) or Google Play
-2. If valid, `UPDATE public.clients SET is_active = true, updated_at = now() WHERE email = $1`
+2. If valid:
+   - If client doesn't exist: create auth user (Supabase Admin API) if needed, then INSERT into clients (id = auth user id, email, name from first_name + last_name, is_active = true)
+   - If client exists: UPDATE clients SET is_active = true, updated_at = now() WHERE email = $1
 3. Return 200 or 204 on success
 
 ## Flow Summary

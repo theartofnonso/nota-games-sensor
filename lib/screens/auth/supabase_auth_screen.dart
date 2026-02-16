@@ -234,7 +234,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                         ),
                       ),
                       const SizedBox(height: 28),
-                      // Modern Email Input with integrated button
                       if (!_otpSent)
                         _ModernEmailInput(
                           controller: _emailController,
@@ -351,6 +350,7 @@ class _ModernEmailInput extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               keyboardType: TextInputType.emailAddress,
+              onSubmitted: (_) => onSubmit(),
             ),
           ),
           const SizedBox(width: 12),
@@ -361,7 +361,7 @@ class _ModernEmailInput extends StatelessWidget {
               borderRadius: BorderRadius.circular(50),
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: colors.vibrantAccent,
                   borderRadius: BorderRadius.circular(50),
@@ -376,23 +376,10 @@ class _ModernEmailInput extends StatelessWidget {
                               AlwaysStoppedAnimation<Color>(Colors.black),
                         ),
                       )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'continue',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          FaIcon(
-                            FontAwesomeIcons.arrowRight,
-                            color: Colors.black,
-                            size: 14,
-                          ),
-                        ],
+                    : FaIcon(
+                        FontAwesomeIcons.arrowRight,
+                        color: Colors.black,
+                        size: 16,
                       ),
               ),
             ),

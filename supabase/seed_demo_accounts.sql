@@ -6,7 +6,7 @@
 --   2. Create coach@ware.health with password: demo123456
 --   3. Create client@ware.health with password: demo123456
 --
--- Data is populated up to 2026-02-03 for both coach and client.
+-- Data is populated up to 2026-02-15 for both coach and client.
 -- Re-running this script deletes existing demo data and repopulates (full overwrite).
 -- =============================================================================
 
@@ -81,10 +81,10 @@ BEGIN
      ]'::jsonb, now())
   ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, exercises = EXCLUDED.exercises;
 
-  -- Routine logs for client - spread from mid-Jan 2026 to Feb 3, 2026 (using real exercises from library)
-  FOR i IN 1..12 LOOP
+  -- Routine logs for client - spread from mid-Jan 2026 to Feb 15, 2026 (using real exercises from library)
+  FOR i IN 1..20 LOOP
     log_date := date '2026-01-15' + (i * 2);
-    EXIT WHEN log_date > date '2026-02-03';
+    EXIT WHEN log_date > date '2026-02-15';
     log_id := gen_random_uuid();
     INSERT INTO public.routine_logs (id, "templateId", name, notes, "startTime", "endTime", exercises, owner, "createdAt")
     VALUES (
@@ -110,10 +110,10 @@ BEGIN
   VALUES (nutrition_template_id, coach_uuid, client_uuid, 2200, 150, 250, 75, now(), now())
   ON CONFLICT (id) DO UPDATE SET calories_kcal = EXCLUDED.calories_kcal, protein_g = EXCLUDED.protein_g, carbs_g = EXCLUDED.carbs_g, fats_g = EXCLUDED.fats_g, updated_at = now();
 
-  -- Nutrition logs for client - sample entries up to Feb 3, 2026
-  FOR i IN 0..14 LOOP
+  -- Nutrition logs for client - sample entries up to Feb 15, 2026
+  FOR i IN 0..30 LOOP
     log_date := date '2026-01-20' + i;
-    EXIT WHEN log_date > date '2026-02-03';
+    EXIT WHEN log_date > date '2026-02-15';
     INSERT INTO public.nutrition_logs (user_id, food_name, protein_g, carbs_g, fats_g, logged_at)
     VALUES
       (client_uuid, 'Breakfast - Oatmeal & Eggs', 25, 45, 12, (log_date + time '08:30')::timestamptz),

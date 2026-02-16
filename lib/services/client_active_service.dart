@@ -46,12 +46,14 @@ class ClientActiveService {
     }
   }
 
-  /// Activates a client after successful IAP. Backend validates receipt and
-  /// updates clients.is_active = true.
+  /// Activates a client after successful IAP. Backend validates receipt,
+  /// creates client if new, and sets is_active = true.
   Future<bool> activateClient({
     required String email,
     required String receiptData,
     String platform = 'ios',
+    String firstName = '',
+    String lastName = '',
   }) async {
     try {
       final uri = Uri.parse(apiNotathletesBaseUrl).resolve(clientActivatePath);
@@ -62,6 +64,8 @@ class ClientActiveService {
           'email': email,
           'receipt': receiptData,
           'platform': platform,
+          if (firstName.isNotEmpty) 'first_name': firstName,
+          if (lastName.isNotEmpty) 'last_name': lastName,
         }),
       ).timeout(const Duration(seconds: 30));
       return response.statusCode == 200 || response.statusCode == 204;
