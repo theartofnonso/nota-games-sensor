@@ -117,69 +117,63 @@ Future<T?> showAppBottomSheet<T>({
     useRootNavigator: useRootNavigator,
     enableDrag: enableDrag ?? (isDismissible && !isDraggable),
     showDragHandle: false,
-    useSafeArea: true,
-    // Dim the backdrop so transparent sheets still pop against the content behind.
-    barrierColor: isDismissible
-        ? Colors.black.withValues(alpha: 0.55)
-        : Colors.transparent, // Make barrier transparent when non-dismissible
-    builder: (context) => Stack(
-      children: [
-        // Always include a tappable barrier when dismissible (behind sheet to catch outside taps)
-        if (isDismissible)
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                // Close the sheet when barrier is tapped
-                Navigator.of(context, rootNavigator: false).pop();
-              },
-              child: Container(
-                color: Colors
-                    .transparent, // Transparent so it doesn't interfere with barrierColor
+    useSafeArea: false, // Full-screen overlay; sheet uses own SafeArea where needed
+    barrierColor: Colors.transparent, // We draw our own full-screen overlay
+    builder: (context) {
+      // MediaQuery.removeViewPadding so overlay ignores safe area and fills entire screen
+      return MediaQuery.removeViewPadding(
+        context: context,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: Stack(
+                children: [
+                  // Full-screen overlay (dimmed background) - fills entire screen
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        if (isDismissible) {
+                          Navigator.of(context, rootNavigator: false).pop();
+                        } else if (onBarrierTap != null) {
+                          final shouldPop = await onBarrierTap();
+                          if (shouldPop && context.mounted) {
+                            Navigator.of(context, rootNavigator: false).pop();
+                          }
+                        } else {
+                          Navigator.of(context, rootNavigator: false).maybePop();
+                        }
+                      },
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ),
+                  // Sheet content on top (so taps on sheet don't hit barrier), full width
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: AppBottomSheet(
+                      isDraggable: isDraggable,
+                      isDismissible: isDismissible,
+                      initialChildSize: initialChildSize,
+                      minChildSize: minChildSize,
+                      maxChildSize: maxChildSize,
+                      useBlurredTransparentBackground: useBlurredTransparentBackground,
+                      blurSigma: blurSigma,
+                      builder: builder,
+                      child: child,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-        // Custom tappable barrier when isDismissible is false (behind sheet to catch outside taps)
-        if (!isDismissible)
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () async {
-                // If a callback is provided, use it to show confirmation dialog
-                if (onBarrierTap != null) {
-                  final shouldPop = await onBarrierTap();
-                  if (shouldPop && context.mounted) {
-                    Navigator.of(context, rootNavigator: false).pop();
-                  }
-                } else {
-                  // Fallback: try maybePop to trigger PopScope's onPopInvokedWithResult
-                  Navigator.of(context, rootNavigator: false).maybePop();
-                }
-              },
-              child: Container(
-                color:
-                    Colors.black.withValues(alpha: 0.55), // Match barrier color
-              ),
-            ),
-          ),
-        // Sheet content on top (so taps on sheet don't hit barrier), full width
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: AppBottomSheet(
-          isDraggable: isDraggable,
-          isDismissible: isDismissible,
-          initialChildSize: initialChildSize,
-          minChildSize: minChildSize,
-          maxChildSize: maxChildSize,
-          useBlurredTransparentBackground: useBlurredTransparentBackground,
-          blurSigma: blurSigma,
-          builder: builder,
-          child: child,
+            );
+          },
         ),
-          ),
-      ],
-    ),
+      );
+    },
   );
 }
