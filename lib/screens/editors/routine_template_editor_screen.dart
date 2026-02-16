@@ -296,6 +296,7 @@ class _RoutineTemplateEditorScreenState
                       child: GestureDetector(
                         onTap: _dismissKeyboard,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Header: template name + add button (top-right)
                             Padding(
@@ -329,6 +330,27 @@ class _RoutineTemplateEditorScreenState
                                     tooltip: 'Add exercises',
                                   ),
                                 ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: _confirmDismissTemplate,
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(0, 0),
+                                tapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                foregroundColor: Colors.redAccent,
+                              ),
+                              child: Text(
+                                'Dismiss template',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Colors.redAccent,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                               ),
                             ),
                             Expanded(
@@ -531,6 +553,24 @@ class _RoutineTemplateEditorScreenState
       context: context,
       exerciseName: exerciseLog.exercise.name,
       fromLabel: 'template',
+    );
+  }
+
+  Future<void> _confirmDismissTemplate() async {
+    showBottomSheetWithSingleAction(
+      context: context,
+      title: 'Dismiss template?',
+      description:
+          'Are you sure you want to discard this workout template? Your changes will not be saved.',
+      action: () {
+        Navigator.of(context).pop();
+        Provider.of<ExerciseLogController>(context, listen: false).clearLocal();
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      },
+      actionLabel: 'Dismiss',
+      isDestructive: true,
     );
   }
 

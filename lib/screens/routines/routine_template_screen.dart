@@ -28,6 +28,7 @@ import '../../extensions/duration_extension.dart';
 import '../../shared_prefs.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
+import '../../utils/calendar_date_logs_sheet.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/chip_one.dart';
@@ -393,103 +394,14 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       dateLabel = DateFormat('EEEE').format(date);
     }
 
-    showEditorBottomSheet(
+    showCalendarDateLogsSheet(
       context: context,
-      builder: (sheetContext, scrollController) {
-        final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
-
-        return Column(
-          children: [
-            // Header row with date and "Log workout" button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Date display
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          dateLabel,
-                          style: Theme.of(sheetContext)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        Text(
-                          DateFormat('MMMM d').format(date),
-                          style: Theme.of(sheetContext)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(
-                                color: Colors.grey.shade400,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Log workout button (only show for today)
-                  if (isToday && !hasSelectedClient)
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pop(sheetContext); // Close bottom sheet
-                        logEmptyRoutine(context: context);
-                      },
-                      icon: FaIcon(
-                        FontAwesomeIcons.circlePlus,
-                        size: 22,
-                        color: isDarkMode ? Colors.white : Colors.black,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: hasLogs
-                  ? ListView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      itemCount: logsForDate.length,
-                      itemBuilder: (context, index) {
-                        final log = logsForDate[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: RoutineLogWidget(
-                            log: log,
-                            trailing: log.duration().hmsAnalog(),
-                            onTap: () {
-                              navigateToRoutineLogPreview(
-                                context: context,
-                                log: log,
-                                isEditable: true,
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    )
-                  : Center(
-                      child: Text(
-                        isPredicted
-                            ? 'This is a day you\'re likely to train based on your previous workout history.'
-                            : 'No workouts logged this date',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.grey.shade400,
-                            ),
-                      ),
-                    ),
-            ),
-          ],
-        );
-      },
+      date: date,
+      logs: logsForDate,
+      dateLabel: dateLabel,
+      isToday: isToday,
+      isPredicted: isPredicted,
+      showLogWorkoutButton: !hasSelectedClient,
     );
   }
 

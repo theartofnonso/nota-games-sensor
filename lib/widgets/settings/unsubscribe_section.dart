@@ -1,14 +1,9 @@
-import 'dart:convert';
-
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../utils/notathletes_auth_headers.dart';
 import '../../utils/dialog_utils.dart';
-import '../../urls.dart';
 import '../bottom_sheets/app_bottom_sheet.dart';
 import '../buttons/opacity_button_widget_two.dart';
 
@@ -70,8 +65,7 @@ class UnsubscribeSection extends StatelessWidget {
 const String _unsubscribeConfirmationPhrase = 'Cancel my membership';
 
 /// Runs the subscription cancellation flow.
-/// Stripe cancel → sign out and cleanup.
-/// Not shown on iOS (UnsubscribeSection is hidden—users manage via App Store).
+/// Sign out and cleanup. Users manage subscriptions via App Store / Play Store.
 Future<void> requestSubscriptionCancellation(
   BuildContext context, {
   required void Function(bool) setLoading,
@@ -117,50 +111,14 @@ Future<void> requestSubscriptionCancellation(
   if (confirmed != true) return;
   if (!context.mounted) return;
 
-  final userId = Supabase.instance.client.auth.currentUser?.id;
-  if (userId == null) return;
-
-  const defaultErrorMessage =
-      'Something went wrong. Please try again or contact support at notathletes.com.';
-
   setLoading(true);
 
-  try {
-    final stripeUri =
-        Uri.parse(stripeBaseUrl).resolve(stripeSubscriptionCancelPath);
-    final stripeResponse = await http.post(
-      stripeUri,
-      headers: notathletesAuthHeaders(),
-      body: jsonEncode({'userId': userId}),
-    );
-    if (stripeResponse.statusCode != 200 && stripeResponse.statusCode != 204) {
-      if (!context.mounted) return;
-      setLoading(false);
-      showErrorBottomSheet(
-        context: context,
-        title: 'Could not cancel membership',
-        message: _errorMessageFromBody(stripeResponse.body) ?? defaultErrorMessage,
-      );
-      return;
-    }
-  } catch (_) {
-    if (!context.mounted) return;
-    setLoading(false);
-    showErrorBottomSheet(
-      context: context,
-      title: 'Could not cancel membership',
-      message: defaultErrorMessage,
-    );
-    return;
-  }
-
-  // Sign out and cleanup (same as delete flow, but no Agora/Supabase deletion)
-  if (!context.mounted) return;
-  setLoading(false);
+  // Sign out and cleanup (subscriptions managed via App Store / Play Store)
   try {
     await ChatClient.getInstance.logout(true);
   } catch (_) {}
   await Supabase.instance.client.auth.signOut();
+  setLoading(false);
 }
 
 Future<bool?> _showUnsubscribeConfirmSheet(BuildContext context) async {
@@ -213,15 +171,4 @@ Future<bool?> _showUnsubscribeConfirmSheet(BuildContext context) async {
       },
     ),
   );
-}
-
-String? _errorMessageFromBody(String body) {
-  if (body.isEmpty) return null;
-  try {
-    final decoded = jsonDecode(body) as Map<String, dynamic>?;
-    final err = decoded?['error'] ?? decoded?['message'];
-    return err?.toString();
-  } catch (_) {
-    return null;
-  }
 }

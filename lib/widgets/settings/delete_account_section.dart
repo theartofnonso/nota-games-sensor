@@ -70,7 +70,7 @@ class DeleteAccountSection extends StatelessWidget {
 const String _deleteAccountConfirmationPhrase = 'Delete my account';
 
 /// Runs the full account deletion flow: two confirmation sheets, then
-/// Stripe → Agora → Supabase delete → sign out. Calls [setLoading] with
+/// Agora → Supabase delete → sign out. Calls [setLoading] with
 /// true/false so the parent can show a loading overlay.
 Future<void> requestAccountDeletion(
   BuildContext context, {
@@ -123,37 +123,7 @@ Future<void> requestAccountDeletion(
 
   setLoading(true);
 
-  try {
-    // 1. Stripe
-    final stripeUri =
-        Uri.parse(stripeBaseUrl).resolve(stripeCustomerDeletePath);
-    final stripeResponse = await http.post(
-      stripeUri,
-      headers: notathletesAuthHeaders(),
-      body: jsonEncode({'userId': userId}),
-    );
-    if (stripeResponse.statusCode != 200 && stripeResponse.statusCode != 204) {
-      if (!context.mounted) return;
-      setLoading(false);
-      showErrorBottomSheet(
-        context: context,
-        title: 'Could not delete account',
-        message: _errorMessageFromBody(stripeResponse.body) ?? defaultErrorMessage,
-      );
-      return;
-    }
-  } catch (_) {
-    if (!context.mounted) return;
-    setLoading(false);
-    showErrorBottomSheet(
-      context: context,
-      title: 'Could not delete account',
-      message: defaultErrorMessage,
-    );
-    return;
-  }
-
-  // 2. Agora
+  // 1. Agora
   try {
     final agoraUri = Uri.parse(agoraBaseUrl).resolve(agoraUserDeletePath);
     final agoraResponse = await http.post(
@@ -182,7 +152,7 @@ Future<void> requestAccountDeletion(
     return;
   }
 
-  // 3. Supabase
+  // 2. Supabase
   try {
     final uri = Uri.parse(accountDeletionBaseUrl).resolve(accountDeletionPath);
     final response = await http.post(
@@ -211,7 +181,7 @@ Future<void> requestAccountDeletion(
     return;
   }
 
-  // 4. Sign out
+  // 3. Sign out
   if (!context.mounted) return;
   setLoading(false);
   try {

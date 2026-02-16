@@ -7,13 +7,14 @@ class AiChatMessage {
   final bool isUser;
   final String text;
   final DateTime timestamp;
-  final ExerciseDto? attachedExercise;
+  /// Attached exercises for AI query scoping (supports multiple).
+  final List<ExerciseDto> attachedExercises;
 
   AiChatMessage({
     required this.isUser,
     required this.text,
     required this.timestamp,
-    this.attachedExercise,
+    this.attachedExercises = const [],
   });
 }
 
@@ -34,14 +35,14 @@ class CoachAiChatController extends ChangeNotifier {
   void addUserMessage({
     required String clientId,
     required String text,
-    ExerciseDto? attachedExercise,
+    List<ExerciseDto> attachedExercises = const [],
   }) {
     _messagesByClientId.putIfAbsent(clientId, () => []);
     _messagesByClientId[clientId]!.add(AiChatMessage(
       isUser: true,
       text: text,
       timestamp: DateTime.now(),
-      attachedExercise: attachedExercise,
+      attachedExercises: attachedExercises,
     ));
     _loadingByClientId[clientId] = true;
     notifyListeners();

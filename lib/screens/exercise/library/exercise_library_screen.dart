@@ -44,9 +44,14 @@ class ExerciseLibraryScreen extends StatefulWidget {
 class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   late TextEditingController _searchController;
 
-  /// Holds a list of [ExerciseDto] when filtering through a search
-  List<ExerciseDto> _filteredExercises = [];
+  /// Exercises from logs, sorted by most recent use. Filtered by search/type/exclude.
+  List<ExerciseDto> _recentFromLogs = [];
+  /// All other exercises in the library (not in logs). Filtered by search/type/exclude.
+  List<ExerciseDto> _libraryOnly = [];
   List<ExerciseDto> _systemExercises = [];
+
+  /// Multi-select: selected exercises for forAiQuery (order preserved).
+  final List<ExerciseDto> _selectedExercises = [];
 
   /// Simple relevance scoring:
   /// +2 if name contains the query part
@@ -110,25 +115,36 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     // If the user typed nothing, sort alphabetically
     if (queryParts.isEmpty) {
       filteredExercises.sort((a, b) => a.name.compareTo(b.name));
-      setState(() {
-        _filteredExercises = filteredExercises;
+    } else {
+      final ranked = filteredExercises
+          .map((ex) => (
+                exercise: ex,
+                score: _calculateRelevanceScore(ex, queryParts),
+              ))
+          .where((e) => e.score > 0)
+          .toList();
+      ranked.sort((a, b) {
+        final cmp = b.score.compareTo(a.score);
+        if (cmp != 0) return cmp;
+        return a.exercise.name.compareTo(b.exercise.name);
       });
-      return;
+      filteredExercises = ranked.map((e) => e.exercise).toList();
     }
 
-    final ranked = filteredExercises
-        .map((ex) => (exercise: ex, score: _calculateRelevanceScore(ex, queryParts)))
-        .where((e) => e.score > 0)
-        .toList();
+    // Split: exercises from logs (recent first) vs rest of library. No overlap.
+    final recentOrdered = controller.exercisesFromLogsOrderedByRecency;
+    final recentIds = recentOrdered.map((e) => e.id).toSet();
+    final recencyIndex = {
+      for (var i = 0; i < recentOrdered.length; i++) recentOrdered[i].id: i,
+    };
 
-    ranked.sort((a, b) {
-      final cmp = b.score.compareTo(a.score);
-      if (cmp != 0) return cmp;
-      return a.exercise.name.compareTo(b.exercise.name);
-    });
+    final recent = filteredExercises.where((e) => recentIds.contains(e.id)).toList()
+      ..sort((a, b) => (recencyIndex[a.id] ?? 9999).compareTo(recencyIndex[b.id] ?? 9999));
+    final library = filteredExercises.where((e) => !recentIds.contains(e.id)).toList();
 
     setState(() {
-      _filteredExercises = ranked.map((e) => e.exercise).toList();
+      _recentFromLogs = recent;
+      _libraryOnly = library;
     });
   }
 
@@ -137,9 +153,14 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     _runSearch();
   }
 
-  /// Select an exercise
+  /// Return selected exercise(s) to caller. For forAiQuery multi-select, pops
+  /// [selectedExercises]. For single-select (addToWorkout), pops [exercise].
   void _navigateBackWithSelectedExercise(ExerciseDto selectedExercise) {
     Navigator.of(context).pop([selectedExercise]);
+  }
+
+  void _navigateBackWithSelectedExercises(List<ExerciseDto> selected) {
+    Navigator.of(context).pop(selected);
   }
 
   Future<void> _promptLogTypeAndReturn(ExerciseDto exercise) async {
@@ -255,10 +276,35 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get all exercises for grid
-    final allExercises = _filteredExercises;
+    final recentFromLogs = _recentFromLogs;
+    final libraryOnly = _libraryOnly;
+    final hasAny = recentFromLogs.isNotEmpty || libraryOnly.isNotEmpty;
 
     return Scaffold(
+      appBar: widget.selectionPurpose == ExerciseSelectionPurpose.forAiQuery
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              title: Text(
+                _selectedExercises.isEmpty
+                    ? 'Select exercises'
+                    : '${_selectedExercises.length} selected',
+              ),
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(<ExerciseDto>[]),
+              ),
+              actions: [
+                if (_selectedExercises.isNotEmpty)
+                  TextButton(
+                    onPressed: () => _navigateBackWithSelectedExercises(
+                      List.from(_selectedExercises),
+                    ),
+                    child: const Text('Done'),
+                  ),
+              ],
+            )
+          : null,
       floatingActionButton: widget.selectionPurpose == ExerciseSelectionPurpose.forAiQuery
           ? null
           : FloatingActionButton(
@@ -288,29 +334,98 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                     controller: _searchController),
               ),
               const SizedBox(height: 18),
-              allExercises.isNotEmpty
+              hasAny
                   ? Expanded(
-                      child: GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 250),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          // Slightly higher aspect ratio so cards feel a bit
-                          // smaller/less tall while keeping readability.
-                          childAspectRatio: 0.9,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                        ),
+                      child: CustomScrollView(
                         keyboardDismissBehavior:
                             ScrollViewKeyboardDismissBehavior.onDrag,
-                        itemCount: allExercises.length,
-                        itemBuilder: (context, index) {
-                          final exercise = allExercises[index];
-                          return ExerciseGridItem(
-                            exercise: exercise,
-                            onTap: () => _handleExerciseTap(exercise),
-                          );
-                        },
+                        slivers: [
+                          if (recentFromLogs.isNotEmpty) ...[
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+                                child: Text(
+                                  'From your logs',
+                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.white70
+                                        : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              sliver: SliverGrid(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 0.9,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                ),
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final exercise = recentFromLogs[index];
+                                    final isSelected = widget.selectionPurpose ==
+                                            ExerciseSelectionPurpose.forAiQuery &&
+                                        _selectedExercises.any((e) => e.id == exercise.id);
+                                    return ExerciseGridItem(
+                                      exercise: exercise,
+                                      onTap: () => _handleExerciseTap(exercise),
+                                      isSelected: isSelected,
+                                    );
+                                  },
+                                  childCount: recentFromLogs.length,
+                                ),
+                              ),
+                            ),
+                            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                          ],
+                          if (libraryOnly.isNotEmpty) ...[
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+                                child: Text(
+                                  'Library',
+                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.white70
+                                        : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(10, 0, 10, 250),
+                              sliver: SliverGrid(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 0.9,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                ),
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final exercise = libraryOnly[index];
+                                    final isSelected = widget.selectionPurpose ==
+                                            ExerciseSelectionPurpose.forAiQuery &&
+                                        _selectedExercises.any((e) => e.id == exercise.id);
+                                    return ExerciseGridItem(
+                                      exercise: exercise,
+                                      onTap: () => _handleExerciseTap(exercise),
+                                      isSelected: isSelected,
+                                    );
+                                  },
+                                  childCount: libraryOnly.length,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     )
                   : Expanded(
@@ -333,12 +448,19 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   // ────────────────────────────────────────────────────────────────────
 
   /// Handle exercise tap - show bottom sheet with context-aware options
-  /// - forAiQuery: tap directly selects and returns (single-choice picker)
+  /// - forAiQuery: tap toggles multi-select; use Done to confirm
   /// - addToWorkout/viewOnly: Show "Add to workout" and "View history"
   void _handleExerciseTap(ExerciseDto exercise) {
     _dismissKeyboard(context);
     if (widget.selectionPurpose == ExerciseSelectionPurpose.forAiQuery) {
-      _navigateBackWithSelectedExercise(exercise);
+      setState(() {
+        final idx = _selectedExercises.indexWhere((e) => e.id == exercise.id);
+        if (idx >= 0) {
+          _selectedExercises.removeAt(idx);
+        } else {
+          _selectedExercises.add(exercise);
+        }
+      });
       return;
     }
     _showExerciseOptionsBottomSheet(exercise);
@@ -395,25 +517,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   void _loadOrSyncExercises() {
     _loadSystemExercises().then((_) {
       if (!mounted) return;
-      final exerciseType = widget.type;
-      final excludeExerciseIds =
-          widget.excludeExercises.map((e) => e.id).toSet();
-
-      final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-          context,
-          listen: false);
-
-      final combined = [
-        ..._systemExercises,
-        ...controller.exercises,
-      ];
-
-      _filteredExercises = combined
-          .where((exercise) => !excludeExerciseIds.contains(exercise.id))
-          .where((exercise) =>
-              exerciseType != null ? exercise.type == widget.type : true)
-          .toList();
-
       _runSearch();
     });
   }

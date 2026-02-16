@@ -117,63 +117,16 @@ Future<T?> showAppBottomSheet<T>({
     useRootNavigator: useRootNavigator,
     enableDrag: enableDrag ?? (isDismissible && !isDraggable),
     showDragHandle: false,
-    useSafeArea: false, // Full-screen overlay; sheet uses own SafeArea where needed
-    barrierColor: Colors.transparent, // We draw our own full-screen overlay
-    builder: (context) {
-      // MediaQuery.removeViewPadding so overlay ignores safe area and fills entire screen
-      return MediaQuery.removeViewPadding(
-        context: context,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              child: Stack(
-                children: [
-                  // Full-screen overlay (dimmed background) - fills entire screen
-                  Positioned.fill(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () async {
-                        if (isDismissible) {
-                          Navigator.of(context, rootNavigator: false).pop();
-                        } else if (onBarrierTap != null) {
-                          final shouldPop = await onBarrierTap();
-                          if (shouldPop && context.mounted) {
-                            Navigator.of(context, rootNavigator: false).pop();
-                          }
-                        } else {
-                          Navigator.of(context, rootNavigator: false).maybePop();
-                        }
-                      },
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.55),
-                      ),
-                    ),
-                  ),
-                  // Sheet content on top (so taps on sheet don't hit barrier), full width
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: AppBottomSheet(
-                      isDraggable: isDraggable,
-                      isDismissible: isDismissible,
-                      initialChildSize: initialChildSize,
-                      minChildSize: minChildSize,
-                      maxChildSize: maxChildSize,
-                      useBlurredTransparentBackground: useBlurredTransparentBackground,
-                      blurSigma: blurSigma,
-                      builder: builder,
-                      child: child,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      );
-    },
+    builder: (context) => AppBottomSheet(
+      isDraggable: isDraggable,
+      isDismissible: isDismissible,
+      initialChildSize: initialChildSize,
+      minChildSize: minChildSize,
+      maxChildSize: maxChildSize,
+      useBlurredTransparentBackground: useBlurredTransparentBackground,
+      blurSigma: blurSigma,
+      builder: builder,
+      child: child,
+    ),
   );
 }

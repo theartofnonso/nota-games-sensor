@@ -43,7 +43,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
   final _logger = getLogger(className: 'CoachAiChatScreen');
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  ExerciseDto? _attachedExercise;
+  List<ExerciseDto> _attachedExercises = [];
 
   late DateTime _dateFrom;
   late DateTime _dateTo;
@@ -68,14 +68,14 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
     final chatController = context.read<CoachAiChatController>();
     if (text.isEmpty || chatController.isLoadingFor(widget.clientId)) return;
 
-    final exercise = _attachedExercise;
+    final exercises = List<ExerciseDto>.from(_attachedExercises);
 
     _messageController.clear();
-    setState(() => _attachedExercise = null);
+    setState(() => _attachedExercises = []);
     chatController.addUserMessage(
       clientId: widget.clientId,
       text: text,
-      attachedExercise: exercise,
+      attachedExercises: exercises,
     );
     _scrollToBottom();
 
@@ -87,8 +87,8 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
         'date_from': DateFormat('yyyy-MM-dd').format(_dateFrom),
         'date_to': DateFormat('yyyy-MM-dd').format(_dateTo),
       };
-      if (exercise != null) {
-        body['exercise_ids'] = [exercise.id];
+      if (exercises.isNotEmpty) {
+        body['exercise_ids'] = exercises.map((e) => e.id).toList();
       }
       _logger.i(
           '[AI Chat] POST $uri query="$text" client_id=${widget.clientId} date_from=${body['date_from']} date_to=${body['date_to']} exercise_ids=${body['exercise_ids'] ?? 'null'}');
@@ -143,8 +143,10 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
     final colors = theme.extension<TRKRColors>();
     final accentColor = colors?.vibrantAccent ?? Colors.green;
     final fromStr = '${_dateFrom.day} ${_dateFrom.abbreviatedMonth()}';
-    final toStr = '${_dateTo.day} ${_dateTo.abbreviatedMonth()} ${_dateTo.year}';
-    final rangeLabel = _dateFrom.year == _dateTo.year && _dateFrom.month == _dateTo.month
+    final toStr =
+        '${_dateTo.day} ${_dateTo.abbreviatedMonth()} ${_dateTo.year}';
+    final rangeLabel = _dateFrom.year == _dateTo.year &&
+            _dateFrom.month == _dateTo.month
         ? '$fromStr – ${_dateTo.day} ${_dateTo.abbreviatedMonth()} ${_dateTo.year}'
         : '$fromStr – $toStr';
 
@@ -163,13 +165,21 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
                 height: 20,
                 width: 20,
                 color: theme.iconTheme.color,
-                errorBuilder: (context, error, stackTrace) =>
-                    Icon(Icons.fitness_center, size: 20, color: theme.iconTheme.color),
+                errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.fitness_center,
+                    size: 20,
+                    color: theme.iconTheme.color),
               ),
               horizontalTitleGap: 12,
               title: const Text('Add exercise'),
-              subtitle: _attachedExercise != null
-                  ? Text(_attachedExercise!.name, style: TextStyle(color: accentColor.withValues(alpha: 0.9)))
+              subtitle: _attachedExercises.isNotEmpty
+                  ? Text(
+                      _attachedExercises.length == 1
+                          ? _attachedExercises.first.name
+                          : '${_attachedExercises.length} exercises',
+                      style:
+                          TextStyle(color: accentColor.withValues(alpha: 0.9)),
+                    )
                   : null,
               onTap: () async {
                 Navigator.of(context).pop();
@@ -178,10 +188,12 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.calendar_today, size: 20, color: theme.iconTheme.color),
+              leading: Icon(Icons.calendar_today,
+                  size: 20, color: theme.iconTheme.color),
               horizontalTitleGap: 12,
               title: const Text('Select date range'),
-              subtitle: Text(rangeLabel, style: TextStyle(color: accentColor.withValues(alpha: 0.9))),
+              subtitle: Text(rangeLabel,
+                  style: TextStyle(color: accentColor.withValues(alpha: 0.9))),
               onTap: () async {
                 Navigator.of(context).pop();
                 await _showDateRangeSelector();
@@ -194,9 +206,9 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
   }
 
   Future<void> _showExercisePicker() async {
-    final exercise = await showExercisePickerForAiChat(context: context);
-    if (exercise != null && mounted) {
-      setState(() => _attachedExercise = exercise);
+    final exercises = await showExercisePickerForAiChat(context: context);
+    if (exercises.isNotEmpty && mounted) {
+      setState(() => _attachedExercises = exercises);
     }
   }
 
@@ -318,15 +330,21 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
                   return _buildLoadingBubble(theme, isDarkMode);
                 }
                 final msg = messages[index];
+                final exs = msg.attachedExercises;
+                final attachedName = exs.isEmpty
+                    ? null
+                    : exs.length == 1
+                        ? exs.first.name
+                        : exs.map((e) => e.name).join(', ');
                 return ChatTextBubble(
                   isCurrentUser: msg.isUser,
                   text: msg.text,
                   timestamp: _formatTimestamp(msg.timestamp),
                   isMarkdown: !msg.isUser,
-                  attachedExerciseName: msg.attachedExercise?.name,
-                  attachedExerciseId: msg.attachedExercise?.id,
+                  attachedExerciseName: attachedName,
+                  attachedExerciseId: exs.isEmpty ? null : exs.first.id,
                   attachedExerciseIsSystem:
-                      msg.attachedExercise?.isSystem ?? false,
+                      exs.isEmpty ? false : (exs.first.isSystem ?? false),
                 );
               },
             ),
@@ -341,73 +359,94 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
   }
 
   Widget _buildWidgetAboveInput(BuildContext context) {
-    if (_attachedExercise == null) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: _buildAttachedExerciseChip(context),
+    if (_attachedExercises.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 48,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.zero,
+          itemCount: _attachedExercises.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            return _buildExerciseChip(
+                context, _attachedExercises[index], index);
+          },
+        ),
+      ),
     );
   }
 
-  Widget _buildAttachedExerciseChip(BuildContext context) {
-    final ex = _attachedExercise!;
+  Widget _buildExerciseChip(
+      BuildContext context, ExerciseDto exercise, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colors = Theme.of(context).extension<TRKRColors>();
-    return Row(
-        children: [
-          SizedBox(
-            width: 28,
-            height: 28,
-            child: ex.isSystem
-                ? FutureBuilder<String?>(
-                    future: LottieExerciseRegistry.lottieFor(ex.id),
-                    builder: (context, snapshot) {
-                      final asset = snapshot.data;
-                      if (asset != null) {
-                        return Lottie.asset(
-                          asset,
-                          width: 28,
-                          height: 28,
-                          fit: BoxFit.contain,
-                          repeat: true,
+    final chipBg =
+        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.12);
+    final iconColor =
+        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6);
+    final closeColor =
+        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5);
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _attachedExercises = List.from(_attachedExercises)..removeAt(index);
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: chipBg,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: exercise.isSystem
+                  ? FutureBuilder<String?>(
+                      future: LottieExerciseRegistry.lottieFor(exercise.id),
+                      builder: (context, snapshot) {
+                        final asset = snapshot.data;
+                        if (asset != null) {
+                          return Lottie.asset(
+                            asset,
+                            width: 20,
+                            height: 20,
+                            fit: BoxFit.contain,
+                            repeat: true,
+                          );
+                        }
+                        return Icon(
+                          Icons.fitness_center,
+                          size: 14,
+                          color: iconColor,
                         );
-                      }
-                      return Icon(
-                        Icons.fitness_center,
-                        size: 20,
-                        color: colors?.vibrantAccent ?? Colors.green,
-                      );
-                    },
-                  )
-                : Icon(
-                    Icons.fitness_center,
-                    size: 20,
-                    color: colors?.vibrantAccent ?? Colors.green,
-                  ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              ex.name,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      },
+                    )
+                  : Icon(
+                      Icons.fitness_center,
+                      size: 14,
+                      color: iconColor,
+                    ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              exercise.name,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: isDark ? Colors.white70 : Colors.black87,
                     fontWeight: FontWeight.w500,
                   ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-          ),
-          GestureDetector(
-            onTap: () => setState(() => _attachedExercise = null),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Icon(
-                Icons.close,
-                size: 18,
-                color: isDark ? Colors.white54 : Colors.black54,
-              ),
-            ),
-          ),
-        ],
+            const SizedBox(width: 6),
+            Icon(Icons.close, size: 14, color: closeColor),
+          ],
+        ),
+      ),
     );
   }
 

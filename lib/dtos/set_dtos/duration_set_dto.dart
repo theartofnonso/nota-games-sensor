@@ -51,9 +51,6 @@ class DurationSetDto extends SetDto {
   String summary() => duration.hmsAnalog();
 
   @override
-  Map<String, dynamic> toJson() => super.toJson();
-
-  @override
   String toString() => 'DurationSetDto('
       'duration: $duration, '
       'checked: $checked, '

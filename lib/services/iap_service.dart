@@ -10,7 +10,7 @@ const Set<String> _iapProductIds = <String>{
 };
 
 /// IAP service for iOS App Store subscriptions.
-/// On iOS, this replaces Stripe for client subscription checks and purchases.
+/// Handles client subscription checks and purchases via App Store / Play Store.
 class IapService {
   IapService() {
     _subscription = InAppPurchase.instance.purchaseStream.listen(

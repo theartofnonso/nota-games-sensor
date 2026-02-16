@@ -6,12 +6,12 @@ This document describes the steps to get the monthly IAP subscription working fu
 
 ## Current Implementation
 
-- **Client app on iOS**: Uses Apple In-App Purchase (IAP) instead of Stripe.
+- **Client app**: Uses Apple In-App Purchase (IAP) for iOS and Google Play Billing for Android.
 - **Product ID**: `notathletes_monthly` (single monthly subscription).
 - **Flow**: User enters email → restore purchases → if none, Apple purchase dialog opens immediately → subscribe via App Store → sign in with OTP.
 - **Code locations**: 
   - `lib/services/iap_service.dart` – IAP service
-  - `lib/utils/client_access_utils.dart` – client access + IAP on iOS
+  - `lib/utils/client_access_utils.dart` – client access + IAP
 
 ---
 

@@ -17,7 +17,7 @@ This document describes where and how **client** users can delete their account 
 1. User taps **Delete account**.
 2. A confirmation sheet appears: title **“Delete account”**, message *“Your account and all associated data (workouts, plans, nutrition logs) will be permanently deleted. This cannot be undone.”*
 3. User can **Cancel** or **Delete my account** (red button).
-4. On **Delete my account**, the app runs **four** steps in order: (1) Stripe unsubscribe, (2) Agora Chat user delete, (3) Supabase account delete, (4) sign out. **If any step fails, the flow stops** and the user sees an error; the next steps (including sign out) are not run. Sign out happens only after all three API calls succeed.
+4. On **Delete my account**, the app runs **three** steps in order: (1) Agora Chat user delete, (2) Supabase account delete, (3) sign out. **If any step fails, the flow stops** and the user sees an error; the next steps (including sign out) are not run. Sign out happens only after both API calls succeed.
 5. If any step fails, the user sees: *“Could not delete account. Something went wrong. Please try again or contact support at notathletes.com.”* (The app may show a backend `error` or `message` if present in the response.)
 
 ---
@@ -29,7 +29,6 @@ When a **client** account is deleted, the following are removed:
 | Area | What is removed |
 |------|------------------|
 | **Agora Chat** | The user’s Agora Chat account (chat identity and history). Handled by the Agora backend when the app calls `POST …/user/delete`. |
-| **Stripe** | The user’s Stripe customer and subscriptions (unsubscribe / no further billing). Handled by the Stripe backend when the app calls `POST …/customer/delete`. |
 | **Supabase Auth** | The user’s auth account. Handled by the api.notathletes.com backend when the app calls `POST …/account/delete`. |
 | **Database (Supabase)** | All data tied to that user is removed by **ON DELETE CASCADE** when the auth user is deleted. See migration `supabase/migrations/20260205000000_account_deletion_cascade.sql`. |
 
@@ -44,24 +43,22 @@ Coach-owned data (e.g. plans/templates owned by the coach) is not deleted when a
 
 ## Backend (handoff for backend developer)
 
-The app runs **three** API calls in this order, then signs the user out. **If any call fails (non-2xx or exception), the app stops and does not run the remaining steps or sign out.** Order:
+The app runs **two** API calls in this order, then signs the user out. **If any call fails (non-2xx or exception), the app stops and does not run the remaining steps or sign out.** Order:
 
 | Order | Endpoint | Purpose |
 |-------|----------|---------|
-| 1 | `POST https://stripe.notathletes.com/customer/delete` | Unsubscribe / delete Stripe customer (stop billing first). |
-| 2 | `POST https://agora.notathletes.com/user/delete` | Remove user from Agora Chat (compliance). |
-| 3 | `POST https://api.notathletes.com/account/delete` | Delete Supabase Auth user (CASCADE removes all client data). |
-| 4 | — | Sign out locally (Chat logout + Supabase signOut); only after 1–3 succeed. |
+| 1 | `POST https://agora.notathletes.com/user/delete` | Remove user from Agora Chat (compliance). |
+| 2 | `POST https://api.notathletes.com/account/delete` | Delete Supabase Auth user (CASCADE removes all client data). |
+| 3 | — | Sign out locally (Chat logout + Supabase signOut); only after 1–2 succeed. |
 
-**Request shape (all three):**  
+**Request shape (both):**  
 - Headers: `Content-Type: application/json`, `Authorization: Bearer <Supabase access token>`  
 - Body: `{"userId": "<Supabase user id>"}`  
 
 **Specs:**
 
 1. **Agora user deletion** → [AGORA_USER_DELETE_BACKEND.md](./AGORA_USER_DELETE_BACKEND.md)
-2. **Stripe customer delete / unsubscribe** → [STRIPE_CUSTOMER_DELETE_BACKEND.md](./STRIPE_CUSTOMER_DELETE_BACKEND.md)
-3. **Supabase account deletion** → [SUPABASE_ACCOUNT_DELETE_BACKEND.md](./SUPABASE_ACCOUNT_DELETE_BACKEND.md)
+2. **Supabase account deletion** → [SUPABASE_ACCOUNT_DELETE_BACKEND.md](./SUPABASE_ACCOUNT_DELETE_BACKEND.md)
 
 **Rules:** Coach accounts must never be deleted (api.notathletes.com must reject with 403 for users in `public.coaches`). Supabase data is removed by DB CASCADE; ensure migration `20260205000000_account_deletion_cascade.sql` is applied.
 

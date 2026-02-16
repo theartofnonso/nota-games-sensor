@@ -203,10 +203,9 @@ class _SetBreakdownContent extends StatelessWidget {
 
   double _numericValue(SetDto set) {
     return switch (set) {
-      WeightAndRepsSetDto() => (set as WeightAndRepsSetDto).weight,
-      RepsSetDto() => (set as RepsSetDto).reps.toDouble(),
-      DurationSetDto() =>
-        (set as DurationSetDto).duration.inMilliseconds.toDouble(),
+      WeightAndRepsSetDto() => (set).weight,
+      RepsSetDto() => (set).reps.toDouble(),
+      DurationSetDto() => (set).duration.inMilliseconds.toDouble(),
       _ => 0.0,
     };
   }

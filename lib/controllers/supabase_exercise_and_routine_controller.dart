@@ -112,6 +112,24 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       get exerciseLogsByExerciseId =>
           UnmodifiableMapView(groupExerciseLogsByExerciseId(routineLogs: logs));
 
+  /// Exercises that appear in logs, ordered by most recent use (newest first).
+  /// Used by the exercise library to show a "From your logs" section.
+  List<ExerciseDto> get exercisesFromLogsOrderedByRecency {
+    final byId = <String, ({ExerciseDto exercise, DateTime lastUsed})>{};
+    for (final log in logs) {
+      for (final exLog in log.exerciseLogs) {
+        final ex = exLog.exercise;
+        final existing = byId[ex.id];
+        if (existing == null || log.startTime.isAfter(existing.lastUsed)) {
+          byId[ex.id] = (exercise: ex, lastUsed: log.startTime);
+        }
+      }
+    }
+    final list = byId.values.toList();
+    list.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
+    return list.map((e) => e.exercise).toList();
+  }
+
   bool _blockIfClientMode() {
     if (!accessController.hasSelectedClient) {
       return false;

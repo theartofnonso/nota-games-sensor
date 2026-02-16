@@ -7,11 +7,14 @@ import 'package:trainware/utils/lottie_exercise_registry.dart';
 class ExerciseGridItem extends StatelessWidget {
   final ExerciseDto exercise;
   final VoidCallback onTap;
+  /// When true, shows a checkmark overlay for multi-select mode.
+  final bool isSelected;
 
   const ExerciseGridItem({
     super.key,
     required this.exercise,
     required this.onTap,
+    this.isSelected = false,
   });
 
   @override
@@ -21,7 +24,10 @@ class ExerciseGridItem extends StatelessWidget {
     // Try Lottie mapping; otherwise fall back to an icon placeholder
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDarkMode ? Colors.black12 : Colors.grey.shade100,
@@ -74,6 +80,32 @@ class ExerciseGridItem extends StatelessWidget {
             const SizedBox(height: 6),
           ],
         ),
+      ),
+          if (isSelected)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

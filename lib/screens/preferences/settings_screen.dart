@@ -33,6 +33,7 @@ import '../../extensions/duration_extension.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/string_utils.dart';
 import '../../services/training_prediction_service.dart';
+import '../../utils/calendar_date_logs_sheet.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/theme/color_extensions.dart';
@@ -693,134 +694,14 @@ class _SettingsScreenState extends State<SettingsScreen>
       dateLabel = DateFormat('EEEE').format(date).toLowerCase();
     }
 
-    // Size sheet by content: header + list items (or empty state), capped at 55% of screen
-    const double kHeaderHeight = 100;
-    const double kListItemHeight = 72;
-    const double kListItemSpacing = 12;
-    const double kListPaddingVertical = 16;
-    const double kEmptyStateHeight = 200;
-    const double kMinSheetHeight = 320; // Ensure single log is comfortable
-    const double kMaxSheetFraction = 0.55;
-
-    final screenHeight = MediaQuery.of(context).size.height;
-    final contentHeight = hasLogs
-        ? kHeaderHeight +
-            kListPaddingVertical +
-            logs.length * (kListItemHeight + kListItemSpacing)
-        : kHeaderHeight + kEmptyStateHeight;
-    final preferredHeight =
-        contentHeight.clamp(kMinSheetHeight, double.infinity);
-    final maxSheetHeight =
-        preferredHeight.clamp(0.0, screenHeight * kMaxSheetFraction);
-
-    showAppBottomSheet(
+    showCalendarDateLogsSheet(
       context: context,
-      isDraggable: false,
-      enableDrag: false,
-      builder: (sheetContext, scrollController) {
-        final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
-
-        return ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: maxSheetHeight),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header row with date and "Log workout" button
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Date display
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            dateLabel,
-                            style: Theme.of(sheetContext)
-                                .textTheme
-                                .headlineMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          Text(
-                            DateFormat('MMMM d').format(date),
-                            style: Theme.of(sheetContext)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: Colors.grey.shade400,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Log workout button (only show for today)
-                    if (isToday && !isClientMode)
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(sheetContext); // Close bottom sheet
-                          logEmptyRoutine(context: context);
-                        },
-                        icon: FaIcon(
-                          FontAwesomeIcons.circlePlus,
-                          size: 22,
-                          color: isDarkMode ? Colors.white : Colors.black,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Flexible(
-                child: hasLogs
-                    ? ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        itemCount: logs.length,
-                        itemBuilder: (context, index) {
-                          final log = logs[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12.0),
-                            child: RoutineLogWidget(
-                              log: log,
-                              trailing: log.duration().hmsAnalog(),
-                              onTap: () {
-                                Navigator.pop(sheetContext);
-                                navigateToRoutineLogPreview(
-                                  context: context,
-                                  log: log,
-                                  isEditable: true,
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      )
-                    : Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            isPredicted
-                                ? 'This is a day you\'re likely to train based on your previous workout history.'
-                                : 'No workouts logged this date',
-                            textAlign: TextAlign.center,
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: Colors.grey.shade400,
-                                    ),
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        );
-      },
+      date: date,
+      logs: logs,
+      dateLabel: dateLabel,
+      isToday: isToday,
+      isPredicted: isPredicted,
+      showLogWorkoutButton: !isClientMode,
     );
   }
 }
