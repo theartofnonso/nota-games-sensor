@@ -41,12 +41,11 @@ import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/badges/unread_badge.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
-import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
 import '../../widgets/icons/custom_icon.dart';
-import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/settings/delete_account_section.dart';
+import '../../widgets/settings/logout_section.dart';
 import '../../widgets/settings/unsubscribe_section.dart';
 import '../../widgets/settings/coach_feedback_card.dart';
 import '../../widgets/settings/coach_ai_chat_card.dart';
@@ -410,6 +409,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                     SizedBox(height: _sectionSpacing),
                   ],
+                  SizedBox(height: _sectionSpacing),
+                  LogoutSection(
+                    onLogoutTap: () async {
+                      setState(() => _loading = true);
+                      await performLogout();
+                      if (mounted) setState(() => _loading = false);
+                    },
+                  ),
                   SizedBox(height: _sectionSpacing),
                   _buildDebugInfoSection(isDarkMode),
                   SizedBox(height: _sectionSpacing),
@@ -2337,10 +2344,8 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
                                         Wrap(
                                           children: [
                                             CustomIcon(
-                                              FontAwesomeIcons
-                                                  .personWalking,
-                                              color: theme
-                                                  .colors.vibrantAccent,
+                                              FontAwesomeIcons.personWalking,
+                                              color: theme.colors.vibrantAccent,
                                               width: 20,
                                               height: 20,
                                               iconSize: 10.5,
@@ -2348,15 +2353,12 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
                                             const SizedBox(width: 6),
                                             Text(
                                               '$exerciseCount ${pluralize(word: 'Exercise', count: exerciseCount)}',
-                                              style: theme
-                                                  .textTheme.bodyMedium
+                                              style: theme.textTheme.bodyMedium
                                                   ?.copyWith(
                                                 color: Colors.white
-                                                    .withValues(
-                                                        alpha: 0.85),
+                                                    .withValues(alpha: 0.85),
                                               ),
-                                              overflow:
-                                                  TextOverflow.ellipsis,
+                                              overflow: TextOverflow.ellipsis,
                                               maxLines: 2,
                                             ),
                                           ],
@@ -2366,8 +2368,8 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
                                           children: [
                                             CustomIcon(
                                               FontAwesomeIcons.hashtag,
-                                              color: theme
-                                                  .colorScheme.secondary,
+                                              color:
+                                                  theme.colorScheme.secondary,
                                               width: 20,
                                               height: 20,
                                               iconSize: 10.5,
@@ -2375,15 +2377,12 @@ class _ClientRoutinePlansFrostedCard extends StatelessWidget {
                                             const SizedBox(width: 6),
                                             Text(
                                               '${templates.length} ${pluralize(word: 'Session', count: templates.length)}',
-                                              style: theme
-                                                  .textTheme.bodyMedium
+                                              style: theme.textTheme.bodyMedium
                                                   ?.copyWith(
                                                 color: Colors.white
-                                                    .withValues(
-                                                        alpha: 0.85),
+                                                    .withValues(alpha: 0.85),
                                               ),
-                                              overflow:
-                                                  TextOverflow.ellipsis,
+                                              overflow: TextOverflow.ellipsis,
                                               maxLines: 2,
                                             ),
                                           ],

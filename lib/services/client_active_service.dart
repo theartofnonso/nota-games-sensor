@@ -4,6 +4,13 @@ import 'package:http/http.dart' as http;
 
 import '../urls.dart';
 
+/// Result of activating a client.
+class ActivateResult {
+  const ActivateResult({required this.success});
+
+  final bool success;
+}
+
 /// Result of checking whether a client can sign in.
 class ClientActiveCheckResult {
   const ClientActiveCheckResult({
@@ -46,31 +53,31 @@ class ClientActiveService {
     }
   }
 
-  /// Activates a client after successful IAP. Backend validates receipt,
-  /// creates client if new, and sets is_active = true.
-  Future<bool> activateClient({
+  /// Activates a client. Sends only email and optionally first_name, last_name.
+  Future<ActivateResult> activateClient({
     required String email,
-    required String receiptData,
-    String platform = 'ios',
     String firstName = '',
     String lastName = '',
   }) async {
     try {
       final uri = Uri.parse(apiNotathletesBaseUrl).resolve(clientActivatePath);
+      final body = <String, dynamic>{'email': email};
+      if (firstName.isNotEmpty) body['first_name'] = firstName;
+      if (lastName.isNotEmpty) body['last_name'] = lastName;
+
       final response = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'receipt': receiptData,
-          'platform': platform,
-          if (firstName.isNotEmpty) 'first_name': firstName,
-          if (lastName.isNotEmpty) 'last_name': lastName,
-        }),
+        body: jsonEncode(body),
       ).timeout(const Duration(seconds: 30));
-      return response.statusCode == 200 || response.statusCode == 204;
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return const ActivateResult(success: true);
+      }
+
+      return const ActivateResult(success: false);
     } catch (_) {
-      return false;
+      return const ActivateResult(success: false);
     }
   }
 }

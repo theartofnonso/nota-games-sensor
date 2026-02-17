@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -108,6 +109,9 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         email: email,
         emailRedirectTo: null,
       );
+      if (kDebugMode) {
+        debugPrint('[Auth] OTP sent to $email');
+      }
 
       if (mounted) {
         setState(() {
@@ -116,6 +120,8 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         });
       }
     } on AuthException catch (error) {
+      debugPrint(
+          '[Auth] AuthException on sendOTP: ${error.message} (statusCode: ${error.statusCode})');
       if (mounted) {
         showSnackbar(
           context: context,
@@ -137,6 +143,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   }
 
   Future<void> _verifyOTP() async {
+    if (_isLoading) return;
     final email = _emailController.text.trim();
     final otp = _otpController.text.trim();
 
@@ -150,6 +157,10 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     }
 
     setState(() => _isLoading = true);
+
+    if (kDebugMode) {
+      debugPrint('[Auth] Verifying OTP for $email, code: $otp');
+    }
 
     try {
       // Verify OTP
@@ -166,6 +177,8 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         });
       }
     } on AuthException catch (error) {
+      debugPrint(
+          '[Auth] AuthException on verifyOTP: ${error.message} (statusCode: ${error.statusCode})');
       if (mounted) {
         showSnackbar(
           context: context,
@@ -450,11 +463,6 @@ class _ModernOTPInput extends StatelessWidget {
               keyboardType: TextInputType.number,
               maxLength: 6,
               autofocus: true,
-              onChanged: (value) {
-                if (value.length == 6) {
-                  onSubmit();
-                }
-              },
             ),
           ),
           const SizedBox(width: 12),

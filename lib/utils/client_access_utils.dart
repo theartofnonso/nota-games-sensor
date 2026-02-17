@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -146,8 +145,11 @@ Future<({String firstName, String lastName})?> _showNameCollectionSheet(
       },
     ),
   );
-  firstNameController.dispose();
-  lastNameController.dispose();
+  // Defer disposal until sheet has fully closed (avoids "used after disposed")
+  Future.delayed(const Duration(milliseconds: 400), () {
+    firstNameController.dispose();
+    lastNameController.dispose();
+  });
   return result;
 }
 
@@ -162,11 +164,17 @@ Future<bool> _requireClientAccessIap({
   final service = iapService;
   final available = await service.isAvailable();
   if (!available) {
+    final result = await ClientActiveService().activateClient(
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+    );
+    if (result.success) return true;
     if (context.mounted) {
       showErrorBottomSheet(
         context: context,
-        title: 'Store unavailable',
-        message: 'In-app purchases are not available. Please try again later.',
+        title: 'Something went wrong',
+        message: 'Please try again.',
       );
     }
     if (signOutOnFail && onDenied != null) await onDenied();
@@ -209,7 +217,7 @@ Future<bool> _startIapPurchase({
     showErrorBottomSheet(
       context: context,
       title: 'Subscription unavailable',
-      message: 'Unable to load subscription. Please try again later.',
+      message: 'Please try again later.',
     );
     return false;
   }
@@ -222,24 +230,17 @@ Future<bool> _startIapPurchase({
     if (details.status == PurchaseStatus.purchased ||
         details.status == PurchaseStatus.restored) {
       purchaseSub.cancel();
-      bool activated = false;
-      final receipt = details.verificationData.serverVerificationData;
-      if (receipt.isNotEmpty) {
-        activated = await ClientActiveService().activateClient(
-          email: email,
-          receiptData: receipt,
-          platform: Platform.isIOS ? 'ios' : 'android',
-          firstName: firstName,
-          lastName: lastName,
-        );
-      }
-      completer.complete(activated);
-      if (!activated && context.mounted) {
+      final result = await ClientActiveService().activateClient(
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+      );
+      completer.complete(result.success);
+      if (!result.success && context.mounted) {
         showErrorBottomSheet(
           context: context,
-          title: 'Activation failed',
-          message:
-              'Purchase succeeded but we couldn\'t activate your account. Please contact support.',
+          title: 'Something went wrong',
+          message: 'Please try again.',
         );
       }
     } else if (details.status == PurchaseStatus.error) {
@@ -248,9 +249,8 @@ Future<bool> _startIapPurchase({
       if (context.mounted) {
         showErrorBottomSheet(
           context: context,
-          title: 'Purchase failed',
-          message: details.error?.message ??
-              'Something went wrong. Please try again.',
+          title: 'Something went wrong',
+          message: 'Please try again.',
         );
       }
     } else if (details.status == PurchaseStatus.canceled) {
@@ -259,7 +259,32 @@ Future<bool> _startIapPurchase({
     }
   });
 
-  await service.buySubscription(product);
+  try {
+    final sent = await service.buySubscription(product);
+    if (!sent) {
+      purchaseSub.cancel();
+      completer.complete(false);
+      if (context.mounted) {
+        showErrorBottomSheet(
+          context: context,
+          title: 'Something went wrong',
+          message: 'Please try again.',
+        );
+      }
+      return false;
+    }
+  } catch (e) {
+    purchaseSub.cancel();
+    completer.complete(false);
+    if (context.mounted) {
+      showErrorBottomSheet(
+        context: context,
+        title: 'Something went wrong',
+        message: 'Please try again.',
+      );
+    }
+    return false;
+  }
 
   final success = await completer.future.timeout(
     const Duration(minutes: 5),

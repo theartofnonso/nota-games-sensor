@@ -34,25 +34,42 @@ Returns `{ "exists": bool, "is_active": bool }`.
 ```json
 {
   "email": "client@example.com",
-  "receipt": "<JWS_from_StoreKit2_serverVerificationData>",
-  "platform": "ios",
   "first_name": "Jane",
   "last_name": "Doe"
 }
 ```
 
-**Backend must:**
+- `email` (required)
+- `first_name`, `last_name` (optional)
 
-1. Validate receipt with Apple (App Store Server API) or Google Play
-2. If valid:
-   - If client doesn't exist: create auth user (Supabase Admin API) if needed, then INSERT into clients (id = auth user id, email, name from first_name + last_name, is_active = true)
-   - If client exists: UPDATE clients SET is_active = true, updated_at = now() WHERE email = $1
+**Behavior:**
+
+1. If client doesn't exist: create auth user (Supabase Admin API) if needed, then `INSERT INTO clients (id, email, name, is_active) VALUES (...)`
+2. If client exists: `UPDATE clients SET is_active = true, updated_at = now() WHERE email = $1`
 3. Return 200 or 204 on success
+
+### Testing with curl
+
+Minimal:
+
+```bash
+curl -X POST http://localhost:3000/account/activate \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com"}'
+```
+
+With optional fields:
+
+```bash
+curl -X POST http://localhost:3000/account/activate \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","first_name":"Jane","last_name":"Doe"}'
+```
 
 ## Flow Summary
 
 1. Client enters email → app calls `GET /account/check-active?email=...`
-2. If not active → app runs IAP flow → on success, calls `POST /account/activate`
-3. Backend validates receipt and sets `is_active = true`
+2. If not active → app runs IAP flow → on success, calls `POST /account/activate` (email, first_name, last_name only)
+3. Backend creates/updates client and sets `is_active = true`
 4. Client proceeds to OTP and sign-in
 5. On each auth event, app verifies `clients.is_active` via Supabase; if false, signs out

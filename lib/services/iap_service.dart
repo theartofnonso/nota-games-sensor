@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 /// Product ID configured in App Store Connect. Update to match your
@@ -67,20 +66,12 @@ class IapService {
     if (!_isAvailable) {
       _isAvailable = await _iap.isAvailable();
     }
-    if (!_isAvailable) {
-      debugPrint('[IapService] Store not available');
-      return [];
-    }
+    if (!_isAvailable) return [];
     try {
       final response = await _iap.queryProductDetails(_iapProductIds);
-      if (response.notFoundIDs.isNotEmpty) {
-        debugPrint('[IapService] NotFound: ${response.notFoundIDs}');
-      }
       _products = response.productDetails;
-      debugPrint('[IapService] Loaded ${_products.length} products');
       return _products;
-    } catch (e) {
-      debugPrint('[IapService] loadProducts error: $e');
+    } catch (_) {
       return [];
     }
   }
@@ -92,18 +83,13 @@ class IapService {
     if (!_isAvailable) {
       _isAvailable = await _iap.isAvailable();
     }
-    if (!_isAvailable) {
-      debugPrint('[IapService] Store not available for restore');
-      return false;
-    }
+    if (!_isAvailable) return false;
     _purchasedProductIds.clear();
     try {
       await _iap.restorePurchases();
-      // Store delivers restored purchases via purchaseStream asynchronously.
       await Future<void>.delayed(const Duration(seconds: 2));
       return _purchasedProductIds.isNotEmpty;
-    } catch (e) {
-      debugPrint('[IapService] restorePurchases error: $e');
+    } catch (_) {
       return false;
     }
   }
@@ -126,10 +112,11 @@ class IapService {
   }
 
   /// Initiates purchase for the given product. Purchase updates stream via purchaseUpdates.
-  Future<void> buySubscription(ProductDetails productDetails) async {
-    if (!_isAvailable) return;
+  /// Returns true if the purchase request was sent (sheet should appear); false if not.
+  Future<bool> buySubscription(ProductDetails productDetails) async {
+    if (!_isAvailable) return false;
     final param = PurchaseParam(productDetails: productDetails);
-    await _iap.buyNonConsumable(purchaseParam: param);
+    return _iap.buyNonConsumable(purchaseParam: param);
   }
 }
 
