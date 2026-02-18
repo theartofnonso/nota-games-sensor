@@ -344,7 +344,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
                   attachedExerciseName: attachedName,
                   attachedExerciseId: exs.isEmpty ? null : exs.first.id,
                   attachedExerciseIsSystem:
-                      exs.isEmpty ? false : (exs.first.isSystem ?? false),
+                      exs.isEmpty ? false : exs.first.isSystem,
                 );
               },
             ),
@@ -528,6 +528,7 @@ void showCoachAiChatBottomSheet({required BuildContext context}) {
         AppBottomSheet(
           isDraggable: false,
           isDismissible: true,
+          showTopLeftCloseButton: true,
           child: CoachAiChatScreen(
             clientId: clientId,
             clientName: clientName,

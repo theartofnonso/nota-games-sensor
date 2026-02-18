@@ -407,9 +407,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                         setLoading: (v) => setState(() => _loading = v),
                       ),
                     ),
-                    SizedBox(height: _sectionSpacing),
+                    SizedBox(height: 8),
                   ],
-                  SizedBox(height: _sectionSpacing),
                   LogoutSection(
                     onLogoutTap: () async {
                       setState(() => _loading = true);

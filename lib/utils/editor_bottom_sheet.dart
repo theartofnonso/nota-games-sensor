@@ -13,11 +13,14 @@ Future<T?> showEditorBottomSheet<T>({
   bool isDismissible = true,
   Future<bool> Function()? onBarrierTap,
 }) {
+  final shouldShowCloseButton =
+      isDismissible && (initialChildSize >= 0.9 || maxChildSize >= 0.9);
   return showAppBottomSheet<T>(
     context: context,
     isDraggable: true,
     isScrollControlled: true,
     isDismissible: isDismissible,
+    showTopLeftCloseButton: shouldShowCloseButton,
     initialChildSize: initialChildSize,
     minChildSize: minChildSize,
     maxChildSize: maxChildSize,

@@ -289,6 +289,7 @@ Future<void> navigateToChat({
         AppBottomSheet(
           isDraggable: false,
           isDismissible: true,
+          showTopLeftCloseButton: true,
           child: ChatScreen(
             coachId: coachId,
             coachName: coachName,

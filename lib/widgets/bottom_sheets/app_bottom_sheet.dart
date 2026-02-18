@@ -16,6 +16,7 @@ class AppBottomSheet extends StatelessWidget {
   final double? maxChildSize;
   final bool useBlurredTransparentBackground;
   final double blurSigma;
+  final bool showTopLeftCloseButton;
 
   const AppBottomSheet({
     super.key,
@@ -28,6 +29,7 @@ class AppBottomSheet extends StatelessWidget {
     this.maxChildSize = 0.9,
     this.useBlurredTransparentBackground = true,
     this.blurSigma = 16,
+    this.showTopLeftCloseButton = false,
   }) : assert(builder != null || child != null,
             'Either builder or child must be provided');
 
@@ -53,6 +55,29 @@ class AppBottomSheet extends StatelessWidget {
       );
     }
 
+    Widget withOptionalCloseButton({required Widget child}) {
+      if (!showTopLeftCloseButton) return child;
+      return Stack(
+        children: [
+          child,
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Material(
+              color: Colors.black.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(999),
+              child: IconButton(
+                tooltip: 'Close',
+                onPressed: () => Navigator.of(context).pop(),
+                icon: Icon(Icons.close,
+                    size: 20, color: Colors.white.withValues(alpha: 0.8)),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     if (isDraggable) {
       return DraggableScrollableSheet(
         initialChildSize: initialChildSize ?? 0.7,
@@ -63,12 +88,14 @@ class AppBottomSheet extends StatelessWidget {
           return GestureDetector(
             // Only consume gestures within the sheet content, not outside
             behavior: HitTestBehavior.deferToChild,
-            child: wrapWithBlur(
-              child: Container(
-                decoration: decoration,
-                child: builder != null
-                    ? builder!(context, scrollController)
-                    : child!,
+            child: withOptionalCloseButton(
+              child: wrapWithBlur(
+                child: Container(
+                  decoration: decoration,
+                  child: builder != null
+                      ? builder!(context, scrollController)
+                      : child!,
+                ),
               ),
             ),
           );
@@ -76,12 +103,14 @@ class AppBottomSheet extends StatelessWidget {
       );
     }
 
-    return wrapWithBlur(
-      child: Container(
-        decoration: decoration,
-        child: SafeArea(
-          bottom: false,
-          child: builder != null ? builder!(context, null) : child!,
+    return withOptionalCloseButton(
+      child: wrapWithBlur(
+        child: Container(
+          decoration: decoration,
+          child: SafeArea(
+            bottom: false,
+            child: builder != null ? builder!(context, null) : child!,
+          ),
         ),
       ),
     );
@@ -101,6 +130,7 @@ Future<T?> showAppBottomSheet<T>({
   double? initialChildSize,
   double? minChildSize,
   double? maxChildSize,
+  bool showTopLeftCloseButton = false,
   bool useBlurredTransparentBackground = true,
   double blurSigma = 16,
   Future<bool> Function()? onBarrierTap,
@@ -123,6 +153,7 @@ Future<T?> showAppBottomSheet<T>({
       initialChildSize: initialChildSize,
       minChildSize: minChildSize,
       maxChildSize: maxChildSize,
+      showTopLeftCloseButton: showTopLeftCloseButton,
       useBlurredTransparentBackground: useBlurredTransparentBackground,
       blurSigma: blurSigma,
       builder: builder,

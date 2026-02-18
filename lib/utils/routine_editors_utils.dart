@@ -70,6 +70,7 @@ void showExerciseLogEditor({
     context: context,
     isDraggable: true,
     isDismissible: !isDurationExercise, // Prevent auto-dismiss for duration exercises
+    showTopLeftCloseButton: !isDurationExercise,
     onBarrierTap: onBarrierTap,
     initialChildSize: 0.9,
     minChildSize: 0.5,
@@ -120,6 +121,7 @@ Future<List<ExerciseDto>> showExercisePickerForAiChat(
   final selected = await showAppBottomSheet<List<ExerciseDto>>(
     context: context,
     isDraggable: true,
+    showTopLeftCloseButton: true,
     initialChildSize: 0.9,
     minChildSize: 0.6,
     maxChildSize: 0.98,
@@ -139,6 +141,7 @@ void showExercisesInLibrary(
   final selectedExercises = await showAppBottomSheet<List<ExerciseDto>>(
     context: context,
     isDraggable: true,
+    showTopLeftCloseButton: true,
     initialChildSize: 0.9,
     minChildSize: 0.6,
     maxChildSize: 0.98,
