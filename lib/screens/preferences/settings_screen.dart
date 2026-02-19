@@ -46,7 +46,6 @@ import '../../widgets/information_containers/information_container_with_backgrou
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/settings/delete_account_section.dart';
 import '../../widgets/settings/logout_section.dart';
-import '../../widgets/settings/unsubscribe_section.dart';
 import '../../widgets/settings/coach_feedback_card.dart';
 import '../../widgets/settings/coach_ai_chat_card.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
@@ -391,16 +390,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // Cancel membership & Delete account (client app only)
                   if (!isCoach) ...[
                     SizedBox(height: _sectionSpacing),
-                    // Hide on iOS—users manage subscriptions in App Store
-                    if (!Platform.isIOS) ...[
-                      UnsubscribeSection(
-                        onUnsubscribeTap: () => requestSubscriptionCancellation(
-                          context,
-                          setLoading: (v) => setState(() => _loading = v),
-                        ),
-                      ),
-                      SizedBox(height: _sectionSpacing),
-                    ],
                     DeleteAccountSection(
                       onDeleteTap: () => requestAccountDeletion(
                         context,
