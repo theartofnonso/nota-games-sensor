@@ -21,10 +21,8 @@ import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
-import '../../utils/editor_bottom_sheet.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
-import '../../extensions/duration_extension.dart';
 import '../../shared_prefs.dart';
 import '../../utils/string_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
@@ -35,9 +33,9 @@ import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
-import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/empty_states/list_empty_state.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
+import '../../widgets/chat/coach_ai_chat_fab.dart';
 
 enum _OriginalNewValues {
   originalValues(
@@ -157,16 +155,20 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final totalSets = template.exerciseTemplates
         .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
 
+    final showCoachAiFab = AppConfig.isCoach && accessController.hasSelectedClient;
+
     return Scaffold(
-        floatingActionButton: accessController.hasSelectedClient
-            ? null
-            : FloatingActionButton(
-                heroTag: UniqueKey,
-                backgroundColor: themeGradient(context: context).colors.first,
-                elevation: 8.0,
-                onPressed: () => _launchRoutineLogEditor(),
-                child: const FaIcon(FontAwesomeIcons.play, size: 24),
-              ),
+        floatingActionButton: showCoachAiFab
+            ? const CoachAiChatFab()
+            : (accessController.hasSelectedClient
+                ? null
+                : FloatingActionButton(
+                    heroTag: UniqueKey,
+                    backgroundColor: themeGradient(context: context).colors.first,
+                    elevation: 8.0,
+                    onPressed: () => _launchRoutineLogEditor(),
+                    child: const FaIcon(FontAwesomeIcons.play, size: 24),
+                  )),
         body: Container(
           height: double.infinity,
           decoration: BoxDecoration(

@@ -19,7 +19,6 @@ import '../../controllers/access_controller.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/notifications_utils.dart';
-import '../../extensions/duration_extension.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../utils/calendar_date_logs_sheet.dart';
 import '../../utils/editor_bottom_sheet.dart';
@@ -28,9 +27,9 @@ import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../widgets/empty_states/list_empty_state.dart';
 import '../../widgets/icons/custom_icon.dart';
-import '../../widgets/routine/preview/routine_log_widget.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
+import '../../widgets/chat/coach_ai_chat_fab.dart';
 
 class RoutinePlanScreen extends StatefulWidget {
   static const routeName = '/routine_plan_screen';
@@ -109,6 +108,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
         .expand((routineTemplate) => routineTemplate.exerciseTemplates);
 
     return Scaffold(
+        floatingActionButton: const CoachAiChatFab(),
         appBar: AppBar(
           backgroundColor: appBarBackgroundColor(context: context),
           surfaceTintColor: Colors.transparent,

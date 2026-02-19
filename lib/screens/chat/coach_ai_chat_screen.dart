@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -304,18 +303,7 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
     return ChatLayout(
       headerLeading: headerLeading,
       title: 'Ask about ${widget.clientName}',
-      headerActions: [
-        IconButton(
-          icon: FaIcon(
-            FontAwesomeIcons.solidCircleXmark,
-            color: isDarkMode ? Colors.white : Colors.black,
-            size: 20,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
-        ),
-      ],
+      headerActions: const [],
       messagesContent: messages.isEmpty && !isLoading
           ? ChatEmptyState(
               title: 'Ask about this client',

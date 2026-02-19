@@ -201,7 +201,8 @@ Future<void> mainCommon(AppFlavor flavor) async {
     chatOptions.enableFCM("160658273085");
   } else if (Platform.isIOS) {
     chatOptions.enableAPNs(ChatConfig.apnsCertName);
-    logger.d('APNs cert name for push: "${ChatConfig.apnsCertName}" (must match Agora Console Push Certificate)');
+    logger.d(
+        'APNs cert name for push: "${ChatConfig.apnsCertName}" (must match Agora Console Push Certificate)');
   }
   await ChatClient.getInstance.init(chatOptions);
 
@@ -421,9 +422,7 @@ GoRouter _createRouter(ClientOverrideController accessController) {
           final logId = state.pathParameters['logId'] ?? '';
           return CustomTransitionPage(
               child: RoutineLogScreen(
-                  id: logId,
-                  isEditable: true,
-                  showShareOnLoad: false),
+                  id: logId, isEditable: true, showShareOnLoad: false),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) {
                 const begin = Offset(0.0, 1.0);
@@ -478,8 +477,8 @@ GoRouter _createRouter(ClientOverrideController accessController) {
               const begin = Offset(0.0, 1.0);
               const end = Offset.zero;
               const curve = Curves.ease;
-              final tween = Tween(begin: begin, end: end)
-                  .chain(CurveTween(curve: curve));
+              final tween =
+                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
               final offsetAnimation = animation.drive(tween);
               return SlideTransition(
                 position: offsetAnimation,
@@ -540,6 +539,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool _lastAuthenticated = false;
   bool _lastCoach = false;
   bool _welcomeDismissed = false;
+  bool _agoraLifecycleTransitionInFlight = false;
 
   @override
   void initState() {
@@ -572,20 +572,42 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    // Disconnect Agora when going to background so Agora treats user as offline
-    // and sends APNs push for new messages. Reconnect when resuming.
-    if (state == AppLifecycleState.paused) {
-      if (ChatClient.getInstance.currentUserId != null) {
-        unawaited(ChatClient.getInstance.logout(false));
-      }
-    } else if (state == AppLifecycleState.resumed) {
-      if (_accessController.isAuthenticated &&
-          _accessController.userId != null &&
-          ChatClient.getInstance.currentUserId == null) {
-        unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
-            _accessController.userId));
-      }
+    // Disconnect Agora when app loses foreground so Agora marks user offline
+    // and push notifications can be delivered for new messages.
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_logoutAgoraForBackground());
+      return;
     }
+
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_restoreAgoraOnResume());
+    }
+  }
+
+  Future<void> _logoutAgoraForBackground() async {
+    if (_agoraLifecycleTransitionInFlight) return;
+    if (ChatClient.getInstance.currentUserId == null) return;
+    _agoraLifecycleTransitionInFlight = true;
+    try {
+      await ChatClient.getInstance
+          .logout(false)
+          .timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // Best effort: app may suspend before logout completes.
+    } finally {
+      _agoraLifecycleTransitionInFlight = false;
+    }
+  }
+
+  Future<void> _restoreAgoraOnResume() async {
+    if (_agoraLifecycleTransitionInFlight) return;
+    if (!_accessController.isAuthenticated || _accessController.userId == null) {
+      return;
+    }
+    if (ChatClient.getInstance.currentUserId != null) return;
+    await ChatBootstrapService.ensureAgoraAndPushSetup(_accessController.userId);
   }
 
   void _handleAccessChanged() {

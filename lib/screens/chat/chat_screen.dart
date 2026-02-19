@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
@@ -948,12 +947,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             IconButton(
               icon: Icon(Icons.videocam, color: isDarkMode ? Colors.white : Colors.black, size: 22),
               onPressed: () => _openVideoCall(),
-            ),
-            IconButton(
-              icon: FaIcon(FontAwesomeIcons.solidCircleXmark, color: isDarkMode ? Colors.white : Colors.black, size: 20),
-              onPressed: () => Navigator.of(context).pop(),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
             ),
           ],
           messagesContent: _messages.isEmpty
