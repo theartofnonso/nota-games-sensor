@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/dtos/appsync/routine_template_dto.dart';
+import 'package:trainware/dtos/set_dtos/duration_set_dto.dart';
+import 'package:trainware/dtos/set_dtos/reps_dto.dart';
+import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
 
 import '../logger.dart';
 import '../repositories/supabase/supabase_routine_template_repository.dart';
@@ -178,13 +181,63 @@ class OfflineRoutineTemplateRepository {
             throw Exception('Cannot upsert template: user not authenticated');
           }
 
-          // Ensure owner is set to current user and clientId is null for user-created templates
-          final json = entry.template.toJson();
-          json['owner'] = userId;
-          // Explicitly set clientId to null for user-created templates (RLS requirement)
-          json['clientId'] = null;
+          // Phase 5.5: relational write path.
+          await _client.from('routine_templates').upsert({
+            'id': entry.template.id,
+            'planId': entry.template.planId,
+            'name': entry.template.name,
+            'notes': entry.template.notes,
+            'owner': userId,
+            'clientId': null,
+            'updatedAt': DateTime.now().toUtc().toIso8601String(),
+          });
 
-          await _client.from('routine_templates').upsert(json);
+          // Replace child rows atomically from app perspective:
+          // delete existing template exercises (cascades template_sets), then re-insert.
+          await _client
+              .from('template_exercises')
+              .delete()
+              .eq('template_id', entry.template.id);
+
+          for (var exIndex = 0;
+              exIndex < entry.template.exerciseTemplates.length;
+              exIndex++) {
+            final exLog = entry.template.exerciseTemplates[exIndex];
+            final inserted = await _client
+                .from('template_exercises')
+                .insert({
+                  'template_id': entry.template.id,
+                  'exercise_id': exLog.exercise.id,
+                  'order_index': exIndex,
+                  'super_set_group':
+                      exLog.superSetId.isEmpty ? null : exLog.superSetId,
+                  'notes': exLog.notes.isEmpty ? null : exLog.notes,
+                })
+                .select('id')
+                .single();
+            final templateExerciseId = inserted['id'] as String;
+
+            final setRows = <Map<String, dynamic>>[];
+            for (var setIndex = 0; setIndex < exLog.sets.length; setIndex++) {
+              final set = exLog.sets[setIndex];
+              final row = <String, dynamic>{
+                'template_exercise_id': templateExerciseId,
+                'order_index': setIndex,
+              };
+              if (set is WeightAndRepsSetDto) {
+                row['target_reps'] = set.reps;
+                row['target_weight'] = set.weight;
+              } else if (set is RepsSetDto) {
+                row['target_reps'] = set.reps;
+              } else if (set is DurationSetDto) {
+                row['target_duration_seconds'] = set.duration.inSeconds;
+              }
+              setRows.add(row);
+            }
+            if (setRows.isNotEmpty) {
+              await _client.from('template_sets').insert(setRows);
+            }
+          }
 
           final index =
               _entries.indexWhere((e) => e.template.id == entry.template.id);

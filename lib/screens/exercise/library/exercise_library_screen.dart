@@ -9,8 +9,6 @@ import 'package:trainware/controllers/supabase_exercise_and_routine_controller.d
 import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
-import '../../../utils/system_exercises.dart';
-import '../../../utils/name_notes_bottom_sheet.dart';
 import '../../../widgets/empty_states/list_empty_state.dart';
 import '../../../widgets/exercise/exercise_grid_item.dart';
 
@@ -18,8 +16,10 @@ import '../../../widgets/exercise/exercise_grid_item.dart';
 enum ExerciseSelectionPurpose {
   /// Add to workout/template (prompts log type).
   addToWorkout,
+
   /// View-only (settings, etc.) – no selection.
   viewOnly,
+
   /// Select for AI chat – tap returns exercise immediately for query scoping.
   forAiQuery,
 }
@@ -46,6 +46,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   /// Exercises from logs, sorted by most recent use. Filtered by search/type/exclude.
   List<ExerciseDto> _recentFromLogs = [];
+
   /// All other exercises in the library (not in logs). Filtered by search/type/exclude.
   List<ExerciseDto> _libraryOnly = [];
   List<ExerciseDto> _systemExercises = [];
@@ -73,8 +74,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       }
       if (tokens.any((t) => t.startsWith(q))) {
         score += 1;
-        }
       }
+    }
     return score;
   }
 
@@ -93,13 +94,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         context,
         listen: false);
 
-    // Combine system (from JSON) + user (from DB)
-    final combined = [
-      ..._systemExercises,
-      ...controller.exercises,
-    ];
-
-    final allExercises = combined
+    // Library is system-defined only (no custom exercise CRUD).
+    final allExercises = _systemExercises
         .where((exercise) => !excludeExerciseIds.contains(exercise.id))
         .toList();
 
@@ -138,9 +134,15 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       for (var i = 0; i < recentOrdered.length; i++) recentOrdered[i].id: i,
     };
 
-    final recent = filteredExercises.where((e) => recentIds.contains(e.id)).toList()
-      ..sort((a, b) => (recencyIndex[a.id] ?? 9999).compareTo(recencyIndex[b.id] ?? 9999));
-    final library = filteredExercises.where((e) => !recentIds.contains(e.id)).toList();
+    final libraryIds = allExercises.map((e) => e.id).toSet();
+    final recent = filteredExercises
+        .where((e) => recentIds.contains(e.id))
+        .where((e) => libraryIds.contains(e.id))
+        .toList()
+      ..sort((a, b) =>
+          (recencyIndex[a.id] ?? 9999).compareTo(recencyIndex[b.id] ?? 9999));
+    final library =
+        filteredExercises.where((e) => !recentIds.contains(e.id)).toList();
 
     setState(() {
       _recentFromLogs = recent;
@@ -252,28 +254,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     });
   }
 
-  Future<void> _showCreateExerciseSheet() async {
-    final details = await showNameNotesBottomSheet(
-      context: context,
-      title: 'Create exercise',
-      primaryButtonLabel: 'Create',
-      emptyNameMessage: 'Please provide a name for this exercise',
-    );
-    if (details == null) return;
-    if (!mounted) return;
-
-    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
-        context,
-        listen: false);
-    final newExercise = ExerciseDto(
-      name: details.name,
-      notes: details.notes,
-      type: ExerciseType.weights,
-    );
-    await controller.saveExercise(exerciseDto: newExercise);
-    _loadOrSyncExercises();
-  }
-
   @override
   Widget build(BuildContext context) {
     final recentFromLogs = _recentFromLogs;
@@ -305,15 +285,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
               ],
             )
           : null,
-      floatingActionButton: widget.selectionPurpose == ExerciseSelectionPurpose.forAiQuery
-          ? null
-          : FloatingActionButton(
-              heroTag: UniqueKey(),
-              backgroundColor: themeGradient(context: context).colors.first,
-              elevation: 8.0,
-              onPressed: _showCreateExerciseSheet,
-              child: const FaIcon(FontAwesomeIcons.plus, size: 24),
-            ),
       body: Container(
         decoration: BoxDecoration(
           gradient: themeGradient(context: context),
@@ -343,20 +314,26 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                           if (recentFromLogs.isNotEmpty) ...[
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+                                padding:
+                                    const EdgeInsets.fromLTRB(10, 0, 10, 12),
                                 child: Text(
                                   'From your logs',
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: Theme.of(context).brightness == Brightness.dark
-                                        ? Colors.white70
-                                        : Colors.black87,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white70
+                                            : Colors.black87,
+                                      ),
                                 ),
                               ),
                             ),
                             SliverPadding(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
                               sliver: SliverGrid(
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
@@ -368,9 +345,12 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
                                     final exercise = recentFromLogs[index];
-                                    final isSelected = widget.selectionPurpose ==
-                                            ExerciseSelectionPurpose.forAiQuery &&
-                                        _selectedExercises.any((e) => e.id == exercise.id);
+                                    final isSelected = widget
+                                                .selectionPurpose ==
+                                            ExerciseSelectionPurpose
+                                                .forAiQuery &&
+                                        _selectedExercises
+                                            .any((e) => e.id == exercise.id);
                                     return ExerciseGridItem(
                                       exercise: exercise,
                                       onTap: () => _handleExerciseTap(exercise),
@@ -381,25 +361,32 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                                 ),
                               ),
                             ),
-                            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                            const SliverToBoxAdapter(
+                                child: SizedBox(height: 24)),
                           ],
                           if (libraryOnly.isNotEmpty) ...[
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+                                padding:
+                                    const EdgeInsets.fromLTRB(10, 0, 10, 12),
                                 child: Text(
                                   'Library',
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: Theme.of(context).brightness == Brightness.dark
-                                        ? Colors.white70
-                                        : Colors.black87,
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white70
+                                            : Colors.black87,
+                                      ),
                                 ),
                               ),
                             ),
                             SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(10, 0, 10, 250),
+                              padding:
+                                  const EdgeInsets.fromLTRB(10, 0, 10, 250),
                               sliver: SliverGrid(
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
@@ -411,9 +398,12 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
                                     final exercise = libraryOnly[index];
-                                    final isSelected = widget.selectionPurpose ==
-                                            ExerciseSelectionPurpose.forAiQuery &&
-                                        _selectedExercises.any((e) => e.id == exercise.id);
+                                    final isSelected = widget
+                                                .selectionPurpose ==
+                                            ExerciseSelectionPurpose
+                                                .forAiQuery &&
+                                        _selectedExercises
+                                            .any((e) => e.id == exercise.id);
                                     return ExerciseGridItem(
                                       exercise: exercise,
                                       onTap: () => _handleExerciseTap(exercise),
@@ -432,8 +422,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: const ListEmptyState(
-                            message:
-                                "No exercises yet. Create your first exercise to get started."),
+                            message: "No exercises found in the library."),
                       ),
                     ),
             ],
@@ -529,18 +518,12 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   }
 
   Future<void> _loadSystemExercises() async {
-    final seeds = await loadLottieExercises();
-    _systemExercises = seeds
-        .map(
-          (s) => ExerciseDto(
-            id: s.id,
-            name: s.name,
-            type: ExerciseType.weights,
-            notes: '',
-            isSystem: s.isSystem,
-          ),
-        )
-        .toList();
+    final controller = Provider.of<SupabaseExerciseAndRoutineController>(
+      context,
+      listen: false,
+    );
+    await controller.loadExerciseCatalog();
+    _systemExercises = controller.exercises.toList();
   }
 
   @override

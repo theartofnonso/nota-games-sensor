@@ -5,7 +5,8 @@
 -- CASCADE logic:
 -- (A) What the client OWNS (created by them, keyed by their auth id)
 --     -> FK to auth.users(id) ON DELETE CASCADE. When client's auth user is deleted,
---     these rows are removed: clients, routine_logs, user_device_tokens, exercises, nutrition_logs.
+--     these rows are removed: clients, routine_logs (legacy; replaced by workout_sessions),
+--     user_device_tokens, exercises, nutrition_logs.
 --
 -- (B) What is ASSIGNED TO the client (keyed by client_id/clientId -> clients(id))
 --     -> FK to clients(id) ON DELETE CASCADE. When clients row is deleted (from A),
@@ -25,7 +26,7 @@ ALTER TABLE public.clients
   ADD CONSTRAINT clients_id_fkey
   FOREIGN KEY (id) REFERENCES auth.users (id) ON DELETE CASCADE;
 
--- 2. routine_logs: owner = client (client creates logs)
+-- 2. routine_logs (legacy pre-workout_sessions): owner = client (client creates logs)
 ALTER TABLE public.routine_logs
   DROP CONSTRAINT IF EXISTS routine_logs_owner_fkey;
 ALTER TABLE public.routine_logs

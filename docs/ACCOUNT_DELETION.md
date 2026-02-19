@@ -34,7 +34,7 @@ When a **client** account is deleted, the following are removed:
 
 **Data removed by CASCADE (summary):**
 
-- **Client-owned (keyed by auth user id):** `clients`, `routine_logs`, `user_device_tokens`, `exercises`, `nutrition_logs`.
+- **Client-owned (keyed by auth user id):** `clients`, `workout_sessions` (and dependent `session_exercises`/`session_sets`), `user_device_tokens`, `exercises`, `nutrition_logs`.
 - **Assigned to the client (keyed by client id):** `coach_clients`, `nutrition_templates`, `routine_plans`, `routine_templates` (and templates linked to deleted plans).
 
 Coach-owned data (e.g. plans/templates owned by the coach) is not deleted when a client is removed; only links and rows that belong to or are assigned to that client are removed.

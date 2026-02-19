@@ -109,7 +109,6 @@ flutter:
     - images/
     - icons/
     - assets/lottie/
-    - assets/exercises/
 
   # Custom fonts
   fonts:

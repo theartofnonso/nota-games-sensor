@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/app_flavor.dart';
+import 'package:trainware/dtos/set_dtos/duration_set_dto.dart';
+import 'package:trainware/dtos/set_dtos/reps_dto.dart';
+import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
 
 import '../logger.dart';
 import '../repositories/supabase/supabase_routine_log_repository.dart';
@@ -10,19 +13,16 @@ import '../services/fcm_push_service.dart';
 import 'routine_log_local_entry.dart';
 import 'routine_log_local_store.dart';
 
-/// A small, self-contained example of an offline-first repository + sync engine
-/// for [RoutineLogDto].
+/// Offline-first repository + sync engine for workout sessions ([RoutineLogDto]).
 ///
 /// Design:
 /// - Local file-based store is the source of truth for the app.
 /// - Supabase is used as the remote source.
-/// - Last-write-wins is implemented using the Supabase `updatedAt` column
+/// - Last-write-wins is implemented using the Supabase `updated_at` column
 ///   (server clock) vs the local `updatedAt` value.
 ///
-/// This module is intentionally *not* wired into the rest of the app yet.
-/// You can adopt it incrementally by:
-/// - Using [offlineLogs] instead of direct Supabase logs where appropriate.
-/// - Calling [syncNow] on app start, resume, or when connectivity changes.
+/// This module is wired into the main routine controller and is the
+/// active client-side write path for normalized session data.
 class OfflineRoutineLogRepository {
   OfflineRoutineLogRepository({
     RoutineLogLocalStore? localStore,
@@ -138,15 +138,75 @@ class OfflineRoutineLogRepository {
     for (final entry in pending) {
       try {
         if (entry.isDeleted) {
-          // Best-effort delete; if it 404s or fails, we keep the entry
-          // as pending so it can retry later.
-          await _client.from('routine_logs').delete().eq('id', entry.log.id);
+          // Phase 6: delete normalized session.
+          await _client
+              .from('workout_sessions')
+              .delete()
+              .eq('id', entry.log.id);
 
           // Remove from local list after successful delete.
           _entries = _entries.where((e) => e.log.id != entry.log.id).toList();
         } else {
-          // Upsert log; Supabase trigger will set `updatedAt` server-side.
-          await _client.from('routine_logs').upsert(entry.log.toJson());
+          // Phase 5.5: relational write path.
+          await _client.from('workout_sessions').upsert({
+            'id': entry.log.id,
+            'user_id': _client.auth.currentUser?.id,
+            'template_id': _asUuidOrNull(entry.log.templateId),
+            'name': entry.log.name,
+            'notes': null,
+            'coach_note': entry.log.coachNote,
+            'start_time': entry.log.startTime.toUtc().toIso8601String(),
+            'end_time': entry.log.endTime.toUtc().toIso8601String(),
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          });
+
+          // Replace child rows from the latest local state.
+          await _client
+              .from('session_exercises')
+              .delete()
+              .eq('session_id', entry.log.id);
+
+          for (var exIndex = 0;
+              exIndex < entry.log.exerciseLogs.length;
+              exIndex++) {
+            final exLog = entry.log.exerciseLogs[exIndex];
+            final inserted = await _client
+                .from('session_exercises')
+                .insert({
+                  'session_id': entry.log.id,
+                  'exercise_id': exLog.exercise.id,
+                  'template_exercise_id': null,
+                  'order_index': exIndex,
+                  'super_set_group':
+                      exLog.superSetId.isEmpty ? null : exLog.superSetId,
+                  'notes': exLog.notes.isEmpty ? null : exLog.notes,
+                })
+                .select('id')
+                .single();
+            final sessionExerciseId = inserted['id'] as String;
+
+            final setRows = <Map<String, dynamic>>[];
+            for (var setIndex = 0; setIndex < exLog.sets.length; setIndex++) {
+              final set = exLog.sets[setIndex];
+              final row = <String, dynamic>{
+                'session_exercise_id': sessionExerciseId,
+                'order_index': setIndex,
+                'is_completed': set.checked,
+              };
+              if (set is WeightAndRepsSetDto) {
+                row['reps'] = set.reps;
+                row['weight'] = set.weight;
+              } else if (set is RepsSetDto) {
+                row['reps'] = set.reps;
+              } else if (set is DurationSetDto) {
+                row['duration_seconds'] = set.duration.inSeconds;
+              }
+              setRows.add(row);
+            }
+            if (setRows.isNotEmpty) {
+              await _client.from('session_sets').insert(setRows);
+            }
+          }
 
           // Mark as synced; we don't yet know the server's updatedAt value,
           // but the next pull will bring that in and update the local entry.
@@ -209,15 +269,15 @@ class OfflineRoutineLogRepository {
       }
 
       final rawRows = await _client
-          .from('routine_logs')
-          .select('id, "updatedAt"')
-          .eq('owner', userId);
+          .from('workout_sessions')
+          .select('id, updated_at')
+          .eq('user_id', userId);
 
       final updatedAtById = <String, DateTime>{};
       for (final row in rawRows as List<dynamic>) {
         final map = row as Map<String, dynamic>;
         final id = map['id'] as String;
-        final updatedAtStr = map['updatedAt'] as String;
+        final updatedAtStr = map['updated_at'] as String;
         updatedAtById[id] = DateTime.parse(updatedAtStr);
       }
 
@@ -269,4 +329,16 @@ class OfflineRoutineLogRepository {
       _logger.w('Failed to pull remote routine logs: $e\n$stackTrace');
     }
   }
+}
+
+String? _asUuidOrNull(String raw) {
+  if (raw.isEmpty) return null;
+  final uuidPattern = RegExp(
+    r'^[0-9a-fA-F]{8}\-'
+    r'[0-9a-fA-F]{4}\-'
+    r'[1-5][0-9a-fA-F]{3}\-'
+    r'[89abAB][0-9a-fA-F]{3}\-'
+    r'[0-9a-fA-F]{12}$',
+  );
+  return uuidPattern.hasMatch(raw) ? raw : null;
 }

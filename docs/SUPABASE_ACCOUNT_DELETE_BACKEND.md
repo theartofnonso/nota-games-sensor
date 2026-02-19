@@ -42,7 +42,7 @@ The app sends the current user’s Supabase user id in the body. Validate the JW
    (Use your Supabase service role / admin client. The exact API depends on your stack; Supabase exposes this as an admin-only operation.)
 
 4. **Do not delete data manually**  
-   All client data (e.g. `clients`, `coach_clients`, `routine_logs`, `user_device_tokens`, `exercises`, `nutrition_logs`, `nutrition_templates`, `routine_plans`, `routine_templates`) is removed by the database when the auth user is deleted, via **ON DELETE CASCADE** on the foreign keys. Ensure the migration has been applied: `supabase/migrations/20260205000000_account_deletion_cascade.sql`.
+   All client data (e.g. `clients`, `coach_clients`, `workout_sessions`, `session_exercises`, `session_sets`, `user_device_tokens`, `exercises`, `nutrition_logs`, `nutrition_templates`, `routine_plans`, `routine_templates`) is removed by the database when the auth user is deleted, via **ON DELETE CASCADE** on the foreign keys. Ensure the relevant migrations are applied.
 
 5. **Response**  
    - On success: return **200** or **204** (no body required).  

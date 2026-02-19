@@ -21,6 +21,7 @@ DECLARE
   template3_id uuid := gen_random_uuid();
   nutrition_template_id uuid := gen_random_uuid();
   log_id uuid;
+  session_exercise_id uuid;
   i int;
   log_date date;
 BEGIN
@@ -33,7 +34,7 @@ BEGIN
   END IF;
 
   -- Delete existing demo data (order respects foreign keys)
-  DELETE FROM public.routine_logs WHERE owner = client_uuid;
+  DELETE FROM public.workout_sessions WHERE user_id = client_uuid;
   DELETE FROM public.routine_templates WHERE owner = coach_uuid OR "clientId" = client_uuid;
   DELETE FROM public.routine_plans WHERE owner = coach_uuid OR "clientId" = client_uuid;
   DELETE FROM public.nutrition_logs WHERE user_id = client_uuid;
@@ -62,47 +63,116 @@ BEGIN
     (plan2_id, 'Hybrid Training', 'Mix of strength and cardio', coach_uuid, NULL, now())
   ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, notes = EXCLUDED.notes;
 
-  -- Routine templates (workouts) - using real exercises from lottie_exercises.json
-  INSERT INTO public.routine_templates (id, "planId", name, notes, owner, "clientId", exercises, "createdAt")
+  -- Canonical exercises used by seeded templates/sessions
+  INSERT INTO public.exercises (id, name, type, lottie_path, created_at)
   VALUES
-    (template1_id, plan1_id, 'Upper Body', '', coach_uuid, client_uuid,
-     '[
-       {"superSetId":"","exercise":{"id":"ex-bench-press-db","name":"Bench Press (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":60,"reps":10,"checked":true},{"weight":60,"reps":8,"checked":true}],"alternatives":[]},
-       {"superSetId":"","exercise":{"id":"ex-row-bent-over-db","name":"Row (Bent-Over, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":25,"reps":12,"checked":true},{"weight":27,"reps":10,"checked":true}],"alternatives":[]}
-     ]'::jsonb, now()),
-    (template2_id, plan1_id, 'Lower Body', '', coach_uuid, client_uuid,
-     '[
-       {"superSetId":"","exercise":{"id":"ex-squat-db","name":"Squat (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":80,"reps":8,"checked":true},{"weight":80,"reps":8,"checked":true}],"alternatives":[]},
-       {"superSetId":"","exercise":{"id":"ex-deadlift-romanian-db","name":"Deadlift (Romanian, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":70,"reps":10,"checked":true}],"alternatives":[]}
-     ]'::jsonb, now()),
-    (template3_id, plan2_id, 'Full Body', '', coach_uuid, NULL,
-     '[
-       {"superSetId":"","exercise":{"id":"ex-deadlift-db","name":"Deadlift (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":100,"reps":5,"checked":true}],"alternatives":[]}
-     ]'::jsonb, now())
-  ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, exercises = EXCLUDED.exercises;
+    ('ex-bench-press-db', 'Bench Press (Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Bench Press Exercise for Chest.json', now()),
+    ('ex-row-bent-over-db', 'Row (Bent-Over, Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Bent Over Row Exercise for Back.json', now()),
+    ('ex-squat-db', 'Squat (Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Squat Exercise For Legs.json', now()),
+    ('ex-deadlift-romanian-db', 'Deadlift (Romanian, Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Romanian Deadlift Exercise For Legs.json', now()),
+    ('ex-deadlift-db', 'Deadlift (Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Deadlift Exercise for Legs.json', now())
+  ON CONFLICT (id) DO UPDATE
+  SET name = EXCLUDED.name,
+      type = EXCLUDED.type,
+      lottie_path = EXCLUDED.lottie_path;
 
-  -- Routine logs for client - spread from mid-Jan 2026 to Feb 15, 2026 (using real exercises from library)
+  -- Routine templates (headers)
+  INSERT INTO public.routine_templates (id, "planId", name, notes, owner, "clientId", "createdAt")
+  VALUES
+    (template1_id, plan1_id, 'Upper Body', '', coach_uuid, client_uuid, now()),
+    (template2_id, plan1_id, 'Lower Body', '', coach_uuid, client_uuid, now()),
+    (template3_id, plan2_id, 'Full Body', '', coach_uuid, NULL, now())
+  ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, notes = EXCLUDED.notes;
+
+  -- Template exercises
+  INSERT INTO public.template_exercises (template_id, exercise_id, order_index, super_set_group, notes)
+  VALUES
+    (template1_id, 'ex-bench-press-db', 0, NULL, ''),
+    (template1_id, 'ex-row-bent-over-db', 1, NULL, ''),
+    (template2_id, 'ex-squat-db', 0, NULL, ''),
+    (template2_id, 'ex-deadlift-romanian-db', 1, NULL, ''),
+    (template3_id, 'ex-deadlift-db', 0, NULL, '')
+  ON CONFLICT (template_id, order_index) DO UPDATE
+  SET exercise_id = EXCLUDED.exercise_id;
+
+  -- Template sets
+  INSERT INTO public.template_sets (template_exercise_id, target_reps, target_weight, order_index)
+  VALUES
+    ((SELECT id FROM public.template_exercises WHERE template_id = template1_id AND order_index = 0), 10, 60, 0),
+    ((SELECT id FROM public.template_exercises WHERE template_id = template1_id AND order_index = 0), 8, 60, 1),
+    ((SELECT id FROM public.template_exercises WHERE template_id = template1_id AND order_index = 1), 12, 25, 0),
+    ((SELECT id FROM public.template_exercises WHERE template_id = template1_id AND order_index = 1), 10, 27, 1),
+    ((SELECT id FROM public.template_exercises WHERE template_id = template2_id AND order_index = 0), 8, 80, 0),
+    ((SELECT id FROM public.template_exercises WHERE template_id = template2_id AND order_index = 0), 8, 80, 1),
+    ((SELECT id FROM public.template_exercises WHERE template_id = template2_id AND order_index = 1), 10, 70, 0),
+    ((SELECT id FROM public.template_exercises WHERE template_id = template3_id AND order_index = 0), 5, 100, 0)
+  ON CONFLICT (template_exercise_id, order_index) DO UPDATE
+  SET target_reps = EXCLUDED.target_reps,
+      target_weight = EXCLUDED.target_weight;
+
+  -- Workout sessions for client - spread from mid-Jan 2026 to Feb 15, 2026
   FOR i IN 1..20 LOOP
     log_date := date '2026-01-15' + (i * 2);
     EXIT WHEN log_date > date '2026-02-15';
     log_id := gen_random_uuid();
-    INSERT INTO public.routine_logs (id, "templateId", name, notes, "startTime", "endTime", exercises, owner, "createdAt")
+
+    INSERT INTO public.workout_sessions (id, user_id, template_id, name, notes, coach_note, start_time, end_time, created_at, updated_at)
     VALUES (
       log_id,
-      (CASE WHEN i % 2 = 0 THEN template1_id ELSE template2_id END)::text,
+      client_uuid,
+      (CASE WHEN i % 2 = 0 THEN template1_id ELSE template2_id END),
       CASE WHEN i % 2 = 0 THEN 'Upper Body' ELSE 'Lower Body' END,
       '',
+      NULL,
       (log_date + time '09:00')::timestamptz,
       (log_date + time '10:15')::timestamptz,
-      CASE WHEN i % 2 = 0 THEN
-        '[{"superSetId":"","exercise":{"id":"ex-bench-press-db","name":"Bench Press (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":60,"reps":10,"checked":true},{"weight":62,"reps":8,"checked":true}],"alternatives":[]},{"superSetId":"","exercise":{"id":"ex-row-bent-over-db","name":"Row (Bent-Over, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":25,"reps":12,"checked":true},{"weight":27,"reps":10,"checked":true}],"alternatives":[]}]'
-      ELSE
-        '[{"superSetId":"","exercise":{"id":"ex-squat-db","name":"Squat (Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":80,"reps":8,"checked":true},{"weight":82,"reps":8,"checked":true}],"alternatives":[]},{"superSetId":"","exercise":{"id":"ex-deadlift-romanian-db","name":"Deadlift (Romanian, Dumbbell)","type":"WR","notes":"","isSystem":true},"notes":"","sets":[{"weight":70,"reps":10,"checked":true}],"alternatives":[]}]'
-      END::jsonb,
-      client_uuid,
+      now(),
       now()
     )
     ON CONFLICT (id) DO NOTHING;
+
+    IF i % 2 = 0 THEN
+      INSERT INTO public.session_exercises (session_id, exercise_id, template_exercise_id, order_index, super_set_group, notes)
+      VALUES
+        (log_id, 'ex-bench-press-db', NULL, 0, NULL, ''),
+        (log_id, 'ex-row-bent-over-db', NULL, 1, NULL, '');
+
+      SELECT id INTO session_exercise_id
+      FROM public.session_exercises
+      WHERE session_id = log_id AND order_index = 0;
+      INSERT INTO public.session_sets (session_exercise_id, reps, weight, is_completed, order_index)
+      VALUES
+        (session_exercise_id, 10, 60, true, 0),
+        (session_exercise_id, 8, 62, true, 1);
+
+      SELECT id INTO session_exercise_id
+      FROM public.session_exercises
+      WHERE session_id = log_id AND order_index = 1;
+      INSERT INTO public.session_sets (session_exercise_id, reps, weight, is_completed, order_index)
+      VALUES
+        (session_exercise_id, 12, 25, true, 0),
+        (session_exercise_id, 10, 27, true, 1);
+    ELSE
+      INSERT INTO public.session_exercises (session_id, exercise_id, template_exercise_id, order_index, super_set_group, notes)
+      VALUES
+        (log_id, 'ex-squat-db', NULL, 0, NULL, ''),
+        (log_id, 'ex-deadlift-romanian-db', NULL, 1, NULL, '');
+
+      SELECT id INTO session_exercise_id
+      FROM public.session_exercises
+      WHERE session_id = log_id AND order_index = 0;
+      INSERT INTO public.session_sets (session_exercise_id, reps, weight, is_completed, order_index)
+      VALUES
+        (session_exercise_id, 8, 80, true, 0),
+        (session_exercise_id, 8, 82, true, 1);
+
+      SELECT id INTO session_exercise_id
+      FROM public.session_exercises
+      WHERE session_id = log_id AND order_index = 1;
+      INSERT INTO public.session_sets (session_exercise_id, reps, weight, is_completed, order_index)
+      VALUES
+        (session_exercise_id, 10, 70, true, 0);
+    END IF;
   END LOOP;
 
   -- Nutrition template for client (macro targets set by coach)

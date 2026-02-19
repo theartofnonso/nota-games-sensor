@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
-import 'package:trainware/screens/editors/exercise_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/exercise/history/exercise_home_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
@@ -19,7 +18,6 @@ import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/appsync/routine_plan_dto.dart';
 import '../dtos/appsync/routine_template_dto.dart';
-import '../dtos/viewmodels/exercise_editor_arguments.dart';
 import '../dtos/viewmodels/routine_log_arguments.dart';
 import '../dtos/viewmodels/routine_plan_arguments.dart';
 import '../dtos/viewmodels/routine_template_arguments.dart';
@@ -31,13 +29,6 @@ import '../screens/routines/routine_template_screen.dart';
 import '../utils/name_notes_bottom_sheet.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'editor_bottom_sheet.dart';
-
-Future<ExerciseDto?> navigateToExerciseEditor(
-    {required BuildContext context, ExerciseEditorArguments? arguments}) async {
-  final exercise = await context.push(ExerciseEditorScreen.routeName,
-      extra: arguments) as ExerciseDto?;
-  return exercise;
-}
 
 Future<RoutineTemplateDto?> navigateToRoutineTemplateEditor(
     {required BuildContext context,

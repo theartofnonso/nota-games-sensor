@@ -12,7 +12,7 @@ import 'routine_log_local_entry.dart';
 /// as a single JSON file. Given the expected size of workout history in
 /// this app, this is a pragmatic solution without pulling in a full DB.
 class RoutineLogLocalStore {
-  static const _fileName = 'routine_logs_cache.json';
+  static const _fileName = 'workout_sessions_cache.json';
 
   final _logger = getLogger(className: 'RoutineLogLocalStore');
 

@@ -23,12 +23,10 @@ import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/appsync/routine_template_dto.dart';
 import 'package:trainware/repositories/exercise_log_repository.dart';
-import 'package:trainware/repositories/supabase/supabase_exercise_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_log_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_plan_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_template_repository.dart';
 import 'package:trainware/screens/auth/supabase_auth_screen.dart';
-import 'package:trainware/screens/editors/exercise_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_plan_editor_screen.dart';
 import 'package:trainware/screens/editors/routine_template_editor_screen.dart';
@@ -60,7 +58,6 @@ import 'dtos/appsync/routine_plan_dto.dart';
 import 'dtos/viewmodels/routine_log_arguments.dart';
 import 'dtos/viewmodels/routine_plan_arguments.dart';
 import 'dtos/viewmodels/routine_template_arguments.dart';
-import 'dtos/viewmodels/exercise_editor_arguments.dart';
 import 'logger.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -286,7 +283,6 @@ Future<void> mainCommon(AppFlavor flavor) async {
         ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
           create: (BuildContext context) =>
               SupabaseExerciseAndRoutineController(
-            exerciseRepository: SupabaseExerciseRepository(),
             templateRepository: SupabaseRoutineTemplateRepository(),
             planRepository: SupabaseRoutinePlanRepository(),
             logRepository: SupabaseRoutineLogRepository(),
@@ -391,13 +387,6 @@ GoRouter _createRouter(ClientOverrideController accessController) {
         builder: (context, state) {
           final args = state.extra as RoutinePlanArguments?;
           return RoutinePlanEditorScreen(plan: args?.plan);
-        },
-      ),
-      GoRoute(
-        path: ExerciseEditorScreen.routeName,
-        builder: (context, state) {
-          final args = state.extra as ExerciseEditorArguments?;
-          return ExerciseEditorScreen(exercise: args?.exercise);
         },
       ),
       GoRoute(
@@ -603,11 +592,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   Future<void> _restoreAgoraOnResume() async {
     if (_agoraLifecycleTransitionInFlight) return;
-    if (!_accessController.isAuthenticated || _accessController.userId == null) {
+    if (!_accessController.isAuthenticated ||
+        _accessController.userId == null) {
       return;
     }
     if (ChatClient.getInstance.currentUserId != null) return;
-    await ChatBootstrapService.ensureAgoraAndPushSetup(_accessController.userId);
+    await ChatBootstrapService.ensureAgoraAndPushSetup(
+        _accessController.userId);
   }
 
   void _handleAccessChanged() {

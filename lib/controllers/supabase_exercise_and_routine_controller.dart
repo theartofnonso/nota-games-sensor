@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
-import 'package:trainware/offline_first/exercise_offline_repository.dart';
 import 'package:trainware/offline_first/routine_log_sync_service.dart';
 import 'package:trainware/offline_first/routine_plan_offline_repository.dart';
 import 'package:trainware/offline_first/routine_template_offline_repository.dart';
@@ -20,7 +19,6 @@ import '../dtos/appsync/routine_template_dto.dart';
 import '../dtos/set_dtos/set_dto.dart';
 import '../enums/exercise_type_enums.dart';
 import '../logger.dart';
-import '../repositories/supabase/supabase_exercise_repository.dart';
 import '../repositories/supabase/supabase_routine_plan_repository.dart';
 import '../repositories/supabase/supabase_routine_template_repository.dart';
 import '../utils/notifications_utils.dart';
@@ -34,33 +32,27 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   String errorMessage = '';
   final logger = getLogger(className: "SupabaseExerciseAndRoutineController");
 
-  late SupabaseExerciseRepository _exerciseRepository;
   late SupabaseRoutineTemplateRepository _templateRepository;
   late SupabaseRoutinePlanRepository _planRepository;
   late SupabaseRoutineLogRepository _logRepository;
-  late OfflineExerciseRepository _offlineExerciseRepository;
   late OfflineRoutineTemplateRepository _offlineTemplateRepository;
   late OfflineRoutinePlanRepository _offlinePlanRepository;
   late OfflineRoutineLogRepository _offlineLogRepository;
-  List<ExerciseDto> _overrideExercises = const [];
+  List<ExerciseDto> _exercises = const [];
   List<RoutineTemplateDto> _overrideTemplates = const [];
   List<RoutinePlanDto> _overridePlans = const [];
   List<RoutineLogDto> _overrideLogs = const [];
   final ClientOverrideController accessController;
 
   SupabaseExerciseAndRoutineController({
-    required SupabaseExerciseRepository exerciseRepository,
     required SupabaseRoutineTemplateRepository templateRepository,
     required SupabaseRoutinePlanRepository planRepository,
     required SupabaseRoutineLogRepository logRepository,
     required this.accessController,
   }) {
-    _exerciseRepository = exerciseRepository;
     _templateRepository = templateRepository;
     _planRepository = planRepository;
     _logRepository = logRepository;
-    _offlineExerciseRepository =
-        OfflineExerciseRepository(remoteRepository: _exerciseRepository);
     _offlineTemplateRepository =
         OfflineRoutineTemplateRepository(remoteRepository: _templateRepository);
     _offlinePlanRepository =
@@ -69,13 +61,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         OfflineRoutineLogRepository(remoteRepository: _logRepository);
   }
 
-  UnmodifiableListView<ExerciseDto> get exercises => UnmodifiableListView(
-        accessController.hasSelectedClient
-            ? _overrideExercises
-            : (AppConfig.isCoach
-                ? const []
-                : _offlineExerciseRepository.offlineExercises),
-      );
+  UnmodifiableListView<ExerciseDto> get exercises =>
+      UnmodifiableListView(_exercises);
 
   UnmodifiableListView<RoutineTemplateDto> get templates =>
       UnmodifiableListView(
@@ -157,6 +144,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> loadUserData() async {
     try {
+      await loadExerciseCatalog();
       if (accessController.hasSelectedClient &&
           accessController.selectedClientId != null) {
         await _loadRemoteForClient(accessController.selectedClientId!);
@@ -164,7 +152,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         return;
       }
       if (AppConfig.isCoach) {
-        _overrideExercises = const [];
         _overrideTemplates = const [];
         _overridePlans = const [];
         _overrideLogs = const [];
@@ -172,7 +159,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         return;
       }
       // Load cached data first so they are available immediately in offline mode.
-      await _offlineExerciseRepository.loadFromCache();
       await _offlineTemplateRepository.loadFromCache();
       await _offlinePlanRepository.loadFromCache();
       await _offlineLogRepository.loadFromCache();
@@ -191,6 +177,40 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
+  /// Loads the canonical exercise catalog from Supabase `exercises`.
+  /// This is the source used by the exercise library and relational reads.
+  Future<void> loadExerciseCatalog({bool force = false}) async {
+    if (!force && _exercises.isNotEmpty) return;
+    try {
+      final response = await Supabase.instance.client
+          .from('exercises')
+          .select('id,name,type')
+          .order('name', ascending: true);
+      final rows = response as List<dynamic>;
+      final loaded = rows
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .map((json) {
+            final parsedType = ExerciseType.fromString(
+              json['type'] as String? ?? 'NO',
+            );
+            return ExerciseDto(
+              id: json['id'] as String? ?? '',
+              name: json['name'] as String? ?? '',
+              type: parsedType == ExerciseType.none
+                  ? ExerciseType.weights
+                  : parsedType,
+              notes: '',
+              isSystem: true,
+            );
+          })
+          .where((e) => e.id.isNotEmpty && e.name.isNotEmpty)
+          .toList();
+      _exercises = loaded;
+    } catch (e) {
+      logger.w('Failed to load exercise catalog from Supabase: $e');
+    }
+  }
+
   /// Manually trigger a routine log sync (e.g. on pull-to-refresh or
   /// connectivity change).
   Future<void> syncRoutineLogs() async {
@@ -204,70 +224,11 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
 
     await Future.wait([
-      _offlineExerciseRepository.syncNow(),
       _offlineTemplateRepository.syncNow(),
       _offlinePlanRepository.syncNow(),
       _offlineLogRepository.syncNow(),
     ]);
     notifyListeners();
-  }
-
-  /// Exercises
-
-  Future<void> saveExercise({required ExerciseDto exerciseDto}) async {
-    if (_blockIfClientMode()) return;
-    isLoading = true;
-    try {
-      // Ensure new exercises have a stable client-generated ID so offline
-      // storage and Supabase stay in sync.
-      final id = exerciseDto.id.isEmpty ? const Uuid().v4() : exerciseDto.id;
-      final exerciseWithId = exerciseDto.copyWith(id: id);
-
-      await _offlineExerciseRepository.upsertLocal(exerciseWithId);
-      // ignore: discarded_futures
-      syncRoutineLogs();
-    } catch (e) {
-      errorMessage = "Oops! Something went wrong. Please try again later.";
-      logger.e("Error saving exercise", error: e);
-    } finally {
-      isLoading = false;
-      errorMessage = "";
-      notifyListeners();
-    }
-  }
-
-  Future<void> updateExercise({required ExerciseDto exercise}) async {
-    if (_blockIfClientMode()) return;
-    isLoading = true;
-    try {
-      await _offlineExerciseRepository.upsertLocal(exercise);
-      // ignore: discarded_futures
-      syncRoutineLogs();
-    } catch (e) {
-      errorMessage = "Oops! Something went wrong. Please try again later.";
-      logger.e("Error updating exercise", error: e);
-    } finally {
-      isLoading = false;
-      errorMessage = "";
-      notifyListeners();
-    }
-  }
-
-  Future<void> removeExercise({required ExerciseDto exercise}) async {
-    if (_blockIfClientMode()) return;
-    isLoading = true;
-    try {
-      await _offlineExerciseRepository.deleteLocal(exercise.id);
-      // ignore: discarded_futures
-      syncRoutineLogs();
-    } catch (e) {
-      errorMessage = "Oops! Something went wrong. Please try again later.";
-      logger.e("Error removing exercise", error: e);
-    } finally {
-      isLoading = false;
-      errorMessage = "";
-      notifyListeners();
-    }
   }
 
   /// Plans
@@ -675,7 +636,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     try {
       await _logRepository.updateCoachNote(logId: logId, note: note);
       await _loadRemoteForClient(clientId);
-      unawaited(sendFcmNotificationCoachFeedback(clientUserId: clientId, logId: logId));
+      unawaited(sendFcmNotificationCoachFeedback(
+          clientUserId: clientId, logId: logId));
       success = true;
     } catch (e) {
       errorMessage = "Failed to save feedback. Please try again.";
@@ -974,7 +936,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> clearSelectedClient() async {
     accessController.clearSelectedClient();
-    _overrideExercises = const [];
     _overrideTemplates = const [];
     _overridePlans = const [];
     _overrideLogs = const [];
@@ -983,12 +944,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> _loadRemoteForClient(String clientId) async {
     final ownerId = Supabase.instance.client.auth.currentUser?.id;
-    if (AppConfig.isCoach) {
-      _overrideExercises = const [];
-    } else {
-      await _exerciseRepository.loadUserExercises(userIdOverride: clientId);
-      _overrideExercises = _exerciseRepository.exercises.toList();
-    }
     await _templateRepository.loadTemplates(
       ownerIdOverride: ownerId,
       clientIdOverride: clientId,
