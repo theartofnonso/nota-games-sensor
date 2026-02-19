@@ -23,7 +23,8 @@ const openAiBaseUrl = 'https://openai.notathletes.com';
 /// POST /nutrition – body { "meal": "string" }
 const nutritionEstimatePath = '/nutrition';
 
-/// POST /query – body { "query": "string", "client_id": "UUID" }, response { "answer": "..." }
+/// POST /query – body { "query", "client_id", optional filters }.
+/// Response is a final backend-computed answer: { "answer": "..." }.
 const aiQueryPath = '/query';
 
 /// api.notathletes.com – account and client endpoints.

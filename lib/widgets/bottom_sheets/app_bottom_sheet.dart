@@ -55,14 +55,13 @@ class AppBottomSheet extends StatelessWidget {
       );
     }
 
-    Widget withOptionalCloseButton({required Widget child}) {
-      if (!showTopLeftCloseButton) return child;
-      return Stack(
-        children: [
-          child,
-          Positioned(
-            top: 8,
-            left: 8,
+    Widget buildCloseHeader() {
+      return SafeArea(
+        bottom: false,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8, top: 8),
             child: Material(
               color: Colors.black.withValues(alpha: 0.22),
               borderRadius: BorderRadius.circular(999),
@@ -74,6 +73,20 @@ class AppBottomSheet extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      );
+    }
+
+    Widget withOptionalCloseButton({
+      required Widget child,
+      required bool expandChild,
+    }) {
+      if (!showTopLeftCloseButton) return child;
+      return Column(
+        mainAxisSize: expandChild ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          buildCloseHeader(),
+          if (expandChild) Expanded(child: child) else child,
         ],
       );
     }
@@ -89,6 +102,7 @@ class AppBottomSheet extends StatelessWidget {
             // Only consume gestures within the sheet content, not outside
             behavior: HitTestBehavior.deferToChild,
             child: withOptionalCloseButton(
+              expandChild: true,
               child: wrapWithBlur(
                 child: Container(
                   decoration: decoration,
@@ -104,6 +118,7 @@ class AppBottomSheet extends StatelessWidget {
     }
 
     return withOptionalCloseButton(
+      expandChild: false,
       child: wrapWithBlur(
         child: Container(
           decoration: decoration,

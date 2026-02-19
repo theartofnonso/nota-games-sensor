@@ -317,7 +317,13 @@ class OfflineRoutineTemplateRepository {
           continue;
         }
 
-        if (remoteUpdatedAt.isAfter(local.updatedAt)) {
+        final localExerciseCount = local.template.exerciseTemplates.length;
+        final remoteExerciseCount = remote.exerciseTemplates.length;
+        final shouldBackfillMissingExercises =
+            localExerciseCount == 0 && remoteExerciseCount > 0;
+
+        if (remoteUpdatedAt.isAfter(local.updatedAt) ||
+            shouldBackfillMissingExercises) {
           byId[remote.id] = local.copyWith(
             template: remote,
             updatedAt: remoteUpdatedAt,
@@ -325,6 +331,12 @@ class OfflineRoutineTemplateRepository {
             needsSync: false,
             lastSyncFailed: false,
           );
+          if (shouldBackfillMissingExercises) {
+            _logger.i(
+              'Backfilled template ${remote.id} exercises from remote '
+              '(local had 0, remote had $remoteExerciseCount).',
+            );
+          }
         }
       }
 

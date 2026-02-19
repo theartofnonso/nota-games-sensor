@@ -38,6 +38,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   late OfflineRoutineTemplateRepository _offlineTemplateRepository;
   late OfflineRoutinePlanRepository _offlinePlanRepository;
   late OfflineRoutineLogRepository _offlineLogRepository;
+  Future<void>? _syncRoutineInFlight;
   List<ExerciseDto> _exercises = const [];
   List<RoutineTemplateDto> _overrideTemplates = const [];
   List<RoutinePlanDto> _overridePlans = const [];
@@ -214,21 +215,34 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Manually trigger a routine log sync (e.g. on pull-to-refresh or
   /// connectivity change).
   Future<void> syncRoutineLogs() async {
-    if (accessController.hasSelectedClient || AppConfig.isCoach) {
-      return;
-    }
-    final connectivity = await Connectivity().checkConnectivity();
-    if (connectivity.last == ConnectivityResult.none) {
-      logger.w("Sync skipped: offline/no connectivity");
+    if (_syncRoutineInFlight != null) {
+      await _syncRoutineInFlight;
       return;
     }
 
-    await Future.wait([
-      _offlineTemplateRepository.syncNow(),
-      _offlinePlanRepository.syncNow(),
-      _offlineLogRepository.syncNow(),
-    ]);
-    notifyListeners();
+    if (accessController.hasSelectedClient || AppConfig.isCoach) {
+      return;
+    }
+    _syncRoutineInFlight = () async {
+      final connectivity = await Connectivity().checkConnectivity();
+      if (connectivity.last == ConnectivityResult.none) {
+        logger.w("Sync skipped: offline/no connectivity");
+        return;
+      }
+
+      await Future.wait([
+        _offlineTemplateRepository.syncNow(),
+        _offlinePlanRepository.syncNow(),
+        _offlineLogRepository.syncNow(),
+      ]);
+      notifyListeners();
+    }();
+
+    try {
+      await _syncRoutineInFlight;
+    } finally {
+      _syncRoutineInFlight = null;
+    }
   }
 
   /// Plans

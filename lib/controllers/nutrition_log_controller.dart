@@ -23,6 +23,7 @@ class NutritionLogController extends ChangeNotifier {
   late OfflineNutritionTemplateRepository _offlineTemplateRepository;
   late SupabaseNutritionLogRepository _remoteRepository;
   late SupabaseNutritionTemplateRepository _remoteTemplateRepository;
+  Future<void>? _syncNutritionInFlight;
 
   List<NutritionLogDto> _overrideLogs = const [];
   NutritionTemplateDto? _overrideTemplate;
@@ -102,20 +103,33 @@ class NutritionLogController extends ChangeNotifier {
   }
 
   Future<void> syncNutritionLogs() async {
-    if (accessController.hasSelectedClient || AppConfig.isCoach) {
-      return;
-    }
-    final connectivity = await Connectivity().checkConnectivity();
-    if (connectivity.last == ConnectivityResult.none) {
-      logger.w('Nutrition sync skipped: offline/no connectivity');
+    if (_syncNutritionInFlight != null) {
+      await _syncNutritionInFlight;
       return;
     }
 
-    await Future.wait([
-      _offlineRepository.syncNow(),
-      _offlineTemplateRepository.syncNow(),
-    ]);
-    notifyListeners();
+    if (accessController.hasSelectedClient || AppConfig.isCoach) {
+      return;
+    }
+    _syncNutritionInFlight = () async {
+      final connectivity = await Connectivity().checkConnectivity();
+      if (connectivity.last == ConnectivityResult.none) {
+        logger.w('Nutrition sync skipped: offline/no connectivity');
+        return;
+      }
+
+      await Future.wait([
+        _offlineRepository.syncNow(),
+        _offlineTemplateRepository.syncNow(),
+      ]);
+      notifyListeners();
+    }();
+
+    try {
+      await _syncNutritionInFlight;
+    } finally {
+      _syncNutritionInFlight = null;
+    }
   }
 
   Future<void> addLog({required NutritionLogDto log}) async {

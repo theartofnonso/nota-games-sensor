@@ -47,9 +47,10 @@ void showExerciseLogEditor({
   // Check if exercise type is duration (DR) to prevent closing without confirmation
   final exerciseLogController =
       Provider.of<ExerciseLogController>(context, listen: false);
-  final exerciseLog = exerciseLogController.whereExerciseLog(
-      exerciseId: exerciseLogId);
-  final isDurationExercise = exerciseLog?.exercise.type == ExerciseType.duration;
+  final exerciseLog =
+      exerciseLogController.whereExerciseLog(exerciseId: exerciseLogId);
+  final isDurationExercise =
+      exerciseLog?.exercise.type == ExerciseType.duration;
 
   // Create barrier tap handler for duration exercises
   Future<bool> Function()? onBarrierTap;
@@ -69,7 +70,8 @@ void showExerciseLogEditor({
   showAppBottomSheet(
     context: context,
     isDraggable: true,
-    isDismissible: !isDurationExercise, // Prevent auto-dismiss for duration exercises
+    isDismissible:
+        !isDurationExercise, // Prevent auto-dismiss for duration exercises
     showTopLeftCloseButton: !isDurationExercise,
     onBarrierTap: onBarrierTap,
     initialChildSize: 0.9,
@@ -121,7 +123,6 @@ Future<List<ExerciseDto>> showExercisePickerForAiChat(
   final selected = await showAppBottomSheet<List<ExerciseDto>>(
     context: context,
     isDraggable: true,
-    showTopLeftCloseButton: true,
     initialChildSize: 0.9,
     minChildSize: 0.6,
     maxChildSize: 0.98,
@@ -141,7 +142,6 @@ void showExercisesInLibrary(
   final selectedExercises = await showAppBottomSheet<List<ExerciseDto>>(
     context: context,
     isDraggable: true,
-    showTopLeftCloseButton: true,
     initialChildSize: 0.9,
     minChildSize: 0.6,
     maxChildSize: 0.98,

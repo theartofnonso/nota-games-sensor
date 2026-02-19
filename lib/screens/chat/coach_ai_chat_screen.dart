@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import 'package:lottie/lottie.dart';
@@ -12,13 +9,12 @@ import '../../controllers/coach_ai_chat_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../extensions/datetime/datetime_extension.dart';
 import '../../logger.dart';
+import '../../services/analytics/coach_ai_query_service.dart';
 import '../../utils/ai_chat_date_range_selector.dart';
 import '../../utils/lottie_exercise_registry.dart';
-import '../../utils/notathletes_auth_headers.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/routine_editors_utils.dart';
-import '../../urls.dart';
 import '../../widgets/chat/chat_layout.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 
@@ -40,6 +36,7 @@ class CoachAiChatScreen extends StatefulWidget {
 
 class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
   final _logger = getLogger(className: 'CoachAiChatScreen');
+  final _queryService = CoachAiQueryService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<ExerciseDto> _attachedExercises = [];
@@ -79,46 +76,15 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
     _scrollToBottom();
 
     try {
-      final uri = Uri.parse(openAiBaseUrl).resolve(aiQueryPath);
-      final body = <String, dynamic>{
-        'query': text,
-        'client_id': widget.clientId,
-        'date_from': DateFormat('yyyy-MM-dd').format(_dateFrom),
-        'date_to': DateFormat('yyyy-MM-dd').format(_dateTo),
-      };
-      if (exercises.isNotEmpty) {
-        body['exercise_ids'] = exercises.map((e) => e.id).toList();
-      }
-      _logger.i(
-          '[AI Chat] POST $uri query="$text" client_id=${widget.clientId} date_from=${body['date_from']} date_to=${body['date_to']} exercise_ids=${body['exercise_ids'] ?? 'null'}');
-
-      final response = await http.post(
-        uri,
-        headers: notathletesAuthHeaders(),
-        body: jsonEncode(body),
+      final answer = await _queryService.query(
+        query: text,
+        clientId: widget.clientId,
+        dateFrom: _dateFrom,
+        dateTo: _dateTo,
+        exerciseIds: exercises.map((e) => e.id).toList(),
       );
-
-      _logger.i(
-          '[AI Chat] Response statusCode=${response.statusCode} body=${response.body.length > 500 ? "${response.body.substring(0, 500)}..." : response.body}');
-
       if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>?;
-        final answer = body?['answer'] as String?;
-        final answerText = answer?.trim() ?? '';
-
-        _logger.i('[AI Chat] Parsed answer length=${answerText.length}');
-
-        chatController.addAiResponse(
-          clientId: widget.clientId,
-          text: answerText.isNotEmpty ? answerText : 'No response received.',
-        );
-      } else {
-        _logger.w(
-            '[AI Chat] Non-200 status=${response.statusCode} body=${response.body}');
-        if (mounted) _handleError();
-      }
+      chatController.addAiResponse(clientId: widget.clientId, text: answer);
     } catch (e, stack) {
       _logger.e('[AI Chat] Request failed: $e', error: e, stackTrace: stack);
       if (mounted) _handleError();
