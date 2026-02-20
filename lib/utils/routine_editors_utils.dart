@@ -72,7 +72,6 @@ void showExerciseLogEditor({
     isDraggable: true,
     isDismissible:
         !isDurationExercise, // Prevent auto-dismiss for duration exercises
-    showTopLeftCloseButton: !isDurationExercise,
     onBarrierTap: onBarrierTap,
     initialChildSize: 0.9,
     minChildSize: 0.5,

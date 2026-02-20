@@ -259,7 +259,7 @@ Color appBarBackgroundColor({required BuildContext context}) {
 void logEmptyRoutine({required BuildContext context, String? workoutVideoUrl}) {
   // Prevent starting a new live session when there's an unsaved one
   if (SharedPrefs().routineLog.isNotEmpty) {
-    showUnsavedWorkoutBottomSheet(context);
+    navigateToUnsavedSession(context);
     return;
   }
 

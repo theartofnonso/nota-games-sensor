@@ -96,9 +96,8 @@ void showBottomSheetWithNoAction(
     required String title,
     required String description,
     TextStyle? textStyle}) {
-  showAppBottomSheet(
+  showAppActionBottomSheet(
       context: context,
-      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(
@@ -127,9 +126,8 @@ void showBottomSheetWithSingleAction(
     bool isDestructive = false,
     Color? actionColor,
     bool isDismissible = true}) {
-  showAppBottomSheet(
+  showAppActionBottomSheet(
       context: context,
-      isScrollControlled: false,
       isDismissible: isDismissible,
       child: Padding(
         padding: const EdgeInsets.all(26),
@@ -271,9 +269,8 @@ Future<bool> confirmDiscardChangesBottomSheet({
   required String description,
 }) async {
   bool? result;
-  await showAppBottomSheet<bool>(
+  await showAppActionBottomSheet<bool>(
     context: context,
-    isScrollControlled: false,
     isDismissible: true, // Allow dismissal for the confirmation dialog itself
     child: Padding(
       padding: const EdgeInsets.all(26),

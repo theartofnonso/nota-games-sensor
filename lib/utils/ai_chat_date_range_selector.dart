@@ -62,72 +62,74 @@ Future<void> showAiChatDateRangeSelectorBottomSheet({
             top: 26,
             bottom: 26 + MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Select Date Range",
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Choose the period to query client data",
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: subtextColor,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _AiChatDateSelectorRow(
-                label: "From Date",
-                date: dateFrom,
-                accentColor: vibrant,
-                onDateChanged: (DateTime newDate) {
-                  dateFrom = newDate;
-                  setBottomSheet(() {});
-                },
-              ),
-              const SizedBox(height: 16),
-              _AiChatDateSelectorRow(
-                label: "To Date",
-                date: dateTo,
-                accentColor: vibrant,
-                onDateChanged: (DateTime newDate) {
-                  dateTo = newDate;
-                  setBottomSheet(() {});
-                },
-              ),
-              const SizedBox(height: 16),
-              if (errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    errorMessage,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.redAccent,
-                    ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Select Date Range",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
                   ),
                 ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OpacityButtonWidgetTwo(
-                  buttonColor: isValid ? vibrant : Colors.grey,
-                  label: isValid
-                      ? "Apply ($daysCount day${daysCount == 1 ? '' : 's'})"
-                      : "Apply",
-                  onPressed: isValid
-                      ? () async {
-                          Navigator.of(context).pop();
-                          await onConfirm(dateFrom, dateTo);
-                        }
-                      : null,
+                const SizedBox(height: 8),
+                Text(
+                  "Choose the period to query client data",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: subtextColor,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                _AiChatDateSelectorRow(
+                  label: "From Date",
+                  date: dateFrom,
+                  accentColor: vibrant,
+                  onDateChanged: (DateTime newDate) {
+                    dateFrom = newDate;
+                    setBottomSheet(() {});
+                  },
+                ),
+                const SizedBox(height: 16),
+                _AiChatDateSelectorRow(
+                  label: "To Date",
+                  date: dateTo,
+                  accentColor: vibrant,
+                  onDateChanged: (DateTime newDate) {
+                    dateTo = newDate;
+                    setBottomSheet(() {});
+                  },
+                ),
+                const SizedBox(height: 16),
+                if (errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      errorMessage,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OpacityButtonWidgetTwo(
+                    buttonColor: isValid ? vibrant : Colors.grey,
+                    label: isValid
+                        ? "Apply ($daysCount day${daysCount == 1 ? '' : 's'})"
+                        : "Apply",
+                    onPressed: isValid
+                        ? () async {
+                            Navigator.of(context).pop();
+                            await onConfirm(dateFrom, dateTo);
+                          }
+                        : null,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

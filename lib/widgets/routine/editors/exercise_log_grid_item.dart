@@ -147,6 +147,9 @@ class ExerciseLogGridItemWidget extends StatelessWidget {
     showAppBottomSheet(
         context: context,
         isScrollControlled: false,
+        initialChildSize: 0.4,
+        minChildSize: 0.3,
+        maxChildSize: 0.55,
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: Column(mainAxisSize: MainAxisSize.min, children: [

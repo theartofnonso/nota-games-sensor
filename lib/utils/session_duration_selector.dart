@@ -68,72 +68,74 @@ Future<void> showSessionDurationSelectorBottomSheet({
             top: 26,
             bottom: 26 + MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Select Duration",
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Set the start and end times for this session",
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _SessionDurationSelectorRow(
-                label: "Start Time",
-                dateTime: startTime,
-                accentColor: vibrant,
-                onTimeChanged: (DateTime newDateTime) {
-                  startTime = newDateTime;
-                  setBottomSheet(() {});
-                },
-              ),
-              const SizedBox(height: 16),
-              _SessionDurationSelectorRow(
-                label: "End Time",
-                dateTime: endTime,
-                accentColor: vibrant,
-                onTimeChanged: (DateTime newDateTime) {
-                  endTime = newDateTime;
-                  setBottomSheet(() {});
-                },
-              ),
-              const SizedBox(height: 16),
-              if (errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    errorMessage,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.redAccent,
-                    ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Select Duration",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OpacityButtonWidgetTwo(
-                  buttonColor: isValid ? vibrant : Colors.grey,
-                  label: isValid
-                      ? "Log ${duration.hmsAnalog()} session"
-                      : "Log Session",
-                  onPressed: isValid
-                      ? () async {
-                          Navigator.of(context).pop();
-                          await onConfirm(startTime, endTime);
-                        }
-                      : null,
+                const SizedBox(height: 8),
+                Text(
+                  "Set the start and end times for this session",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white70,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                _SessionDurationSelectorRow(
+                  label: "Start Time",
+                  dateTime: startTime,
+                  accentColor: vibrant,
+                  onTimeChanged: (DateTime newDateTime) {
+                    startTime = newDateTime;
+                    setBottomSheet(() {});
+                  },
+                ),
+                const SizedBox(height: 16),
+                _SessionDurationSelectorRow(
+                  label: "End Time",
+                  dateTime: endTime,
+                  accentColor: vibrant,
+                  onTimeChanged: (DateTime newDateTime) {
+                    endTime = newDateTime;
+                    setBottomSheet(() {});
+                  },
+                ),
+                const SizedBox(height: 16),
+                if (errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      errorMessage,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OpacityButtonWidgetTwo(
+                    buttonColor: isValid ? vibrant : Colors.grey,
+                    label: isValid
+                        ? "Log ${duration.hmsAnalog()} session"
+                        : "Log Session",
+                    onPressed: isValid
+                        ? () async {
+                            Navigator.of(context).pop();
+                            await onConfirm(startTime, endTime);
+                          }
+                        : null,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

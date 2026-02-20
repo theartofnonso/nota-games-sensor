@@ -50,7 +50,7 @@ Future<({String firstName, String lastName})?> _showNameCollectionSheet(
     context: context,
     isScrollControlled: true,
     isDismissible: true,
-    isDraggable: false,
+    isDraggable: true,
     child: Builder(
       builder: (ctx) {
         final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;

@@ -258,38 +258,23 @@ Future<void> navigateToChat({
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     isDismissible: true,
-    enableDrag: false, // Explicitly disable dragging
+    enableDrag: true,
     showDragHandle: false,
     useSafeArea: true,
     barrierColor: Colors.black.withValues(alpha: 0.55),
-    builder: (context) => Stack(
-      children: [
-        // Tappable barrier for dismissing
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              Navigator.of(context, rootNavigator: false).pop();
-            },
-            child: Container(
-              color: Colors.transparent,
-            ),
-          ),
-        ),
-        // Sheet content (non-draggable)
-        AppBottomSheet(
-          isDraggable: false,
-          isDismissible: true,
-          showTopLeftCloseButton: true,
-          child: ChatScreen(
-            coachId: coachId,
-            coachName: coachName,
-            clientUserId: clientUserId,
-            clientName: clientName,
-            scrollController: null,
-          ),
-        ),
-      ],
+    builder: (context) => AppBottomSheet(
+      isDraggable: true,
+      isDismissible: true,
+      initialChildSize: 1.0,
+      minChildSize: 1.0,
+      maxChildSize: 1.0,
+      child: ChatScreen(
+        coachId: coachId,
+        coachName: coachName,
+        clientUserId: clientUserId,
+        clientName: clientName,
+        scrollController: null,
+      ),
     ),
   );
 }

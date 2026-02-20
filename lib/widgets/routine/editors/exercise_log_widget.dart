@@ -513,7 +513,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     showAppBottomSheet(
         context: context,
         isScrollControlled: false,
-        enableDrag: false,
+        enableDrag: true,
         child: WeightPlateCalculator(target: targetWeight));
   }
 

@@ -11,7 +11,6 @@ import 'package:trainware/utils/calendar_date_logs_sheet.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/notifications_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
-import '../utils/unsaved_workout_utils.dart';
 import '../widgets/backgrounds/trkr_loading_screen.dart';
 import '../widgets/calendar/infinite_calendar.dart';
 import '../screens/preferences/settings_screen.dart';
@@ -39,15 +38,6 @@ class _OverviewScreenState extends State<OverviewScreen>
     WidgetsBinding.instance.addObserver(this);
     _lastCachedSessionState = _hasCachedSession();
     _sharedPrefs.routineLogRevision.addListener(_handleRoutineLogChanged);
-
-    // If there's a pending unsaved workout when the overview screen first loads,
-    // immediately prompt the user to resolve it.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (_hasCachedSession()) {
-        _showRetryBottomSheet();
-      }
-    });
   }
 
   @override
@@ -116,10 +106,6 @@ class _OverviewScreenState extends State<OverviewScreen>
 
   bool _hasCachedSession() {
     return SharedPrefs().routineLog.isNotEmpty;
-  }
-
-  void _showRetryBottomSheet() {
-    showUnsavedWorkoutBottomSheet(context);
   }
 
   void _toggleSettingsOverlay() {

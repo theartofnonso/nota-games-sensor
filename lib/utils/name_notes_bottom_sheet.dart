@@ -141,7 +141,7 @@ Future<String?> showSingleTextAreaBottomSheet({
   final result = await showAppBottomSheet<String?>(
     context: context,
     isScrollControlled: true,
-    enableDrag: false,
+    enableDrag: true,
     child: Builder(
       builder: (ctx) {
         final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;

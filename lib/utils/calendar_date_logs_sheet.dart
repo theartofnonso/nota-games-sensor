@@ -11,7 +11,7 @@ import 'navigation_utils.dart';
 
 /// Shared calendar date logs bottom sheet. Dynamically sizes height by content
 /// (header + list items or empty state), capped at 55% of screen.
-/// Not draggable; tapping outside dismisses.
+/// Draggable; tapping outside dismisses.
 void showCalendarDateLogsSheet({
   required BuildContext context,
   required DateTime date,
@@ -37,15 +37,13 @@ void showCalendarDateLogsSheet({
           kListPaddingVertical +
           logs.length * (kListItemHeight + kListItemSpacing)
       : kHeaderHeight + kEmptyStateHeight;
-  final preferredHeight =
-      contentHeight.clamp(kMinSheetHeight, double.infinity);
+  final preferredHeight = contentHeight.clamp(kMinSheetHeight, double.infinity);
   final maxSheetHeight =
       preferredHeight.clamp(0.0, screenHeight * kMaxSheetFraction);
 
   showAppBottomSheet(
     context: context,
-    isDraggable: false,
-    enableDrag: false,
+    isDraggable: true,
     isDismissible: true,
     builder: (sheetContext, scrollController) {
       final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;

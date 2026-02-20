@@ -16,20 +16,18 @@ class AppBottomSheet extends StatelessWidget {
   final double? maxChildSize;
   final bool useBlurredTransparentBackground;
   final double blurSigma;
-  final bool showTopLeftCloseButton;
 
   const AppBottomSheet({
     super.key,
     this.builder,
     this.child,
-    this.isDraggable = false,
+    this.isDraggable = true,
     this.isDismissible = true,
     this.initialChildSize = 0.7,
     this.minChildSize = 0.5,
     this.maxChildSize = 0.9,
     this.useBlurredTransparentBackground = true,
     this.blurSigma = 16,
-    this.showTopLeftCloseButton = false,
   }) : assert(builder != null || child != null,
             'Either builder or child must be provided');
 
@@ -55,57 +53,23 @@ class AppBottomSheet extends StatelessWidget {
       );
     }
 
-    Widget buildCloseHeader() {
-      return SafeArea(
-        bottom: false,
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8, top: 8),
-            child: Material(
-              color: Colors.black.withValues(alpha: 0.22),
-              borderRadius: BorderRadius.circular(999),
-              child: IconButton(
-                tooltip: 'Close',
-                onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(Icons.close,
-                    size: 20, color: Colors.white.withValues(alpha: 0.8)),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    Widget withOptionalCloseButton({
-      required Widget child,
-      required bool expandChild,
-    }) {
-      if (!showTopLeftCloseButton) return child;
-      return Column(
-        mainAxisSize: expandChild ? MainAxisSize.max : MainAxisSize.min,
-        children: [
-          buildCloseHeader(),
-          if (expandChild) Expanded(child: child) else child,
-        ],
-      );
-    }
-
     if (isDraggable) {
       return DraggableScrollableSheet(
         initialChildSize: initialChildSize ?? 0.7,
         minChildSize: minChildSize ?? 0.5,
         maxChildSize: maxChildSize ?? 0.9,
+        shouldCloseOnMinExtent: true,
         snap: true,
         builder: (context, scrollController) {
           return GestureDetector(
             // Only consume gestures within the sheet content, not outside
             behavior: HitTestBehavior.deferToChild,
-            child: withOptionalCloseButton(
-              expandChild: true,
-              child: wrapWithBlur(
-                child: Container(
-                  decoration: decoration,
+            child: wrapWithBlur(
+              child: Container(
+                decoration: decoration,
+                child: SafeArea(
+                  top: true,
+                  bottom: false,
                   child: builder != null
                       ? builder!(context, scrollController)
                       : child!,
@@ -117,15 +81,13 @@ class AppBottomSheet extends StatelessWidget {
       );
     }
 
-    return withOptionalCloseButton(
-      expandChild: false,
-      child: wrapWithBlur(
-        child: Container(
-          decoration: decoration,
-          child: SafeArea(
-            bottom: false,
-            child: builder != null ? builder!(context, null) : child!,
-          ),
+    return wrapWithBlur(
+      child: Container(
+        decoration: decoration,
+        child: SafeArea(
+          top: true,
+          bottom: false,
+          child: builder != null ? builder!(context, null) : child!,
         ),
       ),
     );
@@ -138,14 +100,13 @@ Future<T?> showAppBottomSheet<T>({
   Widget Function(BuildContext context, ScrollController? scrollController)?
       builder,
   Widget? child,
-  bool isDraggable = false,
+  bool isDraggable = true,
   bool isDismissible = true,
   bool isScrollControlled = true,
   bool useRootNavigator = false,
   double? initialChildSize,
   double? minChildSize,
   double? maxChildSize,
-  bool showTopLeftCloseButton = false,
   bool useBlurredTransparentBackground = true,
   double blurSigma = 16,
   Future<bool> Function()? onBarrierTap,
@@ -160,7 +121,7 @@ Future<T?> showAppBottomSheet<T>({
     isScrollControlled: isScrollControlled,
     isDismissible: isDismissible,
     useRootNavigator: useRootNavigator,
-    enableDrag: enableDrag ?? (isDismissible && !isDraggable),
+    enableDrag: enableDrag ?? isDismissible,
     showDragHandle: false,
     builder: (context) => AppBottomSheet(
       isDraggable: isDraggable,
@@ -168,11 +129,37 @@ Future<T?> showAppBottomSheet<T>({
       initialChildSize: initialChildSize,
       minChildSize: minChildSize,
       maxChildSize: maxChildSize,
-      showTopLeftCloseButton: showTopLeftCloseButton,
       useBlurredTransparentBackground: useBlurredTransparentBackground,
       blurSigma: blurSigma,
       builder: builder,
       child: child,
     ),
+  );
+}
+
+/// Helper for compact action/confirmation/warning sheets.
+/// These sheets fit content and avoid draggable min-height behavior.
+Future<T?> showAppActionBottomSheet<T>({
+  required BuildContext context,
+  Widget Function(BuildContext context, ScrollController? scrollController)?
+      builder,
+  Widget? child,
+  bool isDismissible = true,
+  bool useRootNavigator = false,
+  bool useBlurredTransparentBackground = true,
+  double blurSigma = 16,
+  bool? enableDrag,
+}) {
+  return showAppBottomSheet<T>(
+    context: context,
+    builder: builder,
+    child: child,
+    isDraggable: false,
+    isScrollControlled: false,
+    isDismissible: isDismissible,
+    useRootNavigator: useRootNavigator,
+    useBlurredTransparentBackground: useBlurredTransparentBackground,
+    blurSigma: blurSigma,
+    enableDrag: enableDrag ?? isDismissible,
   );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -269,7 +270,16 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
     return ChatLayout(
       headerLeading: headerLeading,
       title: 'Ask about ${widget.clientName}',
-      headerActions: const [],
+      headerActions: [
+        IconButton(
+          icon: Icon(
+            FontAwesomeIcons.solidCircleXmark,
+            color: isDarkMode ? Colors.white : Colors.black,
+            size: 22,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ],
       messagesContent: messages.isEmpty && !isLoading
           ? ChatEmptyState(
               title: 'Ask about this client',
@@ -467,28 +477,19 @@ void showCoachAiChatBottomSheet({required BuildContext context}) {
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     isDismissible: true,
-    enableDrag: false,
+    enableDrag: true,
     useSafeArea: true,
     barrierColor: Colors.black.withValues(alpha: 0.55),
-    builder: (context) => Stack(
-      children: [
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.of(context, rootNavigator: false).pop(),
-            child: Container(color: Colors.transparent),
-          ),
-        ),
-        AppBottomSheet(
-          isDraggable: false,
-          isDismissible: true,
-          showTopLeftCloseButton: true,
-          child: CoachAiChatScreen(
-            clientId: clientId,
-            clientName: clientName,
-          ),
-        ),
-      ],
+    builder: (context) => AppBottomSheet(
+      isDraggable: true,
+      isDismissible: true,
+      initialChildSize: 1.0,
+      minChildSize: 1.0,
+      maxChildSize: 1.0,
+      child: CoachAiChatScreen(
+        clientId: clientId,
+        clientName: clientName,
+      ),
     ),
   );
 }

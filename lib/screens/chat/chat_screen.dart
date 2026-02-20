@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
@@ -920,8 +921,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.18),
-                  (isDarkMode ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                  (isDarkMode ? Colors.white : Colors.black)
+                      .withValues(alpha: 0.18),
+                  (isDarkMode ? Colors.white : Colors.black)
+                      .withValues(alpha: 0.05),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -938,56 +941,64 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           )
         : const SizedBox(width: 36, height: 36);
 
-    return Stack(
-      children: [
-        ChatLayout(
-          headerLeading: headerLeading,
-          title: AppConfig.isCoach ? widget.clientName : 'Coach ${widget.coachName}',
-          headerActions: [
-            IconButton(
-              icon: Icon(Icons.videocam, color: isDarkMode ? Colors.white : Colors.black, size: 22),
-              onPressed: () => _openVideoCall(),
-            ),
-          ],
-          messagesContent: _messages.isEmpty
-              ? ChatEmptyState(
-                  title: 'No messages yet',
-                  subtitle: AppConfig.isCoach
-                      ? 'Start a conversation with your client'
-                      : 'Start a conversation with your coach',
-                )
-              : Builder(
-                  builder: (context) {
-                    final entries = _buildChatEntries();
-                    return ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
-                      itemCount: entries.length,
-                      itemBuilder: (context, index) {
-                        final entry = entries[index];
-                        if (entry.isDivider) {
-                          return _ChatDateDivider(label: entry.label!);
-                        }
-                        final message = entry.message!;
-                        return _ChatMessageBubble(
-                          message: message,
-                          isCurrentUser: _isCurrentUserMessage(message),
-                          timestamp: _formatTimestamp(_messageTimestamp(message)),
-                          isDarkMode: isDarkMode,
-                          vibrantAccent: colors?.vibrantAccent ?? Colors.green,
-                        );
-                      },
-                    );
-                  },
-                ),
-          messageController: _messageController,
-          onSend: _sendMessage,
-          isSending: _isSending,
-          showAttachmentButton: true,
-          onAttachmentTap: _showAttachmentSheet,
+    return ChatLayout(
+      headerLeading: headerLeading,
+      title:
+          AppConfig.isCoach ? widget.clientName : 'Coach ${widget.coachName}',
+      headerActions: [
+        IconButton(
+          icon: Icon(Icons.videocam,
+              color: isDarkMode ? Colors.white : Colors.black, size: 22),
+          onPressed: () => _openVideoCall(),
+        ),
+        IconButton(
+          icon: Icon(
+            FontAwesomeIcons.solidCircleXmark,
+            color: isDarkMode ? Colors.white : Colors.black,
+            size: 22,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
+      messagesContent: _messages.isEmpty
+          ? ChatEmptyState(
+              title: 'No messages yet',
+              subtitle: AppConfig.isCoach
+                  ? 'Start a conversation with your client'
+                  : 'Start a conversation with your coach',
+            )
+          : Builder(
+              builder: (context) {
+                final entries = _buildChatEntries();
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.manual,
+                  itemCount: entries.length,
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    if (entry.isDivider) {
+                      return _ChatDateDivider(label: entry.label!);
+                    }
+                    final message = entry.message!;
+                    return _ChatMessageBubble(
+                      message: message,
+                      isCurrentUser: _isCurrentUserMessage(message),
+                      timestamp: _formatTimestamp(_messageTimestamp(message)),
+                      isDarkMode: isDarkMode,
+                      vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+                    );
+                  },
+                );
+              },
+            ),
+      messageController: _messageController,
+      onSend: _sendMessage,
+      isSending: _isSending,
+      showAttachmentButton: true,
+      onAttachmentTap: _showAttachmentSheet,
     );
   }
 }

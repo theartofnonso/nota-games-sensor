@@ -303,6 +303,12 @@ class OfflineRoutineLogRepository {
           continue;
         }
 
+        // Keep local deletion intent authoritative until it syncs successfully.
+        // Otherwise a failed delete push could be immediately "undone" by pull.
+        if (local.isDeleted && local.needsSync) {
+          continue;
+        }
+
         // Last-write-wins:
         // - If local is newer -> keep local (it will be pushed on next sync).
         // - If remote is newer -> overwrite local with remote.

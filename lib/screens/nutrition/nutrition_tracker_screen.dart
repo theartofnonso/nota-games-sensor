@@ -420,7 +420,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
       context: context,
       isScrollControlled: true,
       isDismissible: true,
-      enableDrag: false,
+      enableDrag: true,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: SingleChildScrollView(

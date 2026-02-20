@@ -475,7 +475,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
   void _launchRoutineLogEditor() {
     // Prevent starting a new live session when there's an unsaved one
     if (SharedPrefs().routineLog.isNotEmpty) {
-      showUnsavedWorkoutBottomSheet(context);
+      navigateToUnsavedSession(context);
       return;
     }
 
