@@ -457,12 +457,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
 
   void _showExerciseOptionsBottomSheet(ExerciseDto exercise) {
     // forAiQuery is handled in _handleExerciseTap (direct tap selects)
-    showAppBottomSheet(
+    showAppActionBottomSheet(
       context: context,
-      isScrollControlled: false,
-      initialChildSize: 0.4,
-      minChildSize: 0.3,
-      maxChildSize: 0.55,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(

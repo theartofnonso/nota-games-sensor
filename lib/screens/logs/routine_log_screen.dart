@@ -290,9 +290,8 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
   }
 
   void _showBottomSheet() {
-    showAppBottomSheet(
+    showAppActionBottomSheet(
         context: context,
-        isScrollControlled: false,
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: Column(mainAxisSize: MainAxisSize.min, children: [

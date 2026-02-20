@@ -144,6 +144,7 @@ Future<T?> showAppActionBottomSheet<T>({
   Widget Function(BuildContext context, ScrollController? scrollController)?
       builder,
   Widget? child,
+  bool isScrollControlled = false,
   bool isDismissible = true,
   bool useRootNavigator = false,
   bool useBlurredTransparentBackground = true,
@@ -155,7 +156,7 @@ Future<T?> showAppActionBottomSheet<T>({
     builder: builder,
     child: child,
     isDraggable: false,
-    isScrollControlled: false,
+    isScrollControlled: isScrollControlled,
     isDismissible: isDismissible,
     useRootNavigator: useRootNavigator,
     useBlurredTransparentBackground: useBlurredTransparentBackground,

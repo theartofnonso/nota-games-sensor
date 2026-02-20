@@ -124,9 +124,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       return;
     }
     if (!mounted) return;
-    await showAppBottomSheet<void>(
+    await showAppActionBottomSheet<void>(
       context: context,
-      isScrollControlled: false,
       isDismissible: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
@@ -212,9 +211,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (await isNotificationPermissionGranted()) return;
     if (!mounted) return;
 
-    await showAppBottomSheet<void>(
+    await showAppActionBottomSheet<void>(
       context: context,
-      isScrollControlled: false,
       isDismissible: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),

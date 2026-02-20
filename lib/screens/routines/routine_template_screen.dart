@@ -554,9 +554,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final isSystemTemplate = plan?.isSystemPlan ?? false;
     final hasSelectedClient = accessController.hasSelectedClient;
 
-    showAppBottomSheet(
+    showAppActionBottomSheet(
         context: context,
-        isScrollControlled: false,
         child: Padding(
           padding: const EdgeInsets.all(26),
           child: Column(

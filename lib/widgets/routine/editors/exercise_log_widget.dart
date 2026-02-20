@@ -616,9 +616,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     bool shouldReplace = false;
 
-    await showAppBottomSheet(
+    await showAppActionBottomSheet(
       context: context,
-      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(

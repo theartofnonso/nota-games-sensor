@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -35,6 +36,7 @@ import '../../utils/general_utils.dart';
 import '../../utils/string_utils.dart';
 import '../../services/training_prediction_service.dart';
 import '../../utils/calendar_date_logs_sheet.dart';
+import '../../utils/dialog_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/theme/color_extensions.dart';
@@ -463,6 +465,18 @@ class _SettingsScreenState extends State<SettingsScreen>
               const SizedBox(height: 8),
               ListTile(
                 contentPadding: EdgeInsets.zero,
+                leading: const FaIcon(FontAwesomeIcons.userPen, size: 18),
+                horizontalTitleGap: 8,
+                title: const Text('Manage account'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await _showManageAccountBottomSheet();
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const FaIcon(FontAwesomeIcons.crown, size: 18),
+                horizontalTitleGap: 8,
                 title: const Text('Manage subscription'),
                 onTap: () async {
                   Navigator.of(context).pop();
@@ -472,6 +486,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             ],
             ListTile(
               contentPadding: EdgeInsets.zero,
+              leading: const FaIcon(FontAwesomeIcons.arrowRightFromBracket, size: 18),
+              horizontalTitleGap: 8,
               title: const Text('Log out'),
               onTap: () async {
                 Navigator.of(context).pop();
@@ -483,6 +499,12 @@ class _SettingsScreenState extends State<SettingsScreen>
             if (!isCoach)
               ListTile(
                 contentPadding: EdgeInsets.zero,
+                leading: const FaIcon(
+                  FontAwesomeIcons.userMinus,
+                  size: 18,
+                  color: Colors.red,
+                ),
+                horizontalTitleGap: 8,
                 title: const Text('Delete my account'),
                 onTap: () async {
                   Navigator.of(context).pop();
@@ -496,6 +518,165 @@ class _SettingsScreenState extends State<SettingsScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _showManageAccountBottomSheet() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      showErrorBottomSheet(
+        context: context,
+        title: 'Unable to manage account',
+        message: 'Please sign in again and try again.',
+      );
+      return;
+    }
+
+    final existingName = await _loadClientName(userId: user.id);
+    final nameController = TextEditingController(text: existingName ?? '');
+    bool isSaving = false;
+    String? helperMessage;
+
+    await showAppActionBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      child: StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: 24 + MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Manage account',
+                    style: Theme.of(sheetContext).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Add your name so coaches can identify you in chat.',
+                    style: Theme.of(sheetContext).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      hintText: 'Name',
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                  ),
+                  if (helperMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      helperMessage!,
+                      style: Theme.of(sheetContext).textTheme.bodySmall,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OpacityButtonWidgetTwo(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final name = nameController.text.trim();
+
+                              if (name.isEmpty) {
+                                setSheetState(() {
+                                  helperMessage = 'Please enter your name.';
+                                });
+                                return;
+                              }
+
+                              setSheetState(() {
+                                isSaving = true;
+                                helperMessage = null;
+                              });
+
+                              final saved = await _upsertClientProfileNames(
+                                userId: user.id,
+                                name: name,
+                              );
+                              if (!sheetContext.mounted) return;
+
+                              if (saved) {
+                                Navigator.of(sheetContext).pop();
+                                if (context.mounted) {
+                                  showSnackbar(
+                                    context: context,
+                                    message: 'Account details updated.',
+                                  );
+                                }
+                              } else {
+                                setSheetState(() {
+                                  isSaving = false;
+                                  helperMessage =
+                                      'Could not update account right now. Please try again.';
+                                });
+                              }
+                            },
+                      label: isSaving ? 'Saving...' : 'Save',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    nameController.dispose();
+  }
+
+  Future<String?> _loadClientName({
+    required String userId,
+  }) async {
+    try {
+      final row = await Supabase.instance.client
+          .from('clients')
+          .select('name')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (row == null) return null;
+      final name = row['name']?.toString().trim();
+      if (name == null || name.isEmpty) return null;
+      return name;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> _upsertClientProfileNames({
+    required String userId,
+    required String name,
+  }) async {
+    try {
+      final uri = Uri.parse(apiNotathletesBaseUrl).resolve(accountProfilePath);
+      final response = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'user_id': userId,
+              'name': name,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _goBackToCoachList() async {

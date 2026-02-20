@@ -38,9 +38,8 @@ Future<bool> requireCoachAccess({
 }
 
 Future<void> _showCoachAccessRequiredSheet(BuildContext context) async {
-  await showAppBottomSheet<void>(
+  await showAppActionBottomSheet<void>(
     context: context,
-    isScrollControlled: false,
     child: Padding(
       padding: const EdgeInsets.all(26),
       child: Column(

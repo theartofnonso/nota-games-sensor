@@ -369,9 +369,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   }
 
   Future<bool> _confirmDelete(NutritionLogDto log) async {
-    final shouldDelete = await showAppBottomSheet<bool>(
+    final shouldDelete = await showAppActionBottomSheet<bool>(
       context: context,
-      isScrollControlled: false,
       isDismissible: true,
       child: Padding(
         padding: const EdgeInsets.all(26),

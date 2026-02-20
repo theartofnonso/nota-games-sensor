@@ -76,9 +76,8 @@ Future<void> requestAccountDeletion(
   BuildContext context, {
   required void Function(bool) setLoading,
 }) async {
-  final proceeded = await showAppBottomSheet<bool>(
+  final proceeded = await showAppActionBottomSheet<bool>(
     context: context,
-    isScrollControlled: false,
     isDismissible: true,
     child: Padding(
       padding: const EdgeInsets.all(26),
