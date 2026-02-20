@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../dtos/appsync/routine_log_dto.dart';
 import '../extensions/duration_extension.dart';
-import '../utils/general_utils.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/routine/preview/routine_log_widget.dart';
 import 'navigation_utils.dart';
@@ -46,8 +44,6 @@ void showCalendarDateLogsSheet({
     isDraggable: true,
     isDismissible: true,
     builder: (sheetContext, scrollController) {
-      final isDarkMode = Theme.of(sheetContext).brightness == Brightness.dark;
-
       return ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxSheetHeight),
         child: Column(
@@ -85,18 +81,6 @@ void showCalendarDateLogsSheet({
                       ],
                     ),
                   ),
-                  if (isToday && showLogWorkoutButton)
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pop(sheetContext);
-                        logEmptyRoutine(context: context);
-                      },
-                      icon: FaIcon(
-                        FontAwesomeIcons.circlePlus,
-                        size: 22,
-                        color: isDarkMode ? Colors.white : Colors.black,
-                      ),
-                    ),
                 ],
               ),
             ),

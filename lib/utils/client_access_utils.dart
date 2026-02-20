@@ -4,92 +4,178 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/iap_service.dart';
 import '../utils/dialog_utils.dart';
 import '../urls.dart';
+import '../widgets/bottom_sheets/app_bottom_sheet.dart';
+import '../widgets/buttons/opacity_button_widget_two.dart';
 
-Future<bool> requireClientAccess({
+Future<void> showClientSubscriptionSheet({
   required BuildContext context,
-  required String email,
   String? firstName,
   String? lastName,
-  bool signOutOnFail = false,
-  Future<void> Function()? onDenied,
 }) async {
-  return _requireClientAccessIap(
-    context: context,
-    email: email,
-    firstName: firstName,
-    lastName: lastName,
-    signOutOnFail: signOutOnFail,
-    onDenied: onDenied,
-  );
-}
-
-Future<bool> _requireClientAccessIap({
-  required BuildContext context,
-  required String email,
-  String? firstName,
-  String? lastName,
-  bool signOutOnFail = false,
-  Future<void> Function()? onDenied,
-}) async {
-  // Backend is the source of truth for entitlement/access.
-  final hasBackendAccess = await _checkBackendAccess(email: email);
-  if (hasBackendAccess) {
-    return true;
+  final user = Supabase.instance.client.auth.currentUser;
+  final email = user?.email?.trim();
+  if (user == null || email == null || email.isEmpty) {
+    showErrorBottomSheet(
+      context: context,
+      title: 'Unable to manage subscription',
+      message: 'Please sign in again and try again.',
+    );
+    return;
   }
 
-  final service = iapService;
-  final available = await service.isAvailable();
-  if (!available) {
-    if (context.mounted) {
-      showErrorBottomSheet(
-        context: context,
-        title: 'Purchases unavailable',
-        message:
-            'In-app purchases are currently unavailable. Please try again later.',
-      );
+  var isBusy = false;
+  String? helperMessage;
+
+  Future<void> restoreFromSheet(
+    BuildContext sheetContext,
+    void Function(void Function()) setSheetState,
+  ) async {
+    if (isBusy) return;
+    setSheetState(() {
+      isBusy = true;
+      helperMessage = null;
+    });
+
+    final hasSub = await iapService.checkHasActiveSubscription();
+    if (hasSub) {
+      unawaited(_syncBackendActivation(
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+      ));
+      if (sheetContext.mounted) {
+        Navigator.of(sheetContext).pop();
+      }
+      if (context.mounted) {
+        showSnackbar(
+          context: context,
+          message: 'Subscription restored successfully.',
+        );
+      }
+      return;
     }
-    if (signOutOnFail && onDenied != null) await onDenied();
-    return false;
+
+    if (!sheetContext.mounted) return;
+    setSheetState(() {
+      isBusy = false;
+      helperMessage = 'No active subscription was found to restore.';
+    });
   }
 
-  // First try restore/status check before prompting a new purchase.
-  final hasSub = await service.checkHasActiveSubscription();
-  if (hasSub) {
-    unawaited(_syncBackendActivation(
-      email: email,
-      firstName: firstName,
-      lastName: lastName,
-    ));
-    return true;
+  Future<void> subscribeFromSheet(
+    BuildContext sheetContext,
+    void Function(void Function()) setSheetState,
+  ) async {
+    if (isBusy) return;
+    setSheetState(() {
+      isBusy = true;
+      helperMessage = null;
+    });
+
+    final applicationUserName = user.id;
+    if (applicationUserName.trim().isEmpty) {
+      if (sheetContext.mounted) {
+        setSheetState(() {
+          isBusy = false;
+          helperMessage = 'Please sign in again and try purchasing.';
+        });
+      }
+      return;
+    }
+
+    final purchaseCompleted = await _startIapPurchase(
+      context: sheetContext,
+      applicationUserName: applicationUserName,
+    );
+    if (purchaseCompleted) {
+      unawaited(_syncBackendActivation(
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+      ));
+      if (sheetContext.mounted) {
+        Navigator.of(sheetContext).pop();
+      }
+      if (context.mounted) {
+        showSnackbar(
+          context: context,
+          message: 'Subscription purchase completed.',
+        );
+      }
+      return;
+    }
+
+    if (!sheetContext.mounted) return;
+    setSheetState(() {
+      isBusy = false;
+    });
   }
 
-  if (!context.mounted) return false;
-
-  // Go straight to Apple purchase flow (no custom sheet)
-  final purchaseCompleted = await _startIapPurchase(context: context);
-  if (purchaseCompleted) {
-    unawaited(_syncBackendActivation(
-      email: email,
-      firstName: firstName,
-      lastName: lastName,
-    ));
-    return true;
-  }
-
-  if (signOutOnFail && onDenied != null) {
-    await onDenied();
-  }
-  return false;
+  await showAppBottomSheet<void>(
+    context: context,
+    isDraggable: false,
+    isScrollControlled: false,
+    isDismissible: true,
+    builder: (sheetContext, _) {
+      return StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Subscription',
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Subscribe to unlock full client coaching access. If you already subscribed on another device, restore first.',
+                  style: Theme.of(sheetContext).textTheme.bodyMedium,
+                ),
+                TextButton(
+                  onPressed: isBusy
+                      ? null
+                      : () => restoreFromSheet(sheetContext, setSheetState),
+                  child: const Text('Restore purchase'),
+                ),
+                const SizedBox(height: 16),
+                if (helperMessage != null) ...[
+                  Text(
+                    helperMessage!,
+                    style: Theme.of(sheetContext).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                SizedBox(
+                  width: double.infinity,
+                  child: OpacityButtonWidgetTwo(
+                    onPressed: isBusy
+                        ? null
+                        : () => subscribeFromSheet(sheetContext, setSheetState),
+                    label: 'Subscribe',
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
 }
 
 /// Loads the subscription product, starts the Apple purchase flow directly,
 /// and waits for the result. No custom sheet—Apple's native UI is shown immediately.
 Future<bool> _startIapPurchase({
   required BuildContext context,
+  String? applicationUserName,
 }) async {
   final service = iapService;
   final products = await service.loadProducts();
@@ -129,7 +215,10 @@ Future<bool> _startIapPurchase({
   });
 
   try {
-    final sent = await service.buySubscription(product);
+    final sent = await service.buySubscription(
+      product,
+      applicationUserName: applicationUserName,
+    );
     if (!sent) {
       purchaseSub.cancel();
       completer.complete(false);
@@ -189,33 +278,5 @@ Future<void> _syncBackendActivation({
         .timeout(const Duration(seconds: 15));
   } catch (_) {
     // Best effort only: backend sync should not block app access.
-  }
-}
-
-Future<bool> _checkBackendAccess({required String email}) async {
-  try {
-    final uri = Uri.parse(apiNotathletesBaseUrl).resolve(subscriptionStatusPath);
-    final response = await http.get(
-      uri.replace(queryParameters: {'email': email}),
-      headers: {'Accept': 'application/json'},
-    ).timeout(const Duration(seconds: 15));
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      return false;
-    }
-
-    final data = jsonDecode(response.body);
-    if (data is! Map<String, dynamic>) return false;
-
-    // Support both old and new payload shapes.
-    final access = data['access'];
-    if (access is bool) return access;
-
-    final isActive = data['is_active'];
-    if (isActive is bool) return isActive;
-
-    return false;
-  } catch (_) {
-    return false;
   }
 }

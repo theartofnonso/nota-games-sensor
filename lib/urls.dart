@@ -30,5 +30,4 @@ const aiQueryPath = '/query';
 /// api.notathletes.com – account and client endpoints.
 const apiNotathletesBaseUrl = 'https://api.notathletes.com';
 const accountDeletionPath = '/account/delete';
-const subscriptionStatusPath = '/subscription/status';
 const accountActivatePath = '/account/activate';

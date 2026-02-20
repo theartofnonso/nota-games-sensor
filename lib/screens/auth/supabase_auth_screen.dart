@@ -6,7 +6,6 @@ import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
-import 'package:trainware/utils/client_access_utils.dart';
 import 'package:trainware/utils/coach_access_utils.dart';
 import 'package:trainware/app_flavor.dart';
 
@@ -51,18 +50,10 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       return;
     }
 
-    // Check access before sending OTP
+    // Access check now happens after authentication succeeds.
     setState(() => _isLoading = true);
 
-    if (AppConfig.isClient) {
-      final canProceed =
-          await requireClientAccess(context: context, email: email);
-      if (!mounted) return;
-      if (!canProceed) {
-        setState(() => _isLoading = false);
-        return;
-      }
-    } else if (AppConfig.isCoach) {
+    if (AppConfig.isCoach) {
       final canProceed =
           await requireCoachAccess(context: context, email: email);
       if (!mounted) return;
@@ -73,7 +64,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     }
 
     // Check if this is a demo account - bypass OTP and auto-login.
-    // Client flavor still goes through access checks above first.
     if (isTestAccountEmail(email)) {
       final password = getDemoPassword(email);
       if (password == null) {

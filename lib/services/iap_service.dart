@@ -112,10 +112,17 @@ class IapService {
   }
 
   /// Initiates purchase for the given product. Purchase updates stream via purchaseUpdates.
+  /// applicationUserName is used as an app-scoped account token for backend mapping.
   /// Returns true if the purchase request was sent (sheet should appear); false if not.
-  Future<bool> buySubscription(ProductDetails productDetails) async {
+  Future<bool> buySubscription(
+    ProductDetails productDetails, {
+    String? applicationUserName,
+  }) async {
     if (!_isAvailable) return false;
-    final param = PurchaseParam(productDetails: productDetails);
+    final param = PurchaseParam(
+      productDetails: productDetails,
+      applicationUserName: applicationUserName,
+    );
     return _iap.buyNonConsumable(purchaseParam: param);
   }
 }

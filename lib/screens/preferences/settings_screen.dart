@@ -24,6 +24,7 @@ import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/notifications_utils.dart';
+import 'package:trainware/utils/client_access_utils.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../controllers/access_controller.dart';
@@ -48,6 +49,7 @@ import '../../widgets/settings/delete_account_section.dart';
 import '../../widgets/settings/logout_section.dart';
 import '../../widgets/settings/coach_feedback_card.dart';
 import '../../widgets/settings/coach_ai_chat_card.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../screens/routines/routine_plan.dart';
 
@@ -387,29 +389,107 @@ class _SettingsScreenState extends State<SettingsScreen>
                       },
                     ),
                   ),
-                  // Cancel membership & Delete account (client app only)
-                  if (!isCoach) ...[
-                    SizedBox(height: _sectionSpacing),
-                    DeleteAccountSection(
-                      onDeleteTap: () => requestAccountDeletion(
-                        context,
-                        setLoading: (v) => setState(() => _loading = v),
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                  ],
-                  LogoutSection(
-                    onLogoutTap: () async {
-                      setState(() => _loading = true);
-                      await performLogout();
-                      if (mounted) setState(() => _loading = false);
-                    },
-                  ),
+                  _buildAccountActionsEntry(isCoach: isCoach),
                   SizedBox(height: _sectionSpacing),
                   _buildDebugInfoSection(isDarkMode),
                   SizedBox(height: _sectionSpacing),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountActionsEntry({required bool isCoach}) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final surfaceOpacity = theme.brightness == Brightness.dark
+        ? onSurface.withValues(alpha: 0.08)
+        : onSurface.withValues(alpha: 0.06);
+    final contentColor = onSurface.withValues(alpha: 0.75);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Material(
+        color: surfaceOpacity,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () => _showAccountActionsBottomSheet(isCoach: isCoach),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.userGear,
+                  size: 18,
+                  color: contentColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Account',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: contentColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAccountActionsBottomSheet({required bool isCoach}) async {
+    await showAppActionBottomSheet<void>(
+      context: context,
+      isDismissible: true,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Account actions',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            if (!isCoach) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Manage subscription'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await showClientSubscriptionSheet(context: context);
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Delete my account'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await requestAccountDeletion(
+                    context,
+                    setLoading: (v) => setState(() => _loading = v),
+                  );
+                },
+              ),
+            ],
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Log out'),
+              onTap: () async {
+                Navigator.of(context).pop();
+                setState(() => _loading = true);
+                await performLogout();
+                if (mounted) setState(() => _loading = false);
+              },
             ),
           ],
         ),
