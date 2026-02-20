@@ -139,10 +139,20 @@ class OfflineRoutineLogRepository {
       try {
         if (entry.isDeleted) {
           // Phase 6: delete normalized session.
-          await _client
+          final deleted = await _client
               .from('workout_sessions')
               .delete()
-              .eq('id', entry.log.id);
+              .eq('id', entry.log.id)
+              .select('id');
+
+          // Guard against silent no-op deletes (e.g. RLS/no ownership).
+          // If no row was deleted, keep tombstone and retry later.
+          final deletedRows = deleted as List<dynamic>;
+          if (deletedRows.isEmpty) {
+            throw Exception(
+              'Delete rejected or no row found for log ${entry.log.id}',
+            );
+          }
 
           // Remove from local list after successful delete.
           _entries = _entries.where((e) => e.log.id != entry.log.id).toList();

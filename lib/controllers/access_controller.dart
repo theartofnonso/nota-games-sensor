@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../app_flavor.dart';
-
 /// Manages authentication state and selected client for coaches.
 ///
 /// **Purpose:**
@@ -86,34 +84,6 @@ class ClientOverrideController extends ChangeNotifier {
           _selectedClientEmail = null;
           _coachName = null;
           _coachId = null;
-        } else if (AppConfig.isClient && _userId != null) {
-          try {
-            final row = await _client
-                .from('clients')
-                .select('is_active')
-                .eq('id', _userId!)
-                .maybeSingle();
-            final isActive = row?['is_active'] as bool? ?? false;
-            if (!isActive) {
-              await _client.auth.signOut();
-              _isAuthenticated = false;
-              _userId = null;
-              _selectedClientId = null;
-              _selectedClientName = null;
-              _selectedClientEmail = null;
-              _coachName = null;
-              _coachId = null;
-            }
-          } catch (_) {
-            await _client.auth.signOut();
-            _isAuthenticated = false;
-            _userId = null;
-            _selectedClientId = null;
-            _selectedClientName = null;
-            _selectedClientEmail = null;
-            _coachName = null;
-            _coachId = null;
-          }
         }
         notifyListeners();
       },

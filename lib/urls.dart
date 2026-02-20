@@ -30,9 +30,5 @@ const aiQueryPath = '/query';
 /// api.notathletes.com – account and client endpoints.
 const apiNotathletesBaseUrl = 'https://api.notathletes.com';
 const accountDeletionPath = '/account/delete';
-
-/// Client active status. Check before OTP; activate after IAP.
-/// GET /account/check-active?email=... -> { "exists": bool, "is_active": bool }
-/// POST /account/activate -> body { "email", "receipt", "platform", "first_name", "last_name" }
-const clientCheckActivePath = '/account/check-active';
-const clientActivatePath = '/account/activate';
+const subscriptionStatusPath = '/subscription/status';
+const accountActivatePath = '/account/activate';

@@ -134,9 +134,8 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     final response = await Supabase.instance.client
         .from('coach_clients')
         .select(
-            'id, coach_id, client_id, created_at, clients!inner(id, email, name, created_at, is_active), coaches (id, email, name)')
+            'id, coach_id, client_id, created_at, clients!inner(id, email, name, created_at), coaches (id, email, name)')
         .eq('coach_id', coachId)
-        .eq('clients.is_active', true)
         .order('created_at', ascending: false);
     final rows = response as List<dynamic>;
     final clients = rows

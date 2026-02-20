@@ -51,38 +51,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       return;
     }
 
-    // Check if this is a demo account - bypass OTP and auto-login
-    if (isTestAccountEmail(email)) {
-      final password = getDemoPassword(email);
-      if (password == null) return;
-      setState(() => _isLoading = true);
-
-      try {
-        await Supabase.instance.client.auth.signInWithPassword(
-          email: email.trim(),
-          password: password,
-        );
-        // Success! User will be automatically navigated by the auth state listener
-      } catch (error) {
-        debugPrint('[Demo Account] Login failed: $error');
-        if (mounted) {
-          showSnackbar(
-            context: context,
-            message:
-                'Demo account login failed. Please ensure the account exists in Supabase.',
-            backgroundColor: Colors.red,
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
-      return;
-    }
-
     // Check access before sending OTP
     setState(() => _isLoading = true);
 
@@ -102,6 +70,39 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         setState(() => _isLoading = false);
         return;
       }
+    }
+
+    // Check if this is a demo account - bypass OTP and auto-login.
+    // Client flavor still goes through access checks above first.
+    if (isTestAccountEmail(email)) {
+      final password = getDemoPassword(email);
+      if (password == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      try {
+        await Supabase.instance.client.auth.signInWithPassword(
+          email: email.trim(),
+          password: password,
+        );
+        // Success! User will be automatically navigated by the auth state listener
+      } catch (error) {
+        debugPrint('[Demo Account] Login failed: $error');
+        if (mounted) {
+          showSnackbar(
+            context: context,
+            message:
+                'Demo account login failed. Please ensure the account exists in Supabase.',
+            backgroundColor: Colors.red,
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+      return;
     }
 
     try {
@@ -125,7 +126,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       if (mounted) {
         showSnackbar(
           context: context,
-          message: error.message,
+          message: 'We could not send a code right now. Please try again.',
           backgroundColor: Colors.red,
         );
         setState(() => _isLoading = false);
@@ -182,7 +183,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       if (mounted) {
         showSnackbar(
           context: context,
-          message: error.message,
+          message: 'We could not verify that code. Please try again.',
           backgroundColor: Colors.red,
         );
         setState(() => _isLoading = false);

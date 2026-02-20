@@ -164,14 +164,39 @@ void showErrorBottomSheet({
   required String message,
   String title = 'Error',
 }) {
+  final sanitizedMessage = _sanitizeBottomSheetMessage(message);
   showBottomSheetWithSingleAction(
     context: context,
     title: title,
-    description: message,
+    description: sanitizedMessage,
     action: () => Navigator.of(context).pop(),
     actionLabel: 'Got it',
     isDismissible: false,
   );
+}
+
+String _sanitizeBottomSheetMessage(String message) {
+  final trimmed = message.trim();
+  if (trimmed.isEmpty) {
+    return 'Something went wrong. Please try again.';
+  }
+
+  final lower = trimmed.toLowerCase();
+  final looksTechnical = lower.contains('exception') ||
+      lower.contains('stack trace') ||
+      lower.contains('socketexception') ||
+      lower.contains('typeerror') ||
+      lower.contains('statuscode') ||
+      lower.contains('formatexception') ||
+      lower.contains('unexpected error') ||
+      lower.contains('failed assertion') ||
+      lower.contains('null check operator');
+
+  if (looksTechnical) {
+    return 'Something went wrong. Please try again.';
+  }
+
+  return trimmed;
 }
 
 /// Shows a dialog with similar exercises found
