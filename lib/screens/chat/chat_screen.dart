@@ -847,6 +847,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   String _clientInitials() {
     final trimmed = widget.clientName.trim();
+    if (trimmed.isEmpty) return 'C';
     final parts = trimmed.split(RegExp(r'\s+'));
     if (parts.length == 1) {
       final s = parts.first;
@@ -859,7 +860,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   String _coachInitials() {
     final trimmed = widget.coachName.trim();
+    if (trimmed.isEmpty) return 'U';
     return trimmed[0].toUpperCase();
+  }
+
+  String _clientDisplayName() {
+    final trimmed = widget.clientName.trim();
+    return trimmed.isEmpty ? 'Client' : trimmed;
+  }
+
+  String _coachDisplayName() {
+    final trimmed = widget.coachName.trim();
+    return trimmed.isEmpty ? 'Coach' : trimmed;
   }
 
   /// Returns the target user ID based on app configuration.
@@ -941,8 +953,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
     return ChatLayout(
       headerLeading: headerLeading,
-      title:
-          AppConfig.isCoach ? widget.clientName : 'Coach ${widget.coachName}',
+      title: AppConfig.isCoach ? _clientDisplayName() : _coachDisplayName(),
       headerActions: [
         IconButton(
           icon: Icon(Icons.videocam,

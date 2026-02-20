@@ -532,7 +532,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
 
     final existingName = await _loadClientName(userId: user.id);
-    final nameController = TextEditingController(text: existingName ?? '');
+    var draftName = existingName ?? '';
     bool isSaving = false;
     String? helperMessage;
 
@@ -564,8 +564,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                     style: Theme.of(sheetContext).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: nameController,
+                  TextFormField(
+                    initialValue: draftName,
+                    onChanged: (value) => draftName = value,
                     decoration: const InputDecoration(
                       hintText: 'Name',
                       border: InputBorder.none,
@@ -588,7 +589,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       onPressed: isSaving
                           ? null
                           : () async {
-                              final name = nameController.text.trim();
+                              final name = draftName.trim();
 
                               if (name.isEmpty) {
                                 setSheetState(() {
@@ -634,8 +635,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         },
       ),
     );
-
-    nameController.dispose();
   }
 
   Future<String?> _loadClientName({
