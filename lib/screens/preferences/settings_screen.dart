@@ -456,7 +456,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Account actions',
+              'Account',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             if (!isCoach) ...[
