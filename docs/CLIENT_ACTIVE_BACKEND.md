@@ -1,31 +1,23 @@
-# Client Active Status – api.notathletes.com
+# Client Subscription Status – api.notathletes.com
 
-The Trackr client app enforces that only **active subscribers** can sign in. Client records are created in another project (e.g. survey/onboarding). This app calls `api.notathletes.com` to check/activate; the backend updates `clients.is_active` after successful IAP.
-
-## Database
-
-The `public.clients` table has:
-
-- `is_active` (boolean NOT NULL DEFAULT false) – true only after successful IAP; inactive clients cannot sign in.
-
-Migration: `supabase/migrations/20260215000000_clients_is_active.sql`
+Current app behavior is subscription handling from the client Settings entry point.
+The legacy `check-active` endpoint is no longer used by the app.
 
 ## API Endpoints (api.notathletes.com)
 
-### 1. Check Active (pre-auth)
+### 1. Subscription Status
 
-**GET** `/account/check-active?email={email}`
+**GET** `/subscription/status?email={email}`
 
-Returns `{ "exists": bool, "is_active": bool }`.
+Returns:
 
-- `exists`: Client with this email exists in `public.clients`
-- `is_active`: `clients.is_active` for that row
+```json
+{ "access": true }
+```
 
-**Behavior:**
-- If `exists && is_active`: Client may proceed to OTP
-- If `!exists` or `exists && !is_active`: App shows IAP flow; on success, calls activate. Backend creates client if new.
+- `access` (bool): whether this client should be treated as subscribed
 
-### 2. Activate Client (post-IAP)
+### 2. Activate Client (post-IAP/restore sync)
 
 **POST** `/account/activate`
 
@@ -42,34 +34,13 @@ Returns `{ "exists": bool, "is_active": bool }`.
 - `email` (required)
 - `first_name`, `last_name` (optional)
 
-**Behavior:**
-
-1. If client doesn't exist: create auth user (Supabase Admin API) if needed, then `INSERT INTO clients (id, email, name, is_active) VALUES (...)`
-2. If client exists: `UPDATE clients SET is_active = true, updated_at = now() WHERE email = $1`
-3. Return 200 or 204 on success
-
-### Testing with curl
-
-Minimal:
-
-```bash
-curl -X POST http://localhost:3000/account/activate \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com"}'
-```
-
-With optional fields:
-
-```bash
-curl -X POST http://localhost:3000/account/activate \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","first_name":"Jane","last_name":"Doe"}'
-```
+This call is best-effort sync after purchase/restore success.
 
 ## Flow Summary
 
-1. Client enters email → app calls `GET /account/check-active?email=...`
-2. If not active → app runs IAP flow → on success, calls `POST /account/activate` (email, first_name, last_name only)
-3. Backend creates/updates client and sets `is_active = true`
-4. Client proceeds to OTP and sign-in
-5. On each auth event, app verifies `clients.is_active` via Supabase; if false, signs out
+1. Client signs in/signs up normally.
+2. Client opens Settings → Account → Manage subscription.
+3. App checks `GET /subscription/status`.
+4. If already active, app shows already-subscribed info.
+5. If not active, app offers restore/purchase.
+6. On restore/purchase success, app calls `POST /account/activate` in background.

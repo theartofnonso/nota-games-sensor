@@ -469,17 +469,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   await showClientSubscriptionSheet(context: context);
                 },
               ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Delete my account'),
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await requestAccountDeletion(
-                    context,
-                    setLoading: (v) => setState(() => _loading = v),
-                  );
-                },
-              ),
             ],
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -491,6 +480,18 @@ class _SettingsScreenState extends State<SettingsScreen>
                 if (mounted) setState(() => _loading = false);
               },
             ),
+            if (!isCoach)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Delete my account'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await requestAccountDeletion(
+                    context,
+                    setLoading: (v) => setState(() => _loading = v),
+                  );
+                },
+              ),
           ],
         ),
       ),

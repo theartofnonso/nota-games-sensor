@@ -14,12 +14,9 @@ import '../widgets/buttons/opacity_button_widget_two.dart';
 
 Future<void> showClientSubscriptionSheet({
   required BuildContext context,
-  String? firstName,
-  String? lastName,
 }) async {
   final user = Supabase.instance.client.auth.currentUser;
-  final email = user?.email?.trim();
-  if (user == null || email == null || email.isEmpty) {
+  if (user == null || user.id.trim().isEmpty) {
     showErrorBottomSheet(
       context: context,
       title: 'Unable to manage subscription',
@@ -29,6 +26,9 @@ Future<void> showClientSubscriptionSheet({
   }
 
   var isBusy = false;
+  var isCheckingStatus = true;
+  var hasCheckedStatus = false;
+  var isAlreadySubscribed = false;
   String? helperMessage;
 
   Future<void> restoreFromSheet(
@@ -43,11 +43,6 @@ Future<void> showClientSubscriptionSheet({
 
     final hasSub = await iapService.checkHasActiveSubscription();
     if (hasSub) {
-      unawaited(_syncBackendActivation(
-        email: email,
-        firstName: firstName,
-        lastName: lastName,
-      ));
       if (sheetContext.mounted) {
         Navigator.of(sheetContext).pop();
       }
@@ -93,11 +88,6 @@ Future<void> showClientSubscriptionSheet({
       applicationUserName: applicationUserName,
     );
     if (purchaseCompleted) {
-      unawaited(_syncBackendActivation(
-        email: email,
-        firstName: firstName,
-        lastName: lastName,
-      ));
       if (sheetContext.mounted) {
         Navigator.of(sheetContext).pop();
       }
@@ -124,6 +114,19 @@ Future<void> showClientSubscriptionSheet({
     builder: (sheetContext, _) {
       return StatefulBuilder(
         builder: (sheetContext, setSheetState) {
+          if (!hasCheckedStatus) {
+            hasCheckedStatus = true;
+            unawaited(() async {
+              final active =
+                  await _checkBackendSubscriptionActive(userId: user.id);
+              if (!sheetContext.mounted) return;
+              setSheetState(() {
+                isAlreadySubscribed = active;
+                isCheckingStatus = false;
+              });
+            }());
+          }
+
           return Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -135,33 +138,65 @@ Future<void> showClientSubscriptionSheet({
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Subscribe to unlock full client coaching access. If you already subscribed on another device, restore first.',
-                  style: Theme.of(sheetContext).textTheme.bodyMedium,
-                ),
-                TextButton(
-                  onPressed: isBusy
-                      ? null
-                      : () => restoreFromSheet(sheetContext, setSheetState),
-                  child: const Text('Restore purchase'),
-                ),
-                const SizedBox(height: 16),
-                if (helperMessage != null) ...[
-                  Text(
-                    helperMessage!,
-                    style: Theme.of(sheetContext).textTheme.bodySmall,
+                if (isCheckingStatus) ...[
+                  Row(
+                    children: [
+                      const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Checking subscription status...',
+                          style: Theme.of(sheetContext).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                ],
-                SizedBox(
-                  width: double.infinity,
-                  child: OpacityButtonWidgetTwo(
+                ] else if (isAlreadySubscribed) ...[
+                  Text(
+                    'You are already subscribed and can continue using the app.',
+                    style: Theme.of(sheetContext).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OpacityButtonWidgetTwo(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      label: 'Got it',
+                    ),
+                  ),
+                ] else ...[
+                  Text(
+                    'Subscribe to unlock full client coaching access. If you already subscribed on another device, restore first.',
+                    style: Theme.of(sheetContext).textTheme.bodyMedium,
+                  ),
+                  TextButton(
                     onPressed: isBusy
                         ? null
-                        : () => subscribeFromSheet(sheetContext, setSheetState),
-                    label: 'Subscribe',
+                        : () => restoreFromSheet(sheetContext, setSheetState),
+                    child: const Text('Restore purchase'),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  if (helperMessage != null) ...[
+                    Text(
+                      helperMessage!,
+                      style: Theme.of(sheetContext).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: OpacityButtonWidgetTwo(
+                      onPressed: isBusy
+                          ? null
+                          : () => subscribeFromSheet(sheetContext, setSheetState),
+                      label: 'Subscribe',
+                    ),
+                  ),
+                ],
               ],
             ),
           );
@@ -169,6 +204,26 @@ Future<void> showClientSubscriptionSheet({
       );
     },
   );
+}
+
+Future<bool> _checkBackendSubscriptionActive({required String userId}) async {
+  try {
+    final uri = Uri.parse(apiNotathletesBaseUrl).resolve(subscriptionStatusPath);
+    final response = await http.get(
+      uri.replace(queryParameters: {'user_id': userId}),
+      headers: {'Accept': 'application/json'},
+    ).timeout(const Duration(seconds: 15));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return false;
+    }
+
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>) return false;
+    final access = data['access'];
+    return access is bool ? access : false;
+  } catch (_) {
+    return false;
+  }
 }
 
 /// Loads the subscription product, starts the Apple purchase flow directly,
@@ -255,28 +310,3 @@ Future<bool> _startIapPurchase({
   return success;
 }
 
-Future<void> _syncBackendActivation({
-  required String email,
-  String? firstName,
-  String? lastName,
-}) async {
-  try {
-    final uri = Uri.parse(apiNotathletesBaseUrl).resolve(accountActivatePath);
-    final body = <String, String>{'email': email};
-    if ((firstName ?? '').trim().isNotEmpty) {
-      body['first_name'] = firstName!.trim();
-    }
-    if ((lastName ?? '').trim().isNotEmpty) {
-      body['last_name'] = lastName!.trim();
-    }
-    await http
-        .post(
-          uri,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(body),
-        )
-        .timeout(const Duration(seconds: 15));
-  } catch (_) {
-    // Best effort only: backend sync should not block app access.
-  }
-}
