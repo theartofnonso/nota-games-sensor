@@ -65,4 +65,15 @@ class SharedPrefs {
     _routineLogRevision.value++;
   }
 
+  /// Cached client subscription entitlement snapshot (JSON string).
+  final String _subscriptionEntitlementSnapshotKey =
+      "subscription_entitlement_snapshot_key";
+
+  String get subscriptionEntitlementSnapshot =>
+      _sharedPrefs?.getString(_subscriptionEntitlementSnapshotKey) ?? "";
+
+  set subscriptionEntitlementSnapshot(String value) {
+    _sharedPrefs?.setString(_subscriptionEntitlementSnapshotKey, value);
+  }
+
 }

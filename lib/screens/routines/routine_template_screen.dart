@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -22,6 +24,7 @@ import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/notifications_utils.dart';
+import '../../utils/client_access_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../shared_prefs.dart';
 import '../../utils/string_utils.dart';
@@ -479,10 +482,16 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     }
   }
 
-  void _launchRoutineLogEditor() {
+  Future<void> _launchRoutineLogEditor() async {
+    final hasAccess = await guardClientFeature(
+      context: context,
+      feature: ClientFeatureGate.startWorkoutSession,
+    );
+    if (!hasAccess || !mounted) return;
+
     // Prevent starting a new live session when there's an unsaved one
     if (SharedPrefs().routineLog.isNotEmpty) {
-      navigateToUnsavedSession(context);
+      unawaited(navigateToUnsavedSession(context));
       return;
     }
 

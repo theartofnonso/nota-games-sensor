@@ -317,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: _UnsavedSessionCard(
-                        onTap: () => navigateToUnsavedSession(context),
+                        onTap: () => unawaited(navigateToUnsavedSession(context)),
                       ),
                     ),
                   ],
