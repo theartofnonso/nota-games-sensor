@@ -528,6 +528,18 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
     if (!mounted) return;
 
     if (savedLog != null) {
+      // Best-effort durability step: wait briefly for one sync attempt so
+      // freshly finished sessions are less likely to be lost on quick uninstall.
+      if (widget.mode == RoutineEditorMode.log) {
+        try {
+          await routineController
+              .syncRoutineLogs()
+              .timeout(const Duration(seconds: 10));
+        } catch (_) {
+          // Keep UX unblocked: session is still saved locally and will retry sync.
+        }
+      }
+
       // Clear state after successfully saving session.
       await exerciseLogController.onClear();
 
