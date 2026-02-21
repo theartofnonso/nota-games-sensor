@@ -37,7 +37,7 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
   double carbs = (template?.carbs ?? 0).clamp(0.0, maxMacro);
   double fats = (template?.fats ?? 0).clamp(0.0, maxMacro);
 
-  await showAppBottomSheet<void>(
+  await showAppActionBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     child: Builder(
@@ -111,6 +111,7 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
 
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
+            final maxSheetHeight = MediaQuery.of(ctx).size.height * 0.72;
             return Padding(
               padding: EdgeInsets.only(
                 left: 26,
@@ -118,104 +119,109 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
                 top: 26,
                 bottom: 26 + bottomInset,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Nutrition template',
-                    style: Theme.of(ctx)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Set target calories and macros for this client.',
-                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: mutedColor,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxSheetHeight),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nutrition template',
+                        style: Theme.of(ctx)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Set target calories and macros for this client.',
+                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                              color: mutedColor,
+                            ),
+                      ),
+                      const SizedBox(height: 20),
+                      buildSliderRow(
+                        label: 'Calories',
+                        value: calories,
+                        max: maxCalories,
+                        trackColor: colorCalories,
+                        unit: 'kcal',
+                        onChanged: (v) => setSheetState(() => calories = v),
+                      ),
+                      const SizedBox(height: 8),
+                      buildSliderRow(
+                        label: 'Protein',
+                        value: protein,
+                        max: maxMacro,
+                        trackColor: colorProtein,
+                        unit: 'g',
+                        onChanged: (v) => setSheetState(() => protein = v),
+                      ),
+                      const SizedBox(height: 8),
+                      buildSliderRow(
+                        label: 'Carbs',
+                        value: carbs,
+                        max: maxMacro,
+                        trackColor: colorCarbs,
+                        unit: 'g',
+                        onChanged: (v) => setSheetState(() => carbs = v),
+                      ),
+                      const SizedBox(height: 8),
+                      buildSliderRow(
+                        label: 'Fats',
+                        value: fats,
+                        max: maxMacro,
+                        trackColor: colorFats,
+                        unit: 'g',
+                        onChanged: (v) => setSheetState(() => fats = v),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OpacityButtonWidgetTwo(
+                          buttonColor: accent,
+                          label: 'Save template',
+                          onPressed: () async {
+                            final ownerId =
+                                Supabase.instance.client.auth.currentUser?.id;
+                            final clientId = nutritionController.activeUserId;
+                            if (ownerId == null || clientId == null) {
+                              showSnackbar(
+                                context: ctx,
+                                message: 'Unable to save template.',
+                              );
+                              return;
+                            }
+
+                            final now = DateTime.now();
+                            final updated = NutritionTemplateDto(
+                              id: template?.id ?? const Uuid().v4(),
+                              owner: ownerId,
+                              clientId: clientId,
+                              calories: calories,
+                              protein: protein,
+                              carbs: carbs,
+                              fats: fats,
+                              createdAt: template?.createdAt ?? now,
+                              updatedAt: now,
+                            );
+
+                            showCoachLoadingOverlay(ctx);
+                            try {
+                              await nutritionController.upsertTemplate(
+                                template: updated,
+                              );
+                              if (ctx.mounted) Navigator.of(ctx).pop();
+                            } finally {
+                              if (ctx.mounted) hideCoachLoadingOverlay(ctx);
+                            }
+                          },
                         ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  buildSliderRow(
-                    label: 'Calories',
-                    value: calories,
-                    max: maxCalories,
-                    trackColor: colorCalories,
-                    unit: 'kcal',
-                    onChanged: (v) => setSheetState(() => calories = v),
-                  ),
-                  const SizedBox(height: 8),
-                  buildSliderRow(
-                    label: 'Protein',
-                    value: protein,
-                    max: maxMacro,
-                    trackColor: colorProtein,
-                    unit: 'g',
-                    onChanged: (v) => setSheetState(() => protein = v),
-                  ),
-                  const SizedBox(height: 8),
-                  buildSliderRow(
-                    label: 'Carbs',
-                    value: carbs,
-                    max: maxMacro,
-                    trackColor: colorCarbs,
-                    unit: 'g',
-                    onChanged: (v) => setSheetState(() => carbs = v),
-                  ),
-                  const SizedBox(height: 8),
-                  buildSliderRow(
-                    label: 'Fats',
-                    value: fats,
-                    max: maxMacro,
-                    trackColor: colorFats,
-                    unit: 'g',
-                    onChanged: (v) => setSheetState(() => fats = v),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OpacityButtonWidgetTwo(
-                      buttonColor: accent,
-                      label: 'Save template',
-                      onPressed: () async {
-                        final ownerId =
-                            Supabase.instance.client.auth.currentUser?.id;
-                        final clientId = nutritionController.activeUserId;
-                        if (ownerId == null || clientId == null) {
-                          showSnackbar(
-                            context: ctx,
-                            message: 'Unable to save template.',
-                          );
-                          return;
-                        }
-
-                        final now = DateTime.now();
-                        final updated = NutritionTemplateDto(
-                          id: template?.id ?? const Uuid().v4(),
-                          owner: ownerId,
-                          clientId: clientId,
-                          calories: calories,
-                          protein: protein,
-                          carbs: carbs,
-                          fats: fats,
-                          createdAt: template?.createdAt ?? now,
-                          updatedAt: now,
-                        );
-
-                        showCoachLoadingOverlay(ctx);
-                        try {
-                          await nutritionController.upsertTemplate(
-                            template: updated,
-                          );
-                          if (ctx.mounted) Navigator.of(ctx).pop();
-                        } finally {
-                          if (ctx.mounted) hideCoachLoadingOverlay(ctx);
-                        }
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ),
             );
           },
