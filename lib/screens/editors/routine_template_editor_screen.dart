@@ -9,20 +9,16 @@ import 'package:trainware/dtos/appsync/exercise_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
 import 'package:trainware/utils/dialog_utils.dart';
-import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
 import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../dtos/appsync/routine_template_dto.dart';
-import '../../dtos/set_dtos/set_dto.dart';
-import '../../dtos/set_dtos/weight_and_reps_dto.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 import '../../utils/routine_editors_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/routine/editors/exercise_log_list_item.dart';
-import '../../widgets/weight_plate_calculator.dart';
 
 class RoutineTemplateEditorScreen extends StatefulWidget {
   static const routeName = '/routine-template-editor';
@@ -46,8 +42,6 @@ class _RoutineTemplateEditorScreenState
   late Function _onDisposeCallback;
 
   final _minimisedExerciseLogCards = <String>[];
-
-  SetDto? _selectedSetDto;
 
   void _selectExercisesInLibrary() async {
     final controller =
@@ -217,9 +211,6 @@ class _RoutineTemplateEditorScreenState
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = Theme.of(context).brightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     final exerciseLogController =
         Provider.of<ExerciseLogController>(context, listen: false);
 
@@ -260,19 +251,6 @@ class _RoutineTemplateEditorScreenState
                     child: FaIcon(Icons.keyboard_hide_rounded),
                   ),
                   Spacer(),
-                  _selectedSetDto != null
-                      ? FloatingActionButton(
-                          heroTag: UniqueKey(),
-                          onPressed: _showWeightCalculator,
-                          enableFeedback: true,
-                          child: Image.asset(
-                            'icons/dumbbells.png',
-                            fit: BoxFit.contain,
-                            color: isDarkMode ? Colors.white : Colors.white,
-                            height: 24, // Adjust the height as needed
-                          ),
-                        )
-                      : SizedBox.shrink()
                 ]),
               )
             : null,
@@ -474,16 +452,6 @@ class _RoutineTemplateEditorScreenState
         ),
       ),
     );
-  }
-
-  void _showWeightCalculator() {
-    showAppBottomSheet(
-        context: context,
-        isScrollControlled: false,
-        useBlurredTransparentBackground: false,
-        enableDrag: true,
-        child: WeightPlateCalculator(
-            target: (_selectedSetDto as WeightAndRepsSetDto?)?.weight ?? 0));
   }
 
   @override

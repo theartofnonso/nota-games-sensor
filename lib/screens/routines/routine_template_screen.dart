@@ -169,6 +169,22 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                     onPressed: () => _launchRoutineLogEditor(),
                     child: const FaIcon(FontAwesomeIcons.play, size: 24),
                   )),
+        appBar: AppBar(
+          backgroundColor: appBarBackgroundColor(context: context),
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
+            onPressed: context.pop,
+          ),
+          actions: [
+            if (!isSystemTemplate || hasSelectedClient)
+              IconButton(
+                onPressed: () => _showMenuBottomSheet(planDto: plan),
+                icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, size: 22),
+              ),
+          ],
+        ),
         body: Container(
           height: double.infinity,
           decoration: BoxDecoration(
@@ -218,15 +234,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                 ],
                               ),
                             ),
-                            if (!isSystemTemplate || hasSelectedClient)
-                              IconButton(
-                                onPressed: () =>
-                                    _showMenuBottomSheet(planDto: plan),
-                                icon: const FaIcon(
-                                    FontAwesomeIcons.ellipsisVertical),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
                           ],
                         ),
                         if (template.notes.isNotEmpty)

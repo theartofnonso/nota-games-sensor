@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
-import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/search_bar.dart';
 
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import '../../../dtos/appsync/exercise_dto.dart';
 import '../../../utils/general_utils.dart';
-import '../../../utils/navigation_utils.dart';
 import '../../../widgets/empty_states/list_empty_state.dart';
 import '../../../widgets/exercise/exercise_grid_item.dart';
 
@@ -165,93 +162,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     Navigator.of(context).pop(selected);
   }
 
-  Future<void> _promptLogTypeAndReturn(ExerciseDto exercise) async {
-    final chosen = await showModalBottomSheet<ExerciseType>(
-      context: context,
-      backgroundColor: Colors.black87,
-      isDismissible: true,
-      enableDrag: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "How do you want to log this?",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Choose how you want to log what you've done for this exercise.",
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Colors.white70),
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Image.asset(
-                    'icons/dumbbells.png',
-                    height: 24,
-                    width: 24,
-                    color: Colors.white70,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.fitness_center,
-                          color: Colors.white70);
-                    },
-                  ),
-                  title: const Text("Weights + Reps"),
-                  subtitle: const Text("Log weights and repetitions"),
-                  onTap: () => Navigator.pop(context, ExerciseType.weights),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const FaIcon(FontAwesomeIcons.hashtag,
-                      color: Colors.white70),
-                  title: const Text("Reps only"),
-                  subtitle: const Text("Log only reps"),
-                  onTap: () => Navigator.pop(context, ExerciseType.bodyWeight),
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.timer, color: Colors.white70),
-                  title: const Text("Duration"),
-                  subtitle: const Text("Log duration"),
-                  onTap: () => Navigator.pop(context, ExerciseType.duration),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (chosen != null) {
-      _navigateBackWithSelectedExercise(exercise.copyWith(type: chosen));
-    }
-  }
-
   void _dismissKeyboard(BuildContext context) {
     FocusScope.of(context).unfocus();
-  }
-
-  void _navigateToExerciseHistory(ExerciseDto exercise) async {
-    _dismissKeyboard(context);
-    await navigateToExerciseHome(context: context, exercise: exercise);
-    if (!mounted) return;
-    setState(() {
-      _loadOrSyncExercises();
-    });
   }
 
   @override
@@ -436,9 +348,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   // Helpers
   // ────────────────────────────────────────────────────────────────────
 
-  /// Handle exercise tap - show bottom sheet with context-aware options
+  /// Handle exercise tap.
   /// - forAiQuery: tap toggles multi-select; use Done to confirm
-  /// - addToWorkout/viewOnly: Show "Add to workout" and "View history"
+  /// - addToWorkout/viewOnly: direct one-tap return for add-to-workout flow
   void _handleExerciseTap(ExerciseDto exercise) {
     _dismissKeyboard(context);
     if (widget.selectionPurpose == ExerciseSelectionPurpose.forAiQuery) {
@@ -452,54 +364,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       });
       return;
     }
-    _showExerciseOptionsBottomSheet(exercise);
-  }
-
-  void _showExerciseOptionsBottomSheet(ExerciseDto exercise) {
-    // forAiQuery is handled in _handleExerciseTap (direct tap selects)
-    showAppActionBottomSheet(
-      context: context,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Text(
-                exercise.name,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-            ),
-            if (!widget.readOnly) ...[
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const FaIcon(FontAwesomeIcons.circlePlus, size: 22),
-                horizontalTitleGap: 6,
-                title: const Text("Add to workout"),
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await _promptLogTypeAndReturn(exercise);
-                },
-              ),
-            ],
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.circleInfo, size: 20),
-              horizontalTitleGap: 6,
-              title: const Text("View exercise information"),
-              onTap: () {
-                Navigator.of(context).pop();
-                _navigateToExerciseHistory(exercise);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+    _navigateBackWithSelectedExercise(exercise);
   }
 
   void _loadOrSyncExercises() {

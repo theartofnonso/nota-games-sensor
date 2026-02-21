@@ -265,7 +265,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final accessController = context.watch<ClientOverrideController>();
-    final showCoachAiFab = AppConfig.isCoach && accessController.hasSelectedClient;
+    final showCoachAiFab =
+        AppConfig.isCoach && accessController.hasSelectedClient;
     return Scaffold(
       floatingActionButton: showCoachAiFab ? const CoachAiChatFab() : null,
       backgroundColor: appBarBackgroundColor(context: context),
@@ -415,7 +416,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final controller = context.read<NutritionLogController>();
     final calorieTarget = controller.calorieTarget;
-    await showAppBottomSheet<void>(
+    await showAppActionBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       isDismissible: true,
@@ -603,7 +604,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     final mealController = TextEditingController();
     DateTime selectedLoggedAt = DateTime.now();
 
-    await showAppBottomSheet<void>(
+    await showAppActionBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       isDismissible: true,
@@ -612,6 +613,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
           return StatefulBuilder(
             builder: (context, setModalState) {
               final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+              final maxSheetHeight = MediaQuery.of(context).size.height * 0.42;
               final isDarkMode =
                   Theme.of(context).brightness == Brightness.dark;
               final loggedAtLabel =
@@ -619,104 +621,111 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
               return Padding(
                 padding: EdgeInsets.only(
-                  left: 26,
-                  right: 26,
-                  top: 26,
-                  bottom: 26 + bottomInset,
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: 16 + bottomInset,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Log a meal',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Describe what you ate and we\'ll estimate the calories and macros.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: (isDarkMode ? Colors.white : Colors.black)
-                                .withValues(alpha: 0.6),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxSheetHeight),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Log a meal',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Describe what you ate.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: (isDarkMode ? Colors.white : Colors.black)
+                                    .withValues(alpha: 0.6),
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: mealController,
+                          textInputAction: TextInputAction.done,
+                          cursorColor: isDarkMode ? Colors.white : Colors.black,
+                          minLines: 1,
+                          maxLines: 1,
+                          decoration: const InputDecoration(
+                            hintText:
+                                'e.g. two eggs, toast with butter, orange juice',
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
                           ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: mealController,
-                      textInputAction: TextInputAction.done,
-                      cursorColor: isDarkMode ? Colors.white : Colors.black,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'e.g. two eggs, toast with butter, orange juice',
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                      ),
-                      keyboardType: TextInputType.text,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w400,
-                        color: isDarkMode ? Colors.white : Colors.black,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () {
-                        showDateTimePicker(
-                          context: context,
-                          initialDateTime: selectedLoggedAt,
-                          mode: CupertinoDatePickerMode.dateAndTime,
-                          onChangedDateTime: (value) {
-                            setModalState(() => selectedLoggedAt = value);
+                          keyboardType: TextInputType.text,
+                          textCapitalization: TextCapitalization.sentences,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () {
+                            showDateTimePicker(
+                              context: context,
+                              initialDateTime: selectedLoggedAt,
+                              mode: CupertinoDatePickerMode.dateAndTime,
+                              onChangedDateTime: (value) {
+                                setModalState(() => selectedLoggedAt = value);
+                              },
+                            );
                           },
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 16,
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  loggedAtLabel,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Colors.white.withValues(alpha: 0.8),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.access_time,
-                              size: 16,
-                              color: Colors.white.withValues(alpha: 0.7),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              loggedAtLabel,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ],
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: _LogMealButton(
+                            mealController: mealController,
+                            selectedLoggedAt: selectedLoggedAt,
+                            onLogged: () {
+                              if (context.mounted) Navigator.of(context).pop();
+                            },
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: _LogMealButton(
-                        mealController: mealController,
-                        selectedLoggedAt: selectedLoggedAt,
-                        onLogged: () {
-                          if (context.mounted) Navigator.of(context).pop();
-                        },
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               );
             },

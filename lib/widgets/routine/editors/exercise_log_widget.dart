@@ -30,7 +30,6 @@ import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../../buttons/opacity_button_widget_two.dart';
 import '../../empty_states/list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
-import '../../weight_plate_calculator.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
@@ -56,8 +55,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
       _weightAndRepsControllers = [];
   List<TextEditingController> _repsControllers = [];
   List<DateTime> _durationControllers = [];
-
-  SetDto? _selectedSetDto;
 
   final GlobalKey<DurationStopwatchWidgetState> _durationStopwatchKey =
       GlobalKey();
@@ -316,9 +313,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
     if (!mounted) return;
 
-    showAppBottomSheet(
+    showAppActionBottomSheet(
       context: context,
-      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(
@@ -475,76 +471,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _dismissKeyboard() {
     FocusScope.of(context).unfocus(); // Dismisses the keyboard
-  }
-
-  void _showWeightCalculator() {
-    // Get the current weight from the text field controller if available
-    double targetWeight = 0;
-
-    if (_selectedSetDto != null && _selectedSetDto is WeightAndRepsSetDto) {
-      final selectedSet = _selectedSetDto as WeightAndRepsSetDto;
-      final weightSets =
-          _currentExerciseLog.sets.whereType<WeightAndRepsSetDto>().toList();
-
-      // Find the index of the selected set
-      final setIndex = weightSets.indexWhere((s) => s == selectedSet);
-
-      if (setIndex >= 0 && setIndex < _weightAndRepsControllers.length) {
-        // Get the weight controller for this set
-        final weightController = _weightAndRepsControllers[setIndex].$1;
-        final weightText = weightController.text.trim();
-
-        // Parse the weight from the text field
-        final parsedWeight = double.tryParse(weightText);
-        if (parsedWeight != null && parsedWeight > 0) {
-          // Convert to kg if using lbs (weight is stored in kg internally)
-          targetWeight =
-              isDefaultWeightUnit() ? parsedWeight : toKg(parsedWeight);
-        } else {
-          // Fallback to the set's weight property if text field is empty/invalid
-          targetWeight = selectedSet.weight;
-        }
-      } else {
-        // Fallback to the set's weight property if index not found
-        targetWeight = selectedSet.weight;
-      }
-    }
-
-    showAppBottomSheet(
-        context: context,
-        isScrollControlled: false,
-        enableDrag: true,
-        child: WeightPlateCalculator(target: targetWeight));
-  }
-
-  void _onTapWeightEditor({required SetDto setDto}) {
-    setState(() {
-      _selectedSetDto = setDto;
-    });
-  }
-
-  void _onTapRepsEditor() {
-    setState(() {
-      _selectedSetDto = null;
-    });
-  }
-
-  void _showAlternativesBottomSheet() {
-    if (_exerciseLog == null) return;
-
-    showAppBottomSheet(
-      context: context,
-      isDraggable: true,
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.9,
-      builder: (context, scrollController) {
-        return _AlternativesManagementWidget(
-          exerciseLog: _currentExerciseLog,
-          scrollController: scrollController,
-        );
-      },
-    );
   }
 
   void _addAlternativesDirectly() {
@@ -955,8 +881,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                     updateReps: _updateReps,
                                     updateWeight: _updateWeight,
                                     controllers: _weightAndRepsControllers,
-                                    onTapWeightEditor: _onTapWeightEditor,
-                                    onTapRepsEditor: _onTapRepsEditor,
+                                    onTapWeightEditor: ({required setDto}) {},
+                                    onTapRepsEditor: () {},
                                     editorType: widget.editorType,
                                     showSetCheck: widget.showSetCheck,
                                   ),
@@ -980,7 +906,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                     removeSet: _removeSet,
                                     updateReps: _updateReps,
                                     controllers: _repsControllers,
-                                    onTapRepsEditor: _onTapRepsEditor,
+                                    onTapRepsEditor: () {},
                                     editorType: widget.editorType,
                                     showSetCheck: widget.showSetCheck,
                                   ),
@@ -1273,21 +1199,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                       elevation: 8.0,
                       child: const FaIcon(Icons.keyboard_hide_rounded),
                     ),
-                    if (_selectedSetDto != null)
-                      FloatingActionButton(
-                        heroTag: UniqueKey(),
-                        onPressed: _showWeightCalculator,
-                        enableFeedback: true,
-                        backgroundColor:
-                            themeGradient(context: context).colors.first,
-                        elevation: 8.0,
-                        child: Image.asset(
-                          'icons/dumbbells.png',
-                          fit: BoxFit.contain,
-                          color: Colors.white,
-                          height: 24,
-                        ),
-                      )
                   ],
                 ),
               ),
@@ -1474,11 +1385,9 @@ class _DurationSetListView extends StatelessWidget {
 
 class _AlternativesManagementWidget extends StatefulWidget {
   final ExerciseLogDto exerciseLog;
-  final ScrollController? scrollController;
 
   const _AlternativesManagementWidget({
     required this.exerciseLog,
-    this.scrollController,
   });
 
   @override
@@ -1592,7 +1501,6 @@ class _AlternativesManagementWidgetState
                         "No alternative exercises added yet.\nTap the + button to add alternative exercises for this exercise",
                   )
                 : ListView.separated(
-                    controller: widget.scrollController,
                     itemCount: alternatives.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {

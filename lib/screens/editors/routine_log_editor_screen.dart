@@ -130,9 +130,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
         ? _averageSessionDuration!.hmsAnalog()
         : "not enough data yet";
 
-    showAppBottomSheet(
+    showAppActionBottomSheet(
       context: context,
-      isScrollControlled: false,
       useBlurredTransparentBackground: false,
       child: Padding(
         padding: const EdgeInsets.all(26),

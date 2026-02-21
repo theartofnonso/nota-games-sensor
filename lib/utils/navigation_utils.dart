@@ -149,11 +149,9 @@ Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
 Future<void> navigateToRoutineTemplatePreview(
     {required BuildContext context,
     required RoutineTemplateDto template}) async {
-  await showEditorBottomSheet<void>(
+  await navigateWithSlideTransition(
     context: context,
-    child: RoutineTemplateScreen(
-      id: template.id,
-    ),
+    child: RoutineTemplateScreen(id: template.id),
   );
 }
 

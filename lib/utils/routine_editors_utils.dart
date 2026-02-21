@@ -217,9 +217,8 @@ Future<bool> confirmRemoveExerciseBottomSheet({
 }) async {
   bool shouldRemove = false;
 
-  await showAppBottomSheet(
+  await showAppActionBottomSheet(
     context: context,
-    isScrollControlled: false,
     child: Padding(
       padding: const EdgeInsets.all(26),
       child: Column(

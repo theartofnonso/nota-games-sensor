@@ -116,9 +116,8 @@ class _CoachAiChatScreenState extends State<CoachAiChatScreen> {
         ? '$fromStr – ${_dateTo.day} ${_dateTo.abbreviatedMonth()} ${_dateTo.year}'
         : '$fromStr – $toStr';
 
-    showAppBottomSheet(
+    showAppActionBottomSheet(
       context: context,
-      isScrollControlled: false,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: Column(
