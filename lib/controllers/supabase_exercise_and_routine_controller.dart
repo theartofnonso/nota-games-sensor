@@ -197,9 +197,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
             return ExerciseDto(
               id: json['id'] as String? ?? '',
               name: json['name'] as String? ?? '',
-              type: parsedType == ExerciseType.none
-                  ? ExerciseType.weights
-                  : parsedType,
+              // Keep catalog exercises untyped by default; the editor flow asks
+              // how to log (weights/reps/duration) when adding to a routine.
+              type: parsedType,
               notes: '',
               isSystem: true,
             );

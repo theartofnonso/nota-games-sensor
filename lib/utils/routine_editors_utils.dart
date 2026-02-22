@@ -153,13 +153,16 @@ void showExercisesInLibrary(
   if (context.mounted) {
     if (selectedExercises != null && selectedExercises.isNotEmpty) {
       final normalized = <ExerciseDto>[];
+      final shouldAskLogType = type == null;
       for (final ex in selectedExercises) {
-        if (ex.type != ExerciseType.none) {
+        if (!shouldAskLogType) {
           normalized.add(ex);
           continue;
         }
-        final picked =
-            await _pickExerciseType(context: context, exerciseName: ex.name);
+        final picked = await _pickExerciseType(
+          context: context,
+          exerciseName: ex.name,
+        );
         if (picked == null) continue;
         normalized.add(ex.copyWith(type: picked));
       }
