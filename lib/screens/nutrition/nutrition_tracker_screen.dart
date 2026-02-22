@@ -363,6 +363,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                         log: entry.log!,
                         isDarkMode: isDarkMode,
                         calorieTarget: controller.calorieTarget,
+                        canDelete: !AppConfig.isCoach,
                         onDelete: () => _confirmDelete(entry.log!),
                         onTap: () => _showMacroDetails(entry.log!),
                       );
@@ -1006,6 +1007,7 @@ class _MacroLogCard extends StatelessWidget {
   final NutritionLogDto log;
   final bool isDarkMode;
   final double calorieTarget;
+  final bool canDelete;
   final Future<bool> Function() onDelete;
   final VoidCallback onTap;
 
@@ -1013,6 +1015,7 @@ class _MacroLogCard extends StatelessWidget {
     required this.log,
     required this.isDarkMode,
     required this.calorieTarget,
+    required this.canDelete,
     required this.onDelete,
     required this.onTap,
   });
@@ -1025,121 +1028,118 @@ class _MacroLogCard extends StatelessWidget {
         : (log.calories / calorieTarget).clamp(0.0, 1.0);
     final iconData = _iconForHour(log.loggedAt.hour);
     final iconColor = _iconColorForHour(log.loggedAt.hour);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Dismissible(
-        key: ValueKey(log.id),
-        direction: DismissDirection.endToStart,
-        confirmDismiss: (_) => onDelete(),
-        background: const SizedBox.shrink(),
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.06)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: (isDarkMode ? Colors.white : Colors.black)
-                    .withValues(alpha: 0.08),
-              ),
-            ),
-            child: Column(
+    final cardContent = GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: (isDarkMode ? Colors.white : Colors.black)
+                .withValues(alpha: 0.08),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: iconColor.withValues(
-                          alpha: isDarkMode ? 0.25 : 0.15,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        iconData,
-                        size: 16,
-                        color: iconColor,
-                      ),
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(
+                      alpha: isDarkMode ? 0.25 : 0.15,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            log.foodName,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${log.caloriesRounded} / ${calorieTarget.toStringAsFixed(0)} kcal',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: isDarkMode
-                                          ? Colors.white.withValues(alpha: 0.65)
-                                          : Colors.black.withValues(alpha: 0.6),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      timeLabel,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : Colors.black.withValues(alpha: 0.5),
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: calorieProgress,
-                    minHeight: 6,
-                    backgroundColor:
-                        const Color(0xFF22c55e).withValues(alpha: 0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF22c55e),
-                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    iconData,
+                    size: 16,
+                    color: iconColor,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        log.foodName,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isDarkMode ? Colors.white : Colors.black,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${log.caloriesRounded} / ${calorieTarget.toStringAsFixed(0)} kcal',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.65)
+                                  : Colors.black.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Text(
-                  '${log.protein.toStringAsFixed(1)}g protein, '
-                  '${log.carbs.toStringAsFixed(1)}g carbs, '
-                  'and ${log.fats.toStringAsFixed(1)}g fat',
+                  timeLabel,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isDarkMode
                             ? Colors.white.withValues(alpha: 0.6)
                             : Colors.black.withValues(alpha: 0.5),
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: calorieProgress,
+                minHeight: 6,
+                backgroundColor: const Color(0xFF22c55e).withValues(alpha: 0.2),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFF22c55e),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${log.protein.toStringAsFixed(1)}g protein, '
+              '${log.carbs.toStringAsFixed(1)}g carbs, '
+              'and ${log.fats.toStringAsFixed(1)}g fat',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : Colors.black.withValues(alpha: 0.5),
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ],
         ),
       ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: canDelete
+          ? Dismissible(
+              key: ValueKey(log.id),
+              direction: DismissDirection.endToStart,
+              confirmDismiss: (_) => onDelete(),
+              background: const SizedBox.shrink(),
+              child: cardContent,
+            )
+          : cardContent,
     );
   }
 
