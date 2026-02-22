@@ -38,6 +38,7 @@ Future<RoutineTemplateDto?> navigateToRoutineTemplateEditor(
     isDraggable: true,
     isDismissible:
         false, // Prevent auto-dismiss - PopScope will handle via GestureDetector
+    enableDrag: true,
     initialChildSize: 0.9,
     minChildSize: 0.6,
     maxChildSize: 0.98,
@@ -136,6 +137,7 @@ Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
     context: context,
     isDismissible: arguments.editorMode ==
         RoutineEditorMode.log, // Only dismissible in log mode, not edit mode
+    enableDrag: true,
     onBarrierTap: onBarrierTap,
     child: RoutineLogEditorScreen(
       log: arguments.log,

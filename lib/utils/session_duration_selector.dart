@@ -45,6 +45,13 @@ Future<void> showSessionDurationSelectorBottomSheet({
   required DateTime initialStartTime,
   required DateTime initialEndTime,
   required Future<void> Function(DateTime start, DateTime end) onConfirm,
+  CupertinoDatePickerMode pickerMode = CupertinoDatePickerMode.dateAndTime,
+  String title = "Select Duration",
+  String description = "Set the start and end times for this session",
+  String startLabel = "Start Time",
+  String endLabel = "End Time",
+  String Function(Duration duration)? confirmLabelBuilder,
+  String? Function(DateTime start, DateTime end)? validator,
 }) async {
   DateTime startTime = initialStartTime;
   DateTime endTime = initialEndTime;
@@ -57,7 +64,8 @@ Future<void> showSessionDurationSelectorBottomSheet({
         final theme = Theme.of(context);
         final vibrant = theme.colors.vibrantAccent;
 
-        final errorMessage = validateSessionDuration(startTime, endTime);
+        final errorMessage =
+            (validator ?? validateSessionDuration)(startTime, endTime);
         final duration = endTime.difference(startTime);
         final isValid = errorMessage == null;
 
@@ -74,7 +82,7 @@ Future<void> showSessionDurationSelectorBottomSheet({
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Select Duration",
+                  title,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -82,16 +90,17 @@ Future<void> showSessionDurationSelectorBottomSheet({
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Set the start and end times for this session",
+                  description,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white70,
                   ),
                 ),
                 const SizedBox(height: 24),
                 _SessionDurationSelectorRow(
-                  label: "Start Time",
+                  label: startLabel,
                   dateTime: startTime,
                   accentColor: vibrant,
+                  pickerMode: pickerMode,
                   onTimeChanged: (DateTime newDateTime) {
                     startTime = newDateTime;
                     setBottomSheet(() {});
@@ -99,9 +108,10 @@ Future<void> showSessionDurationSelectorBottomSheet({
                 ),
                 const SizedBox(height: 16),
                 _SessionDurationSelectorRow(
-                  label: "End Time",
+                  label: endLabel,
                   dateTime: endTime,
                   accentColor: vibrant,
+                  pickerMode: pickerMode,
                   onTimeChanged: (DateTime newDateTime) {
                     endTime = newDateTime;
                     setBottomSheet(() {});
@@ -124,8 +134,9 @@ Future<void> showSessionDurationSelectorBottomSheet({
                   child: OpacityButtonWidgetTwo(
                     buttonColor: isValid ? vibrant : Colors.grey,
                     label: isValid
-                        ? "Log ${duration.hmsAnalog()} session"
-                        : "Log Session",
+                        ? (confirmLabelBuilder?.call(duration) ??
+                            "Log ${duration.hmsAnalog()} session")
+                        : (confirmLabelBuilder?.call(duration) ?? "Log Session"),
                     onPressed: isValid
                         ? () async {
                             Navigator.of(context).pop();
@@ -148,12 +159,14 @@ class _SessionDurationSelectorRow extends StatefulWidget {
   final String label;
   final DateTime dateTime;
   final Color accentColor;
+  final CupertinoDatePickerMode pickerMode;
   final void Function(DateTime newDateTime) onTimeChanged;
 
   const _SessionDurationSelectorRow({
     required this.label,
     required this.dateTime,
     required this.accentColor,
+    required this.pickerMode,
     required this.onTimeChanged,
   });
 
@@ -183,6 +196,7 @@ class _SessionDurationSelectorRowState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final showTime = widget.pickerMode != CupertinoDatePickerMode.date;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,14 +224,16 @@ class _SessionDurationSelectorRowState
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "${_currentDateTime.hour.toString().padLeft(2, '0')}:${_currentDateTime.minute.toString().padLeft(2, '0')}",
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: widget.accentColor,
-                          fontWeight: FontWeight.bold,
+                      if (showTime) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          "${_currentDateTime.hour.toString().padLeft(2, '0')}:${_currentDateTime.minute.toString().padLeft(2, '0')}",
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: widget.accentColor,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ],
@@ -238,7 +254,7 @@ class _SessionDurationSelectorRowState
           ),
           clipBehavior: Clip.antiAlias,
           child: CupertinoDatePicker(
-            mode: CupertinoDatePickerMode.dateAndTime,
+            mode: widget.pickerMode,
             use24hFormat: true,
             initialDateTime: _currentDateTime,
             itemExtent: 40,

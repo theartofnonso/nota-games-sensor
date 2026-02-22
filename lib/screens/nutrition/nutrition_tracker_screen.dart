@@ -276,9 +276,9 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
         AppConfig.isCoach && accessController.hasSelectedClient;
     return Scaffold(
       floatingActionButton: showCoachAiFab ? const CoachAiChatFab() : null,
-      backgroundColor: appBarBackgroundColor(context: context),
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: appBarBackgroundColor(context: context),
+        backgroundColor: themeGradient(context: context).colors.first,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -319,60 +319,63 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
           const SizedBox(width: 6),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
-        children: [
-          NutritionTrackingCarousel(
-            goalCalories: goalCalories,
-            remainingCalories: remainingCalories,
-            proteinTarget: controller.proteinTarget,
-            carbsTarget: controller.carbsTarget,
-            fatsTarget: controller.fatsTarget,
-            consumedProtein: consumedProtein,
-            consumedCarbs: consumedCarbs,
-            consumedFats: consumedFats,
-            hasLogsToday: hasLogsToday,
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (sortedLogs.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 50.0),
-                    child: ListEmptyState(
-                      message:
-                          "It might feel quiet now, but your nutrition logs will soon appear here.",
-                    ),
-                  )
-                else
-                  ...logEntries.map(
-                    (entry) {
-                      if (entry.isWeekDivider) {
-                        return _LogWeekDivider(label: entry.label!);
-                      }
-                      if (entry.isDivider) {
-                        return _LogDateDivider(
-                          label: entry.label!,
-                          totals: entry.totals ?? const _MacroTotals(),
-                        );
-                      }
-                      return _MacroLogCard(
-                        log: entry.log!,
-                        isDarkMode: isDarkMode,
-                        calorieTarget: controller.calorieTarget,
-                        canDelete: !AppConfig.isCoach,
-                        onDelete: () => _confirmDelete(entry.log!),
-                        onTap: () => _showMacroDetails(entry.log!),
-                      );
-                    },
-                  ),
-              ],
+      body: Container(
+        decoration: BoxDecoration(gradient: themeGradient(context: context)),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+          children: [
+            NutritionTrackingCarousel(
+              goalCalories: goalCalories,
+              remainingCalories: remainingCalories,
+              proteinTarget: controller.proteinTarget,
+              carbsTarget: controller.carbsTarget,
+              fatsTarget: controller.fatsTarget,
+              consumedProtein: consumedProtein,
+              consumedCarbs: consumedCarbs,
+              consumedFats: consumedFats,
+              hasLogsToday: hasLogsToday,
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (sortedLogs.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 50.0),
+                      child: ListEmptyState(
+                        message:
+                            "It might feel quiet now, but your nutrition logs will soon appear here.",
+                      ),
+                    )
+                  else
+                    ...logEntries.map(
+                      (entry) {
+                        if (entry.isWeekDivider) {
+                          return _LogWeekDivider(label: entry.label!);
+                        }
+                        if (entry.isDivider) {
+                          return _LogDateDivider(
+                            label: entry.label!,
+                            totals: entry.totals ?? const _MacroTotals(),
+                          );
+                        }
+                        return _MacroLogCard(
+                          log: entry.log!,
+                          isDarkMode: isDarkMode,
+                          calorieTarget: controller.calorieTarget,
+                          canDelete: !AppConfig.isCoach,
+                          onDelete: () => _confirmDelete(entry.log!),
+                          onTap: () => _showMacroDetails(entry.log!),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

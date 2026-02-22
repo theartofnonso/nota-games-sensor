@@ -242,6 +242,10 @@ class OfflineRoutineLogRepository {
                 userId: clientId,
                 logId: entry.log.id,
               ));
+              unawaited(sendFcmNotificationChallengeAchievementCheck(
+                userId: clientId,
+                logId: entry.log.id,
+              ));
             }
           }
         }

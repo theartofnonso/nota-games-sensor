@@ -11,6 +11,7 @@ Future<T?> showEditorBottomSheet<T>({
   double minChildSize = 0.5,
   double maxChildSize = 0.95,
   bool isDismissible = true,
+  bool enableDrag = true,
   Future<bool> Function()? onBarrierTap,
 }) {
   return showAppBottomSheet<T>(
@@ -24,5 +25,6 @@ Future<T?> showEditorBottomSheet<T>({
     builder: builder,
     child: child,
     onBarrierTap: onBarrierTap,
+    enableDrag: enableDrag,
   );
 }

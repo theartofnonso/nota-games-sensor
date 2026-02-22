@@ -11,17 +11,23 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
+import 'package:trainware/dtos/appsync/exercise_dto.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
+import 'package:trainware/dtos/challenges/exercise_challenge_dto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
+import 'package:trainware/screens/exercise/library/exercise_library_screen.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/config/chat_config.dart';
+import 'package:trainware/enums/exercise_type_enums.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/urls.dart';
 import 'package:trainware/utils/coach_mapping_utils.dart';
+import 'package:trainware/utils/lottie_exercise_registry.dart';
 import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/notifications_utils.dart';
@@ -38,11 +44,13 @@ import '../../services/training_prediction_service.dart';
 import '../../utils/calendar_date_logs_sheet.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/navigation_utils.dart';
+import '../../utils/session_duration_selector.dart';
 import '../../utils/uri_utils.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/badges/unread_badge.dart';
+import '../../widgets/cards/frosted_card.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/information_containers/information_container_with_background_image.dart';
@@ -335,6 +343,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   SizedBox(height: _sectionSpacing),
                   _RoutinePlansSection(),
                   _SpacerIfRoutinePlansVisible(),
+                  _ChallengesSection(),
+                  _SpacerIfChallengesVisible(),
                   _NutritionSection(),
                   _SpacerIfNutritionVisible(),
                   if (AppConfig.isClient) ...[
@@ -2206,6 +2216,836 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
+class _ChallengesSection extends StatefulWidget {
+  const _ChallengesSection();
+
+  @override
+  State<_ChallengesSection> createState() => _ChallengesSectionState();
+}
+
+class _ChallengesSectionState extends State<_ChallengesSection> {
+  Future<ExerciseDto?> _pickExercise() async {
+    final selected = await showAppBottomSheet<List<ExerciseDto>>(
+      context: context,
+      isDraggable: true,
+      initialChildSize: 0.9,
+      minChildSize: 0.6,
+      maxChildSize: 0.98,
+      child: const ExerciseLibraryScreen(
+        selectionPurpose: ExerciseSelectionPurpose.viewOnly,
+      ),
+    );
+    if (selected == null || selected.isEmpty) return null;
+    return selected.first;
+  }
+
+  List<ExerciseChallengeTargetType> _targetOptionsForExerciseType(
+      ExerciseType type) {
+    switch (type) {
+      case ExerciseType.weights:
+        return const [
+          ExerciseChallengeTargetType.weight,
+          ExerciseChallengeTargetType.reps,
+        ];
+      case ExerciseType.bodyWeight:
+        return const [ExerciseChallengeTargetType.reps];
+      case ExerciseType.duration:
+        return const [ExerciseChallengeTargetType.duration];
+      case ExerciseType.none:
+        return const [];
+    }
+  }
+
+  Future<void> _showCreateChallengeSheet() async {
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    if (!AppConfig.isCoach || !controller.accessController.hasSelectedClient) {
+      return;
+    }
+
+    ExerciseDto? selectedExercise;
+    ExerciseType selectedExerciseType = ExerciseType.weights;
+    ExerciseChallengeTargetType? selectedTargetType =
+        ExerciseChallengeTargetType.weight;
+    DateTime startDate = DateUtils.dateOnly(DateTime.now());
+    DateTime endDate =
+        DateUtils.dateOnly(DateTime.now().add(const Duration(days: 14)));
+    final titleController = TextEditingController();
+    final targetController = TextEditingController();
+    int selectedReps = 8;
+    Duration selectedDuration = const Duration(seconds: 60);
+    bool isSaving = false;
+    String? helper;
+
+    await showAppActionBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      child: StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          ExerciseChallengeTargetType? normalizeTargetTypeForExerciseType({
+            required ExerciseType exerciseType,
+            required ExerciseChallengeTargetType? currentTargetType,
+          }) {
+            final targetOptions = _targetOptionsForExerciseType(exerciseType);
+            if (targetOptions.isEmpty) return null;
+            if (targetOptions.contains(currentTargetType)) {
+              return currentTargetType;
+            }
+            if (exerciseType == ExerciseType.weights) {
+              return ExerciseChallengeTargetType.weight;
+            }
+            return targetOptions.first;
+          }
+
+          final options = _targetOptionsForExerciseType(selectedExerciseType);
+          final logTypeOptions = ExerciseType.values
+              .where((t) => t != ExerciseType.none)
+              .toList(growable: false);
+          selectedTargetType = normalizeTargetTypeForExerciseType(
+            exerciseType: selectedExerciseType,
+            currentTargetType: selectedTargetType,
+          );
+
+          Future<void> pickChallengeWindow() async {
+            await showSessionDurationSelectorBottomSheet(
+              context: sheetContext,
+              initialStartTime: startDate,
+              initialEndTime: endDate,
+              pickerMode: CupertinoDatePickerMode.date,
+              title: 'Select challenge dates',
+              description: 'Set the start and end dates for this challenge.',
+              startLabel: 'Start date',
+              endLabel: 'End date',
+              confirmLabelBuilder: (_) => 'Set challenge dates',
+              validator: (start, end) {
+                if (start.isAfter(end)) {
+                  return 'End date must be on or after start date.';
+                }
+                return null;
+              },
+              onConfirm: (start, end) async {
+                if (!sheetContext.mounted) return;
+                setSheetState(() {
+                  startDate = DateUtils.dateOnly(start);
+                  endDate = DateUtils.dateOnly(end);
+                  if (endDate.isBefore(startDate)) endDate = startDate;
+                });
+              },
+            );
+          }
+
+          Future<void> pickReps() async {
+            int temp = selectedReps;
+            await showAppActionBottomSheet<void>(
+              context: sheetContext,
+              isScrollControlled: true,
+              child: Builder(
+                builder: (ctx) => Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Target reps',
+                        style: Theme.of(ctx).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 220,
+                        child: CupertinoPicker(
+                          itemExtent: 36,
+                          scrollController: FixedExtentScrollController(
+                            initialItem: selectedReps - 1,
+                          ),
+                          onSelectedItemChanged: (idx) => temp = idx + 1,
+                          children: List.generate(
+                            100,
+                            (index) => Center(
+                              child: Text('${index + 1} reps'),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OpacityButtonWidgetTwo(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          label: 'Done',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+            if (!sheetContext.mounted) return;
+            setSheetState(() => selectedReps = temp.clamp(1, 100));
+          }
+
+          String formatDuration(Duration d) {
+            final hours = d.inHours;
+            final minutes = d.inMinutes;
+            final seconds = d.inSeconds.remainder(60);
+            if (hours > 0) {
+              final minutePart = d.inMinutes.remainder(60);
+              return '${hours}h ${minutePart.toString().padLeft(2, '0')}m ${seconds.toString().padLeft(2, '0')}s';
+            }
+            return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
+          }
+
+          Future<void> pickDuration() async {
+            Duration temp = selectedDuration;
+            await showModalBottomSheet<void>(
+              context: sheetContext,
+              builder: (ctx) {
+                return SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 220,
+                        child: CupertinoTimerPicker(
+                          mode: CupertinoTimerPickerMode.hms,
+                          initialTimerDuration: selectedDuration,
+                          onTimerDurationChanged: (value) => temp = value,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        child: const Text('Done'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+            if (!sheetContext.mounted) return;
+            setSheetState(() {
+              selectedDuration =
+                  temp.inSeconds <= 0 ? const Duration(seconds: 1) : temp;
+            });
+          }
+
+          Future<void> onSave() async {
+            final rawTitle = titleController.text.trim();
+            final challengeTitle = rawTitle.isEmpty
+                ? rawTitle
+                : '${rawTitle[0].toUpperCase()}${rawTitle.substring(1)}';
+            if (challengeTitle.isEmpty) {
+              setSheetState(() => helper = 'Enter a challenge title.');
+              return;
+            }
+            if (selectedExercise == null) {
+              setSheetState(() => helper = 'Select an exercise first.');
+              return;
+            }
+            if (selectedExerciseType == ExerciseType.none) {
+              setSheetState(
+                  () => helper = 'Select how this exercise is logged.');
+              return;
+            }
+            if (selectedTargetType == null) {
+              setSheetState(() => helper = 'Select a target type.');
+              return;
+            }
+            if (endDate.isBefore(startDate)) {
+              setSheetState(
+                  () => helper = 'End date must be on or after start date.');
+              return;
+            }
+            final today = DateUtils.dateOnly(DateTime.now());
+            if (startDate.isBefore(today) || endDate.isBefore(today)) {
+              setSheetState(() {
+                helper =
+                    'Start date and end date cannot be in the past.';
+              });
+              return;
+            }
+            double targetValue;
+            switch (selectedTargetType!) {
+              case ExerciseChallengeTargetType.weight:
+                final parsed = double.tryParse(targetController.text.trim());
+                if (parsed == null || parsed <= 0) {
+                  setSheetState(() => helper = 'Enter a valid target weight.');
+                  return;
+                }
+                targetValue = parsed;
+                break;
+              case ExerciseChallengeTargetType.reps:
+                targetValue = selectedReps.toDouble();
+                break;
+              case ExerciseChallengeTargetType.duration:
+                targetValue = selectedDuration.inSeconds.toDouble();
+                break;
+            }
+
+            setSheetState(() {
+              isSaving = true;
+              helper = null;
+            });
+            await controller.createExerciseChallenge(
+              title: challengeTitle,
+              exerciseId: selectedExercise!.id,
+              exerciseName: selectedExercise!.name,
+              exerciseType: selectedExerciseType,
+              targetType: selectedTargetType!,
+              targetValue: targetValue,
+              startDate: startDate,
+              endDate: endDate,
+            );
+            if (!sheetContext.mounted) return;
+            Navigator.of(sheetContext).pop();
+            if (mounted) {
+              showSnackbar(context: context, message: 'Challenge created.');
+            }
+          }
+
+          final dateFmt = DateFormat('EEE, MMM d');
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: 20 + MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Create challenge',
+                      style: Theme.of(sheetContext).textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      hintText: 'Challenge title',
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Exercise'),
+                    subtitle: Text(selectedExercise?.name ?? 'Select exercise'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final picked = await _pickExercise();
+                      if (picked == null) return;
+                      setSheetState(() {
+                        selectedExercise = picked;
+                        selectedExerciseType = picked.type == ExerciseType.none
+                            ? selectedExerciseType
+                            : picked.type;
+                        selectedTargetType = normalizeTargetTypeForExerciseType(
+                          exerciseType: selectedExerciseType,
+                          currentTargetType: selectedTargetType,
+                        );
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text('How is this exercise logged?',
+                      style: Theme.of(sheetContext).textTheme.bodyMedium),
+                  const SizedBox(height: 8),
+                  if (logTypeOptions.length >= 2)
+                    CupertinoSlidingSegmentedControl<ExerciseType>(
+                      groupValue: selectedExerciseType == ExerciseType.none
+                          ? null
+                          : selectedExerciseType,
+                      onValueChanged: (type) {
+                        if (type == null) return;
+                        setSheetState(() {
+                          selectedExerciseType = type;
+                          selectedTargetType = normalizeTargetTypeForExerciseType(
+                            exerciseType: type,
+                            currentTargetType: selectedTargetType,
+                          );
+                        });
+                      },
+                      children: {
+                        for (final type in logTypeOptions)
+                          type: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 6),
+                            child: Text(type.name),
+                          ),
+                      },
+                    )
+                  else if (logTypeOptions.length == 1)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.tertiarySystemFill
+                            .resolveFrom(sheetContext),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        logTypeOptions.first.name,
+                        style: Theme.of(sheetContext).textTheme.bodyMedium,
+                      ),
+                    )
+                  else
+                    Text(
+                      'No log types available.',
+                      style: Theme.of(sheetContext).textTheme.bodySmall,
+                    ),
+                  if (selectedExerciseType == ExerciseType.weights) ...[
+                    const SizedBox(height: 12),
+                    Text('Target type',
+                        style: Theme.of(sheetContext).textTheme.bodyMedium),
+                    const SizedBox(height: 8),
+                    CupertinoSlidingSegmentedControl<ExerciseChallengeTargetType>(
+                      groupValue: selectedTargetType,
+                      onValueChanged: (targetType) {
+                        if (targetType == null) return;
+                        setSheetState(() => selectedTargetType = targetType);
+                      },
+                      children: {
+                        for (final targetType in options)
+                          targetType: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 6),
+                            child: Text(_targetTypeLabel(targetType)),
+                          ),
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  if (selectedTargetType == ExerciseChallengeTargetType.weight)
+                    TextField(
+                      controller: targetController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      decoration:
+                          const InputDecoration(hintText: 'Target weight'),
+                    )
+                  else if (selectedTargetType ==
+                      ExerciseChallengeTargetType.reps)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Target reps'),
+                      subtitle: Text('$selectedReps reps'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: pickReps,
+                    )
+                  else if (selectedTargetType ==
+                      ExerciseChallengeTargetType.duration)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Target duration'),
+                      subtitle: Text(formatDuration(selectedDuration)),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: pickDuration,
+                    ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Challenge window'),
+                    subtitle: Text(
+                      '${dateFmt.format(startDate)} - ${dateFmt.format(endDate)}',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: pickChallengeWindow,
+                  ),
+                  if (helper != null) ...[
+                    const SizedBox(height: 8),
+                    Text(helper!,
+                        style: Theme.of(sheetContext).textTheme.bodySmall),
+                  ],
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OpacityButtonWidgetTwo(
+                      onPressed: isSaving ? null : onSave,
+                      label: isSaving ? 'Saving...' : 'Create challenge',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _openChallengesScreen() async {
+    await navigateWithSlideTransition(
+      context: context,
+      child: _ChallengesScreen(
+        onCreateChallenge: _showCreateChallengeSheet,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SupabaseExerciseAndRoutineController>(
+      builder: (context, controller, _) {
+        final challenges = controller.exerciseChallenges;
+        final activeChallenges = challenges
+            .where((c) =>
+                controller.progressForChallenge(c).status ==
+                ExerciseChallengeStatus.active)
+            .toList();
+        final canManage =
+            AppConfig.isCoach && controller.accessController.hasSelectedClient;
+        final shouldShowSection =
+            canManage || !AppConfig.isCoach || challenges.isNotEmpty;
+        if (!shouldShowSection) return const SizedBox.shrink();
+
+        if (canManage && challenges.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: _ChallengeEmptyCard(onTapCreate: _openChallengesScreen),
+          );
+        }
+
+        if (challenges.isEmpty) return const SizedBox.shrink();
+
+        final cardWidth = MediaQuery.of(context).size.width * 0.9;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 215,
+              child: activeChallenges.isEmpty
+                  ? Center(
+                      child: TextButton(
+                        onPressed: _openChallengesScreen,
+                        child: const Text('No active challenges right now.'),
+                      ),
+                    )
+                  : ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      children: activeChallenges.map((challenge) {
+                        final progress = controller.progressForChallenge(challenge);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 14),
+                          child: SizedBox(
+                            width: cardWidth,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _openChallengesScreen,
+                              child: _ExerciseChallengeCard(
+                                challenge: challenge,
+                                progress: progress,
+                                canDelete: false,
+                              pinProgressToBottom: true,
+                                onDelete: () => controller.deleteExerciseChallenge(
+                                  challengeId: challenge.id,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ChallengesScreen extends StatelessWidget {
+  final Future<void> Function() onCreateChallenge;
+
+  const _ChallengesScreen({
+    required this.onCreateChallenge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: themeGradient(context: context).colors.first,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        elevation: 0,
+        leading: IconButton(
+          icon: FaIcon(
+            FontAwesomeIcons.solidCircleXmark,
+            color: isDarkMode ? Colors.white : Colors.black,
+            size: 24,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Close',
+        ),
+        actions: [
+          Consumer<SupabaseExerciseAndRoutineController>(
+            builder: (context, controller, _) {
+              final canManage = AppConfig.isCoach &&
+                  controller.accessController.hasSelectedClient;
+              if (!canManage) return const SizedBox.shrink();
+              return IconButton(
+                onPressed: onCreateChallenge,
+                icon: const Icon(Icons.add),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(gradient: themeGradient(context: context)),
+        child: SafeArea(
+          top: false,
+          child: Consumer<SupabaseExerciseAndRoutineController>(
+            builder: (context, controller, _) {
+              final challenges = controller.exerciseChallenges.toList()
+                ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+              if (challenges.isEmpty) {
+                return const Center(child: Text('No challenges yet.'));
+              }
+              final grouped = <ExerciseChallengeStatus, List<ExerciseChallengeDto>>{
+                ExerciseChallengeStatus.active: [],
+                ExerciseChallengeStatus.upcoming: [],
+                ExerciseChallengeStatus.completed: [],
+                ExerciseChallengeStatus.expired: [],
+              };
+              for (final c in challenges) {
+                grouped[controller.progressForChallenge(c).status]!.add(c);
+              }
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 18),
+                children: grouped.entries
+                    .where((entry) => entry.value.isNotEmpty)
+                    .expand((entry) {
+                  return <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 10),
+                      child: Text(
+                        _statusLabel(entry.key),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    ...entry.value.map((challenge) {
+                      final progress = controller.progressForChallenge(challenge);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _ExerciseChallengeCard(
+                          challenge: challenge,
+                          progress: progress,
+                          canDelete: AppConfig.isCoach &&
+                              controller.accessController.hasSelectedClient,
+                          onDelete: () => controller.deleteExerciseChallenge(
+                            challengeId: challenge.id,
+                          ),
+                        ),
+                      );
+                    }),
+                  ];
+                }).toList(),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChallengeEmptyCard extends StatelessWidget {
+  final VoidCallback onTapCreate;
+  const _ChallengeEmptyCard({required this.onTapCreate});
+
+  @override
+  Widget build(BuildContext context) {
+    return _CreateSectionFrostedCard(
+      title: 'Create their first challenge',
+      description: 'Set a time-bound exercise target for this client.',
+      ctaLabel: 'Create challenge',
+      onPressed: onTapCreate,
+      gradientColors: [
+        Colors.blueGrey.withValues(alpha: 0.35),
+        Colors.indigo.withValues(alpha: 0.3),
+        Colors.black.withValues(alpha: 0.45),
+      ],
+    );
+  }
+}
+
+class _ExerciseChallengeCard extends StatelessWidget {
+  final ExerciseChallengeDto challenge;
+  final ExerciseChallengeProgress progress;
+  final bool canDelete;
+  final bool pinProgressToBottom;
+  final Future<void> Function() onDelete;
+
+  const _ExerciseChallengeCard({
+    required this.challenge,
+    required this.progress,
+    required this.canDelete,
+    this.pinProgressToBottom = false,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final card = FrostedCard(
+      gradientColors: [
+        Colors.teal.withValues(alpha: 0.28),
+        Colors.blue.withValues(alpha: 0.24),
+        Colors.black.withValues(alpha: 0.45),
+      ],
+      child: Row(
+        children: [
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final canPinToBottom =
+                    pinProgressToBottom && constraints.hasBoundedHeight;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      challenge.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${DateFormat('MMM d').format(challenge.startDate)} - ${DateFormat('MMM d').format(challenge.endDate)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.75),
+                          ),
+                    ),
+                    if (canPinToBottom) const Spacer() else const SizedBox(height: 10),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: progress.percent,
+                        minHeight: 6,
+                        backgroundColor: Colors.white.withValues(alpha: 0.18),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF22C55E),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${(progress.percent * 100).round()}% - ${_valueLabel(progress.bestValue, challenge.targetType)} / ${_valueLabel(progress.targetValue, challenge.targetType)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.82),
+                          ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 88,
+            child: FutureBuilder<String?>(
+              future: LottieExerciseRegistry.lottieFor(challenge.exerciseId),
+              builder: (context, snapshot) {
+                final path = snapshot.data;
+                if (path != null && path.isNotEmpty) {
+                  return Lottie.asset(path, fit: BoxFit.contain, repeat: true);
+                }
+                return Icon(
+                  Icons.fitness_center,
+                  color: Colors.white.withValues(alpha: 0.75),
+                  size: 34,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!canDelete) return card;
+
+    return Dismissible(
+      key: ValueKey(challenge.id),
+      direction: DismissDirection.endToStart,
+      background: const SizedBox.shrink(),
+      confirmDismiss: (_) async {
+        await onDelete();
+        return false;
+      },
+      child: card,
+    );
+  }
+}
+
+class _SpacerIfChallengesVisible extends StatelessWidget {
+  const _SpacerIfChallengesVisible();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SupabaseExerciseAndRoutineController>(
+      builder: (context, controller, _) {
+        final hasContent = controller.exerciseChallenges.isNotEmpty ||
+            (AppConfig.isCoach &&
+                controller.accessController.hasSelectedClient);
+        return hasContent
+            ? SizedBox(height: _SettingsScreenState._sectionSpacing)
+            : const SizedBox.shrink();
+      },
+    );
+  }
+}
+
+String _targetTypeLabel(ExerciseChallengeTargetType type) {
+  switch (type) {
+    case ExerciseChallengeTargetType.weight:
+      return 'Target weight';
+    case ExerciseChallengeTargetType.reps:
+      return 'Target reps';
+    case ExerciseChallengeTargetType.duration:
+      return 'Target duration';
+  }
+}
+
+String _valueLabel(double value, ExerciseChallengeTargetType targetType) {
+  switch (targetType) {
+    case ExerciseChallengeTargetType.weight:
+      return '${value.toStringAsFixed(value == value.roundToDouble() ? 0 : 1)}kg';
+    case ExerciseChallengeTargetType.reps:
+      return '${value.round()} reps';
+    case ExerciseChallengeTargetType.duration:
+      return '${value.round()}s';
+  }
+}
+
+String _statusLabel(ExerciseChallengeStatus status) {
+  switch (status) {
+    case ExerciseChallengeStatus.upcoming:
+      return 'Upcoming';
+    case ExerciseChallengeStatus.active:
+      return 'Active';
+    case ExerciseChallengeStatus.completed:
+      return 'Completed';
+    case ExerciseChallengeStatus.expired:
+      return 'Expired';
+  }
+}
+
 // --- Nutrition section (mirrors routine plans) ---
 
 class _NutritionSection extends StatelessWidget {
@@ -2316,49 +3156,17 @@ class _NutritionCreateRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accent = theme.colors.vibrantAccent;
-    final titleColor = isDark ? Colors.white : Colors.black87;
-    final descriptionColor =
-        isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colors.borderLight.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Nutrition',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: titleColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Create a nutrition template to set calorie and macro targets for this client.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: descriptionColor,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: OpacityButtonWidgetTwo(
-              onPressed: () => showNutritionTemplateSheet(context),
-              label: 'Create nutrition template',
-              buttonColor: accent,
-            ),
-          ),
-        ],
-      ),
+    return _CreateSectionFrostedCard(
+      title: 'Nutrition',
+      description:
+          'Create a nutrition template to set calorie and macro targets for this client.',
+      ctaLabel: 'Create nutrition template',
+      onPressed: () => showNutritionTemplateSheet(context),
+      gradientColors: [
+        Colors.green.withValues(alpha: 0.3),
+        Colors.teal.withValues(alpha: 0.24),
+        Colors.black.withValues(alpha: 0.45),
+      ],
     );
   }
 }
@@ -2438,45 +3246,64 @@ class _RoutinePlansCreateRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final accent = theme.colors.vibrantAccent;
-    final titleColor = isDark ? Colors.white : Colors.black87;
-    final descriptionColor =
-        isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
+    return _CreateSectionFrostedCard(
+      title: 'Routine Plan',
+      description:
+          'Build a custom routine plan for this client from the ground up.',
+      ctaLabel: 'Create routine plan',
+      onPressed: () => navigateToRoutinePlanEditor(context: context),
+      gradientColors: [
+        Colors.indigo.withValues(alpha: 0.32),
+        Colors.deepPurple.withValues(alpha: 0.26),
+        Colors.black.withValues(alpha: 0.45),
+      ],
+    );
+  }
+}
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.black12.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
+class _CreateSectionFrostedCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final String ctaLabel;
+  final VoidCallback onPressed;
+  final List<Color> gradientColors;
+
+  const _CreateSectionFrostedCard({
+    required this.title,
+    required this.description,
+    required this.ctaLabel,
+    required this.onPressed,
+    required this.gradientColors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FrostedCard(
+      gradientColors: gradientColors,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Routine Plan',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: titleColor,
-            ),
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Build a custom routine plan for this client from the ground up.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: descriptionColor,
-              height: 1.4,
-            ),
+            description,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.82),
+                  height: 1.4,
+                ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
             child: OpacityButtonWidgetTwo(
-              onPressed: () => navigateToRoutinePlanEditor(context: context),
-              label: 'Create routine plan',
-              buttonColor: accent,
+              onPressed: onPressed,
+              label: ctaLabel,
             ),
           ),
         ],

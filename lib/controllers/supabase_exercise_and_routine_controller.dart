@@ -16,6 +16,7 @@ import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/appsync/routine_plan_dto.dart';
 import '../dtos/appsync/routine_template_dto.dart';
+import '../dtos/challenges/exercise_challenge_dto.dart';
 import '../dtos/set_dtos/set_dto.dart';
 import '../enums/exercise_type_enums.dart';
 import '../logger.dart';
@@ -43,6 +44,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   List<RoutineTemplateDto> _overrideTemplates = const [];
   List<RoutinePlanDto> _overridePlans = const [];
   List<RoutineLogDto> _overrideLogs = const [];
+  List<ExerciseChallengeDto> _overrideChallenges = const [];
+  List<ExerciseChallengeDto> _clientChallenges = const [];
   final ClientOverrideController accessController;
 
   SupabaseExerciseAndRoutineController({
@@ -95,6 +98,16 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// offline sync engine and for debugging; prefer [logs] in the UI).
   UnmodifiableListView<RoutineLogDto> get remoteLogs => _logRepository.logs;
   bool get isCoach => AppConfig.isCoach;
+  String? get activeUserId =>
+      accessController.selectedClientId ??
+      Supabase.instance.client.auth.currentUser?.id;
+
+  UnmodifiableListView<ExerciseChallengeDto> get exerciseChallenges =>
+      UnmodifiableListView(
+        accessController.hasSelectedClient
+            ? _overrideChallenges
+            : (AppConfig.isCoach ? const [] : _clientChallenges),
+      );
 
   UnmodifiableMapView<String, List<ExerciseLogDto>>
       get exerciseLogsByExerciseId =>
@@ -156,6 +169,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         _overrideTemplates = const [];
         _overridePlans = const [];
         _overrideLogs = const [];
+        _overrideChallenges = const [];
         notifyListeners();
         return;
       }
@@ -163,6 +177,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       await _offlineTemplateRepository.loadFromCache();
       await _offlinePlanRepository.loadFromCache();
       await _offlineLogRepository.loadFromCache();
+      await _loadChallengesForClient(activeUserId);
       // Keep the offline caches and Supabase in sync using last-write-wins.
       await syncRoutineLogs();
 
@@ -953,6 +968,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     _overrideTemplates = const [];
     _overridePlans = const [];
     _overrideLogs = const [];
+    _overrideChallenges = const [];
     await initialize();
   }
 
@@ -972,6 +988,180 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     _overridePlans = _planRepository.plans.toList();
     await _logRepository.loadLogs(userIdOverride: clientId);
     _overrideLogs = _logRepository.logs.toList();
+    await _loadChallengesForClient(clientId);
+  }
+
+  Future<void> _loadChallengesForClient(String? clientId) async {
+    if (clientId == null || clientId.trim().isEmpty) return;
+    try {
+      final response = await Supabase.instance.client
+          .from('exercise_challenges')
+          .select('''
+            id,
+            coach_id,
+            client_id,
+            title,
+            exercise_id,
+            exercise_name,
+            exercise_type,
+            target_type,
+            target_value,
+            start_date,
+            end_date,
+            created_at
+          ''')
+          .eq('client_id', clientId)
+          .order('created_at', ascending: false);
+      final rows = (response as List<dynamic>)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      final loaded = rows.map(ExerciseChallengeDto.fromJson).toList();
+      if (accessController.hasSelectedClient) {
+        _overrideChallenges = loaded;
+      } else {
+        _clientChallenges = loaded;
+      }
+    } catch (e) {
+      logger.w('Failed to load exercise challenges: $e');
+    }
+  }
+
+  Future<void> createExerciseChallenge({
+    required String title,
+    required String exerciseId,
+    required String exerciseName,
+    required ExerciseType exerciseType,
+    required ExerciseChallengeTargetType targetType,
+    required double targetValue,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final coachId = Supabase.instance.client.auth.currentUser?.id;
+    final clientId = accessController.selectedClientId;
+    if (coachId == null || clientId == null || clientId.trim().isEmpty) {
+      errorMessage = 'Client context is required to create a challenge.';
+      notifyListeners();
+      return;
+    }
+    try {
+      final challenge = ExerciseChallengeDto(
+        id: '',
+        coachId: coachId,
+        clientId: clientId,
+        title: title.trim(),
+        exerciseId: exerciseId,
+        exerciseName: exerciseName,
+        exerciseType: exerciseType,
+        targetType: targetType,
+        targetValue: targetValue,
+        startDate: DateUtils.dateOnly(startDate),
+        endDate: DateUtils.dateOnly(endDate),
+        createdAt: DateTime.now(),
+      );
+      final inserted = await Supabase.instance.client
+          .from('exercise_challenges')
+          .insert(challenge.toInsertJson())
+          .select('id')
+          .single();
+      final createdChallengeId = inserted['id']?.toString();
+      if (createdChallengeId != null && createdChallengeId.isNotEmpty) {
+        unawaited(sendFcmNotificationChallengeCreated(
+          challengeId: createdChallengeId,
+        ));
+      }
+      await _loadChallengesForClient(clientId);
+      notifyListeners();
+    } catch (e) {
+      logger.e('Error creating challenge', error: e);
+      errorMessage = 'Failed to create challenge.';
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteExerciseChallenge({required String challengeId}) async {
+    final clientId = accessController.selectedClientId ?? activeUserId;
+    if (clientId == null || clientId.trim().isEmpty) return;
+    try {
+      await Supabase.instance.client
+          .from('exercise_challenges')
+          .delete()
+          .eq('id', challengeId);
+      await _loadChallengesForClient(clientId);
+      notifyListeners();
+    } catch (e) {
+      logger.e('Error deleting challenge', error: e);
+      errorMessage = 'Failed to delete challenge.';
+      notifyListeners();
+    }
+  }
+
+  ExerciseChallengeProgress progressForChallenge(
+    ExerciseChallengeDto challenge, {
+    DateTime? now,
+  }) {
+    final today = DateUtils.dateOnly(now ?? DateTime.now());
+    final start = DateUtils.dateOnly(challenge.startDate);
+    final end = DateUtils.dateOnly(challenge.endDate);
+
+    final matchingLogs = logs.where((log) {
+      final d = DateUtils.dateOnly(log.startTime.toLocal());
+      return (d.isAtSameMomentAs(start) || d.isAfter(start)) &&
+          (d.isAtSameMomentAs(end) || d.isBefore(end));
+    });
+
+    double bestValue = 0;
+    for (final log in matchingLogs) {
+      for (final exLog in log.exerciseLogs) {
+        if (exLog.exercise.id != challenge.exerciseId) continue;
+        for (final set in exLog.sets) {
+          switch (challenge.targetType) {
+            case ExerciseChallengeTargetType.weight:
+              if (set.type != ExerciseType.weights) continue;
+              final value = (set as dynamic).weight as num?;
+              if (value != null) {
+                bestValue = value.toDouble() > bestValue ? value.toDouble() : bestValue;
+              }
+              break;
+            case ExerciseChallengeTargetType.reps:
+              if (set.type != ExerciseType.weights &&
+                  set.type != ExerciseType.bodyWeight) {
+                continue;
+              }
+              final value = (set as dynamic).reps as num?;
+              if (value != null) {
+                bestValue = value.toDouble() > bestValue ? value.toDouble() : bestValue;
+              }
+              break;
+            case ExerciseChallengeTargetType.duration:
+              if (set.type != ExerciseType.duration) continue;
+              final duration = (set as dynamic).duration as Duration?;
+              final seconds = duration?.inSeconds.toDouble() ?? 0;
+              bestValue = seconds > bestValue ? seconds : bestValue;
+              break;
+          }
+        }
+      }
+    }
+
+    final target = challenge.targetValue <= 0 ? 1 : challenge.targetValue;
+    final percent = (bestValue / target).clamp(0.0, 1.0);
+    final achieved = bestValue >= challenge.targetValue && challenge.targetValue > 0;
+
+    final status = today.isBefore(start)
+        ? ExerciseChallengeStatus.upcoming
+        : achieved
+            ? ExerciseChallengeStatus.completed
+            : today.isAfter(end)
+                ? ExerciseChallengeStatus.expired
+                : ExerciseChallengeStatus.active;
+
+    return ExerciseChallengeProgress(
+      bestValue: bestValue,
+      targetValue: challenge.targetValue,
+      percent: percent,
+      achieved: achieved,
+      status: status,
+    );
   }
 
   Future<void> removeLog({required RoutineLogDto log}) async {

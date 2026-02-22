@@ -448,6 +448,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       initialName: template.name,
       initialNotes: template.notes,
       emptyNameMessage: 'Please provide a name for this workout',
+      compact: true,
     ).then((result) async {
       if (result == null) return;
       if (!context.mounted) return;

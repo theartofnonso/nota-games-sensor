@@ -73,19 +73,28 @@ void showDateTimePicker(
       ));
 }
 
-void showDatetimeRangePicker(
+Future<void> showDatetimeRangePicker(
     {required BuildContext context,
     DateTimeRange? initialDateTimeRange,
+    DateTimeRangeSelectionMode selectionMode =
+        DateTimeRangeSelectionMode.dateAndTime,
+    String startLabel = 'Start Time',
+    String endLabel = 'End Time',
+    String? confirmLabel,
     required void Function(DateTimeRange datetimeRange)
         onChangedDateTimeRange}) {
   FocusScope.of(context).unfocus();
-  showAppBottomSheet(
+  return showAppBottomSheet(
       context: context,
       isScrollControlled: true,
       child: Padding(
         padding: const EdgeInsets.all(26),
         child: DateTimeRangePicker(
           initialDateTimeRange: initialDateTimeRange,
+          selectionMode: selectionMode,
+          startLabel: startLabel,
+          endLabel: endLabel,
+          confirmLabel: confirmLabel,
           onSelectRange: onChangedDateTimeRange,
         ),
       ));
