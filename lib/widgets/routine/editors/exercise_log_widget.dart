@@ -533,7 +533,6 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
           );
         });
       },
-      type: _currentExerciseLog.exercise.type,
     );
   }
 
@@ -1444,7 +1443,6 @@ class _AlternativesManagementWidgetState
         ];
         _updateAlternatives(newAlternatives);
       },
-      type: _currentExerciseLog.exercise.type,
     );
   }
 
