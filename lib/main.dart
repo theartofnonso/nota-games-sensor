@@ -46,7 +46,6 @@ import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
-import 'package:trainware/utils/client_access_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -547,7 +546,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (_accessController.isAuthenticated && _accessController.userId != null) {
       unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
           _accessController.userId));
-      unawaited(refreshClientSubscriptionSnapshotInBackground(force: true));
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _processPendingNotification();
@@ -574,7 +572,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     if (state == AppLifecycleState.resumed) {
       unawaited(_restoreAgoraOnResume());
-      unawaited(refreshClientSubscriptionSnapshotInBackground());
     }
   }
 
@@ -625,11 +622,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       // Warm up Agora Chat + push tokens so chat screen is instant when opened
       unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
           _accessController.userId));
-      unawaited(refreshClientSubscriptionSnapshotInBackground(force: true));
     }
 
     if (!isAuthenticated && _lastAuthenticated) {
-      clearLocalClientSubscriptionSnapshot();
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();

@@ -317,7 +317,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10.0),
                       child: _UnsavedSessionCard(
-                        onTap: () => unawaited(navigateToUnsavedSession(context)),
+                        onTap: () =>
+                            unawaited(navigateToUnsavedSession(context)),
                       ),
                     ),
                   ],
@@ -486,7 +487,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             ],
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const FaIcon(FontAwesomeIcons.arrowRightFromBracket, size: 18),
+              leading: const FaIcon(FontAwesomeIcons.arrowRightFromBracket,
+                  size: 18),
               horizontalTitleGap: 8,
               title: const Text('Log out'),
               onTap: () async {

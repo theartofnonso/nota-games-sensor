@@ -63,7 +63,7 @@ class InformationContainerWithBackgroundImage extends StatelessWidget {
                 image,
                 fit: BoxFit.cover,
                 width: double.infinity,
-                alignment: alignmentGeometry ?? Alignment.topCenter,
+                alignment: alignmentGeometry ?? Alignment.center,
               ),
               // 2️⃣ Gradient overlay (transparent → dark)
               Positioned.fill(

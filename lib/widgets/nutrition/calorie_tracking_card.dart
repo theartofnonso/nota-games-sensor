@@ -128,7 +128,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
     final cardWidth = screenWidth * 0.9;
 
     return SizedBox(
-      height: 180,
+      height: 210,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -146,6 +146,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
             width: cardWidth,
             child: _MacroTrackingCard(
               label: 'protein left',
+              macroType: _MacroType.protein,
               target: proteinTarget,
               consumed: consumedProtein,
               hasLogsToday: hasLogsToday,
@@ -163,6 +164,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
             width: cardWidth,
             child: _MacroTrackingCard(
               label: 'carbs left',
+              macroType: _MacroType.carbs,
               target: carbsTarget,
               consumed: consumedCarbs,
               hasLogsToday: hasLogsToday,
@@ -180,6 +182,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
             width: cardWidth,
             child: _MacroTrackingCard(
               label: 'fats left',
+              macroType: _MacroType.fats,
               target: fatsTarget,
               consumed: consumedFats,
               hasLogsToday: hasLogsToday,
@@ -198,8 +201,11 @@ class NutritionTrackingCarousel extends StatelessWidget {
   }
 }
 
+enum _MacroType { protein, carbs, fats }
+
 class _MacroTrackingCard extends StatelessWidget {
   final String label;
+  final _MacroType macroType;
   final double target;
   final double consumed;
   final bool hasLogsToday;
@@ -209,6 +215,7 @@ class _MacroTrackingCard extends StatelessWidget {
 
   const _MacroTrackingCard({
     required this.label,
+    required this.macroType,
     required this.target,
     required this.consumed,
     required this.hasLogsToday,
@@ -223,66 +230,109 @@ class _MacroTrackingCard extends StatelessWidget {
         ? (hasLogsToday ? (target - consumed).clamp(0.0, target) : target)
         : 0.0;
     final progress = target > 0 ? (consumed / target).clamp(0.0, 1.0) : 0.0;
+    final guidance =
+        _nearLimitGuidance(progress: progress, macroType: macroType);
 
     final card = FrostedCard(
       gradientColors: gradientColors,
       child: SizedBox(
-        height: 170,
-        child: Row(
+        height: 200,
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.black.withValues(alpha: 0.8),
-                          fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Colors.black.withValues(alpha: 0.8),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
+                        const Spacer(),
+                        Text(
+                          remaining.toStringAsFixed(0),
+                          style: Theme.of(context)
+                                  .textTheme
+                                  .displayLarge
+                                  ?.copyWith(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.0,
+                                    fontSize: 48,
+                                  ) ??
+                              const TextStyle(
+                                color: Colors.black,
+                                fontSize: 48,
+                                fontWeight: FontWeight.w900,
+                                height: 1.0,
+                                fontFamily: 'Grift',
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${target.toStringAsFixed(0)} grams goal',
+                          style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    fontWeight: FontWeight.w500,
+                                  ) ??
+                              TextStyle(
+                                color: Colors.black.withValues(alpha: 0.6),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const Spacer(),
-                  Text(
-                    remaining.toStringAsFixed(0),
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w900,
-                              height: 1.0,
-                              fontSize: 48,
-                            ) ??
-                        const TextStyle(
-                          color: Colors.black,
-                          fontSize: 48,
-                          fontWeight: FontWeight.w900,
-                          height: 1.0,
-                          fontFamily: 'Grift',
-                        ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${target.toStringAsFixed(0)} grams goal',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              fontWeight: FontWeight.w500,
-                            ) ??
-                        TextStyle(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                  const SizedBox(width: 16),
+                  CalorieGauge(
+                    progress: progress,
+                    progressColor: progressColor,
+                    trackColor: Colors.black.withValues(alpha: 0.12),
+                    knobColor: progressColor,
+                    textColor: Colors.black,
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
-            CalorieGauge(
-              progress: progress,
-              progressColor: progressColor,
-              trackColor: Colors.black.withValues(alpha: 0.12),
-              knobColor: progressColor,
-              textColor: Colors.black,
-            ),
+            if (guidance != null) ...[
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.bottomLeft,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    guidance,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.black.withValues(alpha: 0.78),
+                              fontWeight: FontWeight.w500,
+                              fontStyle: FontStyle.italic,
+                              height: 1.25,
+                            ) ??
+                        TextStyle(
+                          color: Colors.black.withValues(alpha: 0.78),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          fontStyle: FontStyle.italic,
+                          height: 1.25,
+                        ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -296,6 +346,22 @@ class _MacroTrackingCard extends StatelessWidget {
       onTap: onTap,
       child: card,
     );
+  }
+
+  String? _nearLimitGuidance({
+    required double progress,
+    required _MacroType macroType,
+  }) {
+    // Show contextual guidance when the macro is close to its target.
+    if (progress < 0.8 || progress > 1.0) return null;
+    switch (macroType) {
+      case _MacroType.fats:
+        return 'You are approaching your fat target. Consider choosing leaner options for your remaining meals.';
+      case _MacroType.carbs:
+        return 'Carbohydrates are close to target. You may want to prioritize protein and fibrous vegetables next.';
+      case _MacroType.protein:
+        return 'Protein target almost achieved. Maintain balance across remaining meals.';
+    }
   }
 }
 
