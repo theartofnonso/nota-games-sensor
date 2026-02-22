@@ -107,6 +107,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
   final double consumedFats;
   final bool hasLogsToday;
   final VoidCallback? onCardTap;
+  final bool useSingleStack;
 
   const NutritionTrackingCarousel({
     super.key,
@@ -120,82 +121,147 @@ class NutritionTrackingCarousel extends StatelessWidget {
     required this.consumedFats,
     required this.hasLogsToday,
     this.onCardTap,
+    this.useSingleStack = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth * 0.9;
+    if (!useSingleStack) {
+      final screenWidth = MediaQuery.of(context).size.width;
+      final cardWidth = screenWidth * 0.9;
+      return SizedBox(
+        height: 210,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          children: [
+            SizedBox(
+              width: cardWidth,
+              child: CalorieTrackingCard(
+                goalCalories: goalCalories,
+                remainingCalories: remainingCalories,
+                onTap: onCardTap,
+              ),
+            ),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: cardWidth,
+              child: _MacroTrackingCard(
+                label: 'protein left',
+                macroType: _MacroType.protein,
+                target: proteinTarget,
+                consumed: consumedProtein,
+                hasLogsToday: hasLogsToday,
+                gradientColors: const [
+                  Color(0xFFF87171),
+                  Color(0xFFEF4444),
+                  Color(0xFFDC2626),
+                ],
+                progressColor: const Color(0xFFB91C1C),
+                onTap: onCardTap,
+              ),
+            ),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: cardWidth,
+              child: _MacroTrackingCard(
+                label: 'carbs left',
+                macroType: _MacroType.carbs,
+                target: carbsTarget,
+                consumed: consumedCarbs,
+                hasLogsToday: hasLogsToday,
+                gradientColors: const [
+                  Color(0xFF60A5FA),
+                  Color(0xFF3B82F6),
+                  Color(0xFF2563EB),
+                ],
+                progressColor: Colors.black,
+                onTap: onCardTap,
+              ),
+            ),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: cardWidth,
+              child: _MacroTrackingCard(
+                label: 'fats left',
+                macroType: _MacroType.fats,
+                target: fatsTarget,
+                consumed: consumedFats,
+                hasLogsToday: hasLogsToday,
+                gradientColors: const [
+                  Color(0xFFFCD34D),
+                  Color(0xFFFBBF24),
+                  Color(0xFFF59E0B),
+                ],
+                progressColor: Colors.black,
+                onTap: onCardTap,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
+    const backTop = Color(0xFF3B82F6); // carbs blue
+    const backMiddle = Color(0xFFEF4444); // protein red
     return SizedBox(
-      height: 210,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        children: [
-          SizedBox(
-            width: cardWidth,
-            child: CalorieTrackingCard(
-              goalCalories: goalCalories,
-              remainingCalories: remainingCalories,
-              onTap: onCardTap,
+      height: 232,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 10, right: 10),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              top: 0,
+              left: 16,
+              right: 16,
+              height: 42,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: backTop.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          SizedBox(
-            width: cardWidth,
-            child: _MacroTrackingCard(
-              label: 'protein left',
-              macroType: _MacroType.protein,
-              target: proteinTarget,
-              consumed: consumedProtein,
-              hasLogsToday: hasLogsToday,
-              gradientColors: const [
-                Color(0xFFF87171),
-                Color(0xFFEF4444),
-                Color(0xFFDC2626),
-              ],
-              progressColor: const Color(0xFFB91C1C),
-              onTap: onCardTap,
+            Positioned(
+              top: 10,
+              left: 8,
+              right: 8,
+              height: 42,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: backMiddle.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          SizedBox(
-            width: cardWidth,
-            child: _MacroTrackingCard(
-              label: 'carbs left',
-              macroType: _MacroType.carbs,
-              target: carbsTarget,
-              consumed: consumedCarbs,
-              hasLogsToday: hasLogsToday,
-              gradientColors: const [
-                Color(0xFF60A5FA),
-                Color(0xFF3B82F6),
-                Color(0xFF2563EB),
-              ],
-              progressColor: Colors.black,
-              onTap: onCardTap,
+            Positioned(
+              top: 20,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: CalorieTrackingCard(
+                goalCalories: goalCalories,
+                remainingCalories: remainingCalories,
+                onTap: onCardTap,
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          SizedBox(
-            width: cardWidth,
-            child: _MacroTrackingCard(
-              label: 'fats left',
-              macroType: _MacroType.fats,
-              target: fatsTarget,
-              consumed: consumedFats,
-              hasLogsToday: hasLogsToday,
-              gradientColors: const [
-                Color(0xFFFCD34D),
-                Color(0xFFFBBF24),
-                Color(0xFFF59E0B),
-              ],
-              progressColor: Colors.black,
-              onTap: onCardTap,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -352,7 +418,6 @@ class _MacroTrackingCard extends StatelessWidget {
     required double progress,
     required _MacroType macroType,
   }) {
-    // Show contextual guidance when the macro is close to its target.
     if (progress < 0.8 || progress > 1.0) return null;
     switch (macroType) {
       case _MacroType.fats:

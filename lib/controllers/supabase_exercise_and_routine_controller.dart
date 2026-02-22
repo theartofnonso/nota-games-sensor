@@ -1,14 +1,10 @@
 import 'dart:async';
 
 import 'package:collection/collection.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
-import 'package:trainware/offline_first/routine_log_sync_service.dart';
-import 'package:trainware/offline_first/routine_plan_offline_repository.dart';
-import 'package:trainware/offline_first/routine_template_offline_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_log_repository.dart';
 import 'package:uuid/uuid.dart';
 
@@ -36,10 +32,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   late SupabaseRoutineTemplateRepository _templateRepository;
   late SupabaseRoutinePlanRepository _planRepository;
   late SupabaseRoutineLogRepository _logRepository;
-  late OfflineRoutineTemplateRepository _offlineTemplateRepository;
-  late OfflineRoutinePlanRepository _offlinePlanRepository;
-  late OfflineRoutineLogRepository _offlineLogRepository;
-  Future<void>? _syncRoutineInFlight;
   List<ExerciseDto> _exercises = const [];
   List<RoutineTemplateDto> _overrideTemplates = const [];
   List<RoutinePlanDto> _overridePlans = const [];
@@ -57,12 +49,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     _templateRepository = templateRepository;
     _planRepository = planRepository;
     _logRepository = logRepository;
-    _offlineTemplateRepository =
-        OfflineRoutineTemplateRepository(remoteRepository: _templateRepository);
-    _offlinePlanRepository =
-        OfflineRoutinePlanRepository(remoteRepository: _planRepository);
-    _offlineLogRepository =
-        OfflineRoutineLogRepository(remoteRepository: _logRepository);
   }
 
   UnmodifiableListView<ExerciseDto> get exercises =>
@@ -74,7 +60,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
             ? _overrideTemplates
             : (AppConfig.isCoach
                 ? const []
-                : _offlineTemplateRepository.offlineTemplates),
+                : _templateRepository.templates),
       );
 
   UnmodifiableListView<RoutinePlanDto> get plans => UnmodifiableListView(
@@ -82,16 +68,15 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
             ? _overridePlans
             : (AppConfig.isCoach
                 ? const []
-                : _offlinePlanRepository.offlinePlans),
+                : _planRepository.plans),
       );
 
-  /// Offline-first view of routine logs backed by local cache and sync engine.
   UnmodifiableListView<RoutineLogDto> get logs => UnmodifiableListView(
         accessController.hasSelectedClient
             ? _overrideLogs
             : (AppConfig.isCoach
                 ? const []
-                : _offlineLogRepository.offlineLogs),
+                : _logRepository.logs),
       );
 
   /// Direct view of logs loaded from Supabase (used internally by the
@@ -173,13 +158,10 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         notifyListeners();
         return;
       }
-      // Load cached data first so they are available immediately in offline mode.
-      await _offlineTemplateRepository.loadFromCache();
-      await _offlinePlanRepository.loadFromCache();
-      await _offlineLogRepository.loadFromCache();
+      await _templateRepository.loadTemplates();
+      await _planRepository.loadPlans();
+      await _logRepository.loadLogs();
       await _loadChallengesForClient(activeUserId);
-      // Keep the offline caches and Supabase in sync using last-write-wins.
-      await syncRoutineLogs();
 
       // Schedule training reminders based on historic log data
       if (logs.isNotEmpty) {
@@ -227,39 +209,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
-  /// Manually trigger a routine log sync (e.g. on pull-to-refresh or
-  /// connectivity change).
-  Future<void> syncRoutineLogs() async {
-    if (_syncRoutineInFlight != null) {
-      await _syncRoutineInFlight;
-      return;
-    }
-
-    if (accessController.hasSelectedClient || AppConfig.isCoach) {
-      return;
-    }
-    _syncRoutineInFlight = () async {
-      final connectivity = await Connectivity().checkConnectivity();
-      if (connectivity.last == ConnectivityResult.none) {
-        logger.w("Sync skipped: offline/no connectivity");
-        return;
-      }
-
-      await Future.wait([
-        _offlineTemplateRepository.syncNow(),
-        _offlinePlanRepository.syncNow(),
-        _offlineLogRepository.syncNow(),
-      ]);
-      notifyListeners();
-    }();
-
-    try {
-      await _syncRoutineInFlight;
-    } finally {
-      _syncRoutineInFlight = null;
-    }
-  }
-
   /// Plans
 
   Future<RoutinePlanDto?> savePlan({required RoutinePlanDto planDto}) async {
@@ -296,13 +245,18 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     RoutinePlanDto? result;
     try {
-      // Generate a stable ID for new plans so they can be synced correctly.
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        errorMessage = "Please sign in to continue.";
+        notifyListeners();
+        return null;
+      }
       final id = planDto.id.isEmpty ? const Uuid().v4() : planDto.id;
       final planWithId = planDto.copyWith(id: id);
-
-      await _offlinePlanRepository.upsertLocal(planWithId);
-      // ignore: discarded_futures
-      syncRoutineLogs();
+      final json = planWithId.toJson();
+      json['owner'] = userId;
+      await Supabase.instance.client.from('routine_plans').upsert(json);
+      await _planRepository.loadPlans();
       result = planWithId;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -351,9 +305,16 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
     isLoading = true;
     try {
-      await _offlinePlanRepository.upsertLocal(plan);
-      // ignore: discarded_futures
-      syncRoutineLogs();
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        errorMessage = "Please sign in to continue.";
+        notifyListeners();
+        return;
+      }
+      final json = plan.toJson();
+      json['owner'] = userId;
+      await Supabase.instance.client.from('routine_plans').upsert(json);
+      await _planRepository.loadPlans();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating plan", error: e);
@@ -394,9 +355,11 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
     isLoading = true;
     try {
-      await _offlinePlanRepository.deleteLocal(plan.id);
-      // ignore: discarded_futures
-      syncRoutineLogs();
+      await Supabase.instance.client
+          .from('routine_plans')
+          .delete()
+          .eq('id', plan.id);
+      await _planRepository.loadPlans();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error deleting plan", error: e);
@@ -455,13 +418,18 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     isLoading = true;
     RoutineTemplateDto? result;
     try {
-      // Generate a stable ID for new templates so they can be synced correctly.
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        errorMessage = "Please sign in to continue.";
+        notifyListeners();
+        return null;
+      }
       final id = templateDto.id.isEmpty ? const Uuid().v4() : templateDto.id;
       final templateWithId = templateDto.copyWith(id: id);
-
-      await _offlineTemplateRepository.upsertLocal(templateWithId);
-      // ignore: discarded_futures
-      syncRoutineLogs();
+      final json = templateWithId.toJson();
+      json['owner'] = userId;
+      await Supabase.instance.client.from('routine_templates').upsert(json);
+      await _templateRepository.loadTemplates();
       result = templateWithId;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -517,9 +485,16 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
     isLoading = true;
     try {
-      await _offlineTemplateRepository.upsertLocal(template);
-      // ignore: discarded_futures
-      syncRoutineLogs();
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        errorMessage = "Please sign in to continue.";
+        notifyListeners();
+        return;
+      }
+      final json = template.toJson();
+      json['owner'] = userId;
+      await Supabase.instance.client.from('routine_templates').upsert(json);
+      await _templateRepository.loadTemplates();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error updating template", error: e);
@@ -566,9 +541,11 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
     isLoading = true;
     try {
-      await _offlineTemplateRepository.deleteLocal(template.id);
-      // ignore: discarded_futures
-      syncRoutineLogs();
+      await Supabase.instance.client
+          .from('routine_templates')
+          .delete()
+          .eq('id', template.id);
+      await _templateRepository.loadTemplates();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error deleting template", error: e);
@@ -581,17 +558,14 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   /// Logs
 
-  /// Local-first create: write to the offline cache, then sync to Supabase
-  /// in the background using last-write-wins.
+  /// Save a routine log to Supabase. For clients, clears SharedPrefs draft
+  /// only after successful save (caller must call exerciseLogController.onClear).
   Future<RoutineLogDto?> saveLog({required RoutineLogDto logDto}) async {
     if (_blockIfClientMode()) return null;
     isLoading = true;
     try {
-      // Generate a stable ID if needed so we can persist locally without
-      // relying on the remote database.
       final id = logDto.id.isEmpty ? const Uuid().v4() : logDto.id;
 
-      // Ensure all nested exercise logs reference this routine log ID.
       final logWithId = logDto.copyWith(id: id);
       final updatedLog = logWithId.copyWith(
         exerciseLogs: logWithId.exerciseLogs
@@ -599,16 +573,23 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
             .toList(),
       );
 
-      // Local-first write: persist to the offline repository so the workout
-      // is immediately available offline and in the UI.
-      await _offlineLogRepository.upsertLocal(updatedLog);
+      await _logRepository.upsertLog(updatedLog);
+      await _logRepository.loadLogs();
 
-      // Best-effort background sync with Supabase. We don't await this so
-      // that the UI isn't blocked by network conditions.
-      // ignore: discarded_futures
-      syncRoutineLogs();
+      if (AppConfig.isClient) {
+        final clientId = Supabase.instance.client.auth.currentUser?.id;
+        if (clientId != null && clientId.isNotEmpty) {
+          unawaited(sendFcmNotification(
+            userId: clientId,
+            logId: updatedLog.id,
+          ));
+          unawaited(sendFcmNotificationChallengeAchievementCheck(
+            userId: clientId,
+            logId: updatedLog.id,
+          ));
+        }
+      }
 
-      // Reschedule training reminders based on updated (offline-first) log data.
       if (logs.isNotEmpty) {
         await schedulePreferredTrainingReminders(logs: logs);
       }
@@ -624,19 +605,14 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
-  /// Local-first update: modify the offline cache and then sync in the
-  /// background. Callers still get a success flag but are not blocked
-  /// on the network.
+  /// Update a routine log in Supabase.
   Future<bool> updateLog({required RoutineLogDto log}) async {
     if (_blockIfClientMode()) return false;
     isLoading = true;
     bool success = false;
     try {
-      await _offlineLogRepository.upsertLocal(log);
-
-      // ignore: discarded_futures
-      syncRoutineLogs();
-
+      await _logRepository.upsertLog(log);
+      await _logRepository.loadLogs();
       success = true;
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -668,9 +644,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       unawaited(sendFcmNotificationCoachFeedback(
           clientUserId: clientId, logId: logId));
       success = true;
-    } catch (e) {
+    } catch (e, stackTrace) {
       errorMessage = "Failed to save feedback. Please try again.";
-      logger.e("Error updating coach note", error: e);
+      logger.e("Error updating coach note: $e", error: e, stackTrace: stackTrace);
     } finally {
       isLoading = false;
       errorMessage = "";
@@ -679,15 +655,13 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return success;
   }
 
-  /// Local-first delete: mark/remove the log from the offline cache and
-  /// then sync in the background.
+  /// Delete a routine log from Supabase.
   Future<void> deleteLog({required RoutineLogDto log}) async {
     if (_blockIfClientMode()) return;
     isLoading = true;
     try {
-      await _offlineLogRepository.deleteLocal(log.id);
-      // ignore: discarded_futures
-      syncRoutineLogs();
+      await _logRepository.deleteLog(log.id);
+      await _logRepository.loadLogs();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";
       logger.e("Error deleting log", error: e);
@@ -935,10 +909,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   /// Refreshes routine logs from the cloud for the current user (client app).
-  /// Used when opening a log from a notification so the log is loaded from the
-  /// server rather than relying on cache.
+  /// Used when opening a log from a notification.
   Future<void> refreshRoutineLogsFromCloudForCurrentUser() async {
-    await _offlineLogRepository.syncNow();
+    await _logRepository.loadLogs();
     notifyListeners();
   }
 
@@ -1001,9 +974,14 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
             coach_id,
             client_id,
             title,
+            template_id,
+            template_exercise_id,
             exercise_id,
             exercise_name,
             exercise_type,
+            target_weight,
+            target_reps,
+            target_duration_seconds,
             target_type,
             target_value,
             start_date,
@@ -1026,13 +1004,16 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
   }
 
-  Future<void> createExerciseChallenge({
+  Future<void> upsertTemplateExerciseChallenge({
     required String title,
+    required String templateId,
+    required String templateExerciseId,
     required String exerciseId,
     required String exerciseName,
     required ExerciseType exerciseType,
-    required ExerciseChallengeTargetType targetType,
-    required double targetValue,
+    double? targetWeight,
+    int? targetReps,
+    int? targetDurationSeconds,
     required DateTime startDate,
     required DateTime endDate,
   }) async {
@@ -1044,28 +1025,56 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       return;
     }
     try {
+      final normalizedTitle = title.trim();
+      if (normalizedTitle.isEmpty) {
+        errorMessage = 'Challenge title is required.';
+        notifyListeners();
+        return;
+      }
+      if (templateId.trim().isEmpty || templateExerciseId.trim().isEmpty) {
+        errorMessage = 'Template context is required to create a challenge.';
+        notifyListeners();
+        return;
+      }
       final challenge = ExerciseChallengeDto(
         id: '',
         coachId: coachId,
         clientId: clientId,
-        title: title.trim(),
+        title: normalizedTitle,
+        templateId: templateId.trim(),
+        templateExerciseId: templateExerciseId.trim(),
         exerciseId: exerciseId,
         exerciseName: exerciseName,
         exerciseType: exerciseType,
-        targetType: targetType,
-        targetValue: targetValue,
+        targetWeight: targetWeight,
+        targetReps: targetReps,
+        targetDurationSeconds: targetDurationSeconds,
         startDate: DateUtils.dateOnly(startDate),
         endDate: DateUtils.dateOnly(endDate),
         createdAt: DateTime.now(),
       );
+      final existing = await Supabase.instance.client
+          .from('exercise_challenges')
+          .select('id')
+          .eq('client_id', clientId)
+          .eq('template_id', templateId.trim())
+          .eq('template_exercise_id', templateExerciseId.trim())
+          .maybeSingle();
+      final hadExisting = existing != null;
       final inserted = await Supabase.instance.client
           .from('exercise_challenges')
-          .insert(challenge.toInsertJson())
+          .upsert(
+            challenge.toInsertJson(),
+            onConflict: 'client_id,template_id,template_exercise_id',
+          )
           .select('id')
           .single();
       final createdChallengeId = inserted['id']?.toString();
-      if (createdChallengeId != null && createdChallengeId.isNotEmpty) {
+      if (!hadExisting &&
+          createdChallengeId != null &&
+          createdChallengeId.isNotEmpty) {
         unawaited(sendFcmNotificationChallengeCreated(
+          userId: clientId,
           challengeId: createdChallengeId,
         ));
       }
@@ -1074,6 +1083,28 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     } catch (e) {
       logger.e('Error creating challenge', error: e);
       errorMessage = 'Failed to create challenge.';
+      notifyListeners();
+    }
+  }
+
+  Future<void> clearTemplateExerciseChallenge({
+    required String templateId,
+    required String templateExerciseId,
+  }) async {
+    final clientId = accessController.selectedClientId ?? activeUserId;
+    if (clientId == null || clientId.trim().isEmpty) return;
+    try {
+      await Supabase.instance.client
+          .from('exercise_challenges')
+          .delete()
+          .eq('client_id', clientId)
+          .eq('template_id', templateId)
+          .eq('template_exercise_id', templateExerciseId);
+      await _loadChallengesForClient(clientId);
+      notifyListeners();
+    } catch (e) {
+      logger.e('Error clearing template exercise challenge', error: e);
+      errorMessage = 'Failed to clear challenge.';
       notifyListeners();
     }
   }
@@ -1110,42 +1141,67 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     });
 
     double bestValue = 0;
+    double bestWeight = 0;
+    int bestReps = 0;
+    int bestDurationSeconds = 0;
+    bool achieved = false;
     for (final log in matchingLogs) {
       for (final exLog in log.exerciseLogs) {
         if (exLog.exercise.id != challenge.exerciseId) continue;
         for (final set in exLog.sets) {
-          switch (challenge.targetType) {
-            case ExerciseChallengeTargetType.weight:
+          switch (challenge.exerciseType) {
+            case ExerciseType.weights:
               if (set.type != ExerciseType.weights) continue;
-              final value = (set as dynamic).weight as num?;
-              if (value != null) {
-                bestValue = value.toDouble() > bestValue ? value.toDouble() : bestValue;
+              final weight = ((set as dynamic).weight as num?)?.toDouble() ?? 0;
+              final reps = ((set as dynamic).reps as num?)?.toInt() ?? 0;
+              if (weight > bestWeight) bestWeight = weight;
+              if (reps > bestReps) bestReps = reps;
+              final targetWeight = challenge.targetWeight ?? 0;
+              final targetReps = challenge.targetReps ?? 0;
+              final weightPercent =
+                  targetWeight > 0 ? (weight / targetWeight) : 0.0;
+              final repsPercent = targetReps > 0 ? (reps / targetReps) : 0.0;
+              final combinedPercent = weightPercent < repsPercent
+                  ? weightPercent
+                  : repsPercent;
+              if (combinedPercent > bestValue) bestValue = combinedPercent;
+              if (weight >= targetWeight && reps >= targetReps) {
+                achieved = targetWeight > 0 && targetReps > 0;
               }
               break;
-            case ExerciseChallengeTargetType.reps:
+            case ExerciseType.bodyWeight:
               if (set.type != ExerciseType.weights &&
                   set.type != ExerciseType.bodyWeight) {
                 continue;
               }
-              final value = (set as dynamic).reps as num?;
-              if (value != null) {
-                bestValue = value.toDouble() > bestValue ? value.toDouble() : bestValue;
+              final reps = ((set as dynamic).reps as num?)?.toInt() ?? 0;
+              if (reps > bestReps) bestReps = reps;
+              final targetReps = challenge.targetReps ?? 0;
+              if (targetReps > 0) {
+                final repsPercent = reps / targetReps;
+                if (repsPercent > bestValue) bestValue = repsPercent;
+                if (reps >= targetReps) achieved = true;
               }
               break;
-            case ExerciseChallengeTargetType.duration:
+            case ExerciseType.duration:
               if (set.type != ExerciseType.duration) continue;
               final duration = (set as dynamic).duration as Duration?;
-              final seconds = duration?.inSeconds.toDouble() ?? 0;
-              bestValue = seconds > bestValue ? seconds : bestValue;
+              final seconds = duration?.inSeconds ?? 0;
+              if (seconds > bestDurationSeconds) bestDurationSeconds = seconds;
+              final targetDuration = challenge.targetDurationSeconds ?? 0;
+              if (targetDuration > 0) {
+                final durationPercent = seconds / targetDuration;
+                if (durationPercent > bestValue) bestValue = durationPercent;
+                if (seconds >= targetDuration) achieved = true;
+              }
+              break;
+            case ExerciseType.none:
               break;
           }
         }
       }
     }
-
-    final target = challenge.targetValue <= 0 ? 1 : challenge.targetValue;
-    final percent = (bestValue / target).clamp(0.0, 1.0);
-    final achieved = bestValue >= challenge.targetValue && challenge.targetValue > 0;
+    final percent = bestValue.clamp(0.0, 1.0).toDouble();
 
     final status = today.isBefore(start)
         ? ExerciseChallengeStatus.upcoming
@@ -1156,8 +1212,22 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
                 : ExerciseChallengeStatus.active;
 
     return ExerciseChallengeProgress(
-      bestValue: bestValue,
-      targetValue: challenge.targetValue,
+      bestValue: challenge.exerciseType == ExerciseType.weights
+          ? bestWeight
+          : challenge.exerciseType == ExerciseType.bodyWeight
+              ? bestReps.toDouble()
+              : bestDurationSeconds.toDouble(),
+      targetValue: challenge.exerciseType == ExerciseType.weights
+          ? (challenge.targetWeight ?? 0)
+          : challenge.exerciseType == ExerciseType.bodyWeight
+              ? (challenge.targetReps ?? 0).toDouble()
+              : (challenge.targetDurationSeconds ?? 0).toDouble(),
+      bestWeight: bestWeight,
+      bestReps: bestReps,
+      bestDurationSeconds: bestDurationSeconds,
+      targetWeight: challenge.targetWeight,
+      targetReps: challenge.targetReps,
+      targetDurationSeconds: challenge.targetDurationSeconds,
       percent: percent,
       achieved: achieved,
       status: status,

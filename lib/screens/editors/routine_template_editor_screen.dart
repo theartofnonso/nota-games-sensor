@@ -382,6 +382,7 @@ class _RoutineTemplateEditorScreenState
                                                     editorType:
                                                         RoutineEditorMode.edit,
                                                     showSetCheck: false,
+                                                    templateId: widget.template?.id,
                                                   );
                                                 },
                                               ),

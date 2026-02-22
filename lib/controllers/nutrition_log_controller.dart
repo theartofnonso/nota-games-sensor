@@ -1,12 +1,9 @@
 import 'dart:collection';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:trainware/dtos/nutrition/nutrition_template_dto.dart';
-import 'package:trainware/offline_first/nutrition_log_offline_repository.dart';
-import 'package:trainware/offline_first/nutrition_template_offline_repository.dart';
 
 import '../logger.dart';
 import '../app_flavor.dart';
@@ -19,11 +16,8 @@ class NutritionLogController extends ChangeNotifier {
   String errorMessage = '';
   final logger = getLogger(className: 'NutritionLogController');
 
-  late OfflineNutritionLogRepository _offlineRepository;
-  late OfflineNutritionTemplateRepository _offlineTemplateRepository;
   late SupabaseNutritionLogRepository _remoteRepository;
   late SupabaseNutritionTemplateRepository _remoteTemplateRepository;
-  Future<void>? _syncNutritionInFlight;
 
   List<NutritionLogDto> _overrideLogs = const [];
   NutritionTemplateDto? _overrideTemplate;
@@ -37,12 +31,6 @@ class NutritionLogController extends ChangeNotifier {
     _remoteRepository = repository ?? SupabaseNutritionLogRepository();
     _remoteTemplateRepository =
         templateRepository ?? SupabaseNutritionTemplateRepository();
-    _offlineRepository = OfflineNutritionLogRepository(
-      remoteRepository: _remoteRepository,
-    );
-    _offlineTemplateRepository = OfflineNutritionTemplateRepository(
-      remoteRepository: _remoteTemplateRepository,
-    );
   }
 
   UnmodifiableListView<NutritionLogDto> get logs {
@@ -52,7 +40,7 @@ class NutritionLogController extends ChangeNotifier {
     if (AppConfig.isCoach) {
       return UnmodifiableListView(const []);
     }
-    return UnmodifiableListView(_offlineRepository.offlineLogs);
+    return UnmodifiableListView(_remoteRepository.logs);
   }
 
   NutritionTemplateDto? get nutritionTemplate {
@@ -61,7 +49,7 @@ class NutritionLogController extends ChangeNotifier {
     }
     final templates = AppConfig.isCoach
         ? const <NutritionTemplateDto>[]
-        : _offlineTemplateRepository.offlineTemplates;
+        : _remoteTemplateRepository.templates;
     if (templates.isEmpty) {
       return null;
     }
@@ -89,9 +77,8 @@ class NutritionLogController extends ChangeNotifier {
         _overrideLogs = const [];
         _overrideTemplate = null;
       } else {
-        await _offlineRepository.loadFromCache();
-        await _offlineTemplateRepository.loadFromCache();
-        await syncNutritionLogs();
+        await _remoteRepository.loadLogs();
+        await _remoteTemplateRepository.loadTemplates();
       }
     } catch (e) {
       logger.e('Error initializing nutrition logs', error: e);
@@ -99,36 +86,6 @@ class NutritionLogController extends ChangeNotifier {
     } finally {
       isLoading = false;
       notifyListeners();
-    }
-  }
-
-  Future<void> syncNutritionLogs() async {
-    if (_syncNutritionInFlight != null) {
-      await _syncNutritionInFlight;
-      return;
-    }
-
-    if (accessController.hasSelectedClient || AppConfig.isCoach) {
-      return;
-    }
-    _syncNutritionInFlight = () async {
-      final connectivity = await Connectivity().checkConnectivity();
-      if (connectivity.last == ConnectivityResult.none) {
-        logger.w('Nutrition sync skipped: offline/no connectivity');
-        return;
-      }
-
-      await Future.wait([
-        _offlineRepository.syncNow(),
-        _offlineTemplateRepository.syncNow(),
-      ]);
-      notifyListeners();
-    }();
-
-    try {
-      await _syncNutritionInFlight;
-    } finally {
-      _syncNutritionInFlight = null;
     }
   }
 
@@ -140,10 +97,9 @@ class NutritionLogController extends ChangeNotifier {
         notifyListeners();
         return;
       }
-      await _offlineRepository.upsertLocal(log);
+      await _remoteRepository.upsertLog(log);
+      await _remoteRepository.loadLogs();
       notifyListeners();
-      // ignore: discarded_futures
-      syncNutritionLogs();
     } catch (e) {
       logger.e('Error saving nutrition log', error: e);
       errorMessage = 'Failed to save nutrition log.';
@@ -159,10 +115,9 @@ class NutritionLogController extends ChangeNotifier {
         notifyListeners();
         return;
       }
-      await _offlineRepository.deleteLocal(id);
+      await _remoteRepository.deleteLog(id);
+      await _remoteRepository.loadLogs();
       notifyListeners();
-      // ignore: discarded_futures
-      syncNutritionLogs();
     } catch (e) {
       logger.e('Error removing nutrition log', error: e);
       errorMessage = 'Failed to delete nutrition log.';

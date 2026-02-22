@@ -42,6 +42,7 @@ void showExerciseLogEditor({
   required String exerciseLogId,
   required RoutineEditorMode editorType,
   bool showSetCheck = true,
+  String? templateId,
 }) {
   final timerRunningNotifier = ValueNotifier<bool>(false);
   // Check if exercise type is duration (DR) to prevent closing without confirmation
@@ -82,6 +83,7 @@ void showExerciseLogEditor({
         editorType: editorType,
         showSetCheck: showSetCheck,
         timerRunningNotifier: timerRunningNotifier,
+        templateId: templateId,
       );
 
       // Wrap with PopScope to handle back button for duration exercises

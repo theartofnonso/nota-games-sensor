@@ -148,11 +148,10 @@ Future<String?> showSingleTextAreaBottomSheet({
   String primaryButtonLabel = 'Save',
 }) async {
   final controller = TextEditingController(text: initialValue);
-
-  final result = await showAppBottomSheet<String?>(
+  String? result;
+  await showAppActionBottomSheet<String?>(
     context: context,
     isScrollControlled: true,
-    enableDrag: true,
     child: Builder(
       builder: (ctx) {
         final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
@@ -207,8 +206,10 @@ Future<String?> showSingleTextAreaBottomSheet({
                 child: OpacityButtonWidgetTwo(
                   buttonColor: Theme.of(ctx).colors.vibrantAccent,
                   label: primaryButtonLabel,
-                  onPressed: () =>
-                      Navigator.of(ctx).pop<String?>(controller.text.trim()),
+                  onPressed: () {
+                    result = controller.text.trim();
+                    Navigator.of(ctx).pop();
+                  },
                 ),
               ),
             ],

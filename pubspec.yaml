@@ -59,7 +59,6 @@ dependencies:
   animated_text_kit: ^4.2.3
   in_app_review: ^2.0.10
   device_info_plus: ^12.1.0
-  connectivity_plus: ^6.0.3
   dtd: ^4.0.0
   flutter_lints: ^6.0.0
   google_fonts: ^6.3.2

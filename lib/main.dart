@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:app_links/app_links.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,6 +42,7 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
+import 'package:trainware/services/client_subscription_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -521,7 +521,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   StreamSubscription<Uri>? _appLinksSub;
   late final ClientOverrideController _accessController;
   late final GoRouter _router;
@@ -538,7 +537,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _lastAuthenticated = _accessController.isAuthenticated;
     _lastCoach = AppConfig.isCoach;
     _accessController.addListener(_handleAccessChanged);
-    _listenToConnectivity();
     if (Platform.isIOS) {
       _initDeepLinks();
     }
@@ -619,12 +617,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       } catch (e) {
         debugPrint('[Auth] Error initializing data: $e');
       }
+      // Check subscription once at app load; cache in memory for gate points
+      unawaited(ClientSubscriptionService.instance.refreshSubscriptionStatus());
       // Warm up Agora Chat + push tokens so chat screen is instant when opened
       unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
           _accessController.userId));
     }
 
     if (!isAuthenticated && _lastAuthenticated) {
+      ClientSubscriptionService.instance.clearCachedAccess();
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();
@@ -665,30 +666,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-  void _listenToConnectivity() {
-    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
-      if (!mounted) return;
-
-      final current =
-          results.isNotEmpty ? results.last : ConnectivityResult.none;
-      final isOnline = current != ConnectivityResult.none;
-      if (!isOnline || !_accessController.isAuthenticated) return;
-
-      try {
-        final controller = context.read<SupabaseExerciseAndRoutineController>();
-        // ignore: discarded_futures
-        controller.syncRoutineLogs();
-      } catch (e) {
-        debugPrint('[Connectivity] Error triggering sync: $e');
-      }
-    });
-  }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _accessController.removeListener(_handleAccessChanged);
-    _connectivitySub?.cancel();
     _appLinksSub?.cancel();
     super.dispose();
   }

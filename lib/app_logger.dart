@@ -11,13 +11,23 @@ class AppLogger extends PrettyPrinter{
     //final color = PrettyPrinter.defaultLevelColors[event.level];
     final emoji = PrettyPrinter.defaultLevelEmojis[event.level];
     final message = event.message;
+    final error = event.error;
+    final stackTrace = event.stackTrace;
 
     /*AnsiPen pen = new AnsiPen();
     pen.red();
 
     print(pen("$message"));*/
 
-    return [('[$correlationId]: $emoji: $className: $message')];
+    final buffer = StringBuffer('[$correlationId]: $emoji: $className: $message');
+    if (error != null) {
+      buffer.write('\nerror: $error');
+    }
+    if (stackTrace != null) {
+      buffer.write('\nstackTrace: $stackTrace');
+    }
+
+    return [buffer.toString()];
 
   }
 }

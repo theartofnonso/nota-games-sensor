@@ -204,6 +204,91 @@ class SupabaseRoutineLogRepository {
     };
   }
 
+  /// Upsert a routine log to Supabase (workout_sessions + session_exercises +
+  /// session_sets). Used for client saves when offline mode is disabled.
+  Future<void> upsertLog(RoutineLogDto log) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('No user logged in');
+
+    await _client.from('workout_sessions').upsert({
+      'id': log.id,
+      'user_id': userId,
+      'template_id': _asUuidOrNull(log.templateId),
+      'name': log.name,
+      'notes': null,
+      'coach_note': log.coachNote,
+      'start_time': log.startTime.toUtc().toIso8601String(),
+      'end_time': log.endTime.toUtc().toIso8601String(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+
+    await _client
+        .from('session_exercises')
+        .delete()
+        .eq('session_id', log.id);
+
+    for (var exIndex = 0; exIndex < log.exerciseLogs.length; exIndex++) {
+      final exLog = log.exerciseLogs[exIndex];
+      final inserted = await _client
+          .from('session_exercises')
+          .insert({
+            'session_id': log.id,
+            'exercise_id': exLog.exercise.id,
+            'template_exercise_id': null,
+            'order_index': exIndex,
+            'super_set_group':
+                exLog.superSetId.isEmpty ? null : exLog.superSetId,
+            'notes': exLog.notes.isEmpty ? null : exLog.notes,
+          })
+          .select('id')
+          .single();
+      final sessionExerciseId = inserted['id'] as String;
+
+      final setRows = <Map<String, dynamic>>[];
+      for (var setIndex = 0; setIndex < exLog.sets.length; setIndex++) {
+        final set = exLog.sets[setIndex];
+        final row = <String, dynamic>{
+          'session_exercise_id': sessionExerciseId,
+          'order_index': setIndex,
+          'is_completed': set.checked,
+        };
+        if (set is WeightAndRepsSetDto) {
+          row['reps'] = set.reps;
+          row['weight'] = set.weight;
+        } else if (set is RepsSetDto) {
+          row['reps'] = set.reps;
+        } else if (set is DurationSetDto) {
+          row['duration_seconds'] = set.duration.inSeconds;
+        }
+        setRows.add(row);
+      }
+      if (setRows.isNotEmpty) {
+        await _client.from('session_sets').insert(setRows);
+      }
+    }
+  }
+
+  /// Delete a routine log from Supabase.
+  Future<void> deleteLog(String logId) async {
+    final deleted = await _client
+        .from('workout_sessions')
+        .delete()
+        .eq('id', logId)
+        .select('id');
+
+    final deletedRows = deleted as List<dynamic>;
+    if (deletedRows.isEmpty) {
+      throw Exception('Delete rejected or no row found for log $logId');
+    }
+  }
+
+  static String? _asUuidOrNull(String raw) {
+    if (raw.isEmpty) return null;
+    final uuidPattern = RegExp(
+        r'^[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$');
+    return uuidPattern.hasMatch(raw) ? raw : null;
+  }
+
   /// Updates only the coach_note for a log (used by coaches). Does not touch
   /// exercises, times, or other fields. Throws if no row was updated (e.g. RLS).
   Future<void> updateCoachNote({

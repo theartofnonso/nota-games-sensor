@@ -22,6 +22,31 @@ class ClientSubscriptionService {
   static final ClientSubscriptionService instance =
       ClientSubscriptionService._();
 
+  /// In-memory cache of subscription status. Null = not yet checked.
+  /// Checked once at app load when user authenticates; reused at gate points.
+  bool? _cachedAccess;
+
+  /// Fetches subscription status from backend and caches in memory.
+  /// Call once when app loads (user authenticated); also call after
+  /// successful purchase/restore to refresh.
+  Future<void> refreshSubscriptionStatus() async {
+    if (!AppConfig.isClient) return;
+
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null || user.id.trim().isEmpty) {
+      _cachedAccess = null;
+      return;
+    }
+
+    final access = await _fetchBackendAccess(userId: user.id);
+    _cachedAccess = access;
+  }
+
+  /// Clears cached status (e.g. on logout).
+  void clearCachedAccess() {
+    _cachedAccess = null;
+  }
+
   Future<bool> ensureAccess({
     required BuildContext context,
     required String blockedMessage,
@@ -29,15 +54,32 @@ class ClientSubscriptionService {
     if (!AppConfig.isClient) return true;
 
     final user = Supabase.instance.client.auth.currentUser;
-    if (user != null && user.id.trim().isNotEmpty) {
-      final access = await _fetchBackendAccess(userId: user.id);
-      if (access == true) return true;
+    if (user == null || user.id.trim().isEmpty) return false;
+
+    // Use cached value if available; no per-gate backend calls
+    if (_cachedAccess == true) return true;
+
+    if (_cachedAccess == false) {
+      if (!context.mounted) return false;
+      showSnackbar(context: context, message: blockedMessage);
+      await showPaywall(context: context);
+      return false;
     }
+
+    // First gate check: cache not yet populated, fetch once
+    await refreshSubscriptionStatus();
+    if (_cachedAccess == true) return true;
 
     if (!context.mounted) return false;
     showSnackbar(context: context, message: blockedMessage);
     await showPaywall(context: context);
     return false;
+  }
+
+  /// Called by paywall when purchase or restore succeeds. Refreshes the
+  /// in-memory cache so subsequent gate checks pass without another backend call.
+  Future<void> onPaywallSuccess() async {
+    await refreshSubscriptionStatus();
   }
 
   Future<void> showPaywall({required BuildContext context}) async {
@@ -290,6 +332,7 @@ class _ClientSubscriptionPaywallSheetState
     final hasSub = await widget.service.restorePurchase();
     if (!mounted) return;
     if (hasSub) {
+      await widget.service.onPaywallSuccess();
       Navigator.of(context).pop();
       if (widget.parentContext.mounted) {
         showSnackbar(
@@ -308,6 +351,7 @@ class _ClientSubscriptionPaywallSheetState
   Future<void> _handlePrimaryAction() async {
     if (_isBusy) return;
     if (_isAlreadySubscribed) {
+      await widget.service.onPaywallSuccess();
       Navigator.of(context).pop();
       return;
     }
@@ -322,6 +366,7 @@ class _ClientSubscriptionPaywallSheetState
     );
     if (!mounted) return;
     if (completed) {
+      await widget.service.onPaywallSuccess();
       Navigator.of(context).pop();
       if (widget.parentContext.mounted) {
         showSnackbar(

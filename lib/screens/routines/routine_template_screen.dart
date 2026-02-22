@@ -158,7 +158,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final totalSets = template.exerciseTemplates
         .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
 
-    final showCoachAiFab = AppConfig.isCoach && accessController.hasSelectedClient;
+    final showCoachAiFab =
+        AppConfig.isCoach && accessController.hasSelectedClient;
 
     return Scaffold(
         floatingActionButton: showCoachAiFab
@@ -167,7 +168,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                 ? null
                 : FloatingActionButton(
                     heroTag: UniqueKey,
-                    backgroundColor: themeGradient(context: context).colors.first,
+                    backgroundColor:
+                        themeGradient(context: context).colors.first,
                     elevation: 8.0,
                     onPressed: () => _launchRoutineLogEditor(),
                     child: const FaIcon(FontAwesomeIcons.play, size: 24),
@@ -685,5 +687,4 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               ]),
         ));
   }
-
 }

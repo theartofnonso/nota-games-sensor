@@ -65,11 +65,13 @@ Future<void> sendFcmNotificationCoachFeedback({
 /// Notifies backend that a coach created a challenge.
 /// Backend resolves recipient and message using challenge context.
 Future<void> sendFcmNotificationChallengeCreated({
+  required String userId,
   required String challengeId,
 }) async {
   try {
     final uri = Uri.parse(_fcmBaseUrl).resolve('/notify-challenge-created');
     final payload = jsonEncode({
+      'userId': userId,
       'challengeId': challengeId,
     });
     final response = await http.post(
