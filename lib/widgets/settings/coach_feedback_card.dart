@@ -28,7 +28,7 @@ class CoachFeedbackCard extends StatelessWidget {
 
         final theme = Theme.of(context);
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
           child: Material(
             color: Colors.transparent,
             child: InkWell(

@@ -26,7 +26,7 @@ class CoachAiChatCard extends StatelessWidget {
         final colors = theme.colors;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
           child: Material(
             color: Colors.transparent,
             child: InkWell(

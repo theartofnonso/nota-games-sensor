@@ -39,7 +39,6 @@ import '../../services/training_prediction_service.dart';
 import '../../utils/calendar_date_logs_sheet.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/navigation_utils.dart';
-import '../../utils/uri_utils.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
@@ -48,7 +47,6 @@ import '../../widgets/cards/frosted_card.dart';
 import '../../widgets/challenges/exercise_challenge_card.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/calendar/calendar.dart';
-import '../../widgets/information_containers/information_container_with_background_image.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/settings/delete_account_section.dart';
 import '../../widgets/settings/logout_section.dart';
@@ -340,29 +338,16 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   SizedBox(height: _sectionSpacing),
                   _RoutinePlansSection(),
+                  if (AppConfig.isClient) ...[
+                    SizedBox(height: _sectionSpacing),
+                    const CoachFeedbackCard(),
+                    SizedBox(height: _sectionSpacing),
+                  ],
                   _SpacerIfRoutinePlansVisible(),
                   _ChallengesSection(),
                   _SpacerIfChallengesVisible(),
                   _NutritionSection(),
                   _SpacerIfNutritionVisible(),
-                  if (AppConfig.isClient) ...[
-                    const CoachFeedbackCard(),
-                    SizedBox(height: _sectionSpacing),
-                  ],
-                  if (!isClientMode) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: InformationContainerWithBackgroundImage(
-                        image: 'images/background.jpg',
-                        subtitle:
-                            "Loving the app? Learn more about us and our mission.",
-                        color: Colors.black,
-                        onTap: _openWebpage,
-                        alignmentGeometry: Alignment.center,
-                      ),
-                    ),
-                    SizedBox(height: _sectionSpacing),
-                  ],
                   ListTile(
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 30.0),
@@ -697,11 +682,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     await nutritionController.clearSelectedClient();
     if (!mounted) return;
     context.go('/coach');
-  }
-
-  void _openWebpage() {
-    final url = trackrWebUrl;
-    openUrl(url: url, context: context);
   }
 
   void _getAppVersion() async {
@@ -2582,6 +2562,7 @@ class _NutritionCreateRow extends StatelessWidget {
 
 /// Spacer after routine plans - only when that section rendered content.
 /// Avoids double gap when client has no plans (section shrinks).
+/// Clients: CoachFeedbackCard has its own SizedBox; avoid double spacing.
 class _SpacerIfRoutinePlansVisible extends StatelessWidget {
   const _SpacerIfRoutinePlansVisible();
 
@@ -2590,6 +2571,7 @@ class _SpacerIfRoutinePlansVisible extends StatelessWidget {
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
         final isCoach = AppConfig.isCoach;
+        if (AppConfig.isClient) return const SizedBox.shrink();
         final hasContent = isCoach || controller.plans.isNotEmpty;
         return hasContent
             ? SizedBox(height: _SettingsScreenState._sectionSpacing)
