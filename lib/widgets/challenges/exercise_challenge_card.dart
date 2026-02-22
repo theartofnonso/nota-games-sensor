@@ -30,9 +30,9 @@ class ExerciseChallengeCard extends StatelessWidget {
         rawDaysLeft <= 0 ? 'ended' : '${daysLeft == 1 ? 'day' : 'days'} left';
     final card = FrostedCard(
       gradientColors: [
-        const Color(0xFF22C55E).withValues(alpha: 0.32),
-        const Color(0xFF16A34A).withValues(alpha: 0.26),
-        Colors.black.withValues(alpha: 0.45),
+        Colors.white.withValues(alpha: 0.9),
+        Colors.white.withValues(alpha: 0.8),
+        Colors.white.withValues(alpha: 0.7),
       ],
       child: Row(
         children: [
@@ -49,7 +49,7 @@ class ExerciseChallengeCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
+                            color: Colors.black.withValues(alpha: 0.85),
                             fontWeight: FontWeight.w800,
                           ),
                     ),
@@ -57,7 +57,7 @@ class ExerciseChallengeCard extends StatelessWidget {
                     Text(
                       '${DateFormat('MMM d').format(challenge.startDate)} - ${DateFormat('MMM d').format(challenge.endDate)}',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.75),
+                            color: Colors.black.withValues(alpha: 0.6),
                           ),
                     ),
                     if (canPinToBottom) const Spacer() else const SizedBox(height: 10),
@@ -67,13 +67,13 @@ class ExerciseChallengeCard extends StatelessWidget {
                         Text(
                           '$daysLeft',
                           style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                    color: Colors.white,
+                                    color: Colors.black.withValues(alpha: 0.9),
                                     fontWeight: FontWeight.w900,
                                     height: 1.0,
                                     fontSize: 28,
                                   ) ??
-                              const TextStyle(
-                                color: Colors.white,
+                              TextStyle(
+                                color: Colors.black.withValues(alpha: 0.9),
                                 fontSize: 28,
                                 fontWeight: FontWeight.w900,
                                 height: 1.0,
@@ -86,7 +86,7 @@ class ExerciseChallengeCard extends StatelessWidget {
                           child: Text(
                             countdownLabel,
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.82),
+                                  color: Colors.black.withValues(alpha: 0.7),
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -99,9 +99,9 @@ class ExerciseChallengeCard extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: progress.percent,
                         minHeight: 6,
-                        backgroundColor: Colors.white.withValues(alpha: 0.18),
+                        backgroundColor: Colors.black.withValues(alpha: 0.12),
                         valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFF22C55E),
+                          Colors.black,
                         ),
                       ),
                     ),
@@ -109,7 +109,7 @@ class ExerciseChallengeCard extends StatelessWidget {
                     Text(
                       '${(progress.percent * 100).round()}% - ${_valueLabel(progress.bestValue, challenge.targetType)} / ${_valueLabel(progress.targetValue, challenge.targetType)}',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.82),
+                            color: Colors.black.withValues(alpha: 0.7),
                           ),
                     ),
                   ],
@@ -129,7 +129,7 @@ class ExerciseChallengeCard extends StatelessWidget {
                 }
                 return Icon(
                   Icons.fitness_center,
-                  color: Colors.white.withValues(alpha: 0.75),
+                  color: Colors.black.withValues(alpha: 0.5),
                   size: 34,
                 );
               },
