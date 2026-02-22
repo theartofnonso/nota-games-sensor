@@ -48,7 +48,7 @@ class ExerciseChallengeCard extends StatelessWidget {
                       challenge.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
                           ),
@@ -56,7 +56,7 @@ class ExerciseChallengeCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '${DateFormat('MMM d').format(challenge.startDate)} - ${DateFormat('MMM d').format(challenge.endDate)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: Colors.white.withValues(alpha: 0.75),
                           ),
                     ),
@@ -70,11 +70,11 @@ class ExerciseChallengeCard extends StatelessWidget {
                                     color: Colors.white,
                                     fontWeight: FontWeight.w900,
                                     height: 1.0,
-                                    fontSize: 42,
+                                    fontSize: 28,
                                   ) ??
                               const TextStyle(
                                 color: Colors.white,
-                                fontSize: 42,
+                                fontSize: 28,
                                 fontWeight: FontWeight.w900,
                                 height: 1.0,
                                 fontFamily: 'Grift',
@@ -85,7 +85,7 @@ class ExerciseChallengeCard extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 4),
                           child: Text(
                             countdownLabel,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                   color: Colors.white.withValues(alpha: 0.82),
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -108,7 +108,7 @@ class ExerciseChallengeCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       '${(progress.percent * 100).round()}% - ${_valueLabel(progress.bestValue, challenge.targetType)} / ${_valueLabel(progress.targetValue, challenge.targetType)}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: Colors.white.withValues(alpha: 0.82),
                           ),
                     ),
