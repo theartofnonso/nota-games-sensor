@@ -390,9 +390,10 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
           id: id,
           clientId: accessController.selectedClientId,
         );
-        final json = templateWithId.toJson();
-        json['owner'] = userId;
-        await Supabase.instance.client.from('routine_templates').upsert(json);
+        await _templateRepository.upsertTemplate(
+          template: templateWithId,
+          ownerId: userId,
+        );
         await _loadRemoteForClient(accessController.selectedClientId!);
         result = templateWithId;
       } catch (e) {
@@ -426,9 +427,10 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       }
       final id = templateDto.id.isEmpty ? const Uuid().v4() : templateDto.id;
       final templateWithId = templateDto.copyWith(id: id);
-      final json = templateWithId.toJson();
-      json['owner'] = userId;
-      await Supabase.instance.client.from('routine_templates').upsert(json);
+      await _templateRepository.upsertTemplate(
+        template: templateWithId,
+        ownerId: userId,
+      );
       await _templateRepository.loadTemplates();
       result = templateWithId;
     } catch (e) {
@@ -468,9 +470,10 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         }
         final updatedTemplate =
             template.copyWith(clientId: accessController.selectedClientId);
-        final json = updatedTemplate.toJson();
-        json['owner'] = userId;
-        await Supabase.instance.client.from('routine_templates').upsert(json);
+        await _templateRepository.upsertTemplate(
+          template: updatedTemplate,
+          ownerId: userId,
+        );
         await _loadRemoteForClient(accessController.selectedClientId!);
       } catch (e) {
         errorMessage = "Oops! Something went wrong. Please try again later.";
@@ -491,9 +494,10 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         notifyListeners();
         return;
       }
-      final json = template.toJson();
-      json['owner'] = userId;
-      await Supabase.instance.client.from('routine_templates').upsert(json);
+      await _templateRepository.upsertTemplate(
+        template: template,
+        ownerId: userId,
+      );
       await _templateRepository.loadTemplates();
     } catch (e) {
       errorMessage = "Oops! Something went wrong. Please try again later.";

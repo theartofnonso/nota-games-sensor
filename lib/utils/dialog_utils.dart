@@ -295,6 +295,49 @@ Future<bool> showSimilarExercisesDialog({
   return result ?? false;
 }
 
+/// Shows a confirmation dialog before deleting an exercise challenge.
+/// Returns true if user confirms, false if dismissed.
+Future<bool> confirmDeleteChallengeBottomSheet({
+  required BuildContext context,
+  required String challengeTitle,
+}) async {
+  final shouldDelete = await showAppActionBottomSheet<bool>(
+    context: context,
+    isDismissible: true,
+    child: Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Delete challenge?',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Are you sure you want to delete "$challengeTitle"?',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              label: 'Delete',
+              buttonColor: Colors.red,
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+  return shouldDelete == true;
+}
+
 /// Shows a confirmation dialog when user tries to exit with unsaved changes
 /// Returns true if user confirms to discard changes, false otherwise
 Future<bool> confirmDiscardChangesBottomSheet({

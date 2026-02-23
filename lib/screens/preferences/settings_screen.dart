@@ -338,11 +338,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   SizedBox(height: _sectionSpacing),
                   _RoutinePlansSection(),
-                  if (AppConfig.isClient) ...[
-                    SizedBox(height: _sectionSpacing),
-                    const CoachFeedbackCard(),
-                    SizedBox(height: _sectionSpacing),
-                  ],
+                  if (AppConfig.isClient) const _CoachFeedbackSection(),
                   _SpacerIfRoutinePlansVisible(),
                   _ChallengesSection(),
                   _SpacerIfChallengesVisible(),
@@ -2363,9 +2359,17 @@ class _ChallengesScreen extends StatelessWidget {
                           progress: progress,
                           canDelete: AppConfig.isCoach &&
                               controller.accessController.hasSelectedClient,
-                          onDelete: () => controller.deleteExerciseChallenge(
-                            challengeId: challenge.id,
-                          ),
+                          onDelete: () async {
+                            final confirmed = await confirmDeleteChallengeBottomSheet(
+                              context: context,
+                              challengeTitle: challenge.title,
+                            );
+                            if (confirmed && context.mounted) {
+                              await controller.deleteExerciseChallenge(
+                                challengeId: challenge.id,
+                              );
+                            }
+                          },
                         ),
                       );
                     }),
@@ -2414,6 +2418,31 @@ class _SpacerIfChallengesVisible extends StatelessWidget {
         return hasContent
             ? SizedBox(height: _SettingsScreenState._sectionSpacing)
             : const SizedBox.shrink();
+      },
+    );
+  }
+}
+
+/// Client-only: coach feedback card with spacing. Only renders when there
+/// are logs with coach notes; avoids 32px empty gap when no feedback.
+class _CoachFeedbackSection extends StatelessWidget {
+  const _CoachFeedbackSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SupabaseExerciseAndRoutineController>(
+      builder: (context, controller, _) {
+        final hasNotes = controller.logs.any((log) =>
+            log.coachNote != null && log.coachNote!.trim().isNotEmpty);
+        if (!hasNotes) return const SizedBox.shrink();
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: _SettingsScreenState._sectionSpacing),
+            const CoachFeedbackCard(),
+            SizedBox(height: _SettingsScreenState._sectionSpacing),
+          ],
+        );
       },
     );
   }

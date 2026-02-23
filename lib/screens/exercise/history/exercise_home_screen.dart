@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
+import 'package:trainware/logger.dart';
+import 'package:trainware/utils/lottie_exercise_registry.dart';
 import 'package:trainware/screens/exercise/history/exercise_chart_screen.dart';
 import 'package:trainware/screens/exercise/history/history_screen.dart';
 
@@ -34,6 +36,23 @@ class ExerciseHomeScreen extends StatefulWidget {
 class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
   ExerciseDto? _exercise;
   ExerciseLogTimePeriod _timePeriod = ExerciseLogTimePeriod.last30Days;
+  static final _logger = getLogger(className: 'ExerciseHomeScreen');
+
+  @override
+  void initState() {
+    super.initState();
+    _exercise = widget.exercise;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _logExerciseInfo());
+  }
+
+  Future<void> _logExerciseInfo() async {
+    final ex = _exercise;
+    if (ex == null) return;
+    final lottiePath =
+        await LottieExerciseRegistry.lottieFor(ex.id);
+    _logger.i(
+        'View exercise info: name="${ex.name}" id=${ex.id} lottie="${lottiePath ?? "n/a"}"');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,9 +158,4 @@ class _ExerciseHomeScreenState extends State<ExerciseHomeScreen> {
         ));
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _exercise = widget.exercise;
-  }
 }

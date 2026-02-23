@@ -12,6 +12,7 @@ import 'package:trainware/dtos/challenges/exercise_challenge_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/dtos/set_dtos/duration_set_dto.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
+import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/lottie_exercise_registry.dart';
@@ -69,7 +70,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   final _errors = <int, String>{};
 
-  late TextEditingController _notesController = TextEditingController();
+  late final TextEditingController _notesController = TextEditingController();
   final FocusNode _notesFocusNode = FocusNode();
 
   bool _hasShownProgressionPrompt = false;
@@ -677,6 +678,13 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     if (_exerciseLog == null) return;
     final templateId = widget.templateId;
     if (templateId == null || templateId.trim().isEmpty) return;
+    final existing = _challengeForCurrentTemplateExercise();
+    final challengeTitle = existing?.title ?? _currentExerciseLog.exercise.name;
+    final confirmed = await confirmDeleteChallengeBottomSheet(
+      context: context,
+      challengeTitle: challengeTitle,
+    );
+    if (!confirmed || !mounted) return;
     await Provider.of<SupabaseExerciseAndRoutineController>(context, listen: false)
         .clearTemplateExerciseChallenge(
       templateId: templateId,
@@ -729,12 +737,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
           ? defaults.reps!.toString()
           : '',
     );
-    final durationController = TextEditingController(
-      text: (defaults.durationSeconds ?? 0) > 0
-          ? defaults.durationSeconds!
-              .toString()
-          : '',
-    );
+    int? targetDurationSeconds = (defaults.durationSeconds ?? 0) > 0
+        ? defaults.durationSeconds
+        : null;
     DateTime startDate = DateUtils.dateOnly(DateTime.now());
     DateTime endDate =
         DateUtils.dateOnly(DateTime.now().add(const Duration(days: 14)));
@@ -812,11 +817,9 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                 }
                 break;
               case ExerciseType.duration:
-                targetDurationSeconds =
-                    int.tryParse(durationController.text.trim());
-                if (targetDurationSeconds == null || targetDurationSeconds <= 0) {
+                if ((targetDurationSeconds ?? 0) <= 0) {
                   setSheetState(
-                      () => helper = 'Enter a valid target duration in seconds.');
+                      () => helper = 'Select a target duration.');
                   return;
                 }
                 break;
@@ -905,12 +908,39 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                     )
                   else if (_currentExerciseLog.exercise.type ==
                       ExerciseType.duration)
-                    _challengeEditorInput(
-                      controller: durationController,
-                      keyboardType: TextInputType.number,
-                      hintText: 'Target duration (seconds)',
-                      suffixText: 'sec',
-                      textAlign: TextAlign.center,
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Target duration'),
+                      subtitle: Text(
+                        targetDurationSeconds != null &&
+                                targetDurationSeconds! > 0
+                            ? Duration(seconds: targetDurationSeconds!)
+                                .hmsAnalog()
+                            : 'Tap to set',
+                        style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                              color: targetDurationSeconds != null &&
+                                      targetDurationSeconds! > 0
+                                  ? Colors.white
+                                  : Colors.white54,
+                            ),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        displayTimePicker(
+                          context: ctx,
+                          mode: CupertinoTimerPickerMode.hms,
+                          initialDuration: targetDurationSeconds != null &&
+                                  targetDurationSeconds! > 0
+                              ? Duration(seconds: targetDurationSeconds!)
+                              : Duration.zero,
+                          onChangedDuration: (Duration duration) {
+                            setSheetState(() {
+                              targetDurationSeconds = duration.inSeconds;
+                            });
+                            if (ctx.mounted) Navigator.of(ctx).pop();
+                          },
+                        );
+                      },
                     ),
                   const SizedBox(height: 12),
                   ListTile(

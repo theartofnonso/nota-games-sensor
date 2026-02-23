@@ -9,6 +9,7 @@ import '../enums/routine_editor_type_enums.dart';
 import '../screens/exercise/library/exercise_library_screen.dart';
 import '../utils/dialog_utils.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
+import '../widgets/picker.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
 import '../widgets/routine/editors/exercise_log_widget.dart';
 import '../widgets/routine/editors/pickers/superset_exercise_log_picker.dart';
@@ -53,27 +54,11 @@ void showExerciseLogEditor({
   final isDurationExercise =
       exerciseLog?.exercise.type == ExerciseType.duration;
 
-  // Create barrier tap handler for duration exercises
-  Future<bool> Function()? onBarrierTap;
-  if (isDurationExercise) {
-    onBarrierTap = () async {
-      if (!timerRunningNotifier.value) {
-        return true;
-      }
-      return await confirmDiscardChangesBottomSheet(
-        context: context,
-        title: 'Leave exercise?',
-        description: 'Are you sure you want to leave?',
-      );
-    };
-  }
-
   showAppBottomSheet(
     context: context,
     isDraggable: true,
-    isDismissible:
-        !isDurationExercise, // Prevent auto-dismiss for duration exercises
-    onBarrierTap: onBarrierTap,
+    isDismissible: true,
+    enableDrag: true,
     initialChildSize: 0.9,
     minChildSize: 0.5,
     maxChildSize: 0.95,
@@ -86,16 +71,24 @@ void showExerciseLogEditor({
         templateId: templateId,
       );
 
-      // Wrap with PopScope to handle back button for duration exercises
+      // For duration exercises, intercept all close attempts (drag, barrier tap, back).
+      // When timer is running, show prompt to stop timer first. Otherwise allow with confirmation.
       if (isDurationExercise) {
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (bool didPop, dynamic result) async {
             if (didPop) return;
 
-            if (!timerRunningNotifier.value) {
+            if (timerRunningNotifier.value) {
               if (context.mounted) {
-                Navigator.of(context).pop();
+                showBottomSheetWithSingleAction(
+                  context: context,
+                  title: 'Timer running',
+                  description:
+                      'Please stop the timer before closing this exercise.',
+                  action: () => Navigator.of(context).pop(),
+                  actionLabel: 'OK',
+                );
               }
               return;
             }
@@ -177,39 +170,37 @@ void showExercisesInLibrary(
 
 Future<ExerciseType?> _pickExerciseType(
     {required BuildContext context, required String exerciseName}) {
+  final options = ExerciseType.values
+      .where((t) => t != ExerciseType.none)
+      .toList(growable: false);
   return showAppBottomSheet<ExerciseType>(
     context: context,
-    isDraggable: true,
-    isDismissible: true,
-    builder: (context, scrollController) {
-      final options = ExerciseType.values
-          .where((t) => t != ExerciseType.none)
-          .toList(growable: false);
-      return Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 16,
-          children: [
-            Text(
-              'Select type for $exerciseName',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+    isScrollControlled: false,
+    child: Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'How to log $exerciseName',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 240,
+            child: GenericPicker<ExerciseType>(
+              items: options,
+              labelBuilder: (type) => type.description,
+              onItemSelected: (value) => Navigator.of(context).pop(value),
             ),
-            ...options.map(
-              (t) => ListTile(
-                title: Text(t.name),
-                subtitle: Text(t.description),
-                onTap: () => Navigator.of(context).pop(t),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
+          ),
+        ],
+      ),
+    ),
   );
 }
 

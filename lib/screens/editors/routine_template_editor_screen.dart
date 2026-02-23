@@ -185,6 +185,7 @@ class _RoutineTemplateEditorScreenState
       initialName: _templateNameController.text.trim(),
       initialNotes: _templateNotesController.text.trim(),
       emptyNameMessage: 'Please provide a name for this workout',
+      compact: true,
     ).then((result) async {
       if (result == null) return;
       _templateNameController.text = result.name;

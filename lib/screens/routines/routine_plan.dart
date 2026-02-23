@@ -21,7 +21,7 @@ import '../../utils/navigation_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../utils/calendar_date_logs_sheet.dart';
-import '../../utils/editor_bottom_sheet.dart';
+import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
@@ -294,6 +294,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       title: "Create workout",
       primaryButtonLabel: "Create Workout",
       emptyNameMessage: 'Please provide a name for this workout',
+      compact: true,
     ).then((result) async {
       if (result == null) return;
       if (!context.mounted) return;
@@ -327,27 +328,24 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
     if (plan == null) return;
 
-    showEditorBottomSheet(
+    showAppActionBottomSheet(
         context: context,
-        // Tighter height to better fit the short menu contents
-        minChildSize: 0.25,
-        initialChildSize: 0.35,
-        maxChildSize: 0.5,
         child: Padding(
-          padding: const EdgeInsets.all(26),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!plan.isSystemPlan ||
                     context.read<ClientOverrideController>().hasSelectedClient) ...[
                   ListTile(
+                      dense: true,
                       contentPadding: EdgeInsets.zero,
                       leading: const FaIcon(
                         FontAwesomeIcons.circlePlus,
-                        size: 22,
+                        size: 20,
                       ),
-                      horizontalTitleGap: 6,
+                      horizontalTitleGap: 10,
                       title: Text("Add new workout",
                           style: Theme.of(context).textTheme.bodyLarge),
                       onTap: () async {
@@ -355,12 +353,13 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                         _showCreateWorkoutBottomSheet(plan: plan);
                       }),
                   ListTile(
+                      dense: true,
                       contentPadding: EdgeInsets.zero,
                       leading: const FaIcon(
                         FontAwesomeIcons.penToSquare,
                         size: 18,
                       ),
-                      horizontalTitleGap: 6,
+                      horizontalTitleGap: 10,
                       title: Text("Edit",
                           style: Theme.of(context).textTheme.bodyLarge),
                       onTap: () async {
@@ -372,24 +371,28 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                       }),
                 ] else
                   ListTile(
+                    dense: true,
                     contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(
                       FontAwesomeIcons.shield,
                       size: 18,
                       color: Colors.grey,
                     ),
-                    horizontalTitleGap: 6,
+                    horizontalTitleGap: 10,
                     title: Text("Read-only plan",
                         style: Theme.of(context)
                             .textTheme
                             .bodyMedium
                             ?.copyWith(color: Colors.grey)),
-                    subtitle: Text(
-                      "This is a system plan. You can log sessions but cannot edit or delete it.",
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: Colors.grey.shade600),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        "This is a system plan. You can log sessions but cannot edit or delete it.",
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: Colors.grey.shade600),
+                      ),
                     ),
                   ),
               ]),

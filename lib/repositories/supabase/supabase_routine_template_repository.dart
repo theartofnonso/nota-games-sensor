@@ -136,6 +136,68 @@ class SupabaseRoutineTemplateRepository {
     );
   }
 
+  /// Upserts a template to Supabase (routine_templates header +
+  /// template_exercises + template_sets). Uses normalized schema.
+  Future<void> upsertTemplate({
+    required RoutineTemplateDto template,
+    required String ownerId,
+  }) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    await _client.from('routine_templates').upsert({
+      'id': template.id,
+      'planId': template.planId,
+      'name': template.name,
+      'notes': template.notes,
+      'clientId': template.clientId,
+      'owner': ownerId,
+      'createdAt': now,
+      'updatedAt': now,
+    });
+
+    await _client
+        .from('template_exercises')
+        .delete()
+        .eq('template_id', template.id);
+
+    for (var exIndex = 0; exIndex < template.exerciseTemplates.length; exIndex++) {
+      final exLog = template.exerciseTemplates[exIndex];
+      final inserted = await _client
+          .from('template_exercises')
+          .insert({
+            'template_id': template.id,
+            'exercise_id': exLog.exercise.id,
+            'order_index': exIndex,
+            'super_set_group':
+                exLog.superSetId.isEmpty ? null : exLog.superSetId,
+            'notes': exLog.notes.isEmpty ? null : exLog.notes,
+          })
+          .select('id')
+          .single();
+      final templateExerciseId = inserted['id'] as String;
+
+      final setRows = <Map<String, dynamic>>[];
+      for (var setIndex = 0; setIndex < exLog.sets.length; setIndex++) {
+        final set = exLog.sets[setIndex];
+        final row = <String, dynamic>{
+          'template_exercise_id': templateExerciseId,
+          'order_index': setIndex,
+        };
+        if (set is WeightAndRepsSetDto) {
+          row['target_reps'] = set.reps;
+          row['target_weight'] = set.weight;
+        } else if (set is RepsSetDto) {
+          row['target_reps'] = set.reps;
+        } else if (set is DurationSetDto) {
+          row['target_duration_seconds'] = set.duration.inSeconds;
+        }
+        setRows.add(row);
+      }
+      if (setRows.isNotEmpty) {
+        await _client.from('template_sets').insert(setRows);
+      }
+    }
+  }
+
   SetDto _buildTemplateSet({
     required Map<String, dynamic> setRow,
     required ExerciseType type,

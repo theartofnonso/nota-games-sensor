@@ -69,7 +69,7 @@ BEGIN
     ('ex-bench-press-db', 'Bench Press (Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Bench Press Exercise for Chest.json', now()),
     ('ex-row-bent-over-db', 'Row (Bent-Over, Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Bent Over Row Exercise for Back.json', now()),
     ('ex-squat-db', 'Squat (Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Squat Exercise For Legs.json', now()),
-    ('ex-deadlift-romanian-db', 'Deadlift (Romanian, Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Romanian Deadlift Exercise For Legs.json', now()),
+    ('ex-deadlift-romanian-db', 'Deadlift (Romanian, Dumbbell)', 'WR', 'assets/lottie/Man Doing Romanian Dumbbell Deadlift Exercise for Legs.json', now()),
     ('ex-deadlift-db', 'Deadlift (Dumbbell)', 'WR', 'assets/lottie/Man Doing Dumbbell Deadlift Exercise for Legs.json', now())
   ON CONFLICT (id) DO UPDATE
   SET name = EXCLUDED.name,

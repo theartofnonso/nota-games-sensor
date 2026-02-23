@@ -304,6 +304,21 @@ Future<void> mainCommon(AppFlavor flavor) async {
   );
 }
 
+/// Parses [value] to RoutineLogDto. Handles both live instances and
+/// Map (from go_router state restoration / serialization).
+RoutineLogDto? _parseRoutineLogFromExtra(dynamic value) {
+  if (value == null) return null;
+  if (value is RoutineLogDto) return value;
+  if (value is Map<String, dynamic>) {
+    try {
+      return RoutineLogDto.fromJson(json: value);
+    } catch (_) {
+      return null;
+    }
+  }
+  return null;
+}
+
 GoRouter _createRouter(ClientOverrideController accessController) {
   return GoRouter(
     initialLocation: "/",
@@ -430,10 +445,10 @@ GoRouter _createRouter(ClientOverrideController accessController) {
       GoRoute(
         path: RoutineLogScreen.routeName,
         pageBuilder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>;
-          final log = extra["log"] as RoutineLogDto?;
-          final isEditable = extra['isEditable'] as bool;
-          final showShareOnLoad = (extra['showShareOnLoad'] as bool?) ?? false;
+          final extra = state.extra as Map<String, dynamic>?;
+          final log = _parseRoutineLogFromExtra(extra?["log"]);
+          final isEditable = (extra?['isEditable'] as bool?) ?? true;
+          final showShareOnLoad = (extra?['showShareOnLoad'] as bool?) ?? false;
 
           return CustomTransitionPage(
               child: RoutineLogScreen(
