@@ -1534,9 +1534,10 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                             ],
                           ),
                         ),
-                        // Alternatives section - in template mode always show (so coaches can add);
+                        // Alternatives section - coaches only; in template mode always show;
                         // in log mode only show when alternatives exist (add disabled during logging)
-                        if ((isTemplateMode ||
+                        if (AppConfig.isCoach &&
+                            (isTemplateMode ||
                                 (isLogMode && widget.showSetCheck)) &&
                             (exerciseLog.alternatives.isNotEmpty || canAddAlternatives)) ...[
                           Builder(builder: (context) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../app_flavor.dart';
 import '../controllers/exercise_log_controller.dart';
 import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/exercise_log_dto.dart';
@@ -115,6 +116,9 @@ void showExercisesInLibrary(
     required List<ExerciseDto> exercisesToExclude,
     required void Function(List<ExerciseDto> selectedExercises) onSelected,
     ExerciseType? type}) async {
+  if (AppConfig.isClient) {
+    return;
+  }
   final selectedExercises = await showAppBottomSheet<List<ExerciseDto>>(
     context: context,
     isDraggable: true,

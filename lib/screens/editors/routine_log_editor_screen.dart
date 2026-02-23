@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/routine_editors_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -365,23 +366,25 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                               ],
                             ),
                           ),
-                          IconButton(
-                            onPressed: _selectExercisesInLibrary,
-                            icon: const FaIcon(
-                              FontAwesomeIcons.circlePlus,
-                              size: 22,
-                              color: Colors.white,
+                          if (AppConfig.isCoach)
+                            IconButton(
+                              onPressed: _selectExercisesInLibrary,
+                              icon: const FaIcon(
+                                FontAwesomeIcons.circlePlus,
+                                size: 22,
+                                color: Colors.white,
+                              ),
+                              tooltip: 'Add exercises',
                             ),
-                            tooltip: 'Add exercises',
-                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       Expanded(
-                        child: exerciseLogs.isEmpty
+                          child: exerciseLogs.isEmpty
                             ? ListEmptyState(
-                                message:
-                                    'No exercises yet.\nTap + to add exercises and start logging.',
+                                message: AppConfig.isCoach
+                                    ? 'No exercises yet.\nTap + to add exercises and start logging.'
+                                    : 'No exercises yet.\nStart logging from your assigned workout.',
                                 lottieFuture: _emptyStateLottieFuture,
                               )
                             : ReorderableListView.builder(

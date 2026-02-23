@@ -299,15 +299,16 @@ class _RoutineTemplateEditorScreenState
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  IconButton(
-                                    onPressed: _selectExercisesInLibrary,
-                                    icon: const FaIcon(
-                                      FontAwesomeIcons.circlePlus,
-                                      size: 22,
-                                      color: Colors.white,
+                                  if (AppConfig.isCoach)
+                                    IconButton(
+                                      onPressed: _selectExercisesInLibrary,
+                                      icon: const FaIcon(
+                                        FontAwesomeIcons.circlePlus,
+                                        size: 22,
+                                        color: Colors.white,
+                                      ),
+                                      tooltip: 'Add exercises',
                                     ),
-                                    tooltip: 'Add exercises',
-                                  ),
                                 ],
                               ),
                             ),

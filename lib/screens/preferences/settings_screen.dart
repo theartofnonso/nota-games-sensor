@@ -2215,14 +2215,12 @@ class _ChallengesSectionState extends State<_ChallengesSection> {
             canManage || !AppConfig.isCoach || challenges.isNotEmpty;
         if (!shouldShowSection) return const SizedBox.shrink();
 
-        if (canManage && challenges.isEmpty) {
+        if (challenges.isEmpty || activeChallenges.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
             child: _ChallengeEmptyCard(onTapCreate: _openChallengesScreen),
           );
         }
-
-        if (challenges.isEmpty) return const SizedBox.shrink();
 
         final horizontalPadding = 10.0;
         final cardWidth = activeChallenges.length == 1
@@ -2233,17 +2231,10 @@ class _ChallengesSectionState extends State<_ChallengesSection> {
           children: [
             SizedBox(
               height: 215,
-              child: activeChallenges.isEmpty
-                  ? Center(
-                      child: TextButton(
-                        onPressed: _openChallengesScreen,
-                        child: const Text('No active challenges right now.'),
-                      ),
-                    )
-                  : ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      children: activeChallenges.map((challenge) {
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                children: activeChallenges.map((challenge) {
                         final progress = controller.progressForChallenge(challenge);
                         return Padding(
                           padding: EdgeInsets.only(
@@ -2266,8 +2257,8 @@ class _ChallengesSectionState extends State<_ChallengesSection> {
                             ),
                           ),
                         );
-                      }).toList(),
-                    ),
+                }).toList(),
+              ),
             ),
           ],
         );
@@ -2390,10 +2381,13 @@ class _ChallengeEmptyCard extends StatelessWidget {
           'Set challenge targets from workout template exercises, then track them here.',
       ctaLabel: 'Open challenges',
       onPressed: onTapCreate,
+      isLightBackground: true,
+      ctaButtonColor: Colors.black,
+      ctaSolidBackground: true,
       gradientColors: [
-        Colors.blueGrey.withValues(alpha: 0.35),
-        Colors.indigo.withValues(alpha: 0.3),
-        Colors.black.withValues(alpha: 0.45),
+        Colors.white.withValues(alpha: 0.9),
+        Colors.white.withValues(alpha: 0.8),
+        Colors.white.withValues(alpha: 0.7),
       ],
     );
   }
@@ -2680,16 +2674,26 @@ class _CreateSectionFrostedCard extends StatelessWidget {
   final VoidCallback onPressed;
   final List<Color> gradientColors;
 
+  final bool isLightBackground;
+  final Color? ctaButtonColor;
+  final bool ctaSolidBackground;
+
   const _CreateSectionFrostedCard({
     required this.title,
     required this.description,
     required this.ctaLabel,
     required this.onPressed,
     required this.gradientColors,
+    this.isLightBackground = false,
+    this.ctaButtonColor,
+    this.ctaSolidBackground = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final titleColor = isLightBackground ? Colors.black87 : Colors.white;
+    final descColor =
+        isLightBackground ? Colors.black54 : Colors.white.withValues(alpha: 0.82);
     return FrostedCard(
       gradientColors: gradientColors,
       child: Column(
@@ -2698,7 +2702,7 @@ class _CreateSectionFrostedCard extends StatelessWidget {
           Text(
             title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
+                  color: titleColor,
                   fontWeight: FontWeight.w700,
                 ),
           ),
@@ -2706,7 +2710,7 @@ class _CreateSectionFrostedCard extends StatelessWidget {
           Text(
             description,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.82),
+                  color: descColor,
                   height: 1.4,
                 ),
           ),
@@ -2716,6 +2720,8 @@ class _CreateSectionFrostedCard extends StatelessWidget {
             child: OpacityButtonWidgetTwo(
               onPressed: onPressed,
               label: ctaLabel,
+              buttonColor: ctaButtonColor,
+              solidBackground: ctaSolidBackground,
             ),
           ),
         ],
