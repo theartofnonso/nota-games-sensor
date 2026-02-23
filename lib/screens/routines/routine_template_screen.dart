@@ -38,7 +38,6 @@ import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
 import '../../widgets/empty_states/list_empty_state.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
-import '../../widgets/chat/coach_ai_chat_fab.dart';
 
 enum _OriginalNewValues {
   originalValues(
@@ -158,22 +157,17 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final totalSets = template.exerciseTemplates
         .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
 
-    final showCoachAiFab =
-        AppConfig.isCoach && accessController.hasSelectedClient;
-
     return Scaffold(
-        floatingActionButton: showCoachAiFab
-            ? const CoachAiChatFab()
-            : (accessController.hasSelectedClient
-                ? null
-                : FloatingActionButton(
-                    heroTag: UniqueKey,
-                    backgroundColor:
-                        themeGradient(context: context).colors.first,
-                    elevation: 8.0,
-                    onPressed: () => _launchRoutineLogEditor(),
-                    child: const FaIcon(FontAwesomeIcons.play, size: 24),
-                  )),
+        floatingActionButton: accessController.hasSelectedClient
+            ? null
+            : FloatingActionButton(
+                heroTag: UniqueKey,
+                backgroundColor:
+                    themeGradient(context: context).colors.first,
+                elevation: 8.0,
+                onPressed: () => _launchRoutineLogEditor(),
+                child: const FaIcon(FontAwesomeIcons.play, size: 24),
+              ),
         appBar: AppBar(
           backgroundColor: appBarBackgroundColor(context: context),
           surfaceTintColor: Colors.transparent,

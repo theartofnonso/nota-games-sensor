@@ -51,7 +51,6 @@ import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/settings/delete_account_section.dart';
 import '../../widgets/settings/logout_section.dart';
 import '../../widgets/settings/coach_feedback_card.dart';
-import '../../widgets/settings/coach_ai_chat_card.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../screens/routines/routine_plan.dart';
@@ -325,11 +324,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                             unawaited(navigateToUnsavedSession(context)),
                       ),
                     ),
-                  ],
-                  if (isCoach && isClientMode) ...[
-                    SizedBox(height: _sectionSpacing),
-                    const CoachAiChatCard(),
-                    SizedBox(height: _sectionSpacing),
                   ],
                   _TrainingInsightsSection(
                     yearStats: yearStats,

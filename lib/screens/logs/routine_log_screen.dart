@@ -13,7 +13,6 @@ import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
-import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/share/routine_share_service.dart';
 import 'package:trainware/share/shareable_routine_renderer.dart';
@@ -35,7 +34,6 @@ import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/chip_one.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
-import '../../widgets/chat/coach_ai_chat_fab.dart';
 
 class RoutineLogScreen extends StatefulWidget {
   static const routeName = '/routine_log_screen';
@@ -111,11 +109,9 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
     );
 
     final isCoach = AppConfig.isCoach;
-    final accessController = context.watch<ClientOverrideController>();
 
     return Scaffold(
-        floatingActionButton:
-            isCoach && accessController.hasSelectedClient ? const CoachAiChatFab() : null,
+        floatingActionButton: null,
         appBar: AppBar(
             backgroundColor: appBarBackgroundColor(context: context),
             surfaceTintColor: Colors.transparent,

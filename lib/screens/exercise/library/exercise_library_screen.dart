@@ -16,9 +16,6 @@ enum ExerciseSelectionPurpose {
 
   /// View-only (settings, etc.) – no selection.
   viewOnly,
-
-  /// Select for AI chat – tap returns exercise immediately for query scoping.
-  forAiQuery,
 }
 
 class ExerciseLibraryScreen extends StatefulWidget {
@@ -48,8 +45,6 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   List<ExerciseDto> _libraryOnly = [];
   List<ExerciseDto> _systemExercises = [];
 
-  /// Multi-select: selected exercises for forAiQuery (order preserved).
-  final List<ExerciseDto> _selectedExercises = [];
 
   /// Simple relevance scoring:
   /// +2 if name contains the query part
@@ -152,14 +147,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     _runSearch();
   }
 
-  /// Return selected exercise(s) to caller. For forAiQuery multi-select, pops
-  /// [selectedExercises]. For single-select (addToWorkout), pops [exercise].
   void _navigateBackWithSelectedExercise(ExerciseDto selectedExercise) {
     Navigator.of(context).pop([selectedExercise]);
-  }
-
-  void _navigateBackWithSelectedExercises(List<ExerciseDto> selected) {
-    Navigator.of(context).pop(selected);
   }
 
   void _dismissKeyboard(BuildContext context) {
@@ -173,30 +162,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     final hasAny = recentFromLogs.isNotEmpty || libraryOnly.isNotEmpty;
 
     return Scaffold(
-      appBar: widget.selectionPurpose == ExerciseSelectionPurpose.forAiQuery
-          ? AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              title: Text(
-                _selectedExercises.isEmpty
-                    ? 'Select exercises'
-                    : '${_selectedExercises.length} selected',
-              ),
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(context).pop(<ExerciseDto>[]),
-              ),
-              actions: [
-                if (_selectedExercises.isNotEmpty)
-                  TextButton(
-                    onPressed: () => _navigateBackWithSelectedExercises(
-                      List.from(_selectedExercises),
-                    ),
-                    child: const Text('Done'),
-                  ),
-              ],
-            )
-          : null,
+      appBar: null,
       body: Container(
         decoration: BoxDecoration(
           gradient: themeGradient(context: context),
@@ -257,16 +223,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
                                     final exercise = recentFromLogs[index];
-                                    final isSelected = widget
-                                                .selectionPurpose ==
-                                            ExerciseSelectionPurpose
-                                                .forAiQuery &&
-                                        _selectedExercises
-                                            .any((e) => e.id == exercise.id);
                                     return ExerciseGridItem(
                                       exercise: exercise,
                                       onTap: () => _handleExerciseTap(exercise),
-                                      isSelected: isSelected,
                                     );
                                   },
                                   childCount: recentFromLogs.length,
@@ -310,16 +269,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
                                     final exercise = libraryOnly[index];
-                                    final isSelected = widget
-                                                .selectionPurpose ==
-                                            ExerciseSelectionPurpose
-                                                .forAiQuery &&
-                                        _selectedExercises
-                                            .any((e) => e.id == exercise.id);
                                     return ExerciseGridItem(
                                       exercise: exercise,
                                       onTap: () => _handleExerciseTap(exercise),
-                                      isSelected: isSelected,
                                     );
                                   },
                                   childCount: libraryOnly.length,
@@ -348,22 +300,8 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   // Helpers
   // ────────────────────────────────────────────────────────────────────
 
-  /// Handle exercise tap.
-  /// - forAiQuery: tap toggles multi-select; use Done to confirm
-  /// - addToWorkout/viewOnly: direct one-tap return for add-to-workout flow
   void _handleExerciseTap(ExerciseDto exercise) {
     _dismissKeyboard(context);
-    if (widget.selectionPurpose == ExerciseSelectionPurpose.forAiQuery) {
-      setState(() {
-        final idx = _selectedExercises.indexWhere((e) => e.id == exercise.id);
-        if (idx >= 0) {
-          _selectedExercises.removeAt(idx);
-        } else {
-          _selectedExercises.add(exercise);
-        }
-      });
-      return;
-    }
     _navigateBackWithSelectedExercise(exercise);
   }
 

@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:trainware/controllers/access_controller.dart';
 import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
@@ -21,7 +20,6 @@ import 'package:trainware/widgets/nutrition/calorie_tracking_card.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 import 'package:trainware/services/nutrition_estimate_service.dart';
-import 'package:trainware/widgets/chat/coach_ai_chat_fab.dart';
 
 /// Shows the create/edit nutrition template bottom sheet. Used from Settings
 /// (coach, no client logs) and from NutritionTrackerScreen app bar.
@@ -271,11 +269,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
     final consumedFats = _sumFatsToday(todayLogs);
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final accessController = context.watch<ClientOverrideController>();
-    final showCoachAiFab =
-        AppConfig.isCoach && accessController.hasSelectedClient;
     return Scaffold(
-      floatingActionButton: showCoachAiFab ? const CoachAiChatFab() : null,
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: themeGradient(context: context).colors.first,
