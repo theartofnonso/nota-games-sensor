@@ -38,7 +38,7 @@ class SupabaseRoutineTemplateRepository {
       }
 
       final query = _client.from('routine_templates').select(
-            'id,planId,name,notes,clientId,createdAt,updatedAt,template_exercises(id,template_id,exercise_id,order_index,super_set_group,notes,created_at,template_sets(id,template_exercise_id,target_reps,target_weight,target_duration_seconds,order_index),exercises!template_exercises_exercise_id_fkey(id,name,type))',
+            'id,planId,name,notes,clientId,createdAt,updatedAt,template_exercises(id,template_id,exercise_id,order_index,super_set_group,notes,created_at,template_sets(id,template_exercise_id,target_reps,target_weight,target_duration_seconds,order_index),exercises!template_exercises_exercise_id_fkey(id,name,type),exercise_alternatives(order_index,exercises(id,name,type)))',
           );
       final response = requireOwnerAndClient
           ? await query
@@ -124,6 +124,27 @@ class SupabaseRoutineTemplateRepository {
         .map((setRow) => _buildTemplateSet(setRow: setRow, type: exercise.type))
         .toList();
 
+    final altRows = (row['exercise_alternatives'] as List<dynamic>? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList()
+      ..sort((a, b) {
+        final ai = (a['order_index'] as num?)?.toInt() ?? 0;
+        final bi = (b['order_index'] as num?)?.toInt() ?? 0;
+        return ai.compareTo(bi);
+      });
+    final alternatives = altRows.map((altRow) {
+      final exMap = Map<String, dynamic>.from(
+        (altRow['exercises'] as Map?) ?? const {},
+      );
+      final altType = ExerciseType.fromString(exMap['type'] as String? ?? 'NO');
+      return ExerciseDto(
+        id: exMap['id'] as String? ?? '',
+        name: exMap['name'] as String? ?? '',
+        type: altType == ExerciseType.none ? ExerciseType.weights : altType,
+        isSystem: true,
+      );
+    }).toList();
+
     return ExerciseLogDto(
       id: exercise.id,
       routineLogId: templateId,
@@ -131,7 +152,7 @@ class SupabaseRoutineTemplateRepository {
       exercise: exercise,
       notes: row['notes'] as String? ?? '',
       sets: sets,
-      alternatives: const [],
+      alternatives: alternatives,
       createdAt: DateTime.now(),
     );
   }
@@ -194,6 +215,18 @@ class SupabaseRoutineTemplateRepository {
       }
       if (setRows.isNotEmpty) {
         await _client.from('template_sets').insert(setRows);
+      }
+
+      if (exLog.alternatives.isNotEmpty) {
+        final altRows = <Map<String, dynamic>>[];
+        for (var altIndex = 0; altIndex < exLog.alternatives.length; altIndex++) {
+          altRows.add({
+            'template_exercise_id': templateExerciseId,
+            'alternative_exercise_id': exLog.alternatives[altIndex].id,
+            'order_index': altIndex,
+          });
+        }
+        await _client.from('exercise_alternatives').insert(altRows);
       }
     }
   }

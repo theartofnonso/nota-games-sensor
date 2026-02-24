@@ -1238,7 +1238,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
     // so treat that as "template mode" to tweak duration behaviour.
     final bool isTemplateMode = !widget.showSetCheck;
     final bool canManageTemplateChallenge = isTemplateMode && AppConfig.isCoach;
-    final bool canAddAlternatives = isTemplateMode;
+    final bool canAddAlternatives = isTemplateMode && AppConfig.isCoach;
     final normalizedTemplateId = widget.templateId?.trim() ?? '';
     final existingChallenge = normalizedTemplateId.isNotEmpty
         ? context.select<SupabaseExerciseAndRoutineController,

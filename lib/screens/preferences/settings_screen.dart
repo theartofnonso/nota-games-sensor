@@ -2211,19 +2211,36 @@ class _ChallengesSectionState extends State<_ChallengesSection> {
             .toList();
         final canManage =
             AppConfig.isCoach && controller.accessController.hasSelectedClient;
+        // Clients: only show section when they have active or upcoming challenges
+        final clientHasRelevantChallenges = challenges.any((c) {
+          final status = controller.progressForChallenge(c).status;
+          return status == ExerciseChallengeStatus.active ||
+              status == ExerciseChallengeStatus.upcoming;
+        });
         final shouldShowSection =
-            canManage || !AppConfig.isCoach || challenges.isNotEmpty;
+            canManage || (AppConfig.isClient && clientHasRelevantChallenges);
         if (!shouldShowSection) return const SizedBox.shrink();
 
-        if (challenges.isEmpty || activeChallenges.isEmpty) {
+        // Empty card ("Open challenges") only for coaches when no active challenges
+        if (AppConfig.isCoach &&
+            (challenges.isEmpty || activeChallenges.isEmpty)) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
             child: _ChallengeEmptyCard(onTapCreate: _openChallengesScreen),
           );
         }
 
+        // Display active challenges; if none, show upcoming (for clients)
+        final displayChallenges = activeChallenges.isNotEmpty
+            ? activeChallenges
+            : challenges
+                .where((c) =>
+                    controller.progressForChallenge(c).status ==
+                    ExerciseChallengeStatus.upcoming)
+                .toList();
+
         final horizontalPadding = 10.0;
-        final cardWidth = activeChallenges.length == 1
+        final cardWidth = displayChallenges.length == 1
             ? MediaQuery.of(context).size.width - (horizontalPadding * 2)
             : MediaQuery.of(context).size.width * 0.9;
         return Column(
@@ -2234,11 +2251,11 @@ class _ChallengesSectionState extends State<_ChallengesSection> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                children: activeChallenges.map((challenge) {
+                children: displayChallenges.map((challenge) {
                         final progress = controller.progressForChallenge(challenge);
                         return Padding(
                           padding: EdgeInsets.only(
-                            right: activeChallenges.length == 1 ? 0 : 14,
+                            right: displayChallenges.length == 1 ? 0 : 14,
                           ),
                           child: SizedBox(
                             width: cardWidth,

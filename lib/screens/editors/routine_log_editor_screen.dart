@@ -387,66 +387,57 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                     : 'No exercises yet.\nStart logging from your assigned workout.',
                                 lottieFuture: _emptyStateLottieFuture,
                               )
-                            : ReorderableListView.builder(
-                                padding: const EdgeInsets.only(
-                                  top: 8,
-                                  bottom: 72,
-                                ),
-                                itemCount: exerciseLogs.length,
-                                onReorder: (oldIndex, newIndex) {
-                                  if (newIndex > oldIndex) {
-                                    newIndex -= 1;
-                                  }
-
-                                  final updated = exerciseLogs.toList();
-                                  final item = updated.removeAt(oldIndex);
-                                  updated.insert(newIndex, item);
-
-                                  exerciseLogController.reOrderExerciseLogs(
-                                    reOrderedList: updated,
-                                  );
-                                },
-                                proxyDecorator:
-                                    (Widget child, int index, animation) {
-                                  // Keep the dragged item visually identical
-                                  // without additional background color.
-                                  return Material(
-                                    type: MaterialType.transparency,
-                                    child: child,
-                                  );
-                                },
-                                itemBuilder: (context, index) {
-                                  final exerciseLog = exerciseLogs[index];
-                                  return Dismissible(
-                                    key: ValueKey(exerciseLog.id),
-                                    direction: DismissDirection.endToStart,
-                                    confirmDismiss: (_) =>
-                                        _confirmRemoveExercise(exerciseLog),
-                                    onDismissed: (_) {
-                                      exerciseLogController.removeExerciseLog(
-                                          logId: exerciseLog.id);
-                                    },
-                                    background: const SizedBox.shrink(),
-                                    child: Column(
-                                      children: [
-                                        ExerciseLogListItem(
-                                          exerciseLogDto: exerciseLog,
-                                          onTap: () {
-                                            showExerciseLogEditor(
-                                              context: context,
-                                              exerciseLogId:
-                                                  exerciseLog.exercise.id,
-                                              editorType: widget.mode,
-                                              templateId: widget.log.templateId,
-                                            );
-                                          },
-                                        ),
-                                        const SizedBox(height: 12),
-                                      ],
+                            : AppConfig.isClient
+                                ? ListView.builder(
+                                    padding: const EdgeInsets.only(
+                                      top: 8,
+                                      bottom: 72,
                                     ),
-                                  );
-                                },
-                              ),
+                                    itemCount: exerciseLogs.length,
+                                    itemBuilder: (context, index) =>
+                                        _exerciseListItem(
+                                      context: context,
+                                      exerciseLog: exerciseLogs[index],
+                                      exerciseLogController:
+                                          exerciseLogController,
+                                    ),
+                                  )
+                                : ReorderableListView.builder(
+                                    padding: const EdgeInsets.only(
+                                      top: 8,
+                                      bottom: 72,
+                                    ),
+                                    itemCount: exerciseLogs.length,
+                                    onReorder: (oldIndex, newIndex) {
+                                      if (newIndex > oldIndex) {
+                                        newIndex -= 1;
+                                      }
+
+                                      final updated = exerciseLogs.toList();
+                                      final item = updated.removeAt(oldIndex);
+                                      updated.insert(newIndex, item);
+
+                                      exerciseLogController.reOrderExerciseLogs(
+                                        reOrderedList: updated,
+                                      );
+                                    },
+                                    proxyDecorator:
+                                        (Widget child, int index, animation) {
+                                      // Keep the dragged item visually identical
+                                      // without additional background color.
+                                      return Material(
+                                        type: MaterialType.transparency,
+                                        child: child,
+                                      );
+                                    },
+                                    itemBuilder: (context, index) =>
+                                        _exerciseListItem(
+                                      context: context,
+                                      exerciseLog: exerciseLogs[index],
+                                      exerciseLogController:
+                                          exerciseLogController,
+                                    ),
+                                  ),
                       ),
                     ],
                   ),
@@ -482,6 +473,38 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
       context: context,
       exerciseName: exerciseLog.exercise.name,
       fromLabel: 'workout',
+    );
+  }
+
+  Widget _exerciseListItem({
+    required BuildContext context,
+    required ExerciseLogDto exerciseLog,
+    required ExerciseLogController exerciseLogController,
+  }) {
+    return Dismissible(
+      key: ValueKey(exerciseLog.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => _confirmRemoveExercise(exerciseLog),
+      onDismissed: (_) {
+        exerciseLogController.removeExerciseLog(logId: exerciseLog.id);
+      },
+      background: const SizedBox.shrink(),
+      child: Column(
+        children: [
+          ExerciseLogListItem(
+            exerciseLogDto: exerciseLog,
+            onTap: () {
+              showExerciseLogEditor(
+                context: context,
+                exerciseLogId: exerciseLog.exercise.id,
+                editorType: widget.mode,
+                templateId: widget.log.templateId,
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
     );
   }
 
