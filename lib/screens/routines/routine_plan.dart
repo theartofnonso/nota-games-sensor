@@ -329,7 +329,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     showAppActionBottomSheet(
         context: context,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -64,6 +64,7 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
     initialName: initialPlan?.name ?? '',
     initialNotes: initialPlan?.notes ?? '',
     emptyNameMessage: 'Please provide a name for this plan',
+    compact: true,
   );
 
   if (details == null) return null;

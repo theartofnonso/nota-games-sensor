@@ -36,10 +36,11 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
           top: 26,
           bottom: 26 + bottomInset,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Text(
               title,
               style: Theme.of(ctx)
@@ -113,6 +114,7 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
               ),
             ),
           ],
+          ),
         ),
       );
     },

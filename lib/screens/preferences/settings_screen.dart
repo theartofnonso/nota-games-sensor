@@ -1187,7 +1187,7 @@ class _TodaySleepSectionState extends State<_TodaySleepSection> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isSleep ? 'Sleep' : 'Steps',
+                      isSleep ? 'SLEEP' : 'STEPS',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: mutedColor,
                         fontWeight: FontWeight.w500,
@@ -1203,7 +1203,7 @@ class _TodaySleepSectionState extends State<_TodaySleepSection> {
                     onTap: () =>
                         setState(() => _selectedMetric = _HealthMetric.sleep),
                     child: Text(
-                      'Sleep',
+                      'SLEEP',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: isSleep ? accentColor : mutedColor,
                         fontWeight: isSleep ? FontWeight.w600 : FontWeight.w500,
@@ -1220,7 +1220,7 @@ class _TodaySleepSectionState extends State<_TodaySleepSection> {
                     onTap: () =>
                         setState(() => _selectedMetric = _HealthMetric.steps),
                     child: Text(
-                      'Steps',
+                      'STEPS',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: !isSleep ? accentColor : mutedColor,
                         fontWeight:
@@ -2975,9 +2975,9 @@ class _RoutinePlansCreateRow extends StatelessWidget {
       ctaLabel: 'Create routine plan',
       onPressed: () => navigateToRoutinePlanEditor(context: context),
       gradientColors: [
-        Colors.indigo.withValues(alpha: 0.32),
-        Colors.deepPurple.withValues(alpha: 0.26),
-        Colors.black.withValues(alpha: 0.45),
+        Colors.grey.withValues(alpha: 0.2),
+        Colors.black.withValues(alpha: 0.4),
+        Colors.black.withValues(alpha: 0.5),
       ],
     );
   }

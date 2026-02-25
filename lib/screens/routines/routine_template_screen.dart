@@ -514,6 +514,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       if (!context.mounted) return;
       if (!AppConfig.isCoach) _showLoadingScreen();
       if (AppConfig.isCoach) showCoachLoadingOverlay(context);
+      var didHideLoading = false;
       try {
         final exercises = template.exerciseTemplates.map((exerciseLog) {
           final uncheckedSets = exerciseLog.sets
@@ -533,6 +534,12 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                 .saveTemplate(templateDto: templateToBeCreated);
         if (mounted && context.mounted) {
           if (createdTemplate != null) {
+            if (AppConfig.isCoach) {
+              hideCoachLoadingOverlay(context);
+            } else {
+              _hideLoadingScreen();
+            }
+            didHideLoading = true;
             navigateToRoutineTemplatePreview(
                 context: context, template: createdTemplate);
           }
@@ -544,7 +551,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               message: "Oops, we are unable to create your template");
         }
       } finally {
-        if (mounted && context.mounted) {
+        if (mounted && context.mounted && !didHideLoading) {
           if (AppConfig.isCoach) {
             hideCoachLoadingOverlay(context);
           } else {
@@ -619,9 +626,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                     onTap: () async {
                       Navigator.of(context).pop();
                       await _createTemplate(copy: true);
-                      if (mounted) {
-                        _showMenuBottomSheet(planDto: planDto);
-                      }
                     },
                   ),
                   ListTile(
