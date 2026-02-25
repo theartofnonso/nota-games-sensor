@@ -3,12 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/dtos/coach_client_dto.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
+import 'package:trainware/services/coach_clients_service.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/widgets/search_bar.dart';
 import 'package:trainware/widgets/empty_states/list_empty_state.dart';
@@ -29,17 +29,16 @@ class CoachClientsScreen extends StatefulWidget {
 
 class _CoachClientsScreenState extends State<CoachClientsScreen>
     with WidgetsBindingObserver {
-  late Future<List<CoachClientDto>> _clientsFuture;
   String _appVersion = '';
   Map<String, int> _unreadByClientId = const {};
   late final TextEditingController _searchController;
   String _searchQuery = '';
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _clientsFuture = _loadClients();
     _searchController = TextEditingController();
     _unreadByClientId = ChatUnreadCountsService().unreadByClientId.value;
     ChatUnreadCountsService().unreadByClientId.addListener(_handleUnreadChange);
@@ -47,28 +46,24 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     _refreshUnreadWhenAgoraReady();
   }
 
-  /// Refresh unread counts when Agora has logged in. If already logged in
-  /// (e.g. app wasn't killed), refresh immediately after clients load.
+  /// Refresh unread counts when Agora has logged in. Clients are pre-loaded
+  /// at startup, so we just need Agora ready to fetch counts.
   void _refreshUnreadWhenAgoraReady() {
     void doRefresh() {
       if (!mounted) return;
       ChatUnreadCountsService().refreshUnreadCounts();
     }
 
-    _clientsFuture.then((_) {
-      if (!mounted) return;
-      if (ChatBootstrapService.agoraLoggedIn.value) {
-        doRefresh();
-        return;
-      }
-      void listener() {
-        if (!ChatBootstrapService.agoraLoggedIn.value) return;
-        ChatBootstrapService.agoraLoggedIn.removeListener(listener);
-        doRefresh();
-      }
-
-      ChatBootstrapService.agoraLoggedIn.addListener(listener);
-    });
+    if (ChatBootstrapService.agoraLoggedIn.value) {
+      doRefresh();
+      return;
+    }
+    void listener() {
+      if (!ChatBootstrapService.agoraLoggedIn.value) return;
+      ChatBootstrapService.agoraLoggedIn.removeListener(listener);
+      doRefresh();
+    }
+    ChatBootstrapService.agoraLoggedIn.addListener(listener);
   }
 
   @override
@@ -97,14 +92,16 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
   }
 
   Future<void> _refreshClientsAndUnread() async {
-    final next = _loadClients();
-    if (mounted) {
-      setState(() {
-        _clientsFuture = next;
-      });
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+    if (mounted) setState(() {});
+    try {
+      await CoachClientsService.instance.loadClients();
+      await ChatUnreadCountsService().refreshUnreadCounts();
+    } finally {
+      _isRefreshing = false;
+      if (mounted) setState(() {});
     }
-    await next;
-    await ChatUnreadCountsService().refreshUnreadCounts();
   }
 
   void _updateSearch(String value) {
@@ -128,39 +125,17 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     }).toList();
   }
 
-  Future<List<CoachClientDto>> _loadClients() async {
-    final coachId = Supabase.instance.client.auth.currentUser?.id;
-    if (coachId == null) return [];
-    final response = await Supabase.instance.client
-        .from('coach_clients')
-        .select(
-            'id, coach_id, client_id, created_at, clients!inner(id, email, name, created_at), coaches (id, email, name)')
-        .eq('coach_id', coachId)
-        .order('created_at', ascending: false);
-    final rows = response as List<dynamic>;
-    final clients = rows
-        .map((row) {
-          final clientsMap = row['clients'] as Map<String, dynamic>?;
-          if (clientsMap == null) return null;
-          final coachesMap = row['coaches'] as Map<String, dynamic>?;
-          return CoachClientDto.fromJson(
-              row as Map<String, dynamic>, clientsMap, coachesMap);
-        })
-        .whereType<CoachClientDto>()
-        .toList();
+  Future<void> _retryLoadClients() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+    if (mounted) setState(() {});
     try {
-      await ChatUnreadCountsService()
-          .updateClients(clients.map((c) => c.clientId).toList());
-    } catch (_) {
-      // Don't fail clients load if Agora/unread service fails
+      await CoachClientsService.instance.loadClients();
+      if (mounted) setState(() {});
+    } finally {
+      _isRefreshing = false;
+      if (mounted) setState(() {});
     }
-    return clients;
-  }
-
-  void _retryLoadClients() {
-    setState(() {
-      _clientsFuture = _loadClients();
-    });
   }
 
   Future<void> _getAppVersion() async {
@@ -189,14 +164,15 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
         child: SafeArea(
           bottom: false,
           minimum: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-          child: FutureBuilder<List<CoachClientDto>>(
-            future: _clientsFuture,
-            builder: (context, snapshot) {
+          child: Builder(
+            builder: (context) {
               final theme = Theme.of(context);
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              final service = CoachClientsService.instance;
+
+              if (_isRefreshing && service.clients.isEmpty) {
                 return const Center(child: CoachLoadingIndicator());
               }
-              if (snapshot.hasError) {
+              if (service.loadError != null && service.clients.isEmpty) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -210,9 +186,15 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                         ),
                         const SizedBox(height: 16),
                         TextButton.icon(
-                          onPressed: _retryLoadClients,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
+                          onPressed: _isRefreshing ? null : () => _retryLoadClients(),
+                          icon: _isRefreshing
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.refresh),
+                          label: Text(_isRefreshing ? 'Retrying…' : 'Retry'),
                         ),
                       ],
                     ),
@@ -220,7 +202,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                 );
               }
 
-              final clients = _filterClients(snapshot.data ?? const []);
+              final clients = _filterClients(service.clients);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
