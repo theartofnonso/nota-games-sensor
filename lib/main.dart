@@ -41,11 +41,11 @@ import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
-import 'package:trainware/services/client_subscription_service.dart';
+import 'package:trainware/services/app_startup_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
-import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
+import 'package:trainware/widgets/backgrounds/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
@@ -539,6 +539,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool _lastCoach = false;
   bool _welcomeDismissed = false;
   bool _agoraLifecycleTransitionInFlight = false;
+  /// True once startup tasks (auth + subscription for clients) have completed.
+  bool _startupComplete = false;
+  bool _startupTasksStarted = false;
 
   @override
   void initState() {
@@ -558,6 +561,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _processPendingNotification();
+      _runStartupTasksIfReady();
     });
     // Set preferred orientation once at startup
     SystemChrome.setPreferredOrientations([
@@ -610,6 +614,41 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         _accessController.userId);
   }
 
+  void _runStartupTasksIfReady() {
+    if (_startupComplete || !mounted) return;
+    if (_accessController.isLoading) return;
+
+    if (!_accessController.isAuthenticated) {
+      _startupComplete = true;
+      if (mounted) setState(() {});
+      return;
+    }
+
+    if (_startupTasksStarted) return;
+    _startupTasksStarted = true;
+
+    final controller = context.read<SupabaseExerciseAndRoutineController>();
+    final userId = _accessController.userId;
+
+    unawaited(
+      AppStartupService.instance
+          .runStartupTasks(controller: controller, userId: userId)
+          .then((_) {
+        if (mounted) {
+          _startupComplete = true;
+          setState(() {});
+        }
+      })
+          .catchError((e, stack) {
+        debugPrint('[Startup] Error: $e\n$stack');
+        if (mounted) {
+          _startupComplete = true;
+          setState(() {});
+        }
+      }),
+    );
+  }
+
   void _handleAccessChanged() {
     if (!mounted) return;
     final isAuthenticated = _accessController.isAuthenticated;
@@ -617,26 +656,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     final shouldRebuild =
         isAuthenticated != _lastAuthenticated || isCoach != _lastCoach;
 
+    _runStartupTasksIfReady();
+
     if (isAuthenticated && (!_lastAuthenticated || isCoach != _lastCoach)) {
       // Mark first launch as complete after successful authentication
       if (SharedPrefs().firstLaunch) {
         SharedPrefs().firstLaunch = false;
       }
-      try {
-        final controller = context.read<SupabaseExerciseAndRoutineController>();
-        controller.initialize();
-      } catch (e) {
-        debugPrint('[Auth] Error initializing data: $e');
-      }
-      // Check subscription once at app load; cache in memory for gate points
-      unawaited(ClientSubscriptionService.instance.refreshSubscriptionStatus());
-      // Warm up Agora Chat + push tokens so chat screen is instant when opened
-      unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
-          _accessController.userId));
+      // Data init + chat bootstrap run in _runStartupTasksIfReady (during splash)
     }
 
     if (!isAuthenticated && _lastAuthenticated) {
-      ClientSubscriptionService.instance.clearCachedAccess();
+      _startupComplete = false;
+      _startupTasksStarted = false;
+      AppStartupService.instance.reset();
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();
@@ -689,12 +722,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    if (_accessController.isLoading) {
+    if (_accessController.isLoading || !_startupComplete) {
       return MaterialApp(
         themeMode: ThemeMode.dark,
         theme: TRKRTheme.darkTheme,
         darkTheme: TRKRTheme.darkTheme,
-        home: const TRKRLoadingScreen(),
+        home: const SplashScreen(),
       );
     }
 

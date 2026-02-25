@@ -8,7 +8,6 @@ import 'package:trainware/dtos/viewmodels/routine_log_arguments.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
 import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/utils/client_access_utils.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -17,11 +16,7 @@ import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 /// Navigates directly to the unsaved session (no bottom sheet).
 /// Use from settings or when a single tap should open the session.
 Future<void> navigateToUnsavedSession(BuildContext context) async {
-  final hasAccess = await guardClientFeature(
-    context: context,
-    feature: ClientFeatureGate.resumeWorkoutSession,
-  );
-  if (!hasAccess || !context.mounted) return;
+  if (!context.mounted) return;
 
   final cache = SharedPrefs().routineLog;
   if (cache.isEmpty) return;

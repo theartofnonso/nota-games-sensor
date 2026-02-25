@@ -26,27 +26,47 @@ class ClientSubscriptionService {
   /// Checked once at app load when user authenticates; reused at gate points.
   bool? _cachedAccess;
 
+  /// Shared future for in-flight refresh. Prevents duplicate fetches when
+  /// app-load refresh and first gate check overlap.
+  Future<void>? _refreshInProgress;
+
   /// Fetches subscription status from backend and caches in memory.
-  /// Call once when app loads (user authenticated); also call after
-  /// successful purchase/restore to refresh.
+  /// Non-blocking when called at app load. Gate points await this; if a
+  /// refresh is already in progress, they await the same future.
   Future<void> refreshSubscriptionStatus() async {
     if (!AppConfig.isClient) return;
 
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.id.trim().isEmpty) {
       _cachedAccess = null;
+      _refreshInProgress = null;
       return;
     }
 
-    final access = await _fetchBackendAccess(userId: user.id);
-    _cachedAccess = access;
+    if (_refreshInProgress != null) {
+      await _refreshInProgress;
+      return;
+    }
+
+    final future = _fetchBackendAccess(userId: user.id).then((access) {
+      _cachedAccess = access;
+    });
+    _refreshInProgress = future;
+    try {
+      await future;
+    } finally {
+      _refreshInProgress = null;
+    }
   }
 
   /// Clears cached status (e.g. on logout).
   void clearCachedAccess() {
     _cachedAccess = null;
+    _refreshInProgress = null;
   }
 
+  /// Checks cached subscription status only. No refresh/API calls at gate points.
+  /// Cache is populated at app launch (splash screen).
   Future<bool> ensureAccess({
     required BuildContext context,
     required String blockedMessage,
@@ -56,20 +76,9 @@ class ClientSubscriptionService {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.id.trim().isEmpty) return false;
 
-    // Use cached value if available; no per-gate backend calls
     if (_cachedAccess == true) return true;
 
-    if (_cachedAccess == false) {
-      if (!context.mounted) return false;
-      showSnackbar(context: context, message: blockedMessage);
-      await showPaywall(context: context);
-      return false;
-    }
-
-    // First gate check: cache not yet populated, fetch once
-    await refreshSubscriptionStatus();
-    if (_cachedAccess == true) return true;
-
+    // Cached false or null: show paywall (no refresh - cache set at splash)
     if (!context.mounted) return false;
     showSnackbar(context: context, message: blockedMessage);
     await showPaywall(context: context);
