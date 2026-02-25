@@ -1,5 +1,7 @@
+import 'dart:math';
 import 'dart:ui';
 
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -55,7 +57,22 @@ class RoutineLogScreen extends StatefulWidget {
 
 class _RoutineLogScreenState extends State<RoutineLogScreen> {
   bool _loading = false;
+  bool _confettiShown = false;
   final RoutineShareService _shareService = RoutineShareService();
+  late final ConfettiController _confettiController;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 3));
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +127,22 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
 
     final isCoach = AppConfig.isCoach;
 
-    return Scaffold(
+    // Show confetti once when client just logged and achieved PBs
+    if (!isCoach &&
+        widget.showShareOnLoad &&
+        personalBests.isNotEmpty &&
+        !_confettiShown) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_confettiShown) {
+          _confettiShown = true;
+          _confettiController.play();
+        }
+      });
+    }
+
+    return Stack(
+      children: [
+        Scaffold(
         floatingActionButton: null,
         appBar: AppBar(
             backgroundColor: appBarBackgroundColor(context: context),
@@ -128,7 +160,9 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                             size: 22))
                   ]
                 : null),
-        body: Container(
+        body: Stack(
+          children: [
+            Container(
           height: double.infinity,
           decoration: BoxDecoration(
             gradient: themeGradient(context: context),
@@ -274,7 +308,26 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
               ),
             ),
           ),
-        ));
+        ),
+        // Confetti overlay (ignores pointer so user can interact)
+        IgnorePointer(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirection: pi / 2,
+              blastDirectionality: BlastDirectionality.directional,
+              numberOfParticles: 25,
+              gravity: 0.1,
+              shouldLoop: false,
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+],
+);
   }
 
   Future<void> _saveCoachNote(String? note) async {
