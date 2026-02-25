@@ -299,10 +299,6 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                                 .withValues(alpha: 0.06),
                                             borderRadius:
                                                 BorderRadius.circular(18),
-                                            border: Border.all(
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.08),
-                                            ),
                                           ),
                                           child: Row(
                                             children: [

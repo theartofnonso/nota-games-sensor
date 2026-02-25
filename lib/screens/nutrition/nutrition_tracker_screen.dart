@@ -1034,10 +1034,6 @@ class _MacroLogCard extends StatelessWidget {
               ? Colors.white.withValues(alpha: 0.06)
               : Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: (isDarkMode ? Colors.white : Colors.black)
-                .withValues(alpha: 0.08),
-          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
