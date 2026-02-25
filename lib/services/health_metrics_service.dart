@@ -167,29 +167,32 @@ class HealthMetricsService {
   }
 
   /// Fetch health metrics for display (for coach viewing client or client own).
+  /// For today + own user: always reads live from Health (steps change throughout
+  /// the day). For past dates or coach viewing client: uses backend.
   Future<({int sleepMinutes, int steps})> getMetricsForDate({
     required String userId,
     required DateTime date,
   }) async {
+    final isOwn =
+        userId == Supabase.instance.client.auth.currentUser?.id;
+    final now = DateTime.now();
+    final isToday = date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+
+    // For today + own: read live from Health (steps accumulate during the day)
+    if (isOwn && isToday && (Platform.isIOS || Platform.isAndroid)) {
+      final sleep = await getTodaySleepMinutes();
+      final steps = await getTodaySteps();
+      return (sleepMinutes: sleep, steps: steps);
+    }
+
     final fromBackend = await _repo.getHealthMetricsForDate(
       userId: userId,
       date: date,
     );
     if (fromBackend != null) {
       return fromBackend;
-    }
-    final isOwn =
-        userId == Supabase.instance.client.auth.currentUser?.id;
-    if (isOwn && (Platform.isIOS || Platform.isAndroid)) {
-      final now = DateTime.now();
-      final isToday = date.year == now.year &&
-          date.month == now.month &&
-          date.day == now.day;
-      if (isToday) {
-        final sleep = await getTodaySleepMinutes();
-        final steps = await getTodaySteps();
-        return (sleepMinutes: sleep, steps: steps);
-      }
     }
     return (sleepMinutes: 0, steps: 0);
   }

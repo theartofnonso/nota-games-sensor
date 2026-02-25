@@ -146,14 +146,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     final logs = controller.logs;
     final yearStats = _YearTrainingStats.fromLogs(logs);
     final yearHoursStats = _YearHoursStats.fromLogs(logs);
-    final headerName = isClientMode
-        ? (accessController.selectedClientName?.trim().isNotEmpty ?? false
-            ? accessController.selectedClientName!.trim()
-            : 'Client')
-        : 'Settings';
-    final headerEmail = isClientMode ? '' : userEmail;
-    final headerInitials =
-        _initialsForName(headerName, isClientMode ? null : headerEmail);
     final nextSession = TrainingPredictionService.getNextPredictedSession(logs);
     final predictionInfo = nextSession != null
         ? _PredictionInfo(
@@ -221,90 +213,6 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (isCoach)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                      child: Row(
-                        children: [
-                          if (headerInitials != null) ...[
-                            Container(
-                              width: 36,
-                              height: 36,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    (isDarkMode ? Colors.white : Colors.black)
-                                        .withValues(alpha: 0.18),
-                                    (isDarkMode ? Colors.white : Colors.black)
-                                        .withValues(alpha: 0.05),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                headerInitials,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelLarge
-                                    ?.copyWith(
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                          ],
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  headerName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                ),
-                                if (headerEmail.trim().isNotEmpty)
-                                  Text(
-                                    headerEmail,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: isDarkMode
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.6)
-                                              : Colors.black
-                                                  .withValues(alpha: 0.6),
-                                        ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: FaIcon(
-                              FontAwesomeIcons.users,
-                              color: isDarkMode ? Colors.white70 : Colors.black,
-                              size: 18,
-                            ),
-                            onPressed: _goBackToCoachList,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                        ],
-                      ),
-                    ),
                   // Calendar widget at top
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -341,6 +249,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                       userId: isClientMode
                           ? accessController.selectedClientId
                           : Supabase.instance.client.auth.currentUser?.id,
+                      onBackToClients: (isCoach && isClientMode)
+                          ? _goBackToCoachList
+                          : null,
                     ),
                   ],
                   _TrainingInsightsSection(
@@ -422,6 +333,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   bool _shouldShowHealthMetrics(bool isCoach, bool isClientMode) {
     if (isCoach && isClientMode) return true;
+    if (isCoach) return false;
     if (AppConfig.isClient && SharedPrefs().healthAccessGranted) return true;
     return false;
   }
@@ -929,28 +841,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
-  String? _initialsForName(String name, String? email) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) {
-      return _initialsFromEmail(email);
-    }
-    final parts = trimmed.split(RegExp(r'\s+'));
-    if (parts.length == 1) {
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
-        .toUpperCase();
-  }
-
-  String? _initialsFromEmail(String? email) {
-    if (email == null || email.trim().isEmpty) return null;
-    final atIndex = email.indexOf('@');
-    if (atIndex <= 0) return email.substring(0, 1).toUpperCase();
-    final local = email.substring(0, atIndex);
-    if (local.isEmpty) return null;
-    return local.substring(0, 1).toUpperCase();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -1133,11 +1023,13 @@ class _TodaySleepSection extends StatefulWidget {
   final String displayName;
   final bool isCoachViewingClient;
   final String? userId;
+  final VoidCallback? onBackToClients;
 
   const _TodaySleepSection({
     required this.displayName,
     this.isCoachViewingClient = false,
     this.userId,
+    this.onBackToClients,
   });
 
   @override
@@ -1149,11 +1041,28 @@ class _TodaySleepSectionState extends State<_TodaySleepSection> {
   int _sleepMinutes = 0;
   int _steps = 0;
   bool _loading = true;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadMetrics();
+    // Steps change throughout the day; refresh every 60s when viewing own today's data
+    _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      if (!mounted) return;
+      final uid =
+          widget.userId ?? Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+      final isOwn = uid == Supabase.instance.client.auth.currentUser?.id;
+      if (!isOwn) return;
+      _loadMetrics();
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadMetrics() async {
@@ -1199,12 +1108,34 @@ class _TodaySleepSectionState extends State<_TodaySleepSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            headingText,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: textColor,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  headingText,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
+              ),
+              if (widget.onBackToClients != null)
+                IconButton(
+                  icon: FaIcon(
+                    FontAwesomeIcons.users,
+                    color: isDarkMode ? Colors.white70 : Colors.black,
+                    size: 18,
+                  ),
+                  onPressed: widget.onBackToClients,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  style: IconButton.styleFrom(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    minimumSize: Size.zero,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -1230,16 +1161,18 @@ class _TodaySleepSectionState extends State<_TodaySleepSection> {
                           _loading
                               ? '--'
                               : (isSleep ? '$sleepHours' : '$_steps'),
-                          style: theme.textTheme.displayLarge?.copyWith(
+                          style: theme.textTheme.displaySmall?.copyWith(
                                 color: textColor,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w900,
                                 height: 1.0,
+                                fontFamily: 'Grift',
                               ) ??
                               TextStyle(
                                 color: textColor,
-                                fontSize: 48,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
                                 height: 1.0,
+                                fontFamily: 'Grift',
                               ),
                         ),
                         Text(
@@ -1247,6 +1180,7 @@ class _TodaySleepSectionState extends State<_TodaySleepSection> {
                           style: theme.textTheme.titleLarge?.copyWith(
                             color: textColor,
                             fontWeight: FontWeight.w600,
+                            fontFamily: 'Grift',
                           ),
                         ),
                       ],
