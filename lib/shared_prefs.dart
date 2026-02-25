@@ -17,6 +17,8 @@ class SharedPrefs {
   void clear() {
     remove(key: _weightUnitKey);
     remove(key: routineLogKey);
+    _sharedPrefs?.remove(_healthAccessGrantedKey);
+    _sharedPrefs?.remove(_healthLastSyncDateKey);
   }
 
   void remove({required String key}) {
@@ -60,6 +62,29 @@ class SharedPrefs {
   }
 
   ValueListenable<int> get routineLogRevision => _routineLogRevision;
+
+  /// Health metrics (Apple Health) access granted by user
+  final String _healthAccessGrantedKey = "health_access_granted_key";
+  bool get healthAccessGranted =>
+      _sharedPrefs?.getBool(_healthAccessGrantedKey) ?? false;
+  set healthAccessGranted(bool value) {
+    _sharedPrefs?.setBool(_healthAccessGrantedKey, value);
+  }
+
+  /// Last date we synced health data to backend (for backfill)
+  final String _healthLastSyncDateKey = "health_last_sync_date_key";
+  DateTime? get healthLastSyncDate {
+    final s = _sharedPrefs?.getString(_healthLastSyncDateKey);
+    if (s == null) return null;
+    return DateTime.tryParse(s);
+  }
+  set healthLastSyncDate(DateTime? value) {
+    if (value == null) {
+      _sharedPrefs?.remove(_healthLastSyncDateKey);
+    } else {
+      _sharedPrefs?.setString(_healthLastSyncDateKey, value.toIso8601String());
+    }
+  }
 
   void _bumpRoutineLogRevision() {
     _routineLogRevision.value++;

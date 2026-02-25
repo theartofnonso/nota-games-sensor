@@ -40,8 +40,9 @@ import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
-import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/services/app_startup_service.dart';
+import 'package:trainware/services/chat_bootstrap_service.dart';
+import 'package:trainware/services/health_metrics_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -585,6 +586,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     if (state == AppLifecycleState.resumed) {
       unawaited(_restoreAgoraOnResume());
+      unawaited(HealthMetricsService.instance.syncToBackend());
     }
   }
 

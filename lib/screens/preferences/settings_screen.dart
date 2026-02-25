@@ -35,6 +35,7 @@ import '../../dtos/appsync/routine_template_dto.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/string_utils.dart';
+import '../../services/health_metrics_service.dart';
 import '../../services/training_prediction_service.dart';
 import '../../utils/calendar_date_logs_sheet.dart';
 import '../../utils/dialog_utils.dart';
@@ -47,6 +48,7 @@ import '../../widgets/cards/frosted_card.dart';
 import '../../widgets/challenges/exercise_challenge_card.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/calendar/calendar.dart';
+import '../../widgets/icons/apple_health_icon.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/settings/delete_account_section.dart';
 import '../../widgets/settings/logout_section.dart';
@@ -108,6 +110,9 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   int _chatUnreadCount = 0;
   bool _nutritionInitialized = false;
+
+  /// Current user's name from clients table (client app only). Loaded async.
+  String? _currentUserName;
 
   /// Stored so [_handleChatUnreadChange] and [dispose] can use it without
   /// [context.read], which can throw when this widget is not in the tree.
@@ -325,6 +330,19 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     ),
                   ],
+                  if (_shouldShowHealthMetrics(isCoach, isClientMode)) ...[
+                    _TodaySleepSection(
+                      displayName: _greetingName(
+                          isClientMode: isClientMode,
+                          selectedClientName:
+                              accessController.selectedClientName,
+                          userEmail: userEmail),
+                      isCoachViewingClient: isCoach && isClientMode,
+                      userId: isClientMode
+                          ? accessController.selectedClientId
+                          : Supabase.instance.client.auth.currentUser?.id,
+                    ),
+                  ],
                   _TrainingInsightsSection(
                     yearStats: yearStats,
                     yearHoursStats: yearHoursStats,
@@ -376,6 +394,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ),
                   _buildAccountActionsEntry(isCoach: isCoach),
+                  if (AppConfig.isClient &&
+                      (Platform.isIOS || Platform.isAndroid))
+                    SizedBox(height: 6),
+                  _buildHealthEntry(
+                      isCoach: isCoach, isClientMode: isClientMode),
                   SizedBox(height: _sectionSpacing),
                   _buildDebugInfoSection(isDarkMode),
                   SizedBox(height: _sectionSpacing),
@@ -386,6 +409,155 @@ class _SettingsScreenState extends State<SettingsScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _loadCurrentUserName() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    final name = await _loadClientName(userId: userId);
+    if (mounted && name != null) {
+      setState(() => _currentUserName = name.trim());
+    }
+  }
+
+  bool _shouldShowHealthMetrics(bool isCoach, bool isClientMode) {
+    if (isCoach && isClientMode) return true;
+    if (AppConfig.isClient && SharedPrefs().healthAccessGranted) return true;
+    return false;
+  }
+
+  Widget _buildHealthEntry(
+      {required bool isCoach, required bool isClientMode}) {
+    if (!AppConfig.isClient) return const SizedBox.shrink();
+    if (!Platform.isIOS && !Platform.isAndroid) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final surfaceOpacity = theme.brightness == Brightness.dark
+        ? onSurface.withValues(alpha: 0.08)
+        : onSurface.withValues(alpha: 0.06);
+    final contentColor = onSurface.withValues(alpha: 0.75);
+    final granted = SharedPrefs().healthAccessGranted;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Material(
+        color: surfaceOpacity,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: granted ? null : () => _showHealthPermissionSheet(),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                AppleHealthIcon(
+                  isDarkMode: theme.brightness == Brightness.dark,
+                  height: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Health',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: contentColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (granted)
+                  Icon(Icons.check_circle,
+                      size: 20, color: Colors.green.shade400)
+                else
+                  Text(
+                    'Connect',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: contentColor.withValues(alpha: 0.8),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showHealthPermissionSheet() async {
+    await showAppActionBottomSheet<void>(
+      context: context,
+      isDismissible: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Connect Apple Health',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Allow access to your sleep and step data so your coach can track your recovery and activity, and you can see your daily metrics.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
+                  ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Allow',
+                buttonColor: Theme.of(context).colors.vibrantAccent,
+                onPressed: () async {
+                  final granted = await HealthMetricsService.instance
+                      .requestAuthorization();
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                    if (granted) {
+                      SharedPrefs().healthAccessGranted = true;
+                      HealthMetricsService.instance.syncToBackend();
+                      setState(() {});
+                    } else {
+                      showErrorBottomSheet(
+                        context: context,
+                        message:
+                            'Health access was not granted. You can try again in Settings.',
+                      );
+                    }
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Name for the greeting. Coach viewing client: selected client name.
+  /// Client viewing own: actual name from clients table, else email fallback.
+  String _greetingName({
+    required bool isClientMode,
+    required String? selectedClientName,
+    required String userEmail,
+  }) {
+    if (isClientMode && selectedClientName != null) {
+      final trimmed = selectedClientName.trim();
+      if (trimmed.isNotEmpty) {
+        return trimmed.split(RegExp(r'\s+')).first;
+      }
+    }
+    if (_currentUserName != null && _currentUserName!.trim().isNotEmpty) {
+      return _currentUserName!.trim().split(RegExp(r'\s+')).first;
+    }
+    final part = userEmail.split('@').first.trim();
+    return part.isNotEmpty ? part : 'there';
   }
 
   Widget _buildAccountActionsEntry({required bool isCoach}) {
@@ -597,6 +769,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                               if (saved) {
                                 Navigator.of(sheetContext).pop();
                                 if (context.mounted) {
+                                  _loadCurrentUserName();
                                   showSnackbar(
                                     context: context,
                                     message: 'Account details updated.',
@@ -787,6 +960,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
     _clientOverrideController = context.read<ClientOverrideController>();
+    if (AppConfig.isClient) {
+      _loadCurrentUserName();
+    }
     if (AppConfig.isCoach) {
       _chatUnreadCount = 0;
       ChatUnreadCountsService()
@@ -938,6 +1114,192 @@ class _SettingsScreenState extends State<SettingsScreen>
       isToday: isToday,
       isPredicted: isPredicted,
       showLogWorkoutButton: !isClientMode,
+    );
+  }
+}
+
+String _timeOfDayGreeting() {
+  final hour = DateTime.now().hour;
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+enum _HealthMetric { sleep, steps }
+
+/// Today's health data section (Sleep, Steps). Placed above the first frosted
+/// cards. Reads from Apple Health / backend. Visible when health access granted.
+class _TodaySleepSection extends StatefulWidget {
+  final String displayName;
+  final bool isCoachViewingClient;
+  final String? userId;
+
+  const _TodaySleepSection({
+    required this.displayName,
+    this.isCoachViewingClient = false,
+    this.userId,
+  });
+
+  @override
+  State<_TodaySleepSection> createState() => _TodaySleepSectionState();
+}
+
+class _TodaySleepSectionState extends State<_TodaySleepSection> {
+  _HealthMetric _selectedMetric = _HealthMetric.sleep;
+  int _sleepMinutes = 0;
+  int _steps = 0;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMetrics();
+  }
+
+  Future<void> _loadMetrics() async {
+    final uid = widget.userId ?? Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+    final today = DateTime.now();
+    final metrics = await HealthMetricsService.instance.getMetricsForDate(
+      userId: uid,
+      date: today,
+    );
+    if (mounted) {
+      setState(() {
+        _sleepMinutes = metrics.sleepMinutes;
+        _steps = metrics.steps;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final mutedColor = textColor.withValues(alpha: 0.6);
+    final accentColor = Theme.of(context).colors.vibrantAccent;
+
+    final sleepHours = _sleepMinutes ~/ 60;
+    final sleepMins = _sleepMinutes % 60;
+
+    final headingText = widget.isCoachViewingClient
+        ? "${widget.displayName}'s data"
+        : '${_timeOfDayGreeting()}, ${widget.displayName}!';
+    final subtitleText = "Today's data";
+
+    final isSleep = _selectedMetric == _HealthMetric.sleep;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            headingText,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitleText,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: mutedColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          _loading
+                              ? '--'
+                              : (isSleep ? '$sleepHours' : '$_steps'),
+                          style: theme.textTheme.displayLarge?.copyWith(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                                height: 1.0,
+                              ) ??
+                              TextStyle(
+                                color: textColor,
+                                fontSize: 48,
+                                fontWeight: FontWeight.w700,
+                                height: 1.0,
+                              ),
+                        ),
+                        Text(
+                          isSleep ? 'h ${sleepMins}m' : ' steps',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: textColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isSleep ? 'Sleep' : 'Steps',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: mutedColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () =>
+                        setState(() => _selectedMetric = _HealthMetric.sleep),
+                    child: Text(
+                      'Sleep',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: isSleep ? accentColor : mutedColor,
+                        fontWeight: isSleep ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '  •  ',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: mutedColor,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () =>
+                        setState(() => _selectedMetric = _HealthMetric.steps),
+                    child: Text(
+                      'Steps',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: !isSleep ? accentColor : mutedColor,
+                        fontWeight:
+                            !isSleep ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2252,28 +2614,28 @@ class _ChallengesSectionState extends State<_ChallengesSection> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 children: displayChallenges.map((challenge) {
-                        final progress = controller.progressForChallenge(challenge);
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            right: displayChallenges.length == 1 ? 0 : 14,
+                  final progress = controller.progressForChallenge(challenge);
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: displayChallenges.length == 1 ? 0 : 14,
+                    ),
+                    child: SizedBox(
+                      width: cardWidth,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _openChallengesScreen,
+                        child: ExerciseChallengeCard(
+                          challenge: challenge,
+                          progress: progress,
+                          canDelete: false,
+                          pinProgressToBottom: true,
+                          onDelete: () => controller.deleteExerciseChallenge(
+                            challengeId: challenge.id,
                           ),
-                          child: SizedBox(
-                            width: cardWidth,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: _openChallengesScreen,
-                              child: ExerciseChallengeCard(
-                                challenge: challenge,
-                                progress: progress,
-                                canDelete: false,
-                                pinProgressToBottom: true,
-                                onDelete: () => controller.deleteExerciseChallenge(
-                                  challengeId: challenge.id,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
+                        ),
+                      ),
+                    ),
+                  );
                 }).toList(),
               ),
             ),
@@ -2327,7 +2689,8 @@ class _ChallengesScreen extends StatelessWidget {
                   ),
                 );
               }
-              final grouped = <ExerciseChallengeStatus, List<ExerciseChallengeDto>>{
+              final grouped =
+                  <ExerciseChallengeStatus, List<ExerciseChallengeDto>>{
                 ExerciseChallengeStatus.active: [],
                 ExerciseChallengeStatus.upcoming: [],
                 ExerciseChallengeStatus.completed: [],
@@ -2353,7 +2716,8 @@ class _ChallengesScreen extends StatelessWidget {
                       ),
                     ),
                     ...entry.value.map((challenge) {
-                      final progress = controller.progressForChallenge(challenge);
+                      final progress =
+                          controller.progressForChallenge(challenge);
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: ExerciseChallengeCard(
@@ -2362,7 +2726,8 @@ class _ChallengesScreen extends StatelessWidget {
                           canDelete: AppConfig.isCoach &&
                               controller.accessController.hasSelectedClient,
                           onDelete: () async {
-                            final confirmed = await confirmDeleteChallengeBottomSheet(
+                            final confirmed =
+                                await confirmDeleteChallengeBottomSheet(
                               context: context,
                               challengeTitle: challenge.title,
                             );
@@ -2437,8 +2802,8 @@ class _CoachFeedbackSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
-        final hasNotes = controller.logs.any((log) =>
-            log.coachNote != null && log.coachNote!.trim().isNotEmpty);
+        final hasNotes = controller.logs.any(
+            (log) => log.coachNote != null && log.coachNote!.trim().isNotEmpty);
         if (!hasNotes) return const SizedBox.shrink();
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -2709,8 +3074,9 @@ class _CreateSectionFrostedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final titleColor = isLightBackground ? Colors.black87 : Colors.white;
-    final descColor =
-        isLightBackground ? Colors.black54 : Colors.white.withValues(alpha: 0.82);
+    final descColor = isLightBackground
+        ? Colors.black54
+        : Colors.white.withValues(alpha: 0.82);
     return FrostedCard(
       gradientColors: gradientColors,
       child: Column(
