@@ -19,7 +19,11 @@ class NextPredictedSession {
 /// - Determining predicted training dates
 /// - Deriving typical training times for weekdays
 /// - Finding the next predicted session (date + time)
-/// 
+///
+/// Timezone: Logs from Supabase/API use UTC. All date/weekday/hour/minute
+/// extraction converts to local time via [_toLocal] so reminders schedule
+/// at the user's actual training times (e.g. 6am local, not 6am UTC).
+///
 /// Used by:
 /// - Training reminder notifications
 /// - Calendar predicted days
@@ -28,6 +32,10 @@ class TrainingPredictionService {
   // Constants matching the calendar prediction logic
   static const Duration _historyWindow = Duration(days: 30);
   static const int _weekdayThreshold = 3; // At least 3 sessions per weekday
+
+  /// Normalize to local time. Logs from Supabase/API are often UTC; reminder times
+  /// must be derived from the user's local time (when they actually trained).
+  static DateTime _toLocal(DateTime d) => d.isUtc ? d.toLocal() : d;
 
   /// Get predicted training dates by projecting weekdays that have 3+ sessions
   /// in the last 30 days. Includes today if it matches a likely training weekday.
@@ -79,12 +87,13 @@ class TrainingPredictionService {
     final Set<DateTime> seenDates = <DateTime>{};
 
     for (final date in historicDateTimes) {
-      final normalized = DateTime(date.year, date.month, date.day);
+      final local = _toLocal(date);
+      final normalized = DateTime(local.year, local.month, local.day);
       if (normalized.isBefore(cutoff)) continue;
       if (!seenDates.add(normalized)) continue; // Count each date only once
 
-      weekdayCounts[normalized.weekday] =
-          (weekdayCounts[normalized.weekday] ?? 0) + 1;
+      weekdayCounts[local.weekday] =
+          (weekdayCounts[local.weekday] ?? 0) + 1;
     }
 
     // Return weekdays with 3+ sessions
@@ -110,14 +119,11 @@ class TrainingPredictionService {
     final todayNormalized = DateTime(now.year, now.month, now.day);
     final cutoff = todayNormalized.subtract(_historyWindow);
 
-    // Filter to only logs from the last 30 days on this weekday
+    // Filter to only logs from the last 30 days on this weekday (use local time)
     final recentMatches = logs.where((log) {
-      final logDate = DateTime(
-        log.startTime.year,
-        log.startTime.month,
-        log.startTime.day,
-      );
-      return log.startTime.weekday == weekday && !logDate.isBefore(cutoff);
+      final local = _toLocal(log.startTime);
+      final logDate = DateTime(local.year, local.month, local.day);
+      return local.weekday == weekday && !logDate.isBefore(cutoff);
     }).toList();
 
     // Count distinct dates (same as _getLikelyTrainingWeekdays logic)
@@ -125,11 +131,8 @@ class TrainingPredictionService {
     final distinctSessions = <RoutineLogDto>[];
 
     for (final log in recentMatches) {
-      final normalized = DateTime(
-        log.startTime.year,
-        log.startTime.month,
-        log.startTime.day,
-      );
+      final local = _toLocal(log.startTime);
+      final normalized = DateTime(local.year, local.month, local.day);
       if (seenDates.add(normalized)) {
         distinctSessions.add(log);
       }
@@ -139,10 +142,13 @@ class TrainingPredictionService {
       return null;
     }
 
-    // Calculate average time
+    // Calculate average time (use local hour/minute)
     final totalMinutes = distinctSessions.fold<int>(
       0,
-      (sum, log) => sum + log.startTime.hour * 60 + log.startTime.minute,
+      (sum, log) {
+        final local = _toLocal(log.startTime);
+        return sum + local.hour * 60 + local.minute;
+      },
     );
     final averageMinutes = totalMinutes ~/ distinctSessions.length;
     final hour = averageMinutes ~/ 60;
@@ -170,10 +176,10 @@ class TrainingPredictionService {
   }) {
     if (logs.isEmpty) return null;
 
-    // Create a set of dates that already have logs (normalized to day level)
+    // Create a set of dates that already have logs (normalized to local day)
     final loggedDates = logs.map((log) {
-      final date = log.startTime;
-      return DateTime(date.year, date.month, date.day);
+      final local = _toLocal(log.startTime);
+      return DateTime(local.year, local.month, local.day);
     }).toSet();
 
     final now = DateTime.now();
@@ -183,7 +189,8 @@ class TrainingPredictionService {
         daysAhead ?? endOfYear.difference(todayStart).inDays;
 
     final predictedSet = getPredictedTrainingDates(
-      historicDateTimes: logs.map((log) => log.startTime).toList(),
+      historicDateTimes:
+          logs.map((log) => _toLocal(log.startTime)).toList(),
       daysAhead: predictionDaysAhead,
     );
 
