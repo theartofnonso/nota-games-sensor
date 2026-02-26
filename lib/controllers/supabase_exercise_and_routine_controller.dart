@@ -12,7 +12,6 @@ import '../dtos/appsync/exercise_dto.dart';
 import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/appsync/routine_plan_dto.dart';
 import '../dtos/appsync/routine_template_dto.dart';
-import '../dtos/challenges/exercise_challenge_dto.dart';
 import '../dtos/set_dtos/set_dto.dart';
 import '../enums/exercise_type_enums.dart';
 import '../logger.dart';
@@ -36,8 +35,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   List<RoutineTemplateDto> _overrideTemplates = const [];
   List<RoutinePlanDto> _overridePlans = const [];
   List<RoutineLogDto> _overrideLogs = const [];
-  List<ExerciseChallengeDto> _overrideChallenges = const [];
-  List<ExerciseChallengeDto> _clientChallenges = const [];
   final ClientOverrideController accessController;
 
   SupabaseExerciseAndRoutineController({
@@ -86,13 +83,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   String? get activeUserId =>
       accessController.selectedClientId ??
       Supabase.instance.client.auth.currentUser?.id;
-
-  UnmodifiableListView<ExerciseChallengeDto> get exerciseChallenges =>
-      UnmodifiableListView(
-        accessController.hasSelectedClient
-            ? _overrideChallenges
-            : (AppConfig.isCoach ? const [] : _clientChallenges),
-      );
 
   UnmodifiableMapView<String, List<ExerciseLogDto>>
       get exerciseLogsByExerciseId =>
@@ -154,14 +144,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         _overrideTemplates = const [];
         _overridePlans = const [];
         _overrideLogs = const [];
-        _overrideChallenges = const [];
         notifyListeners();
         return;
       }
       await _templateRepository.loadTemplates();
       await _planRepository.loadPlans();
       await _logRepository.loadLogs();
-      await _loadChallengesForClient(activeUserId);
 
       // Schedule training reminders based on historic log data
       if (logs.isNotEmpty) {
@@ -587,10 +575,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
             userId: clientId,
             logId: updatedLog.id,
           ));
-          unawaited(sendFcmNotificationChallengeAchievementCheck(
-            userId: clientId,
-            logId: updatedLog.id,
-          ));
         }
       }
 
@@ -945,7 +929,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     _overrideTemplates = const [];
     _overridePlans = const [];
     _overrideLogs = const [];
-    _overrideChallenges = const [];
     await initialize();
   }
 
@@ -965,277 +948,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     _overridePlans = _planRepository.plans.toList();
     await _logRepository.loadLogs(userIdOverride: clientId);
     _overrideLogs = _logRepository.logs.toList();
-    await _loadChallengesForClient(clientId);
-  }
-
-  Future<void> _loadChallengesForClient(String? clientId) async {
-    if (clientId == null || clientId.trim().isEmpty) return;
-    try {
-      final response = await Supabase.instance.client
-          .from('exercise_challenges')
-          .select('''
-            id,
-            coach_id,
-            client_id,
-            title,
-            template_id,
-            template_exercise_id,
-            exercise_id,
-            exercise_name,
-            exercise_type,
-            target_weight,
-            target_reps,
-            target_duration_seconds,
-            target_type,
-            target_value,
-            start_date,
-            end_date,
-            created_at
-          ''')
-          .eq('client_id', clientId)
-          .order('created_at', ascending: false);
-      final rows = (response as List<dynamic>)
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-      final loaded = rows.map(ExerciseChallengeDto.fromJson).toList();
-      if (accessController.hasSelectedClient) {
-        _overrideChallenges = loaded;
-      } else {
-        _clientChallenges = loaded;
-      }
-    } catch (e) {
-      logger.w('Failed to load exercise challenges: $e');
-    }
-  }
-
-  Future<void> upsertTemplateExerciseChallenge({
-    required String title,
-    required String templateId,
-    required String templateExerciseId,
-    required String exerciseId,
-    required String exerciseName,
-    required ExerciseType exerciseType,
-    double? targetWeight,
-    int? targetReps,
-    int? targetDurationSeconds,
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    final coachId = Supabase.instance.client.auth.currentUser?.id;
-    final clientId = accessController.selectedClientId;
-    if (coachId == null || clientId == null || clientId.trim().isEmpty) {
-      errorMessage = 'Client context is required to create a challenge.';
-      notifyListeners();
-      return;
-    }
-    try {
-      final normalizedTitle = title.trim();
-      if (normalizedTitle.isEmpty) {
-        errorMessage = 'Challenge title is required.';
-        notifyListeners();
-        return;
-      }
-      if (templateId.trim().isEmpty || templateExerciseId.trim().isEmpty) {
-        errorMessage = 'Template context is required to create a challenge.';
-        notifyListeners();
-        return;
-      }
-      final challenge = ExerciseChallengeDto(
-        id: '',
-        coachId: coachId,
-        clientId: clientId,
-        title: normalizedTitle,
-        templateId: templateId.trim(),
-        templateExerciseId: templateExerciseId.trim(),
-        exerciseId: exerciseId,
-        exerciseName: exerciseName,
-        exerciseType: exerciseType,
-        targetWeight: targetWeight,
-        targetReps: targetReps,
-        targetDurationSeconds: targetDurationSeconds,
-        startDate: DateUtils.dateOnly(startDate),
-        endDate: DateUtils.dateOnly(endDate),
-        createdAt: DateTime.now(),
-      );
-      final existing = await Supabase.instance.client
-          .from('exercise_challenges')
-          .select('id')
-          .eq('client_id', clientId)
-          .eq('template_id', templateId.trim())
-          .eq('template_exercise_id', templateExerciseId.trim())
-          .maybeSingle();
-      final hadExisting = existing != null;
-      final inserted = await Supabase.instance.client
-          .from('exercise_challenges')
-          .upsert(
-            challenge.toInsertJson(),
-            onConflict: 'client_id,template_id,template_exercise_id',
-          )
-          .select('id')
-          .single();
-      final createdChallengeId = inserted['id']?.toString();
-      if (!hadExisting &&
-          createdChallengeId != null &&
-          createdChallengeId.isNotEmpty) {
-        unawaited(sendFcmNotificationChallengeCreated(
-          userId: clientId,
-          challengeId: createdChallengeId,
-        ));
-      }
-      await _loadChallengesForClient(clientId);
-      notifyListeners();
-    } catch (e) {
-      logger.e('Error creating challenge', error: e);
-      errorMessage = 'Failed to create challenge.';
-      notifyListeners();
-    }
-  }
-
-  Future<void> clearTemplateExerciseChallenge({
-    required String templateId,
-    required String templateExerciseId,
-  }) async {
-    final clientId = accessController.selectedClientId ?? activeUserId;
-    if (clientId == null || clientId.trim().isEmpty) return;
-    try {
-      await Supabase.instance.client
-          .from('exercise_challenges')
-          .delete()
-          .eq('client_id', clientId)
-          .eq('template_id', templateId)
-          .eq('template_exercise_id', templateExerciseId);
-      await _loadChallengesForClient(clientId);
-      notifyListeners();
-    } catch (e) {
-      logger.e('Error clearing template exercise challenge', error: e);
-      errorMessage = 'Failed to clear challenge.';
-      notifyListeners();
-    }
-  }
-
-  Future<void> deleteExerciseChallenge({required String challengeId}) async {
-    final clientId = accessController.selectedClientId ?? activeUserId;
-    if (clientId == null || clientId.trim().isEmpty) return;
-    try {
-      await Supabase.instance.client
-          .from('exercise_challenges')
-          .delete()
-          .eq('id', challengeId);
-      await _loadChallengesForClient(clientId);
-      notifyListeners();
-    } catch (e) {
-      logger.e('Error deleting challenge', error: e);
-      errorMessage = 'Failed to delete challenge.';
-      notifyListeners();
-    }
-  }
-
-  ExerciseChallengeProgress progressForChallenge(
-    ExerciseChallengeDto challenge, {
-    DateTime? now,
-  }) {
-    final today = DateUtils.dateOnly(now ?? DateTime.now());
-    final start = DateUtils.dateOnly(challenge.startDate);
-    final end = DateUtils.dateOnly(challenge.endDate);
-
-    final matchingLogs = logs.where((log) {
-      final d = DateUtils.dateOnly(log.startTime.toLocal());
-      return (d.isAtSameMomentAs(start) || d.isAfter(start)) &&
-          (d.isAtSameMomentAs(end) || d.isBefore(end));
-    });
-
-    double bestValue = 0;
-    double bestWeight = 0;
-    int bestReps = 0;
-    int bestDurationSeconds = 0;
-    bool achieved = false;
-    for (final log in matchingLogs) {
-      for (final exLog in log.exerciseLogs) {
-        if (exLog.exercise.id != challenge.exerciseId) continue;
-        for (final set in exLog.sets) {
-          switch (challenge.exerciseType) {
-            case ExerciseType.weights:
-              if (set.type != ExerciseType.weights) continue;
-              final weight = ((set as dynamic).weight as num?)?.toDouble() ?? 0;
-              final reps = ((set as dynamic).reps as num?)?.toInt() ?? 0;
-              if (weight > bestWeight) bestWeight = weight;
-              if (reps > bestReps) bestReps = reps;
-              final targetWeight = challenge.targetWeight ?? 0;
-              final targetReps = challenge.targetReps ?? 0;
-              final weightPercent =
-                  targetWeight > 0 ? (weight / targetWeight) : 0.0;
-              final repsPercent = targetReps > 0 ? (reps / targetReps) : 0.0;
-              final combinedPercent = weightPercent < repsPercent
-                  ? weightPercent
-                  : repsPercent;
-              if (combinedPercent > bestValue) bestValue = combinedPercent;
-              if (weight >= targetWeight && reps >= targetReps) {
-                achieved = targetWeight > 0 && targetReps > 0;
-              }
-              break;
-            case ExerciseType.bodyWeight:
-              if (set.type != ExerciseType.weights &&
-                  set.type != ExerciseType.bodyWeight) {
-                continue;
-              }
-              final reps = ((set as dynamic).reps as num?)?.toInt() ?? 0;
-              if (reps > bestReps) bestReps = reps;
-              final targetReps = challenge.targetReps ?? 0;
-              if (targetReps > 0) {
-                final repsPercent = reps / targetReps;
-                if (repsPercent > bestValue) bestValue = repsPercent;
-                if (reps >= targetReps) achieved = true;
-              }
-              break;
-            case ExerciseType.duration:
-              if (set.type != ExerciseType.duration) continue;
-              final duration = (set as dynamic).duration as Duration?;
-              final seconds = duration?.inSeconds ?? 0;
-              if (seconds > bestDurationSeconds) bestDurationSeconds = seconds;
-              final targetDuration = challenge.targetDurationSeconds ?? 0;
-              if (targetDuration > 0) {
-                final durationPercent = seconds / targetDuration;
-                if (durationPercent > bestValue) bestValue = durationPercent;
-                if (seconds >= targetDuration) achieved = true;
-              }
-              break;
-            case ExerciseType.none:
-              break;
-          }
-        }
-      }
-    }
-    final percent = bestValue.clamp(0.0, 1.0).toDouble();
-
-    final status = today.isBefore(start)
-        ? ExerciseChallengeStatus.upcoming
-        : achieved
-            ? ExerciseChallengeStatus.completed
-            : today.isAfter(end)
-                ? ExerciseChallengeStatus.expired
-                : ExerciseChallengeStatus.active;
-
-    return ExerciseChallengeProgress(
-      bestValue: challenge.exerciseType == ExerciseType.weights
-          ? bestWeight
-          : challenge.exerciseType == ExerciseType.bodyWeight
-              ? bestReps.toDouble()
-              : bestDurationSeconds.toDouble(),
-      targetValue: challenge.exerciseType == ExerciseType.weights
-          ? (challenge.targetWeight ?? 0)
-          : challenge.exerciseType == ExerciseType.bodyWeight
-              ? (challenge.targetReps ?? 0).toDouble()
-              : (challenge.targetDurationSeconds ?? 0).toDouble(),
-      bestWeight: bestWeight,
-      bestReps: bestReps,
-      bestDurationSeconds: bestDurationSeconds,
-      targetWeight: challenge.targetWeight,
-      targetReps: challenge.targetReps,
-      targetDurationSeconds: challenge.targetDurationSeconds,
-      percent: percent,
-      achieved: achieved,
-      status: status,
-    );
   }
 
   Future<void> removeLog({required RoutineLogDto log}) async {

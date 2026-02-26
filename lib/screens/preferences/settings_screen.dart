@@ -15,7 +15,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
-import 'package:trainware/dtos/challenges/exercise_challenge_dto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/app_flavor.dart';
@@ -45,7 +44,6 @@ import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
 import '../../widgets/badges/unread_badge.dart';
 import '../../widgets/cards/frosted_card.dart';
-import '../../widgets/challenges/exercise_challenge_card.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/icons/apple_health_icon.dart';
@@ -263,8 +261,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _RoutinePlansSection(),
                   if (AppConfig.isClient) const _CoachFeedbackSection(),
                   _SpacerIfRoutinePlansVisible(),
-                  _ChallengesSection(),
-                  _SpacerIfChallengesVisible(),
                   _NutritionSection(),
                   _SpacerIfNutritionVisible(),
                   ListTile(
@@ -2480,253 +2476,6 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-class _ChallengesSection extends StatefulWidget {
-  const _ChallengesSection();
-
-  @override
-  State<_ChallengesSection> createState() => _ChallengesSectionState();
-}
-
-class _ChallengesSectionState extends State<_ChallengesSection> {
-  Future<void> _openChallengesScreen() async {
-    await navigateWithSlideTransition(
-      context: context,
-      child: const _ChallengesScreen(),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<SupabaseExerciseAndRoutineController>(
-      builder: (context, controller, _) {
-        final challenges = controller.exerciseChallenges;
-        final activeChallenges = challenges
-            .where((c) =>
-                controller.progressForChallenge(c).status ==
-                ExerciseChallengeStatus.active)
-            .toList();
-        final canManage =
-            AppConfig.isCoach && controller.accessController.hasSelectedClient;
-        // Clients: only show section when they have active or upcoming challenges
-        final clientHasRelevantChallenges = challenges.any((c) {
-          final status = controller.progressForChallenge(c).status;
-          return status == ExerciseChallengeStatus.active ||
-              status == ExerciseChallengeStatus.upcoming;
-        });
-        final shouldShowSection =
-            canManage || (AppConfig.isClient && clientHasRelevantChallenges);
-        if (!shouldShowSection) return const SizedBox.shrink();
-
-        // Empty card ("Open challenges") only for coaches when no active challenges
-        if (AppConfig.isCoach &&
-            (challenges.isEmpty || activeChallenges.isEmpty)) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: _ChallengeEmptyCard(onTapCreate: _openChallengesScreen),
-          );
-        }
-
-        // Display active challenges; if none, show upcoming (for clients)
-        final displayChallenges = activeChallenges.isNotEmpty
-            ? activeChallenges
-            : challenges
-                .where((c) =>
-                    controller.progressForChallenge(c).status ==
-                    ExerciseChallengeStatus.upcoming)
-                .toList();
-
-        final horizontalPadding = 10.0;
-        final cardWidth = displayChallenges.length == 1
-            ? MediaQuery.of(context).size.width - (horizontalPadding * 2)
-            : MediaQuery.of(context).size.width * 0.9;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 215,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                children: displayChallenges.map((challenge) {
-                  final progress = controller.progressForChallenge(challenge);
-                  return Padding(
-                    padding: EdgeInsets.only(
-                      right: displayChallenges.length == 1 ? 0 : 14,
-                    ),
-                    child: SizedBox(
-                      width: cardWidth,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _openChallengesScreen,
-                        child: ExerciseChallengeCard(
-                          challenge: challenge,
-                          progress: progress,
-                          canDelete: false,
-                          pinProgressToBottom: true,
-                          onDelete: () => controller.deleteExerciseChallenge(
-                            challengeId: challenge.id,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _ChallengesScreen extends StatelessWidget {
-  const _ChallengesScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: themeGradient(context: context).colors.first,
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        leading: IconButton(
-          icon: FaIcon(
-            FontAwesomeIcons.solidCircleXmark,
-            color: isDarkMode ? Colors.white : Colors.black,
-            size: 24,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-          tooltip: 'Close',
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(gradient: themeGradient(context: context)),
-        child: SafeArea(
-          top: false,
-          child: Consumer<SupabaseExerciseAndRoutineController>(
-            builder: (context, controller, _) {
-              final challenges = controller.exerciseChallenges.toList()
-                ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-              if (challenges.isEmpty) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      'No challenges yet. Create challenge targets from a workout template exercise.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                );
-              }
-              final grouped =
-                  <ExerciseChallengeStatus, List<ExerciseChallengeDto>>{
-                ExerciseChallengeStatus.active: [],
-                ExerciseChallengeStatus.upcoming: [],
-                ExerciseChallengeStatus.completed: [],
-                ExerciseChallengeStatus.expired: [],
-              };
-              for (final c in challenges) {
-                grouped[controller.progressForChallenge(c).status]!.add(c);
-              }
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(14, 8, 14, 18),
-                children: grouped.entries
-                    .where((entry) => entry.value.isNotEmpty)
-                    .expand((entry) {
-                  return <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 10),
-                      child: Text(
-                        _statusLabel(entry.key),
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    ...entry.value.map((challenge) {
-                      final progress =
-                          controller.progressForChallenge(challenge);
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: ExerciseChallengeCard(
-                          challenge: challenge,
-                          progress: progress,
-                          canDelete: AppConfig.isCoach &&
-                              controller.accessController.hasSelectedClient,
-                          onDelete: () async {
-                            final confirmed =
-                                await confirmDeleteChallengeBottomSheet(
-                              context: context,
-                              challengeTitle: challenge.title,
-                            );
-                            if (confirmed && context.mounted) {
-                              await controller.deleteExerciseChallenge(
-                                challengeId: challenge.id,
-                              );
-                            }
-                          },
-                        ),
-                      );
-                    }),
-                  ];
-                }).toList(),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChallengeEmptyCard extends StatelessWidget {
-  final VoidCallback onTapCreate;
-  const _ChallengeEmptyCard({required this.onTapCreate});
-
-  @override
-  Widget build(BuildContext context) {
-    return _CreateSectionFrostedCard(
-      title: 'No active challenges',
-      description:
-          'Set challenge targets from workout template exercises, then track them here.',
-      ctaLabel: 'Open challenges',
-      onPressed: onTapCreate,
-      isLightBackground: true,
-      ctaButtonColor: Colors.black,
-      ctaSolidBackground: true,
-      gradientColors: [
-        Colors.white.withValues(alpha: 0.9),
-        Colors.white.withValues(alpha: 0.8),
-        Colors.white.withValues(alpha: 0.7),
-      ],
-    );
-  }
-}
-
-class _SpacerIfChallengesVisible extends StatelessWidget {
-  const _SpacerIfChallengesVisible();
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<SupabaseExerciseAndRoutineController>(
-      builder: (context, controller, _) {
-        final hasContent = controller.exerciseChallenges.isNotEmpty ||
-            (AppConfig.isCoach &&
-                controller.accessController.hasSelectedClient);
-        return hasContent
-            ? SizedBox(height: _SettingsScreenState._sectionSpacing)
-            : const SizedBox.shrink();
-      },
-    );
-  }
-}
-
 /// Client-only: coach feedback card with spacing. Only renders when there
 /// are logs with coach notes; avoids 32px empty gap when no feedback.
 class _CoachFeedbackSection extends StatelessWidget {
@@ -2749,19 +2498,6 @@ class _CoachFeedbackSection extends StatelessWidget {
         );
       },
     );
-  }
-}
-
-String _statusLabel(ExerciseChallengeStatus status) {
-  switch (status) {
-    case ExerciseChallengeStatus.upcoming:
-      return 'Upcoming';
-    case ExerciseChallengeStatus.active:
-      return 'Active';
-    case ExerciseChallengeStatus.completed:
-      return 'Completed';
-    case ExerciseChallengeStatus.expired:
-      return 'Expired';
   }
 }
 
