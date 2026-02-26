@@ -2726,27 +2726,16 @@ class _CreateSectionFrostedCard extends StatelessWidget {
   final VoidCallback onPressed;
   final List<Color> gradientColors;
 
-  final bool isLightBackground;
-  final Color? ctaButtonColor;
-  final bool ctaSolidBackground;
-
   const _CreateSectionFrostedCard({
     required this.title,
     required this.description,
     required this.ctaLabel,
     required this.onPressed,
     required this.gradientColors,
-    this.isLightBackground = false,
-    this.ctaButtonColor,
-    this.ctaSolidBackground = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = isLightBackground ? Colors.black87 : Colors.white;
-    final descColor = isLightBackground
-        ? Colors.black54
-        : Colors.white.withValues(alpha: 0.82);
     return FrostedCard(
       gradientColors: gradientColors,
       child: Column(
@@ -2755,7 +2744,7 @@ class _CreateSectionFrostedCard extends StatelessWidget {
           Text(
             title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: titleColor,
+                  color: Colors.white,
                   fontWeight: FontWeight.w700,
                 ),
           ),
@@ -2763,7 +2752,7 @@ class _CreateSectionFrostedCard extends StatelessWidget {
           Text(
             description,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: descColor,
+                  color: Colors.white.withValues(alpha: 0.82),
                   height: 1.4,
                 ),
           ),
@@ -2773,8 +2762,6 @@ class _CreateSectionFrostedCard extends StatelessWidget {
             child: OpacityButtonWidgetTwo(
               onPressed: onPressed,
               label: ctaLabel,
-              buttonColor: ctaButtonColor,
-              solidBackground: ctaSolidBackground,
             ),
           ),
         ],

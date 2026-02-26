@@ -279,13 +279,6 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     }
   }
 
-  void _toggleLoadingState() {
-    if (!mounted) return;
-    setState(() {
-      _loading = !_loading;
-    });
-  }
-
   void _showCreateWorkoutBottomSheet({required RoutinePlanDto plan}) {
     showNameNotesBottomSheet(
       context: context,
