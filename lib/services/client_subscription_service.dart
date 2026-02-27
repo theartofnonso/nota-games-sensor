@@ -65,6 +65,12 @@ class ClientSubscriptionService {
     _refreshInProgress = null;
   }
 
+  /// Whether the client has active subscription access (from last refresh).
+  bool get hasAccess => _cachedAccess == true;
+
+  /// Whether the cache has been populated (by startup or a prior refresh).
+  bool get isCachePopulated => _cachedAccess != null;
+
   /// Checks cached subscription status only. No refresh/API calls at gate points.
   /// Cache is populated at app launch (splash screen).
   Future<bool> ensureAccess({
@@ -112,6 +118,22 @@ class ClientSubscriptionService {
         parentContext: context,
         service: this,
       ),
+    );
+  }
+
+  /// Returns the blocking paywall widget for the subscription gate.
+  /// No close button; on success calls [onComplete].
+  Widget buildBlockingPaywall({required VoidCallback onComplete}) {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null || user.id.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return _ClientSubscriptionPaywallSheet(
+      userId: user.id,
+      parentContext: null,
+      service: this,
+      showCloseButton: false,
+      onBlockingComplete: onComplete,
     );
   }
 
@@ -268,11 +290,15 @@ class _ClientSubscriptionPaywallSheet extends StatefulWidget {
     required this.userId,
     required this.parentContext,
     required this.service,
+    this.showCloseButton = true,
+    this.onBlockingComplete,
   });
 
   final String userId;
-  final BuildContext parentContext;
+  final BuildContext? parentContext;
   final ClientSubscriptionService service;
+  final bool showCloseButton;
+  final VoidCallback? onBlockingComplete;
 
   @override
   State<_ClientSubscriptionPaywallSheet> createState() =>
@@ -332,6 +358,14 @@ class _ClientSubscriptionPaywallSheetState
         : 'Subscribe';
   }
 
+  void _onSuccess() {
+    if (widget.onBlockingComplete != null) {
+      widget.onBlockingComplete!();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
   Future<void> _handleRestore() async {
     if (_isBusy) return;
     setState(() {
@@ -342,10 +376,12 @@ class _ClientSubscriptionPaywallSheetState
     if (!mounted) return;
     if (hasSub) {
       await widget.service.onPaywallSuccess();
-      Navigator.of(context).pop();
-      if (widget.parentContext.mounted) {
+      _onSuccess();
+      if (widget.onBlockingComplete == null &&
+          widget.parentContext != null &&
+          widget.parentContext!.mounted) {
         showSnackbar(
-          context: widget.parentContext,
+          context: widget.parentContext!,
           message: 'Subscription restored.',
         );
       }
@@ -361,7 +397,7 @@ class _ClientSubscriptionPaywallSheetState
     if (_isBusy) return;
     if (_isAlreadySubscribed) {
       await widget.service.onPaywallSuccess();
-      Navigator.of(context).pop();
+      _onSuccess();
       return;
     }
     setState(() {
@@ -376,10 +412,12 @@ class _ClientSubscriptionPaywallSheetState
     if (!mounted) return;
     if (completed) {
       await widget.service.onPaywallSuccess();
-      Navigator.of(context).pop();
-      if (widget.parentContext.mounted) {
+      _onSuccess();
+      if (widget.onBlockingComplete == null &&
+          widget.parentContext != null &&
+          widget.parentContext!.mounted) {
         showSnackbar(
-          context: widget.parentContext,
+          context: widget.parentContext!,
           message: 'Subscription activated.',
         );
       }
@@ -427,23 +465,24 @@ class _ClientSubscriptionPaywallSheetState
                         ),
                       ),
                     ),
-                    Positioned(
-                      top: 12,
-                      left: 16,
-                      child: GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            shape: BoxShape.circle,
+                    if (widget.showCloseButton)
+                      Positioned(
+                        top: 12,
+                        left: 16,
+                        child: GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close,
+                                color: Colors.white, size: 20),
                           ),
-                          child: const Icon(Icons.close,
-                              color: Colors.white, size: 20),
                         ),
                       ),
-                    ),
                     Positioned(
                       left: 20,
                       right: 20,

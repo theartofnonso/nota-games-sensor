@@ -49,7 +49,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ];
 
-          return AnnotatedRegion<SystemUiOverlayStyle>(
+          return PopScope(
+            canPop: false,
+            child: AnnotatedRegion<SystemUiOverlayStyle>(
             value: const SystemUiOverlayStyle(
               statusBarColor: Colors.transparent,
               statusBarIconBrightness: Brightness.light,
@@ -120,6 +122,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ],
               ),
             ),
+          ),
           );
         },
       ),

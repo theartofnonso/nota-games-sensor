@@ -47,6 +47,9 @@ import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 import 'package:trainware/widgets/backgrounds/splash_screen.dart';
+import 'package:trainware/widgets/coach_selection/coach_selection_gate.dart';
+import 'package:trainware/widgets/coach_selection/profile_completion_gate.dart';
+import 'package:trainware/widgets/coach_selection/subscription_gate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
@@ -540,6 +543,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool _lastCoach = false;
   bool _welcomeDismissed = false;
   bool _agoraLifecycleTransitionInFlight = false;
+
   /// True once startup tasks (auth + subscription for clients) have completed.
   bool _startupComplete = false;
   bool _startupTasksStarted = false;
@@ -640,8 +644,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           _startupComplete = true;
           setState(() {});
         }
-      })
-          .catchError((e, stack) {
+      }).catchError((e, stack) {
         debugPrint('[Startup] Error: $e\n$stack');
         if (mounted) {
           _startupComplete = true;
@@ -672,6 +675,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _startupComplete = false;
       _startupTasksStarted = false;
       AppStartupService.instance.reset();
+      SharedPrefs().coachSelectionComplete = false;
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();
@@ -712,7 +716,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -742,10 +745,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ),
     );
 
-    // Show welcome screen on first launch (until user dismisses it)
+    // Welcome first: users must dismiss before Auth until firstLaunch is false
     if (SharedPrefs().firstLaunch && !_welcomeDismissed) {
       return WelcomeScreen(
         onPressed: () {
+          SharedPrefs().firstLaunch = false;
           setState(() => _welcomeDismissed = true);
         },
       );
@@ -763,12 +767,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
 
     // Show main app if authenticated
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      theme: TRKRTheme.darkTheme,
-      darkTheme: TRKRTheme.darkTheme,
-      routerConfig: _router,
+    return ProfileCompletionGate(
+      child: CoachSelectionGate(
+        child: SubscriptionGate(
+          child: MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            themeMode: ThemeMode.dark,
+            theme: TRKRTheme.darkTheme,
+            darkTheme: TRKRTheme.darkTheme,
+            routerConfig: _router,
+          ),
+        ),
+      ),
     );
   }
 }

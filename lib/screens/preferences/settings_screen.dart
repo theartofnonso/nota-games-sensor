@@ -9,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -20,12 +19,12 @@ import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/urls.dart';
 import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/notifications_utils.dart';
 import 'package:trainware/utils/client_access_utils.dart';
+import 'package:trainware/services/account_profile_service.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../controllers/access_controller.dart';
@@ -668,7 +667,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                 helperMessage = null;
                               });
 
-                              final saved = await _upsertClientProfileNames(
+                              final saved = await updateAccountProfile(
                                 userId: user.id,
                                 name: name,
                               );
@@ -719,28 +718,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       return name;
     } catch (_) {
       return null;
-    }
-  }
-
-  Future<bool> _upsertClientProfileNames({
-    required String userId,
-    required String name,
-  }) async {
-    try {
-      final uri = Uri.parse(apiNotathletesBaseUrl).resolve(accountProfilePath);
-      final response = await http
-          .post(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'user_id': userId,
-              'name': name,
-            }),
-          )
-          .timeout(const Duration(seconds: 15));
-      return response.statusCode >= 200 && response.statusCode < 300;
-    } catch (_) {
-      return false;
     }
   }
 

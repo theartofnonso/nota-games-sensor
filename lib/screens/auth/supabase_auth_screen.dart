@@ -2,12 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/utils/coach_access_utils.dart';
-import 'package:trainware/app_flavor.dart';
+import 'package:trainware/services/account_profile_service.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -76,6 +77,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           email: email.trim(),
           password: password,
         );
+        setEmailFromAuth(email);
         // Success! User will be automatically navigated by the auth state listener
       } catch (error) {
         debugPrint('[Demo Account] Login failed: $error');
@@ -161,7 +163,10 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         type: OtpType.email,
       );
 
-      // Success! User will be automatically navigated by the auth state listener
+      // Pass email to ProfileCompletionGate (used for name derivation)
+      setEmailFromAuth(email);
+
+      // Success! Profile creation for new clients happens in ProfileCompletionGate
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -202,9 +207,11 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
         children: [
           // ----------------- GRADIENT BACKGROUND -----------------
           Positioned.fill(
@@ -294,6 +301,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

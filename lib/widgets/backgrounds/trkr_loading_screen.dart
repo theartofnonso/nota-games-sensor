@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../strings/loading_screen_messages.dart';
-import 'package:trainware/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/general_utils.dart';
 
 class TRKRLoadingScreen extends StatelessWidget {
   final double opacity;
@@ -13,9 +13,6 @@ class TRKRLoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Brightness systemBrightness = Theme.of(context).brightness;
-    final isDarkMode = systemBrightness == Brightness.dark;
-
     final children = defaultLoadingMessages
         .map((message) => TypewriterAnimatedText(
               message.toUpperCase(),
@@ -28,9 +25,9 @@ class TRKRLoadingScreen extends StatelessWidget {
       body: Container(
           width: double.infinity,
           height: double.infinity,
-          color: isDarkMode
-              ? Theme.of(context).colors.sapphireDark.withValues(alpha: opacity)
-              : Colors.white,
+          decoration: BoxDecoration(
+            gradient: themeGradient(context: context),
+          ),
           child: Stack(
             children: [
               if (action != null)

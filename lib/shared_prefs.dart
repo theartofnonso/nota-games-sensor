@@ -51,6 +51,19 @@ class SharedPrefs {
     _sharedPrefs?.setBool(_firstLaunchKey, value);
   }
 
+  /// Coach selection completed (mock flow). The mock flow doesn't write to
+  /// coach_clients, so fetchCoachForClient stays null. This flag records that
+  /// the user completed the flow so we allow main app access until real backend
+  /// assignment exists. Cleared on logout.
+  final String _coachSelectionCompleteKey = "coach_selection_complete_key";
+
+  bool get coachSelectionComplete =>
+      _sharedPrefs?.getBool(_coachSelectionCompleteKey) ?? false;
+
+  set coachSelectionComplete(bool value) {
+    _sharedPrefs?.setBool(_coachSelectionCompleteKey, value);
+  }
+
   /// Cached routine log
   final String routineLogKey = "routine_log_key";
 
