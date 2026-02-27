@@ -609,7 +609,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                     .firstOrNull;
 
                 if (exerciseLogInMostRecentLog != null) {
-                  // Use sets from the most recent log, unchecked
+                  // Use sets and notes from the most recent log (sets unchecked)
                   final uncheckedSets = exerciseLogInMostRecentLog.sets
                       .map((set) => set.copyWith(checked: false))
                       .toList();
@@ -619,7 +619,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                   return exerciseLog.copyWith(
                       sets: withReps(type: exerciseLog.exercise.type)
                           ? uncheckedSets
-                          : []);
+                          : [],
+                      notes: exerciseLogInMostRecentLog.notes);
                 }
               }
 
