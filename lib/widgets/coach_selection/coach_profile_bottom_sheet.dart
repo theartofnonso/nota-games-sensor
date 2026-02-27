@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:trainware/dtos/mock_coach_dto.dart';
+import 'package:trainware/dtos/coach_dto.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 
 /// Bottom sheet content: coach profile with Choose Coach CTA.
 class CoachProfileBottomSheetContent extends StatelessWidget {
-  final MockCoachDto coach;
+  final CoachDto coach;
   final VoidCallback onChooseCoach;
 
   const CoachProfileBottomSheetContent({
@@ -19,36 +19,36 @@ class CoachProfileBottomSheetContent extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+      padding: const EdgeInsets.all(26),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
-            child: Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                color: theme.extension<TRKRColors>()?.borderLight ??
-                    Colors.grey.shade300,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.person,
-                size: 48,
-                color: Colors.white.withValues(alpha: 0.8),
-              ),
-            ),
+            child: coach.profileImageUrl != null &&
+                    coach.profileImageUrl!.trim().isNotEmpty
+                ? ClipOval(
+                    child: Image.network(
+                      coach.profileImageUrl!,
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          _buildPlaceholderAvatar(context),
+                    ),
+                  )
+                : _buildPlaceholderAvatar(context),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Text(
             coach.name,
-            style: theme.textTheme.headlineSmall?.copyWith(
+            style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 12),
-          if (coach.description != null && coach.description!.isNotEmpty)
+          if (coach.description != null && coach.description!.isNotEmpty) ...[
+            const SizedBox(height: 6),
             Text(
               coach.description!,
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -56,13 +56,32 @@ class CoachProfileBottomSheetContent extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-          const SizedBox(height: 32),
+          ],
+          const SizedBox(height: 16),
           OpacityButtonWidgetTwo(
             label: 'Choose Coach',
             buttonColor: theme.extension<TRKRColors>()!.vibrantAccent,
             onPressed: onChooseCoach,
           ),
         ],
+      ),
+    );
+  }
+
+  static Widget _buildPlaceholderAvatar(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color:
+            theme.extension<TRKRColors>()?.borderLight ?? Colors.grey.shade300,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.person,
+        size: 32,
+        color: Colors.white.withValues(alpha: 0.8),
       ),
     );
   }

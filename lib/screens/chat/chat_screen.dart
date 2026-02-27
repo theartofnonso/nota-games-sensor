@@ -871,7 +871,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   String _coachDisplayName() {
     final trimmed = widget.coachName.trim();
-    return trimmed.isEmpty ? 'Coach' : trimmed;
+    if (trimmed.isEmpty) return 'Coach';
+    return AppConfig.isClient ? 'Coach $trimmed' : trimmed;
   }
 
   /// Returns the target user ID based on app configuration.

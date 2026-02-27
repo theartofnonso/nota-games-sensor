@@ -1,33 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:trainware/dtos/mock_coach_dto.dart';
-
-/// Mock coaches for the coach selection flow.
-List<MockCoachDto> get mockCoaches => const [
-  MockCoachDto(
-    id: 'mock-1',
-    name: 'Alex Morgan',
-    description: 'Strength & conditioning specialist. 10+ years experience.',
-  ),
-  MockCoachDto(
-    id: 'mock-2',
-    name: 'Jordan Lee',
-    description: 'CrossFit coach. Focus on functional fitness.',
-  ),
-  MockCoachDto(
-    id: 'mock-3',
-    name: 'Sam Taylor',
-    description: 'Marathon runner & endurance coach.',
-  ),
-  MockCoachDto(
-    id: 'mock-4',
-    name: 'Casey Kim',
-    description: 'Powerlifting & Olympic lifting coach.',
-  ),
-];
+import 'package:trainware/dtos/coach_dto.dart';
 
 /// Reusable coach grid item for the selection flow.
 class CoachGridItem extends StatelessWidget {
-  final MockCoachDto coach;
+  final CoachDto coach;
   final bool isDarkMode;
   final VoidCallback onTap;
 
@@ -60,10 +36,20 @@ class CoachGridItem extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.asset(
-                'images/background.jpg',
-                fit: BoxFit.cover,
-              ),
+              coach.profileImageUrl != null &&
+                      coach.profileImageUrl!.trim().isNotEmpty
+                  ? Image.network(
+                      coach.profileImageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'images/background.jpg',
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Image.asset(
+                      'images/background.jpg',
+                      fit: BoxFit.cover,
+                    ),
               Positioned(
                 left: 0,
                 right: 0,
