@@ -27,7 +27,8 @@ class CoachProfileBottomSheetContent extends StatelessWidget {
           Center(
             child: coach.profileImageUrl != null &&
                     coach.profileImageUrl!.trim().isNotEmpty
-                ? ClipOval(
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
                     child: Image.network(
                       coach.profileImageUrl!,
                       width: 56,
@@ -76,7 +77,7 @@ class CoachProfileBottomSheetContent extends StatelessWidget {
       decoration: BoxDecoration(
         color:
             theme.extension<TRKRColors>()?.borderLight ?? Colors.grey.shade300,
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(
         Icons.person,

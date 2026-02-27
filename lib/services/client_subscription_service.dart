@@ -49,7 +49,9 @@ class ClientSubscriptionService {
     }
 
     final future = _fetchBackendAccess(userId: user.id).then((access) {
-      _cachedAccess = access;
+      // On API failure (null), retain previous cache so returning subscribers
+      // keep access during network/backend outages.
+      if (access != null) _cachedAccess = access;
     });
     _refreshInProgress = future;
     try {

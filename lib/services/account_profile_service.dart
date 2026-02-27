@@ -62,7 +62,8 @@ Future<bool> createAccountProfile({
         'name': name.trim(),
       }),
     ).timeout(const Duration(seconds: 15));
-    return response.statusCode >= 200 && response.statusCode < 300;
+    return (response.statusCode >= 200 && response.statusCode < 300) ||
+        response.statusCode == 409; // profile already exists (race, retry)
   } catch (_) {
     return false;
   }
