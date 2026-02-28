@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trainware/app_keys.dart';
 
 /// Reusable loading indicator for coach operations (non–offline-first).
 /// Use [CoachLoadingIndicator] inline, or [showCoachLoadingOverlay] /
@@ -41,8 +42,10 @@ void showCoachLoadingOverlay(BuildContext context) {
 }
 
 /// Hides the coach loading overlay. Call after the coach operation completes.
-/// No-op if [context] is not mounted.
+/// Uses [rootNavigatorKey] when [context] is unmounted (e.g. user navigated
+/// away during the async operation) so the overlay is always dismissed.
 void hideCoachLoadingOverlay(BuildContext context) {
-  if (!context.mounted) return;
-  Navigator.of(context, rootNavigator: true).pop();
+  final ctx = context.mounted ? context : rootNavigatorKey.currentContext;
+  if (ctx == null) return;
+  Navigator.of(ctx, rootNavigator: true).pop();
 }

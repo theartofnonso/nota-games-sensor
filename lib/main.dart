@@ -61,9 +61,8 @@ import 'dtos/appsync/routine_plan_dto.dart';
 import 'dtos/viewmodels/routine_log_arguments.dart';
 import 'dtos/viewmodels/routine_plan_arguments.dart';
 import 'dtos/viewmodels/routine_template_arguments.dart';
+import 'app_keys.dart';
 import 'logger.dart';
-
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Map<String, dynamic>? _pendingNotificationPayload;
 int _notificationRetryCount = 0;
 const int _maxNotificationRetries = 10;
@@ -88,7 +87,7 @@ void onDidReceiveNotificationResponse(NotificationResponse response) {
 void _processPendingNotification() {
   if (_pendingNotificationPayload == null) return;
 
-  final context = navigatorKey.currentContext;
+  final context = rootNavigatorKey.currentContext;
   if (context == null) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _processPendingNotification();
@@ -145,8 +144,8 @@ void _processCoachViewLog(BuildContext context, String logId) async {
   await controller.loadClientData(clientId: ownerId);
   _pendingNotificationPayload = null;
   _notificationRetryCount = 0;
-  if (navigatorKey.currentContext != null) {
-    navigatorKey.currentContext!.push('/log/$logId');
+  if (rootNavigatorKey.currentContext != null) {
+    rootNavigatorKey.currentContext!.push('/log/$logId');
   }
 }
 
@@ -171,8 +170,8 @@ void _processClientViewLog(BuildContext context, String logId) async {
   }
   _pendingNotificationPayload = null;
   _notificationRetryCount = 0;
-  if (navigatorKey.currentContext != null) {
-    navigatorKey.currentContext!.push('/log/$logId');
+  if (rootNavigatorKey.currentContext != null) {
+    rootNavigatorKey.currentContext!.push('/log/$logId');
   }
 }
 
@@ -322,7 +321,7 @@ RoutineLogDto? _parseRoutineLogFromExtra(dynamic value) {
 GoRouter _createRouter(ClientOverrideController accessController) {
   return GoRouter(
     initialLocation: "/",
-    navigatorKey: navigatorKey,
+    navigatorKey: rootNavigatorKey,
     observers: [appRouteObserver],
     refreshListenable: accessController,
     redirect: (context, state) {
