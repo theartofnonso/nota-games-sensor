@@ -159,9 +159,9 @@ class _CoachSelectionScreenState extends State<CoachSelectionScreen> {
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
-                              childAspectRatio: 0.9,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: 12,
+                              childAspectRatio: 0.88,
+                              mainAxisSpacing: 16,
+                              crossAxisSpacing: 16,
                             ),
                             itemCount: _coaches.length,
                             itemBuilder: (context, index) {

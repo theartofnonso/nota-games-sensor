@@ -325,7 +325,8 @@ class _ClientSubscriptionPaywallSheetState
   }
 
   Future<void> _loadStatusAndProduct() async {
-    final access = await widget.service._fetchBackendAccess(userId: widget.userId);
+    final access =
+        await widget.service._fetchBackendAccess(userId: widget.userId);
     final products = await widget.service.loadProducts();
     if (!mounted) return;
     setState(() {
@@ -435,18 +436,16 @@ class _ClientSubscriptionPaywallSheetState
     final product = _product;
     final trialLabel = _trialLabel(product);
 
-    return Container(
-      decoration: BoxDecoration(gradient: themeGradient(context: context)),
-      child: SafeArea(
-        top: true,
-        bottom: false,
-        child: SingleChildScrollView(
+    return SizedBox.expand(
+      child: Container(
+        decoration: BoxDecoration(gradient: themeGradient(context: context)),
+        child: SafeArea(
+          top: false,
+          bottom: true,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.34,
-                width: double.infinity,
+              Expanded(
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -469,19 +468,26 @@ class _ClientSubscriptionPaywallSheetState
                     ),
                     if (widget.showCloseButton)
                       Positioned(
-                        top: 12,
-                        left: 16,
-                        child: GestureDetector(
-                          onTap: () => Navigator.of(context).pop(),
-                          child: Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.35),
-                              shape: BoxShape.circle,
+                        top: 0,
+                        left: 0,
+                        child: SafeArea(
+                          top: true,
+                          bottom: false,
+                          left: true,
+                          right: false,
+                          minimum: const EdgeInsets.only(left: 20, top: 60),
+                          child: GestureDetector(
+                            onTap: () => Navigator.of(context).pop(),
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.close,
+                                  color: Colors.white, size: 20),
                             ),
-                            child: const Icon(Icons.close,
-                                color: Colors.white, size: 20),
                           ),
                         ),
                       ),

@@ -337,6 +337,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       {required bool isCoach, required bool isClientMode}) {
     if (!AppConfig.isClient) return const SizedBox.shrink();
     if (!Platform.isIOS && !Platform.isAndroid) return const SizedBox.shrink();
+    if (SharedPrefs().healthAccessGranted) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
     final surfaceOpacity = theme.brightness == Brightness.dark

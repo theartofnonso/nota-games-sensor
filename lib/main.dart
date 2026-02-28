@@ -683,6 +683,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       } catch (e) {
         debugPrint('[Auth] Error clearing data: $e');
       }
+      // Re-run startup so we complete (unauthenticated) and transition off splash
+      _runStartupTasksIfReady();
     }
 
     if (shouldRebuild) {
