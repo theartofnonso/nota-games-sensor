@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../dtos/coach_dto.dart';
 import '../../logger.dart';
+import '../../urls.dart';
 import '../../utils/dummy_mode_utils.dart';
+import '../../utils/notathletes_auth_headers.dart';
 
 /// Fetches coaches from [public.coaches].
 class SupabaseCoachesRepository {
@@ -38,27 +43,34 @@ class SupabaseCoachesRepository {
     }
   }
 
-  /// Assign client to coach via direct Supabase insert.
-  /// Uses RLS "Client can assign themselves to a coach" (auth.uid() = client_id).
-  /// Returns true on success or already assigned (unique constraint).
+  /// Assign client to coach via POST /coach-clients API.
+  /// Backend uses service role to insert; RLS allows service_role.
+  /// Returns true on success (201) or already assigned (409).
   Future<bool> assignClientToCoach({
     required String coachId,
     required String clientId,
   }) async {
     try {
-      await _client.from('coach_clients').insert({
-        'coach_id': coachId,
-        'client_id': clientId,
-      });
-      _logger.i('Assigned client $clientId to coach $coachId');
-      return true;
-    } on PostgrestException catch (e) {
-      // 23505 = unique_violation (already assigned)
-      if (e.code == '23505') {
+      final uri =
+          Uri.parse(apiNotathletesBaseUrl).resolve(coachClientsPath);
+      final response = await http.post(
+        uri,
+        headers: notathletesAuthHeaders(),
+        body: jsonEncode({
+          'coach_id': coachId,
+          'client_id': clientId,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 201) {
+        _logger.i('Assigned client $clientId to coach $coachId');
+        return true;
+      }
+      if (response.statusCode == 409) {
         _logger.i('Client already assigned to coach');
         return true;
       }
-      _logger.e('Error assigning client to coach: $e');
+      _logger.e('Assign coach failed: ${response.statusCode} ${response.body}');
       return false;
     } catch (e) {
       _logger.e('Error assigning client to coach: $e');
