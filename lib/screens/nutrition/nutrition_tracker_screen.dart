@@ -328,6 +328,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
               consumedCarbs: consumedCarbs,
               consumedFats: consumedFats,
               hasLogsToday: hasLogsToday,
+              calorieCardHeroTag: 'nutrition_calorie_card',
             ),
             const SizedBox(height: 16),
             Padding(

@@ -6,12 +6,14 @@ class CalorieTrackingCard extends StatelessWidget {
   final double goalCalories;
   final double remainingCalories;
   final VoidCallback? onTap;
+  final String? heroTag;
 
   const CalorieTrackingCard({
     super.key,
     required this.goalCalories,
     required this.remainingCalories,
     this.onTap,
+    this.heroTag,
   });
 
   @override
@@ -85,14 +87,20 @@ class CalorieTrackingCard extends StatelessWidget {
       ),
     );
 
-    if (onTap == null) {
-      return card;
+    Widget result = card;
+    if (onTap != null) {
+      result = GestureDetector(
+        onTap: onTap,
+        child: card,
+      );
     }
-
-    return GestureDetector(
-      onTap: onTap,
-      child: card,
-    );
+    if (heroTag != null) {
+      result = Hero(
+        tag: heroTag!,
+        child: result,
+      );
+    }
+    return result;
   }
 }
 
@@ -108,6 +116,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
   final bool hasLogsToday;
   final VoidCallback? onCardTap;
   final bool useSingleStack;
+  final String? calorieCardHeroTag;
 
   const NutritionTrackingCarousel({
     super.key,
@@ -122,6 +131,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
     required this.hasLogsToday,
     this.onCardTap,
     this.useSingleStack = false,
+    this.calorieCardHeroTag,
   });
 
   @override
@@ -141,6 +151,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
                 goalCalories: goalCalories,
                 remainingCalories: remainingCalories,
                 onTap: onCardTap,
+                heroTag: calorieCardHeroTag,
               ),
             ),
             const SizedBox(width: 16),
@@ -258,6 +269,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
                 goalCalories: goalCalories,
                 remainingCalories: remainingCalories,
                 onTap: onCardTap,
+                heroTag: calorieCardHeroTag,
               ),
             ),
           ],

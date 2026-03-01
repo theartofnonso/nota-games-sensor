@@ -2557,6 +2557,7 @@ class _NutritionSection extends StatelessWidget {
           consumedFats: _sumFatsToday(nutritionController.logs),
           hasLogsToday: hasLogsToday,
           useSingleStack: true,
+          calorieCardHeroTag: 'nutrition_calorie_card',
           onCardTap: () {
             if (isCoach && nutritionController.logs.isEmpty) {
               showNutritionTemplateSheet(context);

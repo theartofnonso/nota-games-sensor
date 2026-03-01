@@ -23,6 +23,9 @@ const openAiBaseUrl = 'https://openai.notathletes.com';
 /// POST /nutrition – body { "meal": "string" }
 const nutritionEstimatePath = '/nutrition';
 
+/// POST /exercise – body { "exercise": "string" } or { "name": "string" }
+const exerciseInstructionPath = '/exercise';
+
 /// api.notathletes.com – account and client endpoints.
 const apiNotathletesBaseUrl = 'https://api.notathletes.com';
 const accountDeletionPath = '/account/delete';

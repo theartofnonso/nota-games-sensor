@@ -29,6 +29,9 @@ import '../../../utils/routine_editors_utils.dart';
 import '../../../widgets/list_tile.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../../buttons/opacity_button_widget_two.dart';
+import '../../cards/frosted_card.dart';
+import '../../exercise/exercise_instruction_sheet.dart';
+import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../empty_states/list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
 
@@ -474,6 +477,23 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
 
   void _dismissKeyboard() {
     FocusScope.of(context).unfocus(); // Dismisses the keyboard
+  }
+
+  void _showExerciseInstructions(
+    BuildContext context,
+    String exerciseName, {
+    String? exerciseId,
+  }) {
+    showAppActionBottomSheet<void>(
+      context: context,
+      isDismissible: true,
+      isScrollControlled: true,
+      useBlurredTransparentBackground: true,
+      child: ExerciseInstructionSheetContent(
+        exerciseName: exerciseName,
+        exerciseId: exerciseId,
+      ),
+    );
   }
 
   void _addAlternativesDirectly() {
@@ -1179,6 +1199,89 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                               ],
                             ),
                           ),
+                        ],
+                        // Exercise instructions - clients only
+                        if (AppConfig.isClient) ...[
+                          Builder(builder: (context) {
+                            final isDark =
+                                Theme.of(context).brightness == Brightness.dark;
+                            final color = isDark
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : Colors.black.withValues(alpha: 0.06);
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: Divider(
+                                thickness: 0.5,
+                                color: color,
+                                height: 16,
+                              ),
+                            );
+                          }),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _showExerciseInstructions(
+                                    context,
+                                    exerciseLog.exercise.name,
+                                    exerciseId: exerciseLog.exercise.id
+                                        .isNotEmpty
+                                        ? exerciseLog.exercise.id
+                                        : null),
+                                borderRadius: BorderRadius.circular(14),
+                                splashColor: (Theme.of(context)
+                                            .extension<TRKRColors>()
+                                            ?.vibrantAccent ??
+                                        vibrantGreen)
+                                    .withValues(alpha: 0.2),
+                                highlightColor: Colors.white
+                                    .withValues(alpha: 0.06),
+                                child: FrostedCard(
+                                  borderRadius: 14,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  gradientColors: [
+                                    sapphireDark80.withValues(alpha: 0.4),
+                                    sapphireDark80.withValues(alpha: 0.2),
+                                    (Theme.of(context)
+                                                .extension<TRKRColors>()
+                                                ?.vibrantAccent ??
+                                            vibrantGreen)
+                                        .withValues(alpha: 0.08),
+                                  ],
+                                  child: Row(
+                                    children: [
+                                      FaIcon(
+                                        FontAwesomeIcons.solidCirclePlay,
+                                        size: 20,
+                                        color: Theme.of(context)
+                                            .extension<TRKRColors>()
+                                            ?.vibrantAccent ??
+                                            vibrantGreen,
+                                      ),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Text(
+                                          'How to perform',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
                         ],
                       ],
                     ),
