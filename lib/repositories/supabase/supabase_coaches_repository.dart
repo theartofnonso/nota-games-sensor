@@ -21,7 +21,7 @@ class SupabaseCoachesRepository {
     try {
       final response = await _client
           .from('coaches')
-          .select('id, name, profile_image_url, description, email')
+          .select('id, name, profile_image_url, profile_video_url, description, email')
           .order('name', ascending: true);
 
       final list = response as List<dynamic>;
