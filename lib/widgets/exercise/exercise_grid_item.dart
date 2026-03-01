@@ -21,7 +21,6 @@ class ExerciseGridItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     const banColor = Color.fromRGBO(255, 255, 255, 0.4);
-    // Try Lottie mapping; otherwise fall back to an icon placeholder
     return GestureDetector(
       onTap: onTap,
       child: Stack(
