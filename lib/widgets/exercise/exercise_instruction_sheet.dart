@@ -247,8 +247,7 @@ class _ExerciseInstructionSheetContentState
                       _AvoidFrostedCard(items: inst.avoid!),
                     if (inst.proTip != null && inst.proTip!.isNotEmpty)
                       _ProTipCard(text: inst.proTip!),
-                    if (inst.regression != null &&
-                        inst.regression!.isNotEmpty)
+                    if (inst.regression != null && inst.regression!.isNotEmpty)
                       _SectionCard(
                         label: 'Easier',
                         items: inst.regression!,
@@ -322,37 +321,37 @@ class _SectionCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             ...items.asMap().entries.map((e) {
-                final i = e.key;
-                final item = e.value;
-                final prefix = numbered ? '${i + 1}. ' : '• ';
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: numbered ? 24 : 12,
-                        child: Text(
-                          prefix,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.95),
-                            fontWeight: numbered ? FontWeight.w600 : null,
-                          ),
+              final i = e.key;
+              final item = e.value;
+              final prefix = numbered ? '${i + 1}. ' : '• ';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: numbered ? 24 : 12,
+                      child: Text(
+                        prefix,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.95),
+                          fontWeight: numbered ? FontWeight.w600 : null,
                         ),
                       ),
-                      Expanded(
-                        child: Text(
-                          item,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            height: 1.45,
-                          ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        item,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          height: 1.45,
                         ),
                       ),
-                    ],
-                  ),
-                );
-              }),
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
         ),
       ),
@@ -520,4 +519,3 @@ class _ProTipCard extends StatelessWidget {
     );
   }
 }
-

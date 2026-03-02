@@ -1229,7 +1229,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                         .isNotEmpty
                                         ? exerciseLog.exercise.id
                                         : null),
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(10),
                                 splashColor: (Theme.of(context)
                                             .extension<TRKRColors>()
                                             ?.vibrantAccent ??
@@ -1238,29 +1238,22 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                 highlightColor: Colors.white
                                     .withValues(alpha: 0.06),
                                 child: FrostedCard(
-                                  borderRadius: 14,
+                                  borderRadius: 10,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 14,
                                   ),
                                   gradientColors: [
-                                    sapphireDark80.withValues(alpha: 0.4),
-                                    sapphireDark80.withValues(alpha: 0.2),
-                                    (Theme.of(context)
-                                                .extension<TRKRColors>()
-                                                ?.vibrantAccent ??
-                                            vibrantGreen)
-                                        .withValues(alpha: 0.08),
+                                    Colors.white.withValues(alpha: 0.9),
+                                    Colors.white.withValues(alpha: 0.8),
+                                    Colors.white.withValues(alpha: 0.7),
                                   ],
                                   child: Row(
                                     children: [
                                       FaIcon(
                                         FontAwesomeIcons.solidCirclePlay,
                                         size: 20,
-                                        color: Theme.of(context)
-                                            .extension<TRKRColors>()
-                                            ?.vibrantAccent ??
-                                            vibrantGreen,
+                                        color: Colors.black.withValues(alpha: 0.8),
                                       ),
                                       const SizedBox(width: 14),
                                       Expanded(
@@ -1271,7 +1264,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                               .bodyMedium
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w600,
-                                                color: Colors.white,
+                                                color: Colors.black.withValues(alpha: 0.8),
                                               ),
                                         ),
                                       ),
