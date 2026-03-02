@@ -90,7 +90,7 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
       return created;
     }
   } finally {
-    if (context.mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
+    if (AppConfig.isCoach) hideCoachLoadingOverlay(context);
   }
 }
 

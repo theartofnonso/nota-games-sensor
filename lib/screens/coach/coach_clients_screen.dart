@@ -275,9 +275,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                               clientId: client.clientId,
                                             );
                                           } finally {
-                                            if (mounted && context.mounted) {
-                                              hideCoachLoadingOverlay(context);
-                                            }
+                                            hideCoachLoadingOverlay(context);
                                           }
                                           if (!mounted || !context.mounted) {
                                             return;

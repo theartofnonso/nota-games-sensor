@@ -559,7 +559,7 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
         }
       } finally {
         if (AppConfig.isCoach) {
-          if (mounted) hideCoachLoadingOverlay(context);
+          hideCoachLoadingOverlay(context);
         } else {
           _hideLoadingScreen();
         }

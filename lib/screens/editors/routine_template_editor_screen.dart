@@ -105,7 +105,7 @@ class _RoutineTemplateEditorScreenState
           .saveTemplate(templateDto: template);
       if (mounted) _navigateBack();
     } finally {
-      if (mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
+      if (AppConfig.isCoach) hideCoachLoadingOverlay(context);
     }
   }
 
@@ -130,7 +130,7 @@ class _RoutineTemplateEditorScreenState
                 _navigateBack(template: updatedTemplate);
               }
             } finally {
-              if (mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
+              if (AppConfig.isCoach) hideCoachLoadingOverlay(context);
             }
           },
           actionLabel: 'Update',
@@ -201,7 +201,7 @@ class _RoutineTemplateEditorScreenState
             await _doUpdateRoutineTemplate(updatedTemplate: updatedTemplate);
             if (mounted) _navigateBack(template: updatedTemplate);
           } finally {
-            if (mounted && AppConfig.isCoach) hideCoachLoadingOverlay(context);
+            if (AppConfig.isCoach) hideCoachLoadingOverlay(context);
           }
         }
       } else {

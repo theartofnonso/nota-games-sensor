@@ -304,9 +304,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
         await exerciseAndRoutineController.saveTemplate(templateDto: template);
       } finally {
-        if (mounted && AppConfig.isCoach && context.mounted) {
-          hideCoachLoadingOverlay(context);
-        }
+        if (AppConfig.isCoach) hideCoachLoadingOverlay(context);
       }
     });
   }
