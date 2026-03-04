@@ -16,6 +16,24 @@ import '../widgets/buttons/opacity_button_widget_two.dart';
 import 'iap_service.dart';
 
 const String _privacyPolicyUrl = 'https://www.notathletes.com/privacy';
+const String _termsOfUseUrl =
+    'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+
+/// Subscription duration text inferred from product ID (e.g. notathletes_monthly → per month).
+String _subscriptionDuration(String? productId) {
+  if (productId == null || productId.isEmpty) return '';
+  final lower = productId.toLowerCase();
+  if (lower.contains('annual') || lower.contains('yearly') || lower.contains('_year')) {
+    return 'per year, billed annually';
+  }
+  if (lower.contains('monthly') || lower.contains('_month')) {
+    return 'per month';
+  }
+  if (lower.contains('weekly') || lower.contains('_week')) {
+    return 'per week';
+  }
+  return 'billed through Apple';
+}
 
 class ClientSubscriptionService {
   ClientSubscriptionService._();
@@ -567,7 +585,9 @@ class _ClientSubscriptionPaywallSheetState
                                 if (!_isAlreadySubscribed) ...[
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Billed through Apple subscription',
+                                    _subscriptionDuration(product?.id) != ''
+                                        ? _subscriptionDuration(product?.id)
+                                        : 'Billed through Apple subscription',
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color:
                                           (isDark ? Colors.white : Colors.black)
@@ -623,15 +643,50 @@ class _ClientSubscriptionPaywallSheetState
                             ? null
                             : _handlePrimaryAction,
                         label: _ctaLabel(),
+                        buttonColor: _paywallGreen,
+                        solidBackground: true,
+                        showArrowRight: false,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
+                    if (!_isAlreadySubscribed)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          'Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Payment will be charged to your Apple ID account at confirmation of purchase.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: (isDark ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.6),
+                            height: 1.35,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     Center(
                       child: Wrap(
                         alignment: WrapAlignment.center,
                         children: [
                           Text(
                             'By continuing, you agree to our ',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: (isDark ? Colors.white : Colors.black)
+                                  .withValues(alpha: 0.6),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => openUrl(
+                                url: _termsOfUseUrl, context: context),
+                            child: Text(
+                              'Terms of Use',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                decoration: TextDecoration.underline,
+                                color: _paywallGreen,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            ' and ',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: (isDark ? Colors.white : Colors.black)
                                   .withValues(alpha: 0.6),

@@ -6,7 +6,7 @@
 --   2. Create coach@ware.health with password: demo123456
 --   3. Create client@ware.health with password: demo123456
 --
--- Data is populated up to 2026-02-15 for both coach and client.
+-- Data is populated for the past ~40 days up to current date.
 -- Re-running this script deletes existing demo data and repopulates (full overwrite).
 -- =============================================================================
 
@@ -24,6 +24,8 @@ DECLARE
   session_exercise_id uuid;
   i int;
   log_date date;
+  start_date date := current_date - 40;
+  end_date date := current_date;
 BEGIN
   -- Get user IDs
   SELECT id INTO coach_uuid FROM auth.users WHERE email = 'coach@ware.health' LIMIT 1;
@@ -110,10 +112,10 @@ BEGIN
   SET target_reps = EXCLUDED.target_reps,
       target_weight = EXCLUDED.target_weight;
 
-  -- Workout sessions for client - spread from mid-Jan 2026 to Feb 15, 2026
+  -- Workout sessions for client - spread over past ~40 days (every 2 days) up to today
   FOR i IN 1..20 LOOP
-    log_date := date '2026-01-15' + (i * 2);
-    EXIT WHEN log_date > date '2026-02-15';
+    log_date := start_date + (i * 2);
+    EXIT WHEN log_date > end_date;
     log_id := gen_random_uuid();
 
     INSERT INTO public.workout_sessions (id, user_id, template_id, name, notes, coach_note, start_time, end_time, created_at, updated_at)
@@ -180,10 +182,10 @@ BEGIN
   VALUES (nutrition_template_id, coach_uuid, client_uuid, 2200, 150, 250, 75, now(), now())
   ON CONFLICT (id) DO UPDATE SET calories_kcal = EXCLUDED.calories_kcal, protein_g = EXCLUDED.protein_g, carbs_g = EXCLUDED.carbs_g, fats_g = EXCLUDED.fats_g, updated_at = now();
 
-  -- Nutrition logs for client - sample entries up to Feb 15, 2026
+  -- Nutrition logs for client - sample entries for past ~30 days up to today
   FOR i IN 0..30 LOOP
-    log_date := date '2026-01-20' + i;
-    EXIT WHEN log_date > date '2026-02-15';
+    log_date := (current_date - 30) + i;
+    EXIT WHEN log_date > end_date;
     INSERT INTO public.nutrition_logs (user_id, food_name, protein_g, carbs_g, fats_g, logged_at)
     VALUES
       (client_uuid, 'Breakfast - Oatmeal & Eggs', 25, 45, 12, (log_date + time '08:30')::timestamptz),
