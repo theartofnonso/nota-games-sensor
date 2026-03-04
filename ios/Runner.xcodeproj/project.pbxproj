@@ -17,7 +17,6 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		B3F7737B3A6B81B3D03796BE /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6CFB8105D87D1CB885A5D90D /* Pods_RunnerTests.framework */; };
-		F32728AD2F2D8AF00098B545 /* AgoraChat in Frameworks */ = {isa = PBXBuildFile; productRef = 6B0F8D2C3E5A7C9B1D4F6E8A /* AgoraChat */; };
 		F34FE38E2F4374C500D5A7B5 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F34FE38D2F4374C500D5A7B5 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -107,7 +106,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F34FE38E2F4374C500D5A7B5 /* StoreKit.framework in Frameworks */,
-				F32728AD2F2D8AF00098B545 /* AgoraChat in Frameworks */,
 				7247E570E99CBBE4857738EB /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -258,7 +256,6 @@
 			);
 			name = Runner;
 			packageProductDependencies = (
-				6B0F8D2C3E5A7C9B1D4F6E8A /* AgoraChat */,
 			);
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
@@ -293,7 +290,6 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
-				5A9E7C1B2D4F6E8A0C3B5D7E /* XCRemoteSwiftPackageReference "AgoraChat_iOS" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
@@ -1486,24 +1482,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		5A9E7C1B2D4F6E8A0C3B5D7E /* XCRemoteSwiftPackageReference "AgoraChat_iOS" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/AgoraIO/AgoraChat_iOS";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		6B0F8D2C3E5A7C9B1D4F6E8A /* AgoraChat */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5A9E7C1B2D4F6E8A0C3B5D7E /* XCRemoteSwiftPackageReference "AgoraChat_iOS" */;
-			productName = AgoraChat;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 97C146E61CF9000F007C117D /* Project object */;
 }

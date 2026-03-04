@@ -266,41 +266,43 @@ Future<void> mainCommon(AppFlavor flavor) async {
   tz.initializeTimeZones();
   await configureLocalTimezone();
 
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = kReleaseMode
-          ? 'https://45d4468d9e461dc80082807aea326bd7@o4506338359377920.ingest.sentry.io/4506338360754176'
-          : "";
-      // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
-      // We recommend adjusting this value in production.
-      options.tracesSampleRate = 1.0;
-    },
-    appRunner: () {
-      return runApp(MultiProvider(providers: [
-        ChangeNotifierProvider<ClientOverrideController>(
+  void runAppWithProviders() {
+    runApp(MultiProvider(providers: [
+      ChangeNotifierProvider<ClientOverrideController>(
+        create: (BuildContext context) =>
+            ClientOverrideController()..initialize(),
+      ),
+      ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
+        create: (BuildContext context) =>
+            SupabaseExerciseAndRoutineController(
+          templateRepository: SupabaseRoutineTemplateRepository(),
+          planRepository: SupabaseRoutinePlanRepository(),
+          logRepository: SupabaseRoutineLogRepository(),
+          accessController: context.read<ClientOverrideController>(),
+        ),
+      ),
+      ChangeNotifierProvider<NutritionLogController>(
+        create: (BuildContext context) => NutritionLogController(
+            accessController: context.read<ClientOverrideController>()),
+      ),
+      ChangeNotifierProvider<ExerciseLogController>(
           create: (BuildContext context) =>
-              ClientOverrideController()..initialize(),
-        ),
-        // Provide main controller with Supabase repositories
-        ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
-          create: (BuildContext context) =>
-              SupabaseExerciseAndRoutineController(
-            templateRepository: SupabaseRoutineTemplateRepository(),
-            planRepository: SupabaseRoutinePlanRepository(),
-            logRepository: SupabaseRoutineLogRepository(),
-            accessController: context.read<ClientOverrideController>(),
-          ),
-        ),
-        ChangeNotifierProvider<NutritionLogController>(
-          create: (BuildContext context) => NutritionLogController(
-              accessController: context.read<ClientOverrideController>()),
-        ),
-        ChangeNotifierProvider<ExerciseLogController>(
-            create: (BuildContext context) =>
-                ExerciseLogController(ExerciseLogRepository())),
-      ], child: const MyApp()));
-    },
-  );
+              ExerciseLogController(ExerciseLogRepository())),
+    ], child: const MyApp()));
+  }
+
+  if (kReleaseMode) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn =
+            'https://45d4468d9e461dc80082807aea326bd7@o4506338359377920.ingest.sentry.io/4506338360754176';
+        options.tracesSampleRate = 1.0;
+      },
+      appRunner: runAppWithProviders,
+    );
+  } else {
+    runAppWithProviders();
+  }
 }
 
 /// Parses [value] to RoutineLogDto. Handles both live instances and

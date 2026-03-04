@@ -259,6 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   SizedBox(height: _sectionSpacing),
                   _RoutinePlansSection(),
                   if (AppConfig.isClient) const _CoachFeedbackSection(),
+                  const _SpacerBeforeNutritionWhenNoCoachFeedback(),
                   _SpacerIfRoutinePlansVisible(),
                   _NutritionSection(),
                   _SpacerIfNutritionVisible(),
@@ -2611,6 +2612,26 @@ class _NutritionCreateRow extends StatelessWidget {
 /// Spacer after routine plans - only when that section rendered content.
 /// Avoids double gap when client has no plans (section shrinks).
 /// Clients: CoachFeedbackCard has its own SizedBox; avoid double spacing.
+/// Client-only: adds spacing above nutrition/calories when there is no coach
+/// feedback, so the calories section doesn't sit flush against content above.
+class _SpacerBeforeNutritionWhenNoCoachFeedback extends StatelessWidget {
+  const _SpacerBeforeNutritionWhenNoCoachFeedback();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AppConfig.isClient) return const SizedBox.shrink();
+    return Consumer<SupabaseExerciseAndRoutineController>(
+      builder: (context, controller, _) {
+        final hasNotes = controller.logs.any((log) =>
+            log.coachNote != null && log.coachNote!.trim().isNotEmpty);
+        return hasNotes
+            ? const SizedBox.shrink()
+            : SizedBox(height: _SettingsScreenState._sectionSpacing);
+      },
+    );
+  }
+}
+
 class _SpacerIfRoutinePlansVisible extends StatelessWidget {
   const _SpacerIfRoutinePlansVisible();
 
