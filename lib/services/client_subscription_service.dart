@@ -10,6 +10,7 @@ import '../app_flavor.dart';
 import '../urls.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/general_utils.dart';
+import '../utils/theme/color_extensions.dart';
 import '../utils/uri_utils.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
@@ -327,8 +328,6 @@ class _ClientSubscriptionPaywallSheet extends StatefulWidget {
 
 class _ClientSubscriptionPaywallSheetState
     extends State<_ClientSubscriptionPaywallSheet> {
-  static const Color _paywallGreen = Color(0xFF22C55E);
-
   bool _isCheckingStatus = true;
   bool _isAlreadySubscribed = false;
   bool _isLoadingProduct = true;
@@ -451,6 +450,7 @@ class _ClientSubscriptionPaywallSheetState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final accent = theme.colors.vibrantAccent;
     final product = _product;
     final trialLabel = _trialLabel(product);
 
@@ -603,7 +603,7 @@ class _ClientSubscriptionPaywallSheetState
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: _paywallGreen,
+                              color: accent,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             alignment: Alignment.center,
@@ -643,7 +643,7 @@ class _ClientSubscriptionPaywallSheetState
                             ? null
                             : _handlePrimaryAction,
                         label: _ctaLabel(),
-                        buttonColor: _paywallGreen,
+                        buttonColor: accent,
                         solidBackground: true,
                         showArrowRight: false,
                       ),
@@ -680,7 +680,7 @@ class _ClientSubscriptionPaywallSheetState
                               'Terms of Use',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 decoration: TextDecoration.underline,
-                                color: _paywallGreen,
+                                color: accent,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -699,7 +699,7 @@ class _ClientSubscriptionPaywallSheetState
                               'Privacy Policy',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 decoration: TextDecoration.underline,
-                                color: _paywallGreen,
+                                color: accent,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
