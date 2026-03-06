@@ -80,7 +80,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         children: [
                           const Spacer(flex: 2),
                           Text(
-                            isCoach ? 'Not Athletes Coach' : 'Not Athletes',
+                            AppConfig.appName,
                             style: const TextStyle(
                               fontFamily: 'GroutpixFlow',
                               color: Colors.white70,

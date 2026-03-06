@@ -15,5 +15,5 @@ class AppConfig {
   }
 
   static String get appName =>
-      _flavor == AppFlavor.coach ? 'Not Athletes Coach' : 'Not Athletes';
+      _flavor == AppFlavor.coach ? 'Not Athletes Coach' : 'Not Athletes Train';
 }

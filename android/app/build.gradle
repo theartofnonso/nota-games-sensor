@@ -68,7 +68,7 @@ android {
         client {
             dimension "app"
             applicationIdSuffix ".client"
-            resValue "string", "app_name", "Not Athletes"
+            resValue "string", "app_name", "Not Athletes Train"
         }
     }
 
