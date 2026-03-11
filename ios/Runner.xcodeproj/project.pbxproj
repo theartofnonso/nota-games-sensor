@@ -83,6 +83,8 @@
 		F39C1A122BA65BE6008A4FC5 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		F3B77BFC2B2CC958007D0009 /* RunnerDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RunnerDebug.entitlements; sourceTree = "<group>"; };
 		F3B77BFD2B2CC958007D0009 /* RunnerRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RunnerRelease.entitlements; sourceTree = "<group>"; };
+		F3B77C002B2CC958007D000A /* RunnerDebug-coach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "RunnerDebug-coach.entitlements"; sourceTree = "<group>"; };
+		F3B77C012B2CC958007D000A /* RunnerRelease-coach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "RunnerRelease-coach.entitlements"; sourceTree = "<group>"; };
 		F3EF76AC2F22A6CC00B45C86 /* Debug-client.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Debug-client.xcconfig"; sourceTree = "<group>"; };
 		F3EF76AD2F22A6DC00B45C86 /* Debug-coach.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Debug-coach.xcconfig"; sourceTree = "<group>"; };
 		F3EF76AE2F22A70300B45C86 /* Release-client.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Release-client.xcconfig"; sourceTree = "<group>"; };
@@ -191,6 +193,8 @@
 				F39C1A122BA65BE6008A4FC5 /* Runner.entitlements */,
 				F3B77BFC2B2CC958007D0009 /* RunnerDebug.entitlements */,
 				F3B77BFD2B2CC958007D0009 /* RunnerRelease.entitlements */,
+				F3B77C002B2CC958007D000A /* RunnerDebug-coach.entitlements */,
+				F3B77C012B2CC958007D000A /* RunnerRelease-coach.entitlements */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
@@ -871,7 +875,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconCoach;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Runner/RunnerDebug.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Runner/RunnerDebug-coach.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 32;
@@ -1082,7 +1086,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconCoach;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease-coach.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 32;
@@ -1284,7 +1288,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconCoach;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease-coach.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 32;

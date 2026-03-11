@@ -4,6 +4,17 @@ This document describes the steps to get the monthly IAP subscription working fu
 
 ---
 
+## Coach App: No IAP
+
+The **coach app** (Not Athletes Coach, `com.notathletes.coach`) must **not** have In-App Purchase:
+
+- **Entitlements**: Coach builds use `RunnerDebug-coach.entitlements` and `RunnerRelease-coach.entitlements`, which do not include any IAP entitlement.
+- **Apple Developer Portal**: Ensure the coach App ID (`com.notathletes.coach`) does **not** have the In-App Purchase capability enabled. Go to [developer.apple.com](https://developer.apple.com) → Certificates, Identifiers & Profiles → Identifiers → select the coach App ID → ensure In-App Purchase is **unchecked**.
+- **App Store Connect**: Do not create or configure any In-App Purchase products for the coach app.
+- **Code**: `ClientSubscriptionService` and `iap_service` are never invoked when `AppConfig.isCoach` is true.
+
+---
+
 ## Current Implementation
 
 - **Client app**: Uses Apple In-App Purchase (IAP) for iOS and Google Play Billing for Android.
