@@ -720,9 +720,10 @@ class _ClientSubscriptionPaywallSheetState
                     if (!_isAlreadySubscribed)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
-                        child: TextButton(
+                        child: OpacityButtonWidgetTwo(
                           onPressed: _isBusy ? null : _handleRestore,
-                          child: const Text('Restore purchase'),
+                          label: 'Restore purchase',
+                          showArrowRight: false,
                         ),
                       ),
                     if (_isLoadingProduct && !_isAlreadySubscribed)
