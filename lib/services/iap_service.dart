@@ -2,23 +2,26 @@ import 'dart:async';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+import '../logger.dart';
+
 /// Product IDs configured in App Store Connect.
 /// - notathletes_monthly: Not Athletes Pro (coach-led)
-/// - notathletes_solo: Not Athletes (self-coaching)
+/// - notathletes_solo_monthly: Not Athletes (self-coaching)
 const Set<String> _iapProductIds = <String>{
   'notathletes_monthly',
-  'notathletes_solo',
+  'notathletes_solo_monthly',
 };
 
 /// Product ID for Pro tier (coach-led).
 const String iapProductIdPro = 'notathletes_monthly';
 
 /// Product ID for self-coaching tier (create/manage own routines, no coach).
-const String iapProductIdSolo = 'notathletes_solo';
+const String iapProductIdSolo = 'notathletes_solo_monthly';
 
 /// IAP service for iOS App Store subscriptions.
 /// Handles client subscription checks and purchases via App Store / Play Store.
 class IapService {
+  final _logger = getLogger(className: 'IapService');
   IapService() {
     _subscription = InAppPurchase.instance.purchaseStream.listen(
       _onPurchaseUpdated,
@@ -74,12 +77,24 @@ class IapService {
     if (!_isAvailable) {
       _isAvailable = await _iap.isAvailable();
     }
-    if (!_isAvailable) return [];
+    if (!_isAvailable) {
+      _logger.w('IAP not available (Store not ready). Check: device signed in to Apple ID, sandbox account for testing.');
+      return [];
+    }
     try {
+      _logger.i('Querying products: $_iapProductIds');
       final response = await _iap.queryProductDetails(_iapProductIds);
       _products = response.productDetails;
+      if (response.notFoundIDs.isNotEmpty) {
+        _logger.w('Products not found: ${response.notFoundIDs}. Check: product IDs match App Store Connect, products in Ready to Submit, Bundle ID matches.');
+      }
+      if (response.error != null) {
+        _logger.w('Product query error: ${response.error}');
+      }
+      _logger.i('Loaded ${_products.length} products: ${_products.map((p) => p.id).toList()}');
       return _products;
-    } catch (_) {
+    } catch (e, st) {
+      _logger.e('Failed to load products', error: e, stackTrace: st);
       return [];
     }
   }

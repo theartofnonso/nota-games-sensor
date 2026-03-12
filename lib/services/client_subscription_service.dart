@@ -24,7 +24,9 @@ const String _termsOfUseUrl =
 String _subscriptionDuration(String? productId) {
   if (productId == null || productId.isEmpty) return '';
   final lower = productId.toLowerCase();
-  if (lower.contains('annual') || lower.contains('yearly') || lower.contains('_year')) {
+  if (lower.contains('annual') ||
+      lower.contains('yearly') ||
+      lower.contains('_year')) {
     return 'per year, billed annually';
   }
   if (lower.contains('monthly') || lower.contains('_month')) {
@@ -364,10 +366,14 @@ class _ClientSubscriptionPaywallSheetState
     if (!mounted) return;
     ProductDetails? defaultProduct;
     if (products.isNotEmpty) {
-      defaultProduct = products.firstWhere(
-        (p) => p.id == iapProductIdPro,
-        orElse: () => products.first,
-      );
+      if (access == true) {
+        final purchasedIds = iapService.purchasedProductIds;
+        final activeProduct =
+            products.where((p) => purchasedIds.contains(p.id)).firstOrNull;
+        defaultProduct = activeProduct ?? products.first;
+      } else {
+        defaultProduct = products.first;
+      }
     }
     setState(() {
       _isAlreadySubscribed = access == true;
@@ -386,6 +392,17 @@ class _ClientSubscriptionPaywallSheetState
     return product.id;
   }
 
+  String _productDescription(ProductDetails? product) {
+    if (product == null) return '';
+    if (product.id == iapProductIdPro) {
+      return 'Train with a coach who builds your plans and gives you feedback.';
+    }
+    if (product.id == iapProductIdSolo) {
+      return 'Train on your own: create and manage your own routines.';
+    }
+    return '';
+  }
+
   String _trialLabel(ProductDetails? product) {
     if (product == null) return 'Free trial available';
     final combined = '${product.title} ${product.description}'.toLowerCase();
@@ -402,12 +419,18 @@ class _ClientSubscriptionPaywallSheetState
     return 'Subscribe to unlock full access';
   }
 
+  bool _isSelectedProductActive() {
+    if (!_isAlreadySubscribed) return false;
+    final purchasedIds = iapService.purchasedProductIds;
+    return _selectedProduct != null &&
+        purchasedIds.contains(_selectedProduct!.id);
+  }
+
   String _ctaLabel() {
     if (_isBusy) return 'Processing...';
-    if (_isAlreadySubscribed) return 'Got it';
-    return _trialLabel(_selectedProduct).toLowerCase().contains('free trial')
-        ? 'Start Free Trial'
-        : 'Subscribe';
+    if (_selectedProduct?.id == iapProductIdPro) return 'Start training with a coach';
+    if (_selectedProduct?.id == iapProductIdSolo) return 'Start training alone';
+    return 'Subscribe';
   }
 
   void _onSuccess() {
@@ -447,11 +470,6 @@ class _ClientSubscriptionPaywallSheetState
 
   Future<void> _handlePrimaryAction() async {
     if (_isBusy) return;
-    if (_isAlreadySubscribed) {
-      await widget.service.onPaywallSuccess();
-      _onSuccess();
-      return;
-    }
     setState(() {
       _isBusy = true;
       _helperMessage = null;
@@ -549,7 +567,7 @@ class _ClientSubscriptionPaywallSheetState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Start your coaching journey today',
+                            'Start your journey today',
                             style: theme.textTheme.headlineSmall?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
@@ -557,9 +575,7 @@ class _ClientSubscriptionPaywallSheetState
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _isAlreadySubscribed
-                                ? 'You are already subscribed.'
-                                : trialLabel,
+                            trialLabel,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.92),
                               fontWeight: FontWeight.w500,
@@ -590,37 +606,12 @@ class _ClientSubscriptionPaywallSheetState
                         ],
                       )
                     else ...[
-                      if (_products.isEmpty && !_isAlreadySubscribed)
+                      if (_products.isEmpty)
                         Text(
                           'Loading plan details...',
                           style: theme.textTheme.bodyMedium,
                         )
-                      else if (_isAlreadySubscribed)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'You are already subscribed.',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: accent,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              alignment: Alignment.center,
-                              child: const Icon(Icons.check,
-                                  color: Colors.white, size: 16),
-                            ),
-                          ],
-                        )
-                      else
+                      else ...[
                         ..._products.map((p) {
                           final isSelected = p.id == selectedProduct?.id;
                           return Padding(
@@ -630,12 +621,11 @@ class _ClientSubscriptionPaywallSheetState
                               child: Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: (isDark ? Colors.white : Colors.black)
-                                      .withValues(alpha: isSelected ? 0.12 : 0.06),
+                                  color: isSelected
+                                      ? accent.withValues(alpha: 0.2)
+                                      : (isDark ? Colors.white : Colors.black)
+                                          .withValues(alpha: 0.06),
                                   borderRadius: BorderRadius.circular(10),
-                                  border: isSelected
-                                      ? Border.all(color: accent, width: 2)
-                                      : null,
                                 ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -651,9 +641,23 @@ class _ClientSubscriptionPaywallSheetState
                                             overflow: TextOverflow.ellipsis,
                                             style: theme.textTheme.titleMedium
                                                 ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                           ),
+                                          if (_productDescription(p).isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _productDescription(p),
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                    color: (isDark
+                                                            ? Colors.white
+                                                            : Colors.black)
+                                                        .withValues(alpha: 0.7),
+                                                    height: 1.3,
+                                                  ),
+                                            ),
+                                          ],
                                           const SizedBox(height: 2),
                                           Text(
                                             p.price,
@@ -709,6 +713,7 @@ class _ClientSubscriptionPaywallSheetState
                             ),
                           );
                         }),
+                      ],
                     ],
                     const SizedBox(height: 12),
                     if (_helperMessage != null)
@@ -717,16 +722,15 @@ class _ClientSubscriptionPaywallSheetState
                         child: Text(_helperMessage!,
                             style: theme.textTheme.bodySmall),
                       ),
-                    if (!_isAlreadySubscribed)
+                    if (!_isSelectedProductActive())
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
-                        child: OpacityButtonWidgetTwo(
+                        child: TextButton(
                           onPressed: _isBusy ? null : _handleRestore,
-                          label: 'Restore purchase',
-                          showArrowRight: false,
+                          child: const Text('Restore purchase'),
                         ),
                       ),
-                    if (_isLoadingProduct && !_isAlreadySubscribed)
+                    if (_isLoadingProduct && !_isSelectedProductActive())
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
@@ -734,21 +738,20 @@ class _ClientSubscriptionPaywallSheetState
                           style: theme.textTheme.bodySmall,
                         ),
                       ),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OpacityButtonWidgetTwo(
-                        onPressed: (_isBusy ||
-                                (_selectedProduct == null && !_isAlreadySubscribed))
-                            ? null
-                            : _handlePrimaryAction,
-                        label: _ctaLabel(),
-                        buttonColor: accent,
-                        solidBackground: true,
-                        showArrowRight: false,
+                    if (!_isSelectedProductActive())
+                      SizedBox(
+                        width: double.infinity,
+                        child: OpacityButtonWidgetTwo(
+                          onPressed: (_isBusy ||
+                                  _selectedProduct == null)
+                              ? null
+                              : _handlePrimaryAction,
+                          label: _ctaLabel(),
+                          buttonColor: accent,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 16),
-                    if (!_isAlreadySubscribed)
+                    if (!_isSelectedProductActive())
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(
@@ -773,8 +776,8 @@ class _ClientSubscriptionPaywallSheetState
                             ),
                           ),
                           GestureDetector(
-                            onTap: () => openUrl(
-                                url: _termsOfUseUrl, context: context),
+                            onTap: () =>
+                                openUrl(url: _termsOfUseUrl, context: context),
                             child: Text(
                               'Terms of Use',
                               style: theme.textTheme.bodySmall?.copyWith(
