@@ -30,7 +30,7 @@ When a **client** account is deleted, the following are removed:
 |------|------------------|
 | **Agora Chat** | The user’s Agora Chat account (chat identity and history). Handled by the Agora backend when the app calls `POST …/user/delete`. |
 | **Supabase Auth** | The user’s auth account. Handled by the api.notathletes.com backend when the app calls `POST …/account/delete`. |
-| **Database (Supabase)** | All data tied to that user is removed by **ON DELETE CASCADE** when the auth user is deleted. See migration `supabase/migrations/20260205000000_account_deletion_cascade.sql`. |
+| **Database (Supabase)** | All data tied to that user is removed by **ON DELETE CASCADE** when the auth user is deleted. |
 
 **Data removed by CASCADE (summary):**
 
@@ -55,12 +55,33 @@ The app runs **two** API calls in this order, then signs the user out. **If any 
 - Headers: `Content-Type: application/json`, `Authorization: Bearer <Supabase access token>`  
 - Body: `{"userId": "<Supabase user id>"}`  
 
-**Specs:**
+**Rules:** Coach accounts must never be deleted (api.notathletes.com must reject with 403 for users in `public.coaches`). Supabase data is removed by DB CASCADE.
 
-1. **Agora user deletion** → [AGORA_USER_DELETE_BACKEND.md](./AGORA_USER_DELETE_BACKEND.md)
-2. **Supabase account deletion** → [SUPABASE_ACCOUNT_DELETE_BACKEND.md](./SUPABASE_ACCOUNT_DELETE_BACKEND.md)
+---
 
-**Rules:** Coach accounts must never be deleted (api.notathletes.com must reject with 403 for users in `public.coaches`). Supabase data is removed by DB CASCADE; ensure migration `20260205000000_account_deletion_cascade.sql` is applied.
+## Appendix A: Agora user deletion (backend spec)
+
+**Endpoint:** `POST https://agora.notathletes.com/user/delete`  
+**Purpose:** Delete the user from Agora Chat. The app calls this before the main account-deletion endpoint. Non-2xx does not block the flow.
+
+**Request:** Headers `Content-Type: application/json`, `Authorization: Bearer <token>`; Body `{"userId": "<Supabase user id>"}`
+
+**Backend must:** (1) Validate JWT, ensure body `userId` matches authenticated user. (2) Derive Agora username from `userId`: sanitize `[^A-Za-z0-9_]` → `_`; if result doesn't start with a letter, prefix `u_`. (3) Call Agora REST API `DELETE {agora_base}/users/{username}` with Agora App Token. (4) Return 200/204. Treat 404 as success.
+
+**Reference:** `lib/utils/agora_chat_utils.dart` — `toAgoraUsername(String userId)`.
+
+---
+
+## Appendix B: Supabase account deletion (backend spec)
+
+**Endpoint:** `POST https://api.notathletes.com/account/delete`  
+**Purpose:** Permanently delete the Supabase Auth user. All data removed by DB CASCADE.
+
+**Request:** Same as above.
+
+**Backend must:** (1) Validate JWT, ensure body `userId` matches. (2) Reject coaches (check `public.coaches`; return 403). (3) Call Supabase Auth Admin `deleteUser(userId)`. (4) Do not delete data manually; CASCADE handles it.
+
+**Response:** 200/204 on success; 403 for coaches; 400/401/500 with `{"error":"..."}` on failure.
 
 ---
 

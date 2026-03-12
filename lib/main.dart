@@ -771,8 +771,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     // Show main app if authenticated
     return ProfileCompletionGate(
-      child: CoachSelectionGate(
-        child: SubscriptionGate(
+      child: SubscriptionGate(
+        child: CoachSelectionGate(
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             themeMode: ThemeMode.dark,

@@ -25,6 +25,7 @@ import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/utils/notifications_utils.dart';
 import 'package:trainware/utils/client_access_utils.dart';
 import 'package:trainware/services/account_profile_service.dart';
+import 'package:trainware/utils/app_privileges.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../controllers/access_controller.dart';
@@ -258,7 +259,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ),
                   SizedBox(height: _sectionSpacing),
                   _RoutinePlansSection(),
-                  if (AppConfig.isClient) const _CoachFeedbackSection(),
+                  if (AppPrivileges.isProWithCoach)
+                    const _CoachFeedbackSection(),
                   const _SpacerBeforeNutritionWhenNoCoachFeedback(),
                   _SpacerIfRoutinePlansVisible(),
                   _NutritionSection(),
@@ -2525,16 +2527,18 @@ class _NutritionSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<NutritionLogController>(
       builder: (context, nutritionController, _) {
-        final isCoach = AppConfig.isCoach;
+        final canEditNutrition =
+            AppPrivileges.isCoach || AppPrivileges.isSelfCoaching;
+        final isSelfCoaching = AppPrivileges.isSelfCoaching;
         final template = nutritionController.nutritionTemplate;
 
-        // Clients: hide nutrition section when no template exists
-        if (!isCoach && template == null) return const SizedBox.shrink();
+        // Clients (non-self-coaching): hide nutrition section when no template exists
+        if (!canEditNutrition && template == null) return const SizedBox.shrink();
 
-        if (isCoach && template == null) {
+        if (canEditNutrition && template == null) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: _NutritionCreateRow(),
+            child: _NutritionCreateRow(isSelfCoaching: isSelfCoaching),
           );
         }
 
@@ -2560,7 +2564,7 @@ class _NutritionSection extends StatelessWidget {
           useSingleStack: true,
           calorieCardHeroTag: 'nutrition_calorie_card',
           onCardTap: () {
-            if (isCoach && nutritionController.logs.isEmpty) {
+            if (canEditNutrition && nutritionController.logs.isEmpty) {
               showNutritionTemplateSheet(context);
               return;
             }
@@ -2586,16 +2590,19 @@ class _NutritionSection extends StatelessWidget {
   }
 }
 
-/// Coach only: empty state with CTA to create nutrition template.
+/// Coach/self-coaching: empty state with CTA to create nutrition template.
 class _NutritionCreateRow extends StatelessWidget {
-  const _NutritionCreateRow();
+  const _NutritionCreateRow({this.isSelfCoaching = false});
+
+  final bool isSelfCoaching;
 
   @override
   Widget build(BuildContext context) {
     return _CreateSectionFrostedCard(
       title: 'Nutrition',
-      description:
-          'Create a nutrition template to set calorie and macro targets for this client.',
+      description: isSelfCoaching
+          ? 'Create a nutrition template to set calorie and macro targets for yourself.'
+          : 'Create a nutrition template to set calorie and macro targets for this client.',
       ctaLabel: 'Create nutrition template',
       onPressed: () => showNutritionTemplateSheet(context),
       gradientColors: [
@@ -2619,7 +2626,7 @@ class _SpacerBeforeNutritionWhenNoCoachFeedback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!AppConfig.isClient) return const SizedBox.shrink();
+    if (!AppPrivileges.isProWithCoach) return const SizedBox.shrink();
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
         final hasNotes = controller.logs.any((log) =>
@@ -2639,9 +2646,10 @@ class _SpacerIfRoutinePlansVisible extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
-        final isCoach = AppConfig.isCoach;
-        if (AppConfig.isClient) return const SizedBox.shrink();
-        final hasContent = isCoach || controller.plans.isNotEmpty;
+        if (AppPrivileges.isProWithCoach) return const SizedBox.shrink();
+        final hasContent =
+            (AppPrivileges.isCoach || AppPrivileges.isSelfCoaching) ||
+                controller.plans.isNotEmpty;
         return hasContent
             ? SizedBox(height: _SettingsScreenState._sectionSpacing)
             : const SizedBox.shrink();
@@ -2659,8 +2667,9 @@ class _SpacerIfNutritionVisible extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<NutritionLogController>(
       builder: (context, controller, _) {
-        final isCoach = AppConfig.isCoach;
-        final hasContent = isCoach || controller.nutritionTemplate != null;
+        final hasContent =
+            (AppPrivileges.isCoach || AppPrivileges.isSelfCoaching) ||
+            controller.nutritionTemplate != null;
         return hasContent
             ? SizedBox(height: _SettingsScreenState._sectionSpacing)
             : const SizedBox.shrink();
@@ -2676,16 +2685,18 @@ class _RoutinePlansSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
-        final isCoach = AppConfig.isCoach;
+        final canEditPlans =
+            AppPrivileges.isCoach || AppPrivileges.isSelfCoaching;
+        final isSelfCoaching = AppPrivileges.isSelfCoaching;
         final plansEmpty = controller.plans.isEmpty;
 
-        // Clients: hide routine plan section when no plan exists
-        if (!isCoach && plansEmpty) return const SizedBox.shrink();
+        // Clients (non-self-coaching): hide routine plan section when no plan exists
+        if (!canEditPlans && plansEmpty) return const SizedBox.shrink();
 
-        if (isCoach && plansEmpty) {
+        if (canEditPlans && plansEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: _RoutinePlansCreateRow(),
+            child: _RoutinePlansCreateRow(isSelfCoaching: isSelfCoaching),
           );
         }
 
@@ -2698,16 +2709,19 @@ class _RoutinePlansSection extends StatelessWidget {
   }
 }
 
-/// Coach only: empty state with title, description, and bottom-sheet-style CTA.
+/// Coach/self-coaching: empty state with title, description, and bottom-sheet-style CTA.
 class _RoutinePlansCreateRow extends StatelessWidget {
-  const _RoutinePlansCreateRow();
+  const _RoutinePlansCreateRow({this.isSelfCoaching = false});
+
+  final bool isSelfCoaching;
 
   @override
   Widget build(BuildContext context) {
     return _CreateSectionFrostedCard(
       title: 'Routine Plan',
-      description:
-          'Build a custom routine plan for this client from the ground up.',
+      description: isSelfCoaching
+          ? 'Build a custom routine plan for yourself from the ground up.'
+          : 'Build a custom routine plan for this client from the ground up.',
       ctaLabel: 'Create routine plan',
       onPressed: () => navigateToRoutinePlanEditor(context: context),
       gradientColors: [

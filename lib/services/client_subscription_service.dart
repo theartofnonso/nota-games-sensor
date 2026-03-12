@@ -45,19 +45,24 @@ class ClientSubscriptionService {
   /// Checked once at app load when user authenticates; reused at gate points.
   bool? _cachedAccess;
 
+  /// Cached subscription type from IAP (Pro vs self-coaching). Set when we have
+  /// access and have run restore to get product IDs.
+  bool? _cachedIsSelfCoaching;
+
   /// Shared future for in-flight refresh. Prevents duplicate fetches when
   /// app-load refresh and first gate check overlap.
   Future<void>? _refreshInProgress;
 
   /// Fetches subscription status from backend and caches in memory.
-  /// Non-blocking when called at app load. Gate points await this; if a
-  /// refresh is already in progress, they await the same future.
+  /// Also runs restore when access is granted to determine subscription type
+  /// (Pro vs self-coaching). Non-blocking when called at app load.
   Future<void> refreshSubscriptionStatus() async {
     if (!AppConfig.isClient) return;
 
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.id.trim().isEmpty) {
       _cachedAccess = null;
+      _cachedIsSelfCoaching = null;
       _refreshInProgress = null;
       return;
     }
@@ -67,10 +72,14 @@ class ClientSubscriptionService {
       return;
     }
 
-    final future = _fetchBackendAccess(userId: user.id).then((access) {
-      // On API failure (null), retain previous cache so returning subscribers
-      // keep access during network/backend outages.
+    final future = _fetchBackendAccess(userId: user.id).then((access) async {
       if (access != null) _cachedAccess = access;
+      if (access == true) {
+        await iapService.restorePurchases();
+        _cachedIsSelfCoaching = iapService.isSelfCoachingSubscription;
+      } else {
+        _cachedIsSelfCoaching = null;
+      }
     });
     _refreshInProgress = future;
     try {
@@ -83,11 +92,17 @@ class ClientSubscriptionService {
   /// Clears cached status (e.g. on logout).
   void clearCachedAccess() {
     _cachedAccess = null;
+    _cachedIsSelfCoaching = null;
     _refreshInProgress = null;
   }
 
   /// Whether the client has active subscription access (from last refresh).
   bool get hasAccess => _cachedAccess == true;
+
+  /// True if user has self-coaching subscription (Not Athletes). Creates own
+  /// routines, nutrition template; skips coach selection. Defaults to false
+  /// when unknown.
+  bool get isSelfCoaching => _cachedIsSelfCoaching == true;
 
   /// Whether the cache has been populated (by startup or a prior refresh).
   bool get isCachePopulated => _cachedAccess != null;
@@ -332,7 +347,8 @@ class _ClientSubscriptionPaywallSheetState
   bool _isAlreadySubscribed = false;
   bool _isLoadingProduct = true;
   bool _isBusy = false;
-  ProductDetails? _product;
+  List<ProductDetails> _products = [];
+  ProductDetails? _selectedProduct;
   String? _helperMessage;
 
   @override
@@ -346,12 +362,28 @@ class _ClientSubscriptionPaywallSheetState
         await widget.service._fetchBackendAccess(userId: widget.userId);
     final products = await widget.service.loadProducts();
     if (!mounted) return;
+    ProductDetails? defaultProduct;
+    if (products.isNotEmpty) {
+      defaultProduct = products.firstWhere(
+        (p) => p.id == iapProductIdPro,
+        orElse: () => products.first,
+      );
+    }
     setState(() {
       _isAlreadySubscribed = access == true;
       _isCheckingStatus = false;
-      _product = products.isNotEmpty ? products.first : null;
+      _products = products;
+      _selectedProduct = defaultProduct;
       _isLoadingProduct = false;
     });
+  }
+
+  String _productDisplayName(ProductDetails? product) {
+    if (product == null) return 'Not Athletes Pro';
+    if (product.title.trim().isNotEmpty) return product.title;
+    if (product.id == iapProductIdPro) return 'Not Athletes Pro';
+    if (product.id == iapProductIdSolo) return 'Not Athletes';
+    return product.id;
   }
 
   String _trialLabel(ProductDetails? product) {
@@ -373,7 +405,7 @@ class _ClientSubscriptionPaywallSheetState
   String _ctaLabel() {
     if (_isBusy) return 'Processing...';
     if (_isAlreadySubscribed) return 'Got it';
-    return _trialLabel(_product).toLowerCase().contains('free trial')
+    return _trialLabel(_selectedProduct).toLowerCase().contains('free trial')
         ? 'Start Free Trial'
         : 'Subscribe';
   }
@@ -427,7 +459,7 @@ class _ClientSubscriptionPaywallSheetState
     final completed = await widget.service.startPurchase(
       context: context,
       userId: widget.userId,
-      product: _product,
+      product: _selectedProduct,
     );
     if (!mounted) return;
     if (completed) {
@@ -451,8 +483,8 @@ class _ClientSubscriptionPaywallSheetState
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final accent = theme.colors.vibrantAccent;
-    final product = _product;
-    final trialLabel = _trialLabel(product);
+    final selectedProduct = _selectedProduct;
+    final trialLabel = _trialLabel(selectedProduct);
 
     return SizedBox.expand(
       child: Container(
@@ -557,61 +589,127 @@ class _ClientSubscriptionPaywallSheetState
                               style: theme.textTheme.bodyMedium),
                         ],
                       )
-                    else
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product?.title.trim().isNotEmpty == true
-                                      ? product!.title
-                                      : 'Not Athletes Pro',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                    else ...[
+                      if (_products.isEmpty && !_isAlreadySubscribed)
+                        Text(
+                          'Loading plan details...',
+                          style: theme.textTheme.bodyMedium,
+                        )
+                      else if (_isAlreadySubscribed)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'You are already subscribed.',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  product?.price ?? 'Price unavailable',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              ),
+                            ),
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: accent,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              alignment: Alignment.center,
+                              child: const Icon(Icons.check,
+                                  color: Colors.white, size: 16),
+                            ),
+                          ],
+                        )
+                      else
+                        ..._products.map((p) {
+                          final isSelected = p.id == selectedProduct?.id;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: GestureDetector(
+                              onTap: () => setState(() => _selectedProduct = p),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: (isDark ? Colors.white : Colors.black)
+                                      .withValues(alpha: isSelected ? 0.12 : 0.06),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: isSelected
+                                      ? Border.all(color: accent, width: 2)
+                                      : null,
                                 ),
-                                if (!_isAlreadySubscribed) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    _subscriptionDuration(product?.id) != ''
-                                        ? _subscriptionDuration(product?.id)
-                                        : 'Billed through Apple subscription',
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color:
-                                          (isDark ? Colors.white : Colors.black)
-                                              .withValues(alpha: 0.64),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _productDisplayName(p),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            p.price,
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _subscriptionDuration(p.id) != ''
+                                                ? _subscriptionDuration(p.id)
+                                                : 'Billed through Apple subscription',
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                              color: (isDark
+                                                      ? Colors.white
+                                                      : Colors.black)
+                                                  .withValues(alpha: 0.64),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ],
+                                    const SizedBox(width: 12),
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? accent
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: isSelected
+                                            ? null
+                                            : Border.all(
+                                                color: (isDark
+                                                        ? Colors.white
+                                                        : Colors.black)
+                                                    .withValues(alpha: 0.4),
+                                                width: 1.5,
+                                              ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: isSelected
+                                          ? const Icon(Icons.check,
+                                              color: Colors.white, size: 16)
+                                          : null,
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: accent,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Icon(Icons.check,
-                                color: Colors.white, size: 16),
-                          ),
-                        ],
-                      ),
+                          );
+                        }),
+                    ],
                     const SizedBox(height: 12),
                     if (_helperMessage != null)
                       Padding(
@@ -639,7 +737,7 @@ class _ClientSubscriptionPaywallSheetState
                       width: double.infinity,
                       child: OpacityButtonWidgetTwo(
                         onPressed: (_isBusy ||
-                                (_product == null && !_isAlreadySubscribed))
+                                (_selectedProduct == null && !_isAlreadySubscribed))
                             ? null
                             : _handlePrimaryAction,
                         label: _ctaLabel(),

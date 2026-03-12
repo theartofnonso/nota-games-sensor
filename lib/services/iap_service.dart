@@ -2,11 +2,19 @@ import 'dart:async';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
 
-/// Product ID configured in App Store Connect. Update to match your
-/// monthly subscription product identifier.
+/// Product IDs configured in App Store Connect.
+/// - notathletes_monthly: Not Athletes Pro (coach-led)
+/// - notathletes_solo: Not Athletes (self-coaching)
 const Set<String> _iapProductIds = <String>{
   'notathletes_monthly',
+  'notathletes_solo',
 };
+
+/// Product ID for Pro tier (coach-led).
+const String iapProductIdPro = 'notathletes_monthly';
+
+/// Product ID for self-coaching tier (create/manage own routines, no coach).
+const String iapProductIdSolo = 'notathletes_solo';
 
 /// IAP service for iOS App Store subscriptions.
 /// Handles client subscription checks and purchases via App Store / Play Store.
@@ -98,6 +106,13 @@ class IapService {
   bool hasActiveSubscription() {
     return _purchasedProductIds.isNotEmpty;
   }
+
+  /// Returns purchased product IDs (populated after restore or purchase).
+  Set<String> get purchasedProductIds => Set.from(_purchasedProductIds);
+
+  /// True if user has the self-coaching subscription (Not Athletes).
+  bool get isSelfCoachingSubscription =>
+      _purchasedProductIds.contains(iapProductIdSolo);
 
   /// Clears cached purchase state. Call when starting a fresh check.
   void clearPurchaseCache() {
