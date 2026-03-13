@@ -577,7 +577,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                   color: Colors.red,
                 ),
                 horizontalTitleGap: 8,
-                title: const Text('Delete my account'),
+                title: Text(
+                  'Delete my account',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.red,
+                  ),
+                ),
                 onTap: () async {
                   Navigator.of(context).pop();
                   await requestAccountDeletion(

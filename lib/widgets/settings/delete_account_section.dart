@@ -29,7 +29,6 @@ class DeleteAccountSection extends StatelessWidget {
     final surfaceOpacity = theme.brightness == Brightness.dark
         ? onSurface.withValues(alpha: 0.08)
         : onSurface.withValues(alpha: 0.06);
-    final contentColor = onSurface.withValues(alpha: 0.75);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -46,14 +45,14 @@ class DeleteAccountSection extends StatelessWidget {
                 FaIcon(
                   FontAwesomeIcons.userMinus,
                   size: 18,
-                  color: contentColor,
+                  color: Colors.red,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Delete my account',
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: contentColor,
+                      color: Colors.red,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
