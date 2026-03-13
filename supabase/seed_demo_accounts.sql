@@ -6,7 +6,7 @@
 --   2. Create coach@ware.health with password: demo123456
 --   3. Create client@ware.health with password: demo123456
 --
--- Data is populated for the past ~40 days up to current date.
+-- Data is populated for the past ~60 days up to current date.
 -- Re-running this script deletes existing demo data and repopulates (full overwrite).
 -- =============================================================================
 
@@ -24,7 +24,7 @@ DECLARE
   session_exercise_id uuid;
   i int;
   log_date date;
-  start_date date := current_date - 40;
+  start_date date := current_date - 60;
   end_date date := current_date;
 BEGIN
   -- Get user IDs
@@ -112,8 +112,8 @@ BEGIN
   SET target_reps = EXCLUDED.target_reps,
       target_weight = EXCLUDED.target_weight;
 
-  -- Workout sessions for client - spread over past ~40 days (every 2 days) up to today
-  FOR i IN 1..20 LOOP
+  -- Workout sessions for client - spread over past ~60 days (every 2 days) up to today
+  FOR i IN 1..30 LOOP
     log_date := start_date + (i * 2);
     EXIT WHEN log_date > end_date;
     log_id := gen_random_uuid();
@@ -125,7 +125,11 @@ BEGIN
       (CASE WHEN i % 2 = 0 THEN template1_id ELSE template2_id END),
       CASE WHEN i % 2 = 0 THEN 'Upper Body' ELSE 'Lower Body' END,
       '',
-      NULL,
+      -- Add coach feedback to the 3 most recent sessions (for coach feedback card)
+      CASE WHEN i >= 28 THEN 'Great consistency this week. Try adding one more set on bench next session.'
+           WHEN i >= 27 THEN 'Solid lower body work. Squat depth looked good.'
+           WHEN i >= 26 THEN 'Nice progress on rows. Keep it up!'
+           ELSE NULL END,
       (log_date + time '09:00')::timestamptz,
       (log_date + time '10:15')::timestamptz,
       now(),
@@ -182,15 +186,15 @@ BEGIN
   VALUES (nutrition_template_id, coach_uuid, client_uuid, 2200, 150, 250, 75, now(), now())
   ON CONFLICT (id) DO UPDATE SET calories_kcal = EXCLUDED.calories_kcal, protein_g = EXCLUDED.protein_g, carbs_g = EXCLUDED.carbs_g, fats_g = EXCLUDED.fats_g, updated_at = now();
 
-  -- Nutrition logs for client - sample entries for past ~30 days up to today
-  FOR i IN 0..30 LOOP
-    log_date := (current_date - 30) + i;
+  -- Nutrition logs for client - sample entries for past ~45 days up to today
+  FOR i IN 0..45 LOOP
+    log_date := (current_date - 45) + i;
     EXIT WHEN log_date > end_date;
-    INSERT INTO public.nutrition_logs (user_id, food_name, protein_g, carbs_g, fats_g, logged_at)
+    INSERT INTO public.nutrition_logs (id, user_id, food_name, protein_g, carbs_g, fats_g, logged_at, created_at, updated_at)
     VALUES
-      (client_uuid, 'Breakfast - Oatmeal & Eggs', 25, 45, 12, (log_date + time '08:30')::timestamptz),
-      (client_uuid, 'Lunch - Chicken Salad', 35, 20, 15, (log_date + time '13:00')::timestamptz),
-      (client_uuid, 'Dinner - Salmon & Rice', 40, 60, 18, (log_date + time '19:00')::timestamptz);
+      (gen_random_uuid(), client_uuid, 'Breakfast - Oatmeal & Eggs', 25, 45, 12, (log_date + time '08:30')::timestamptz, now(), now()),
+      (gen_random_uuid(), client_uuid, 'Lunch - Chicken Salad', 35, 20, 15, (log_date + time '13:00')::timestamptz, now(), now()),
+      (gen_random_uuid(), client_uuid, 'Dinner - Salmon & Rice', 40, 60, 18, (log_date + time '19:00')::timestamptz, now(), now());
   END LOOP;
 
   RAISE NOTICE 'Demo seed completed. Coach: %, Client: %', coach_uuid, client_uuid;

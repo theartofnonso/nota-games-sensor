@@ -153,53 +153,57 @@ class _SettingsScreenState extends State<SettingsScreen>
           )
         : const _PredictionInfo(date: null, time: null);
 
+    final showChatFab = isCoach || AppPrivileges.isProWithCoach;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.amber.withValues(alpha: 0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () async {
-                      await navigateToChat(context: context);
-                    },
-                    borderRadius: BorderRadius.circular(28),
-                    child: Center(
-                      child: FaIcon(
-                        FontAwesomeIcons.headset,
-                        color: Colors.amber,
-                        size: 22,
+      floatingActionButton: showChatFab
+          ? Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.amber.withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () async {
+                            await navigateToChat(context: context);
+                          },
+                          borderRadius: BorderRadius.circular(28),
+                          child: Center(
+                            child: FaIcon(
+                              FontAwesomeIcons.headset,
+                              color: Colors.amber,
+                              size: 22,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
-          if (_chatUnreadCount > 0)
-            Positioned(
-              top: -1,
-              right: -1,
-              child: UnreadBadge(count: _chatUnreadCount),
-            ),
-        ],
-      ),
+                if (_chatUnreadCount > 0)
+                  Positioned(
+                    top: -1,
+                    right: -1,
+                    child: UnreadBadge(count: _chatUnreadCount),
+                  ),
+              ],
+            )
+          : null,
       body: SafeArea(
         bottom: false,
         child: Stack(

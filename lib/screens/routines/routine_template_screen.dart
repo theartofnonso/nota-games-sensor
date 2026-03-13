@@ -24,6 +24,7 @@ import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/notifications_utils.dart';
+import '../../utils/app_privileges.dart';
 import '../../utils/client_access_utils.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../shared_prefs.dart';
@@ -177,7 +178,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            if (!isSystemTemplate || hasSelectedClient)
+            if (!isSystemTemplate || hasSelectedClient || AppPrivileges.isSelfCoaching)
               IconButton(
                 onPressed: () => _showMenuBottomSheet(planDto: plan),
                 icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, size: 22),
@@ -580,7 +581,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (!isSystemTemplate || hasSelectedClient) ...[
+                if (!isSystemTemplate || hasSelectedClient || AppPrivileges.isSelfCoaching) ...[
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(

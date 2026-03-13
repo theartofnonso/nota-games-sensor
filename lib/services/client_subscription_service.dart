@@ -7,6 +7,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_flavor.dart';
+import '../colors.dart';
 import '../urls.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/general_utils.dart';
@@ -351,7 +352,6 @@ class _ClientSubscriptionPaywallSheetState
   bool _isBusy = false;
   List<ProductDetails> _products = [];
   ProductDetails? _selectedProduct;
-  String? _helperMessage;
 
   @override
   void initState() {
@@ -428,7 +428,8 @@ class _ClientSubscriptionPaywallSheetState
 
   String _ctaLabel() {
     if (_isBusy) return 'Processing...';
-    if (_selectedProduct?.id == iapProductIdPro) return 'Start training with a coach';
+    if (_selectedProduct?.id == iapProductIdPro)
+      return 'Start training with a coach';
     if (_selectedProduct?.id == iapProductIdSolo) return 'Start training alone';
     return 'Subscribe';
   }
@@ -443,10 +444,7 @@ class _ClientSubscriptionPaywallSheetState
 
   Future<void> _handleRestore() async {
     if (_isBusy) return;
-    setState(() {
-      _isBusy = true;
-      _helperMessage = null;
-    });
+    setState(() => _isBusy = true);
     final hasSub = await widget.service.restorePurchase();
     if (!mounted) return;
     if (hasSub) {
@@ -462,18 +460,19 @@ class _ClientSubscriptionPaywallSheetState
       }
       return;
     }
-    setState(() {
-      _isBusy = false;
-      _helperMessage = 'No active subscription was found to restore.';
-    });
+    setState(() => _isBusy = false);
+    if (mounted) {
+      showErrorBottomSheet(
+        context: context,
+        title: 'Restore purchase',
+        message: 'No active subscription was found to restore.',
+      );
+    }
   }
 
   Future<void> _handlePrimaryAction() async {
     if (_isBusy) return;
-    setState(() {
-      _isBusy = true;
-      _helperMessage = null;
-    });
+    setState(() => _isBusy = true);
     final completed = await widget.service.startPurchase(
       context: context,
       userId: widget.userId,
@@ -588,7 +587,12 @@ class _ClientSubscriptionPaywallSheetState
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  12,
+                  16,
+                  widget.showCloseButton ? 18 : 8,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -641,21 +645,22 @@ class _ClientSubscriptionPaywallSheetState
                                             overflow: TextOverflow.ellipsis,
                                             style: theme.textTheme.titleMedium
                                                 ?.copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                           ),
-                                          if (_productDescription(p).isNotEmpty) ...[
+                                          if (_productDescription(p)
+                                              .isNotEmpty) ...[
                                             const SizedBox(height: 4),
                                             Text(
                                               _productDescription(p),
                                               style: theme.textTheme.bodySmall
                                                   ?.copyWith(
-                                                    color: (isDark
-                                                            ? Colors.white
-                                                            : Colors.black)
-                                                        .withValues(alpha: 0.7),
-                                                    height: 1.3,
-                                                  ),
+                                                color: (isDark
+                                                        ? Colors.white
+                                                        : Colors.black)
+                                                    .withValues(alpha: 0.7),
+                                                height: 1.3,
+                                              ),
                                             ),
                                           ],
                                           const SizedBox(height: 2),
@@ -688,7 +693,7 @@ class _ClientSubscriptionPaywallSheetState
                                       height: 24,
                                       decoration: BoxDecoration(
                                         color: isSelected
-                                            ? accent
+                                            ? sapphireDark80
                                             : Colors.transparent,
                                         borderRadius: BorderRadius.circular(6),
                                         border: isSelected
@@ -716,12 +721,6 @@ class _ClientSubscriptionPaywallSheetState
                       ],
                     ],
                     const SizedBox(height: 12),
-                    if (_helperMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(_helperMessage!,
-                            style: theme.textTheme.bodySmall),
-                      ),
                     if (!_isSelectedProductActive())
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
@@ -742,8 +741,7 @@ class _ClientSubscriptionPaywallSheetState
                       SizedBox(
                         width: double.infinity,
                         child: OpacityButtonWidgetTwo(
-                          onPressed: (_isBusy ||
-                                  _selectedProduct == null)
+                          onPressed: (_isBusy || _selectedProduct == null)
                               ? null
                               : _handlePrimaryAction,
                           label: _ctaLabel(),
@@ -816,6 +814,17 @@ class _ClientSubscriptionPaywallSheetState
                         ],
                       ),
                     ),
+                    if (!widget.showCloseButton) ...[
+                      const SizedBox(height: 24),
+                      Center(
+                        child: TextButton(
+                          onPressed: () async {
+                            await Supabase.instance.client.auth.signOut();
+                          },
+                          child: const Text('Log out'),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
