@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/services/account_profile_service.dart';
+import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/utils/theme/theme.dart';
@@ -46,8 +47,15 @@ class _ProfileCompletionGateState extends State<ProfileCompletionGate> {
       return;
     }
 
+    // Returning user: skip network check when we've passed this gate before
+    if (SharedPrefs().profileSetupComplete) {
+      if (mounted) setState(() => _needsProfileCompletion = false);
+      return;
+    }
+
     final exists = await clientProfileExists(userId);
     if (exists) {
+      SharedPrefs().profileSetupComplete = true;
       if (mounted) {
         setState(() => _needsProfileCompletion = false);
       }
@@ -67,6 +75,7 @@ class _ProfileCompletionGateState extends State<ProfileCompletionGate> {
     final email = takeEmailFromAuth() ?? user?.email?.trim() ?? '';
     final name = nameFromEmail(email);
     final ok = await createAccountProfile(userId: userId, name: name);
+    if (ok) SharedPrefs().profileSetupComplete = true;
 
     if (!mounted) return;
     setState(() {

@@ -677,6 +677,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _startupTasksStarted = false;
       AppStartupService.instance.reset();
       SharedPrefs().coachSelectionComplete = false;
+      SharedPrefs().profileSetupComplete = false;
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();

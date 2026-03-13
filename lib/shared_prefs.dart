@@ -19,6 +19,7 @@ class SharedPrefs {
     remove(key: routineLogKey);
     _sharedPrefs?.remove(_healthAccessGrantedKey);
     _sharedPrefs?.remove(_healthLastSyncDateKey);
+    _sharedPrefs?.remove(_profileSetupCompleteKey);
   }
 
   void remove({required String key}) {
@@ -62,6 +63,17 @@ class SharedPrefs {
 
   set coachSelectionComplete(bool value) {
     _sharedPrefs?.setBool(_coachSelectionCompleteKey, value);
+  }
+
+  /// Profile setup completed (client has profile in DB). Used to bypass
+  /// ProfileCompletionGate on subsequent launches when offline. Cleared on logout.
+  final String _profileSetupCompleteKey = "profile_setup_complete_key";
+
+  bool get profileSetupComplete =>
+      _sharedPrefs?.getBool(_profileSetupCompleteKey) ?? false;
+
+  set profileSetupComplete(bool value) {
+    _sharedPrefs?.setBool(_profileSetupCompleteKey, value);
   }
 
   /// Cached routine log
