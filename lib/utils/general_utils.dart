@@ -10,7 +10,6 @@ import '../dtos/appsync/routine_log_dto.dart';
 import '../dtos/viewmodels/routine_log_arguments.dart';
 import '../enums/routine_editor_type_enums.dart';
 import '../shared_prefs.dart';
-import 'client_access_utils.dart';
 import 'navigation_utils.dart';
 import 'unsaved_workout_utils.dart';
 
@@ -259,12 +258,6 @@ Color appBarBackgroundColor({required BuildContext context}) {
 
 Future<void> logEmptyRoutine(
     {required BuildContext context, String? workoutVideoUrl}) async {
-  final hasAccess = await guardClientFeature(
-    context: context,
-    feature: ClientFeatureGate.startWorkoutSession,
-  );
-  if (!hasAccess || !context.mounted) return;
-
   // Prevent starting a new live session when there's an unsaved one
   if (SharedPrefs().routineLog.isNotEmpty) {
     await navigateToUnsavedSession(context);

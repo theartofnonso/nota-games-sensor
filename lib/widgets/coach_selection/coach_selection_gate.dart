@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/app_flavor.dart';
+import 'package:trainware/utils/app_privileges.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/utils/theme/theme.dart';
@@ -41,6 +42,11 @@ class _CoachSelectionGateState extends State<CoachSelectionGate> {
     final userId =
         Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
+      if (mounted) setState(() => _needsCoachSelection = false);
+      return;
+    }
+
+    if (AppPrivileges.isSelfCoaching) {
       if (mounted) setState(() => _needsCoachSelection = false);
       return;
     }

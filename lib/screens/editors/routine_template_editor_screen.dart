@@ -8,6 +8,7 @@ import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/exercise_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/enums/routine_editor_type_enums.dart';
+import 'package:trainware/utils/app_privileges.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
@@ -83,7 +84,7 @@ class _RoutineTemplateEditorScreenState
         listen: false);
     final plan = controller.planWhere(id: widget.planId);
 
-    if (plan?.isSystemPlan ?? false) {
+    if (!AppPrivileges.isSelfCoaching && (plan?.isSystemPlan ?? false)) {
       _showSnackbar('Cannot add workouts to system plans.');
       return;
     }

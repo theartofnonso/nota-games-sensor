@@ -677,6 +677,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _startupTasksStarted = false;
       AppStartupService.instance.reset();
       SharedPrefs().coachSelectionComplete = false;
+      SharedPrefs().profileSetupComplete = false;
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();
@@ -771,8 +772,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     // Show main app if authenticated
     return ProfileCompletionGate(
-      child: CoachSelectionGate(
-        child: SubscriptionGate(
+      child: SubscriptionGate(
+        child: CoachSelectionGate(
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
             themeMode: ThemeMode.dark,

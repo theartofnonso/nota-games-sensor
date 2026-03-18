@@ -17,6 +17,7 @@ import '../enums/exercise_type_enums.dart';
 import '../logger.dart';
 import '../repositories/supabase/supabase_routine_plan_repository.dart';
 import '../repositories/supabase/supabase_routine_template_repository.dart';
+import '../utils/app_privileges.dart';
 import '../utils/notifications_utils.dart';
 import '../utils/routine_utils.dart';
 import 'access_controller.dart';
@@ -257,7 +258,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> updatePlan({required RoutinePlanDto plan}) async {
     final isClientMode = accessController.hasSelectedClient;
-    if (!isClientMode && plan.isSystemPlan) {
+    if (!isClientMode && !AppPrivileges.isSelfCoaching && plan.isSystemPlan) {
       errorMessage = "System plans cannot be edited.";
       logger.w("Attempted to update system plan: ${plan.id}");
       notifyListeners();
@@ -313,7 +314,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> deletePlan({required RoutinePlanDto plan}) async {
     final isClientMode = accessController.hasSelectedClient;
-    if (!isClientMode && plan.isSystemPlan) {
+    if (!isClientMode && !AppPrivileges.isSelfCoaching && plan.isSystemPlan) {
       errorMessage = "System plans cannot be deleted.";
       logger.w("Attempted to delete system plan: ${plan.id}");
       notifyListeners();
@@ -392,9 +393,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       }
       return result;
     }
-    // Check if template belongs to a system plan
+    // Check if template belongs to a system plan (solo users can add)
     final plan = planWhere(id: templateDto.planId);
-    if (plan?.isSystemPlan ?? false) {
+    if (!AppPrivileges.isSelfCoaching && (plan?.isSystemPlan ?? false)) {
       errorMessage = "Cannot add workouts to system plans.";
       logger.w(
           "Attempted to save template to system plan: ${templateDto.planId}");
@@ -434,7 +435,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     required RoutineTemplateDto template,
   }) async {
     final isClientMode = accessController.hasSelectedClient;
-    if (!isClientMode) {
+    if (!isClientMode && !AppPrivileges.isSelfCoaching) {
       final plan = planWhere(id: template.planId);
       if (plan?.isSystemPlan ?? false) {
         errorMessage = "Templates from system plans cannot be edited.";
@@ -499,7 +500,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     required RoutineTemplateDto template,
   }) async {
     final isClientMode = accessController.hasSelectedClient;
-    if (!isClientMode) {
+    if (!isClientMode && !AppPrivileges.isSelfCoaching) {
       final plan = planWhere(id: template.planId);
       if (plan?.isSystemPlan ?? false) {
         errorMessage = "Templates from system plans cannot be deleted.";

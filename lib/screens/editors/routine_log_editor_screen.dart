@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
-import 'package:trainware/app_flavor.dart';
+import 'package:trainware/utils/app_privileges.dart';
 import 'package:trainware/utils/exercise_logs_utils.dart';
 import 'package:trainware/utils/routine_editors_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
@@ -366,7 +366,8 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                               ],
                             ),
                           ),
-                          if (AppConfig.isCoach)
+                          if (AppPrivileges.isCoach ||
+                              AppPrivileges.isSelfCoaching)
                             IconButton(
                               onPressed: _selectExercisesInLibrary,
                               icon: const FaIcon(
@@ -382,12 +383,13 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                       Expanded(
                           child: exerciseLogs.isEmpty
                             ? ListEmptyState(
-                                message: AppConfig.isCoach
+                                message: (AppPrivileges.isCoach ||
+                                        AppPrivileges.isSelfCoaching)
                                     ? 'No exercises yet.\nTap + to add exercises and start logging.'
                                     : 'No exercises yet.\nStart logging from your assigned workout.',
                                 lottieFuture: _emptyStateLottieFuture,
                               )
-                            : AppConfig.isClient
+                            : AppPrivileges.isProWithCoach
                                 ? ListView.builder(
                                     padding: const EdgeInsets.only(
                                       top: 8,

@@ -16,6 +16,7 @@ import '../../dtos/appsync/routine_template_dto.dart';
 import '../../dtos/viewmodels/routine_plan_arguments.dart';
 import '../../utils/dialog_utils.dart';
 import '../../controllers/access_controller.dart';
+import '../../utils/app_privileges.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/notifications_utils.dart';
@@ -116,7 +117,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            if (!plan.isSystemPlan || hasSelectedClient)
+            if (!plan.isSystemPlan || hasSelectedClient || AppPrivileges.isSelfCoaching)
               IconButton(
                   onPressed: _showMenuBottomSheet,
                   icon:
@@ -326,7 +327,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!plan.isSystemPlan ||
-                    context.read<ClientOverrideController>().hasSelectedClient) ...[
+                    context.read<ClientOverrideController>().hasSelectedClient ||
+                    AppPrivileges.isSelfCoaching) ...[
                   ListTile(
                       dense: true,
                       contentPadding: EdgeInsets.zero,

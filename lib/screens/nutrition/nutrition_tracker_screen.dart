@@ -11,7 +11,6 @@ import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:trainware/dtos/nutrition/nutrition_template_dto.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/dialog_utils.dart';
-import 'package:trainware/utils/client_access_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
@@ -602,12 +601,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   }
 
   Future<void> _showAddEntrySheet() async {
-    final hasAccess = await guardClientFeature(
-      context: context,
-      feature: ClientFeatureGate.logMeal,
-    );
-    if (!hasAccess || !mounted) return;
-
     await _showLogMealByDescriptionSheet();
   }
 
