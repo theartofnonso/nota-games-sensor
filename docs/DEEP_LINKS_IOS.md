@@ -28,11 +28,10 @@ Serve the **apple-app-site-association** file from your domain (e.g. the Next.js
           "<TEAM_ID>.<BUNDLE_ID_CLIENT>",
           "<TEAM_ID>.<BUNDLE_ID_COACH>"
         ],
-        "paths": ["/log/*"],
+        "paths": ["/log/*", "/incoming-call"],
         "components": [
-          {
-            "/": "/log/*"
-          }
+          { "/": "/log/*" },
+          { "/": "/incoming-call" }
         ]
       }
     ]

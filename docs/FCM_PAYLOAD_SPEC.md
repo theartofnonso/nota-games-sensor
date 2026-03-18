@@ -125,16 +125,16 @@ Use when the callee should see an incoming call screen (ringing) for a video cal
 ```json
 {
   "calleeUserId": "<callee-uuid>",
-  "callerId": "<caller-uuid>",
-  "callerName": "Jane"
+  "callerId": "<caller-uuid>"
 }
 ```
 
 **Backend:**
 1. Generate Agora channel name (e.g. deterministic from callerId + calleeId).
-2. Resolve callee's device tokens from `user_device_tokens`.
-3. Send FCM to those tokens with `data: { "type": "incoming_call", "callerId", "callerName", "channelName" }`. Include `notification` (title, body) for background.
-4. Return `{ "channelName": "<generated>" }` so the caller app can join the same channel.
+2. Resolve caller name from callerId (e.g. from profiles).
+3. Resolve callee's device tokens from `user_device_tokens`.
+4. Send FCM to those tokens with `data: { "type": "incoming_call", "callerId", "callerName", "channelName" }`. Include `notification` (title, body) for background.
+5. Return `{ "channelName": "<generated>" }` so the caller app can join the same channel.
 
 ---
 

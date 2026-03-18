@@ -40,14 +40,12 @@ Future<void> sendFcmNotification({
 Future<String?> sendIncomingCallNotification({
   required String calleeUserId,
   required String callerId,
-  required String callerName,
 }) async {
   try {
     final uri = Uri.parse(_fcmBaseUrl).resolve('/notify-incoming-call');
     final payload = jsonEncode({
       'calleeUserId': calleeUserId,
       'callerId': callerId,
-      'callerName': callerName,
     });
     final response = await http.post(
       uri,

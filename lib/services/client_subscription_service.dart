@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../app_flavor.dart';
 import '../colors.dart';
 import '../urls.dart';
+import '../utils/notathletes_auth_headers.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/general_utils.dart';
 import '../utils/theme/color_extensions.dart';
@@ -200,7 +201,7 @@ class ClientSubscriptionService {
           Uri.parse(apiNotathletesBaseUrl).resolve(subscriptionStatusPath);
       final response = await http.get(
         uri.replace(queryParameters: {'user_id': userId}),
-        headers: {'Accept': 'application/json'},
+        headers: notathletesAuthHeaders(),
       ).timeout(const Duration(seconds: 15));
       if (response.statusCode < 200 || response.statusCode >= 300) return null;
       final data = jsonDecode(response.body);

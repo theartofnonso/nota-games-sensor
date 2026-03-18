@@ -192,7 +192,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       channelName = await sendIncomingCallNotification(
         calleeUserId: calleeId,
         callerId: callerId,
-        callerName: callerName,
       );
     }
     if (!mounted) return;

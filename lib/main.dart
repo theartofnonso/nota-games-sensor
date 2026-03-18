@@ -63,6 +63,7 @@ import 'dtos/viewmodels/routine_plan_arguments.dart';
 import 'dtos/viewmodels/routine_template_arguments.dart';
 import 'app_keys.dart';
 import 'logger.dart';
+
 Map<String, dynamic>? _pendingNotificationPayload;
 int _notificationRetryCount = 0;
 const int _maxNotificationRetries = 10;
@@ -124,7 +125,10 @@ void _processPendingNotification() {
     final callerId = payload['callerId'] as String?;
     final callerName = payload['callerName'] as String? ?? '';
     final channelName = payload['channelName'] as String?;
-    if (callerId == null || callerId.isEmpty || channelName == null || channelName.isEmpty) {
+    if (callerId == null ||
+        callerId.isEmpty ||
+        channelName == null ||
+        channelName.isEmpty) {
       _pendingNotificationPayload = null;
       return;
     }
@@ -304,8 +308,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
             ClientOverrideController()..initialize(),
       ),
       ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
-        create: (BuildContext context) =>
-            SupabaseExerciseAndRoutineController(
+        create: (BuildContext context) => SupabaseExerciseAndRoutineController(
           templateRepository: SupabaseRoutineTemplateRepository(),
           planRepository: SupabaseRoutinePlanRepository(),
           logRepository: SupabaseRoutineLogRepository(),
@@ -747,6 +750,28 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (path.startsWith('/log/') && path.length > 5) {
       if (_accessController.isAuthenticated) {
         _router.go(path);
+      }
+      return;
+    }
+    if (path == '/incoming-call') {
+      if (!_accessController.isAuthenticated) return;
+      final callerId = uri.queryParameters['callerId'];
+      final channelName = uri.queryParameters['channelName'];
+      final callerName = uri.queryParameters['callerName'] ?? '';
+      if (callerId == null ||
+          callerId.isEmpty ||
+          channelName == null ||
+          channelName.isEmpty) {
+        return;
+      }
+      final context = rootNavigatorKey.currentContext;
+      if (context != null) {
+        navigateToIncomingCall(
+          context: context,
+          callerId: callerId,
+          callerName: callerName,
+          channelName: channelName,
+        );
       }
     }
   }
