@@ -313,7 +313,7 @@ void navigateToIncomingCall({
   Navigator.of(context).push(
     PageRouteBuilder(
       fullscreenDialog: true,
-      opaque: true,
+      opaque: false,
       pageBuilder: (_, __, ___) => IncomingCallScreen(
         callerId: callerId,
         callerName: callerName,

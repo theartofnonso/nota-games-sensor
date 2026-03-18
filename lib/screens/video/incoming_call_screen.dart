@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
@@ -100,63 +101,75 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: Colors.black,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Spacer(),
-                const CircleAvatar(
-                  radius: 56,
-                  backgroundColor: Colors.white12,
-                  child: Icon(
-                    Icons.person,
-                    size: 64,
-                    color: Colors.white54,
-                  ),
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.25),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Incoming video call',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 16,
-                  ),
-                ),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _CallActionButton(
-                      icon: Icons.call_end,
-                      label: 'Decline',
-                      backgroundColor: Colors.red,
-                      onPressed: _handleDecline,
+                    const Spacer(),
+                    const CircleAvatar(
+                      radius: 56,
+                      backgroundColor: Colors.white12,
+                      child: Icon(
+                        Icons.person,
+                        size: 64,
+                        color: Colors.white54,
+                      ),
                     ),
-                    _CallActionButton(
-                      icon: Icons.videocam,
-                      label: 'Answer',
-                      backgroundColor: Colors.green,
-                      onPressed: _handleAnswer,
+                    const SizedBox(height: 24),
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Incoming video call',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _CallActionButton(
+                          icon: Icons.call_end,
+                          label: 'Decline',
+                          backgroundColor: Colors.red,
+                          onPressed: _handleDecline,
+                        ),
+                        _CallActionButton(
+                          icon: Icons.videocam,
+                          label: 'Answer',
+                          backgroundColor: Colors.green,
+                          onPressed: _handleAnswer,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 48),
                   ],
                 ),
-                const SizedBox(height: 48),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
