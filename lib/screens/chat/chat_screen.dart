@@ -22,6 +22,7 @@ import '../../services/push_token_service.dart'
         isNotificationPermissionGranted,
         requestNotificationPermission,
         setupPushToken;
+import '../../services/fcm_push_service.dart';
 import '../../utils/dialog_utils.dart';
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
@@ -182,13 +183,28 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _pushVideoCallScreen() {
+  void _pushVideoCallScreen() async {
+    final callerId = Supabase.instance.client.auth.currentUser?.id;
+    final calleeId = _targetUserId();
+    final callerName = AppConfig.isCoach ? widget.clientName : widget.coachName;
+    String? channelName;
+    if (callerId != null && calleeId.isNotEmpty) {
+      channelName = await sendIncomingCallNotification(
+        calleeUserId: calleeId,
+        callerId: callerId,
+        callerName: callerName,
+      );
+    }
+    if (!mounted) return;
+    if (channelName == null || channelName.isEmpty) return;
     Navigator.of(context).push(
       PageRouteBuilder(
         fullscreenDialog: true,
         opaque: true,
         pageBuilder: (_, __, ___) => VideoCallScreen(
-          targetUserId: _targetUserId(),
+          targetUserId: calleeId,
+          targetUserName: callerName,
+          channelName: channelName,
         ),
         transitionsBuilder: (_, animation, __, child) {
           const begin = Offset(0.0, 1.0);

@@ -120,6 +120,25 @@ void _processPendingNotification() {
     return;
   }
 
+  if (type == 'incoming_call') {
+    final callerId = payload['callerId'] as String?;
+    final callerName = payload['callerName'] as String? ?? '';
+    final channelName = payload['channelName'] as String?;
+    if (callerId == null || callerId.isEmpty || channelName == null || channelName.isEmpty) {
+      _pendingNotificationPayload = null;
+      return;
+    }
+    _pendingNotificationPayload = null;
+    _notificationRetryCount = 0;
+    navigateToIncomingCall(
+      context: context,
+      callerId: callerId,
+      callerName: callerName,
+      channelName: channelName,
+    );
+    return;
+  }
+
   _pendingNotificationPayload = null;
   _notificationRetryCount = 0;
 }
@@ -261,6 +280,18 @@ Future<void> mainCommon(AppFlavor flavor) async {
     _pendingNotificationPayload = Map<String, dynamic>.from(data);
     _notificationRetryCount = 0;
     _processPendingNotification();
+  });
+
+  // FCM: app in foreground, incoming call data message
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    final data = message.data;
+    if (data.isEmpty) return;
+    final type = data['type'] as String?;
+    if (type == 'incoming_call') {
+      _pendingNotificationPayload = Map<String, dynamic>.from(data);
+      _notificationRetryCount = 0;
+      _processPendingNotification();
+    }
   });
 
   tz.initializeTimeZones();

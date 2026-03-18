@@ -25,6 +25,7 @@ import '../enums/routine_editor_type_enums.dart';
 import '../screens/editors/routine_template_editor_screen.dart';
 import '../screens/logs/routine_log_screen.dart';
 import '../screens/routines/routine_plan.dart';
+import '../screens/video/incoming_call_screen.dart';
 import '../screens/routines/routine_template_screen.dart';
 import '../utils/name_notes_bottom_sheet.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -300,4 +301,34 @@ Future navigateWithSlideTransition(
   );
 
   return Navigator.of(context).push(route);
+}
+
+/// Shows the incoming call screen (from FCM push). Caller must be authenticated.
+void navigateToIncomingCall({
+  required BuildContext context,
+  required String callerId,
+  required String callerName,
+  required String channelName,
+}) {
+  Navigator.of(context).push(
+    PageRouteBuilder(
+      fullscreenDialog: true,
+      opaque: true,
+      pageBuilder: (_, __, ___) => IncomingCallScreen(
+        callerId: callerId,
+        callerName: callerName,
+        channelName: channelName,
+      ),
+      transitionsBuilder: (_, animation, __, child) {
+        const begin = Offset(0.0, 1.0);
+        const end = Offset.zero;
+        final tween = Tween(begin: begin, end: end)
+            .chain(CurveTween(curve: Curves.easeOutCubic));
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: child,
+        );
+      },
+    ),
+  );
 }

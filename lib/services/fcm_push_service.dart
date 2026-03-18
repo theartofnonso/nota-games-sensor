@@ -35,6 +35,42 @@ Future<void> sendFcmNotification({
   }
 }
 
+/// Requests the backend to initiate a video call. Backend generates channel name,
+/// sends FCM push to callee, returns channelName. Use returned channel for joining.
+Future<String?> sendIncomingCallNotification({
+  required String calleeUserId,
+  required String callerId,
+  required String callerName,
+}) async {
+  try {
+    final uri = Uri.parse(_fcmBaseUrl).resolve('/notify-incoming-call');
+    final payload = jsonEncode({
+      'calleeUserId': calleeUserId,
+      'callerId': callerId,
+      'callerName': callerName,
+    });
+    final response = await http.post(
+      uri,
+      headers: notathletesAuthHeaders(),
+      body: payload,
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      // ignore: avoid_print
+      print('[FCM] Incoming call push failed: ${response.statusCode} ${response.body}');
+      return null;
+    }
+    final body = jsonDecode(response.body);
+    if (body is Map<String, dynamic>) {
+      return body['channelName'] as String?;
+    }
+    return null;
+  } catch (e) {
+    // ignore: avoid_print
+    print('[FCM] Error sending incoming call push: $e');
+    return null;
+  }
+}
+
 /// Notifies the given client that their coach has added or updated feedback
 /// on a session. Backend should deliver to the client's device tokens with logId in FCM data.
 Future<void> sendFcmNotificationCoachFeedback({
