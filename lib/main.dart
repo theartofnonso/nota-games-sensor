@@ -33,6 +33,7 @@ import 'package:trainware/screens/logs/coach_feedback_feed_screen.dart';
 import 'package:trainware/screens/logs/routine_log_screen.dart';
 import 'package:trainware/screens/welcome_screen.dart';
 import 'package:trainware/screens/coach/coach_clients_screen.dart';
+import 'package:trainware/screens/preferences/account_settings_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
@@ -42,7 +43,6 @@ import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/app_startup_service.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
-import 'package:trainware/services/health_metrics_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -50,6 +50,7 @@ import 'package:trainware/widgets/backgrounds/splash_screen.dart';
 import 'package:trainware/widgets/coach_selection/coach_selection_gate.dart';
 import 'package:trainware/widgets/coach_selection/profile_completion_gate.dart';
 import 'package:trainware/widgets/coach_selection/subscription_gate.dart';
+import 'package:trainware/widgets/navigation/main_shell_scaffold.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
@@ -380,38 +381,49 @@ GoRouter _createRouter(ClientOverrideController accessController) {
     },
     routes: [
       GoRoute(
-        path: "/", // Define the path for Home Screen
-        pageBuilder: (context, state) {
-          return CustomTransitionPage(
-            key: state.pageKey,
-            child: const Home(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-          );
-        },
+        path: Home.routeName,
+        redirect: (context, state) => '/',
       ),
-      GoRoute(
-        path: '/coach',
-        pageBuilder: (context, state) {
-          return CustomTransitionPage(
-            key: state.pageKey,
-            child: const CoachClientsScreen(
-              navigateToOverviewOnSelect: true,
-            ),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
+      ShellRoute(
+        builder: (context, state, child) {
+          return MainShellScaffold(child: child);
+        },
+        routes: [
+          GoRoute(
+            path: '/',
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const Home(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+          GoRoute(
+            path: '/coach',
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const CoachClientsScreen(
+                  navigateToOverviewOnSelect: true,
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: RoutineLogEditorScreen.routeName,
@@ -532,6 +544,10 @@ GoRouter _createRouter(ClientOverrideController accessController) {
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
+        path: AccountSettingsScreen.routeName,
+        builder: (context, state) => const AccountSettingsScreen(),
+      ),
+      GoRoute(
         path: ChatScreen.routeName,
         builder: (context, state) {
           final coachId = state.uri.queryParameters['coachId'] ?? '';
@@ -554,10 +570,6 @@ GoRouter _createRouter(ClientOverrideController accessController) {
             clientName: clientName,
           );
         },
-      ),
-      GoRoute(
-        path: Home.routeName,
-        builder: (context, state) => const Home(),
       ),
     ],
   );
@@ -625,7 +637,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     if (state == AppLifecycleState.resumed) {
       unawaited(_restoreAgoraOnResume());
-      unawaited(HealthMetricsService.instance.syncToBackend());
     }
   }
 

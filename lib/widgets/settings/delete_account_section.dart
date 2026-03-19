@@ -68,6 +68,9 @@ class DeleteAccountSection extends StatelessWidget {
 
 const String _deleteAccountConfirmationPhrase = 'Delete my account';
 
+/// Tighter padding for delete-account sheets (keeps actions obvious, less tall).
+const EdgeInsets _deleteSheetPadding = EdgeInsets.fromLTRB(20, 16, 20, 20);
+
 /// Runs the full account deletion flow: two confirmation sheets, then
 /// Agora → Supabase delete → sign out. Calls [setLoading] with
 /// true/false so the parent can show a loading overlay.
@@ -79,29 +82,32 @@ Future<void> requestAccountDeletion(
     context: context,
     isDismissible: true,
     child: Padding(
-      padding: const EdgeInsets.all(26),
+      padding: _deleteSheetPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'Delete account',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
             textAlign: TextAlign.start,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             'Your account and all associated data (workouts, plans, nutrition logs) will be permanently deleted. This cannot be undone.',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.35),
             textAlign: TextAlign.start,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
             child: OpacityButtonWidgetTwo(
               onPressed: () => Navigator.of(context).pop(true),
               label: 'Proceed',
               buttonColor: Colors.red,
+              showArrowRight: false,
             ),
           ),
         ],
@@ -192,36 +198,37 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
   String typed = '';
   return showAppBottomSheet<bool>(
     context: context,
+    isDraggable: false,
     isScrollControlled: true,
     isDismissible: true,
     child: StatefulBuilder(
       builder: (context, setSheetState) {
         final matches = typed.trim() == _deleteAccountConfirmationPhrase;
-        final viewInsets = MediaQuery.of(context).viewInsets;
         return Padding(
-          padding: const EdgeInsets.all(26).add(EdgeInsets.only(
-            bottom: viewInsets.bottom,
-          )),
+          padding: _deleteSheetPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'To confirm, type "$_deleteAccountConfirmationPhrase" below.',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.35),
                 textAlign: TextAlign.start,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               TextField(
+                style: Theme.of(context).textTheme.bodyMedium,
                 onChanged: (value) => setSheetState(() => typed = value),
                 decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   hintText: _deleteAccountConfirmationPhrase,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: OpacityButtonWidgetTwo(
@@ -230,6 +237,7 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
                       : null,
                   label: 'Delete my account',
                   buttonColor: Colors.red,
+                  showArrowRight: false,
                 ),
               ),
             ],

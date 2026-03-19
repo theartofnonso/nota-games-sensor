@@ -21,6 +21,9 @@ class ChatLayout extends StatelessWidget {
   final String inputHint;
   final Widget? widgetAboveInput;
 
+  /// When false, omit the in-body header (e.g. when using [Scaffold.appBar]).
+  final bool showHeader;
+
   const ChatLayout({
     super.key,
     required this.headerLeading,
@@ -34,6 +37,7 @@ class ChatLayout extends StatelessWidget {
     this.onAttachmentTap,
     this.inputHint = 'Type a message...',
     this.widgetAboveInput,
+    this.showHeader = true,
   });
 
   @override
@@ -43,32 +47,32 @@ class ChatLayout extends StatelessWidget {
 
     return Column(
       children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: Row(
-            children: [
-              headerLeading,
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: isDarkMode ? Colors.white : Colors.black,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 17,
+        if (showHeader)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Row(
+              children: [
+                headerLeading,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 17,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              ...headerActions,
-            ],
+                ...headerActions,
+              ],
+            ),
           ),
-        ),
         // Messages
         Expanded(child: messagesContent),
         // Optional widget above input (e.g. attached exercise chip)
@@ -135,7 +139,7 @@ class ChatEmptyState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               FaIcon(
-                FontAwesomeIcons.message,
+                FontAwesomeIcons.comment,
                 size: 48,
                 color: descriptionColor,
               ),
@@ -317,10 +321,13 @@ class ChatTextBubble extends StatelessWidget {
   final String text;
   final String timestamp;
   final bool isMarkdown;
+
   /// Optional: show attachment indicator (e.g. "Exercise: Bench Press").
   final String? attachedExerciseName;
+
   /// Optional: exercise ID for Lottie lookup. Only system exercises have Lottie.
   final String? attachedExerciseId;
+
   /// Optional: whether exercise is system (has Lottie in registry).
   final bool attachedExerciseIsSystem;
 
@@ -387,8 +394,9 @@ class ChatTextBubble extends StatelessWidget {
                                   child: attachedExerciseIsSystem &&
                                           attachedExerciseId != null
                                       ? FutureBuilder<String?>(
-                                          future: LottieExerciseRegistry.lottieFor(
-                                              attachedExerciseId!),
+                                          future:
+                                              LottieExerciseRegistry.lottieFor(
+                                                  attachedExerciseId!),
                                           builder: (context, snapshot) {
                                             final asset = snapshot.data;
                                             if (asset != null) {
@@ -403,14 +411,16 @@ class ChatTextBubble extends StatelessWidget {
                                             return Icon(
                                               Icons.fitness_center,
                                               size: 14,
-                                              color: textColor.withValues(alpha: 0.8),
+                                              color: textColor.withValues(
+                                                  alpha: 0.8),
                                             );
                                           },
                                         )
                                       : Icon(
                                           Icons.fitness_center,
                                           size: 14,
-                                          color: textColor.withValues(alpha: 0.8),
+                                          color:
+                                              textColor.withValues(alpha: 0.8),
                                         ),
                                 ),
                                 const SizedBox(width: 6),
@@ -453,11 +463,11 @@ class ChatTextBubble extends StatelessWidget {
                                     color: textColor,
                                     fontFamily: 'monospace',
                                   ),
-                                  blockquote: theme.textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: textColor,
-                                        fontStyle: FontStyle.italic,
-                                      ),
+                                  blockquote:
+                                      theme.textTheme.bodyMedium?.copyWith(
+                                    color: textColor,
+                                    fontStyle: FontStyle.italic,
+                                  ),
                                 ),
                               )
                             : Text(

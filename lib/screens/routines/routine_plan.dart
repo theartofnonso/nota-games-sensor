@@ -36,7 +36,14 @@ class RoutinePlanScreen extends StatefulWidget {
 
   final String id;
 
-  const RoutinePlanScreen({super.key, required this.id});
+  /// When true (shell tab), hide back affordance; use bottom nav instead of pop.
+  final bool embeddedInShell;
+
+  const RoutinePlanScreen({
+    super.key,
+    required this.id,
+    this.embeddedInShell = false,
+  });
 
   @override
   State<RoutinePlanScreen> createState() => _RoutinePlanScreenState();
@@ -112,10 +119,13 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
           backgroundColor: appBarBackgroundColor(context: context),
           surfaceTintColor: Colors.transparent,
           scrolledUnderElevation: 0,
-          leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
-            onPressed: context.pop,
-          ),
+          automaticallyImplyLeading: !widget.embeddedInShell,
+          leading: widget.embeddedInShell
+              ? null
+              : IconButton(
+                  icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
+                  onPressed: context.pop,
+                ),
           actions: [
             if (!plan.isSystemPlan ||
                 hasSelectedClient ||

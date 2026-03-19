@@ -36,10 +36,6 @@
 	<string>Not Athletes needs microphone access for video calls with your coach.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Not Athletes needs permission to save photos to your library.</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>Not Athletes reads your sleep and step data to share insights with your coach and track your progress.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Not Athletes syncs your health data so your coach can view your recovery and activity.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Not Athletes needs photo access to share images in chat.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

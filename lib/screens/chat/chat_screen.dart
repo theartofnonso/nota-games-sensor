@@ -26,6 +26,8 @@ import '../../services/push_token_service.dart'
         setupPushToken;
 import '../../services/fcm_push_service.dart';
 import '../../utils/dialog_utils.dart';
+import '../../utils/general_utils.dart'
+    show appBarBackgroundColor, themeGradient;
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/chat/chat_layout.dart';
@@ -43,6 +45,9 @@ class ChatScreen extends StatefulWidget {
   /// Optional scroll controller for bottom sheet integration
   final ScrollController? scrollController;
 
+  /// When true (main shell tab), hide sheet close; rely on bottom navigation.
+  final bool embeddedInShell;
+
   const ChatScreen({
     super.key,
     required this.coachId,
@@ -50,6 +55,7 @@ class ChatScreen extends StatefulWidget {
     required this.clientUserId,
     required this.clientName,
     this.scrollController,
+    this.embeddedInShell = false,
   });
 
   @override
@@ -1073,6 +1079,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final displayInitials =
         AppConfig.isCoach ? _clientInitials() : _coachInitials();
 
+    final titleText =
+        AppConfig.isCoach ? _clientDisplayName() : _coachDisplayName();
+
     final headerLeading = displayInitials.isNotEmpty
         ? Container(
             width: 36,
@@ -1101,63 +1110,103 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           )
         : const SizedBox(width: 36, height: 36);
 
-    return ChatLayout(
-      headerLeading: headerLeading,
-      title: AppConfig.isCoach ? _clientDisplayName() : _coachDisplayName(),
-      headerActions: [
-        IconButton(
-          icon: Icon(Icons.videocam,
-              color: isDarkMode ? Colors.white : Colors.black, size: 22),
-          onPressed: () => _openVideoCall(),
+    final iconColor = isDarkMode ? Colors.white : Colors.black;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: !widget.embeddedInShell,
+        leading: widget.embeddedInShell
+            ? null
+            : IconButton(
+                icon: Icon(
+                  FontAwesomeIcons.solidCircleXmark,
+                  color: iconColor,
+                  size: 22,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+        titleSpacing: widget.embeddedInShell ? 16 : 0,
+        title: Row(
+          children: [
+            headerLeading,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                titleText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: iconColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                ),
+              ),
+            ),
+          ],
         ),
-        IconButton(
-          icon: Icon(
-            FontAwesomeIcons.solidCircleXmark,
-            color: isDarkMode ? Colors.white : Colors.black,
-            size: 22,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.videocam, color: iconColor, size: 22),
+            onPressed: () => _openVideoCall(),
           ),
-          onPressed: () => Navigator.of(context).pop(),
+        ],
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: themeGradient(context: context),
         ),
-      ],
-      messagesContent: _messages.isEmpty
-          ? ChatEmptyState(
-              title: 'No messages yet',
-              subtitle: AppConfig.isCoach
-                  ? 'Start a conversation with your client'
-                  : 'Start a conversation with your coach',
-            )
-          : Builder(
-              builder: (context) {
-                final entries = _buildChatEntries();
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.manual,
-                  itemCount: entries.length,
-                  itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    if (entry.isDivider) {
-                      return _ChatDateDivider(label: entry.label!);
-                    }
-                    final message = entry.message!;
-                    return _ChatMessageBubble(
-                      message: message,
-                      isCurrentUser: _isCurrentUserMessage(message),
-                      timestamp: _formatTimestamp(_messageTimestamp(message)),
-                      isDarkMode: isDarkMode,
-                      vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+        child: ChatLayout(
+          showHeader: false,
+          headerLeading: const SizedBox.shrink(),
+          title: '',
+          headerActions: const [],
+          messagesContent: _messages.isEmpty
+              ? ChatEmptyState(
+                  title: 'No messages yet',
+                  subtitle: AppConfig.isCoach
+                      ? 'Start a conversation with your client'
+                      : 'Start a conversation with your coach',
+                )
+              : Builder(
+                  builder: (context) {
+                    final entries = _buildChatEntries();
+                    return ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.manual,
+                      itemCount: entries.length,
+                      itemBuilder: (context, index) {
+                        final entry = entries[index];
+                        if (entry.isDivider) {
+                          return _ChatDateDivider(label: entry.label!);
+                        }
+                        final message = entry.message!;
+                        return _ChatMessageBubble(
+                          message: message,
+                          isCurrentUser: _isCurrentUserMessage(message),
+                          timestamp: _formatTimestamp(_messageTimestamp(message)),
+                          isDarkMode: isDarkMode,
+                          vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
-      messageController: _messageController,
-      onSend: _sendMessage,
-      isSending: _isSending,
-      showAttachmentButton: true,
-      onAttachmentTap: _showAttachmentSheet,
+                ),
+          messageController: _messageController,
+          onSend: _sendMessage,
+          isSending: _isSending,
+          showAttachmentButton: true,
+          onAttachmentTap: _showAttachmentSheet,
+        ),
+      ),
     );
   }
 }
