@@ -1419,22 +1419,21 @@ class _TrainingInsightsSection extends StatelessWidget {
                         icon: FontAwesomeIcons.clock,
                       ),
                       const SizedBox(height: 12),
-                      // Legend
+                      // Legend (hours, not days)
                       Row(
                         children: [
                           _LegendItem(
                             color: Colors.blue,
                             label: 'Logged',
-                            value: yearHoursStats.loggedHours.round().toString(),
+                            value:
+                                '${yearHoursStats.loggedHours.round()} hrs',
                           ),
                           const SizedBox(width: 16),
                           _LegendItem(
                             color: Colors.blue.withValues(alpha: 0.6),
                             label: 'Predicted',
-                            value: (yearHoursStats.totalProjectedHours -
-                                    yearHoursStats.loggedHours)
-                                .round()
-                                .toString(),
+                            value:
+                                '${(yearHoursStats.totalProjectedHours - yearHoursStats.loggedHours).round()} hrs',
                           ),
                         ],
                       ),

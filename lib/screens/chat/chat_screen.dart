@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -486,6 +488,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (body is ChatVideoMessageBody) {
       return body.localPath.isNotEmpty && File(body.localPath).existsSync();
     }
+    if (body is ChatVoiceMessageBody) {
+      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
+    }
     return false;
   }
 
@@ -575,6 +580,21 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         if (body.localPath.isEmpty) {
           await ChatClient.getInstance.chatManager.downloadAttachment(message);
         }
+      }).whenComplete(() {
+        _attachmentDownloadsInFlight.remove(msgId);
+        if (mounted) setState(() {});
+      });
+      return;
+    }
+
+    if (body is ChatVoiceMessageBody) {
+      final hasLocal =
+          body.localPath.isNotEmpty && File(body.localPath).existsSync();
+      if (hasLocal) return;
+
+      _attachmentDownloadsInFlight.add(msgId);
+      Future<void>(() async {
+        await ChatClient.getInstance.chatManager.downloadAttachment(message);
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
         if (mounted) setState(() {});
@@ -686,22 +706,27 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _showAttachmentSheet() async {
-    await showAppBottomSheet<void>(
+    await showAppActionBottomSheet<void>(
       context: context,
-      isScrollControlled: false,
+      isScrollControlled: true,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          16,
+          20,
+          16 + MediaQuery.of(context).viewPadding.bottom,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Share',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -714,7 +739,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _ShareTile(
                     icon: Icons.videocam,
@@ -722,6 +747,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     onTap: () async {
                       Navigator.of(context).pop();
                       await _pickVideo();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ShareTile(
+                    icon: Icons.mic,
+                    label: 'Voice',
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _recordAndSendVoice();
                     },
                   ),
                 ),
@@ -750,6 +786,104 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final picked = await _imagePicker.pickVideo(source: ImageSource.gallery);
     if (picked == null) return;
     await _sendVideoMessage(targetAgoraUserId, picked.path);
+  }
+
+  Future<void> _recordAndSendVoice() async {
+    final targetAgoraUserId = _targetAgoraUserId;
+    if (targetAgoraUserId == null) return;
+    final micGranted = await Permission.microphone.isGranted;
+    if (!micGranted) {
+      if (!context.mounted) return;
+      final ctx = context;
+      await showAppActionBottomSheet<void>(
+        context: ctx,
+        isDismissible: true,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Microphone access',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Allow microphone access to record voice messages.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.8),
+                    ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  label: 'Allow',
+                  buttonColor: Theme.of(context).colors.vibrantAccent,
+                  onPressed: () async {
+                    final status = await Permission.microphone.request();
+                    if (!ctx.mounted) return;
+                    Navigator.of(ctx).pop();
+                    if (status == PermissionStatus.granted) {
+                      _recordAndSendVoice();
+                    } else if (ctx.mounted) {
+                      showErrorBottomSheet(
+                        context: ctx,
+                        message:
+                            'Microphone access is required for voice messages.',
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+    final result =
+        await showAppActionBottomSheet<({String path, int duration})>(
+      context: context,
+      isScrollControlled: true,
+      child: _VoiceRecordingSheet(),
+    );
+    if (result == null) return;
+    await _sendVoiceMessage(targetAgoraUserId, result.path, result.duration);
+  }
+
+  Future<void> _sendVoiceMessage(
+    String targetId,
+    String path,
+    int durationSeconds,
+  ) async {
+    try {
+      final durationMs = durationSeconds * 1000;
+      final message = ChatMessage.createVoiceSendMessage(
+        targetId: targetId,
+        filePath: path,
+        duration: durationMs,
+      );
+      message.chatType = ChatType.Chat;
+      await ChatClient.getInstance.chatManager.sendMessage(message);
+      if (!mounted) return;
+      setState(() {
+        _mergeMessage(message);
+        _sortMessages();
+      });
+      await _markConversationRead();
+      _refreshUnreadBadges();
+      _scrollToBottom();
+    } catch (e) {
+      _handleSendError(e, 'voice message');
+    }
   }
 
   Future<void> _sendImageMessage(String targetId, String path) async {
@@ -1140,6 +1274,10 @@ class _MessageBody extends StatelessWidget {
 
     if (body is ChatVideoMessageBody) {
       return _VideoAttachment(body: body, textColor: textColor);
+    }
+
+    if (body is ChatVoiceMessageBody) {
+      return _VoiceAttachment(body: body, textColor: textColor);
     }
 
     return Text(
@@ -1678,6 +1816,105 @@ class _VideoAttachmentState extends State<_VideoAttachment> {
   }
 }
 
+class _VoiceAttachment extends StatefulWidget {
+  final ChatVoiceMessageBody body;
+  final Color textColor;
+
+  const _VoiceAttachment({required this.body, required this.textColor});
+
+  @override
+  State<_VoiceAttachment> createState() => _VoiceAttachmentState();
+}
+
+class _VoiceAttachmentState extends State<_VoiceAttachment> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = state == PlayerState.playing;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  String _formatDuration(int ms) {
+    if (ms <= 0) return '0:00';
+    final s = (ms / 1000).round();
+    final m = s ~/ 60;
+    final sec = s % 60;
+    return '$m:${sec.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _togglePlay() async {
+    final localPath = widget.body.localPath;
+    final remotePath = widget.body.remotePath;
+    String? path;
+    if (localPath.isNotEmpty && File(localPath).existsSync()) {
+      path = localPath;
+    } else if (remotePath != null && remotePath.isNotEmpty) {
+      path = remotePath;
+    }
+    if (path == null) return;
+
+    if (_isPlaying) {
+      await _player.pause();
+    } else {
+      if (path.startsWith('http')) {
+        await _player.play(UrlSource(path));
+      } else {
+        await _player.play(DeviceFileSource(path));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = widget.body.duration;
+    final durationStr = _formatDuration(duration);
+
+    return InkWell(
+      onTap: _togglePlay,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: widget.textColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _isPlaying ? Icons.pause : Icons.play_arrow,
+              color: widget.textColor,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              durationStr,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: widget.textColor,
+                fontWeight: FontWeight.w500,
+                fontFeatures: [const FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 Widget? _videoThumbnail(ChatVideoMessageBody body) {
   final localThumb = body.thumbnailLocalPath;
   if (localThumb != null && localThumb.isNotEmpty) {
@@ -1853,6 +2090,145 @@ class _ChatListEntry {
   bool get isDivider => label != null;
 }
 
+class _VoiceRecordingSheet extends StatefulWidget {
+  @override
+  State<_VoiceRecordingSheet> createState() => _VoiceRecordingSheetState();
+}
+
+class _VoiceRecordingSheetState extends State<_VoiceRecordingSheet> {
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _isRecording = false;
+  String? _path;
+  int _durationSeconds = 0;
+  String _durationDisplay = '0:00';
+
+  @override
+  void dispose() {
+    if (_isRecording) {
+      _recorder.stop().ignore();
+    }
+    _recorder.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startRecording() async {
+    if (_isRecording) return;
+    final tempDir = await getTemporaryDirectory();
+    final fileName = 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    _path = '${tempDir.path}/$fileName';
+    final config = RecordConfig(
+      encoder: AudioEncoder.aacLc,
+      sampleRate: 44100,
+      numChannels: 1,
+      bitRate: 128000,
+    );
+    await _recorder.start(config, path: _path!);
+    setState(() {
+      _isRecording = true;
+      _durationSeconds = 0;
+      _durationDisplay = '0:00';
+    });
+    _runDurationTimer();
+  }
+
+  void _runDurationTimer() {
+    Future.doWhile(() async {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (!mounted || !_isRecording) return false;
+      setState(() {
+        _durationSeconds++;
+        final m = _durationSeconds ~/ 60;
+        final s = _durationSeconds % 60;
+        _durationDisplay = '$m:${s.toString().padLeft(2, '0')}';
+      });
+      return true;
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    if (!_isRecording) return;
+    final path = await _recorder.stop();
+    setState(() {
+      _isRecording = false;
+      _path = path;
+    });
+  }
+
+  void _send() {
+    if (_path != null && _durationSeconds > 0) {
+      Navigator.of(context).pop((path: _path!, duration: _durationSeconds));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        16 + MediaQuery.of(context).viewPadding.bottom,
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 180,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _isRecording ? 'Recording...' : 'Voice message',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Center(
+                child: Text(
+                  _durationDisplay,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: [const FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_isRecording)
+                    FilledButton.icon(
+                      onPressed: _stopRecording,
+                      icon: const Icon(Icons.stop, size: 20),
+                      label: const Text('Stop'),
+                    )
+                  else if (_path != null && _durationSeconds > 0)
+                    FilledButton.icon(
+                      onPressed: _send,
+                      icon: const Icon(Icons.send, size: 20),
+                      label: const Text('Send'),
+                    )
+                  else
+                    FilledButton.icon(
+                      onPressed: _startRecording,
+                      icon: const Icon(Icons.fiber_manual_record, size: 20),
+                      label: const Text('Record'),
+                    ),
+                ],
+              ),
+            ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ShareTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1871,13 +2247,13 @@ class _ShareTile extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.05);
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDarkMode
                 ? Colors.white.withValues(alpha: 0.12)
@@ -1888,24 +2264,24 @@ class _ShareTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: isDarkMode
                     ? Colors.white.withValues(alpha: 0.16)
                     : Colors.black.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
                 color: isDarkMode ? Colors.white : Colors.black,
-                size: 24,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
             ),
@@ -1929,6 +2305,9 @@ String _messageContent(ChatMessage message) {
   }
   if (body is ChatVideoMessageBody) {
     return body.displayName ?? 'video';
+  }
+  if (body is ChatVoiceMessageBody) {
+    return 'voice:${body.duration}';
   }
   return '';
 }
