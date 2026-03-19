@@ -1425,11 +1425,16 @@ class _TrainingInsightsSection extends StatelessWidget {
                           _LegendItem(
                             color: Colors.blue,
                             label: 'Logged',
+                            value: yearHoursStats.loggedHours.round().toString(),
                           ),
                           const SizedBox(width: 16),
                           _LegendItem(
                             color: Colors.blue.withValues(alpha: 0.6),
                             label: 'Predicted',
+                            value: (yearHoursStats.totalProjectedHours -
+                                    yearHoursStats.loggedHours)
+                                .round()
+                                .toString(),
                           ),
                         ],
                       ),
@@ -2655,9 +2660,8 @@ class _SpacerIfRoutinePlansVisible extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
-        if (AppPrivileges.isProWithCoach) return const SizedBox.shrink();
         final hasContent =
-            (AppPrivileges.isCoach || AppPrivileges.isSelfCoaching) ||
+            AppPrivileges.canCreateManageRoutines ||
                 controller.plans.isNotEmpty;
         return hasContent
             ? SizedBox(height: _SettingsScreenState._sectionSpacing)
@@ -2694,9 +2698,9 @@ class _RoutinePlansSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
-        final canEditPlans =
-            AppPrivileges.isCoach || AppPrivileges.isSelfCoaching;
-        final isSelfCoaching = AppPrivileges.isSelfCoaching;
+        final canEditPlans = AppPrivileges.canCreateManageRoutines;
+        final isOwnRoutines =
+            AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach;
         final plansEmpty = controller.plans.isEmpty;
 
         // Clients (non-self-coaching): hide routine plan section when no plan exists
@@ -2705,7 +2709,7 @@ class _RoutinePlansSection extends StatelessWidget {
         if (canEditPlans && plansEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: _RoutinePlansCreateRow(isSelfCoaching: isSelfCoaching),
+            child: _RoutinePlansCreateRow(isOwnRoutines: isOwnRoutines),
           );
         }
 
@@ -2720,15 +2724,15 @@ class _RoutinePlansSection extends StatelessWidget {
 
 /// Coach/self-coaching: empty state with title, description, and bottom-sheet-style CTA.
 class _RoutinePlansCreateRow extends StatelessWidget {
-  const _RoutinePlansCreateRow({this.isSelfCoaching = false});
+  const _RoutinePlansCreateRow({this.isOwnRoutines = false});
 
-  final bool isSelfCoaching;
+  final bool isOwnRoutines;
 
   @override
   Widget build(BuildContext context) {
     return _CreateSectionFrostedCard(
       title: 'Routine Plan',
-      description: isSelfCoaching
+      description: isOwnRoutines
           ? 'Build a custom routine plan for yourself from the ground up.'
           : 'Build a custom routine plan for this client from the ground up.',
       ctaLabel: 'Create routine plan',

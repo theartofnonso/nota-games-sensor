@@ -258,7 +258,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> updatePlan({required RoutinePlanDto plan}) async {
     final isClientMode = accessController.hasSelectedClient;
-    if (!isClientMode && !AppPrivileges.isSelfCoaching && plan.isSystemPlan) {
+    if (!isClientMode &&
+        !(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach) &&
+        plan.isSystemPlan) {
       errorMessage = "System plans cannot be edited.";
       logger.w("Attempted to update system plan: ${plan.id}");
       notifyListeners();
@@ -314,7 +316,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
   Future<void> deletePlan({required RoutinePlanDto plan}) async {
     final isClientMode = accessController.hasSelectedClient;
-    if (!isClientMode && !AppPrivileges.isSelfCoaching && plan.isSystemPlan) {
+    if (!isClientMode &&
+        !(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach) &&
+        plan.isSystemPlan) {
       errorMessage = "System plans cannot be deleted.";
       logger.w("Attempted to delete system plan: ${plan.id}");
       notifyListeners();
@@ -395,7 +399,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     }
     // Check if template belongs to a system plan (solo users can add)
     final plan = planWhere(id: templateDto.planId);
-    if (!AppPrivileges.isSelfCoaching && (plan?.isSystemPlan ?? false)) {
+    if (!(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach) &&
+        (plan?.isSystemPlan ?? false)) {
       errorMessage = "Cannot add workouts to system plans.";
       logger.w(
           "Attempted to save template to system plan: ${templateDto.planId}");
@@ -435,7 +440,8 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     required RoutineTemplateDto template,
   }) async {
     final isClientMode = accessController.hasSelectedClient;
-    if (!isClientMode && !AppPrivileges.isSelfCoaching) {
+    if (!isClientMode &&
+        !(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach)) {
       final plan = planWhere(id: template.planId);
       if (plan?.isSystemPlan ?? false) {
         errorMessage = "Templates from system plans cannot be edited.";
@@ -473,14 +479,20 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       return;
     }
 
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      errorMessage = "Please sign in to continue.";
+      notifyListeners();
+      return;
+    }
+    if (AppPrivileges.isProWithCoach && !template.isOwnedBy(userId)) {
+      errorMessage = "You cannot edit workouts assigned by your coach.";
+      notifyListeners();
+      return;
+    }
+
     isLoading = true;
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) {
-        errorMessage = "Please sign in to continue.";
-        notifyListeners();
-        return;
-      }
       await _templateRepository.upsertTemplate(
         template: template,
         ownerId: userId,
@@ -500,12 +512,25 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     required RoutineTemplateDto template,
   }) async {
     final isClientMode = accessController.hasSelectedClient;
-    if (!isClientMode && !AppPrivileges.isSelfCoaching) {
+    if (!isClientMode &&
+        !(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach)) {
       final plan = planWhere(id: template.planId);
       if (plan?.isSystemPlan ?? false) {
         errorMessage = "Templates from system plans cannot be deleted.";
         logger
             .w("Attempted to delete template from system plan: ${template.id}");
+        notifyListeners();
+        return;
+      }
+    }
+
+    if (!isClientMode) {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null &&
+          AppPrivileges.isProWithCoach &&
+          !template.isOwnedBy(userId)) {
+        errorMessage =
+            "You cannot delete workouts assigned by your coach.";
         notifyListeners();
         return;
       }

@@ -9,6 +9,8 @@ class RoutineTemplateDto {
   final String notes;
   final List<ExerciseLogDto> exerciseTemplates;
   final String? clientId;
+  /// Owner user id. Coach-created templates have owner = coach; client-created have owner = client.
+  final String? owner;
 
   RoutineTemplateDto({
     this.id = "",
@@ -17,7 +19,12 @@ class RoutineTemplateDto {
     this.notes = "",
     required this.exerciseTemplates,
     this.clientId,
+    this.owner,
   });
+
+  /// True when the template was created by the given user (they can edit/delete).
+  bool isOwnedBy(String userId) =>
+      owner != null && owner!.isNotEmpty && owner == userId;
 
   Map<String, dynamic> toJson() {
     return {
@@ -27,8 +34,8 @@ class RoutineTemplateDto {
       'notes': notes,
       'exercises':
           exerciseTemplates.map((exercise) => exercise.toJson()).toList(),
-      // Explicitly set clientId to null for user-created templates to ensure RLS compliance
       'clientId': clientId,
+      'owner': owner,
     };
   }
 
@@ -38,6 +45,7 @@ class RoutineTemplateDto {
     final name = json["name"] as String;
     final notes = json["notes"] as String? ?? "";
     final clientId = json["clientId"] as String?;
+    final owner = json["owner"] as String?;
 
     final rawExerciseTemplates = json["exercises"] as List;
     final exerciseTemplates = rawExerciseTemplates
@@ -55,6 +63,7 @@ class RoutineTemplateDto {
       notes: notes,
       exerciseTemplates: exerciseTemplates,
       clientId: clientId,
+      owner: owner,
     );
   }
 
@@ -75,6 +84,7 @@ class RoutineTemplateDto {
     String? notes,
     List<ExerciseLogDto>? exerciseTemplates,
     String? clientId,
+    String? owner,
   }) {
     return RoutineTemplateDto(
       id: id ?? this.id,
@@ -85,6 +95,7 @@ class RoutineTemplateDto {
           ? exerciseTemplates.map((e) => e.copyWith()).toList()
           : this.exerciseTemplates.map((e) => e.copyWith()).toList(),
       clientId: clientId ?? this.clientId,
+      owner: owner ?? this.owner,
     );
   }
 

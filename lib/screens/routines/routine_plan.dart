@@ -117,7 +117,9 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            if (!plan.isSystemPlan || hasSelectedClient || AppPrivileges.isSelfCoaching)
+            if (!plan.isSystemPlan ||
+                hasSelectedClient ||
+                AppPrivileges.canCreateManageRoutines)
               IconButton(
                   onPressed: _showMenuBottomSheet,
                   icon:
@@ -328,7 +330,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
               children: [
                 if (!plan.isSystemPlan ||
                     context.read<ClientOverrideController>().hasSelectedClient ||
-                    AppPrivileges.isSelfCoaching) ...[
+                    AppPrivileges.canCreateManageRoutines) ...[
                   ListTile(
                       dense: true,
                       contentPadding: EdgeInsets.zero,

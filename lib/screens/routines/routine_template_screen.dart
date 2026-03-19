@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/extensions/datetime/datetime_extension.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
@@ -112,6 +113,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     // Check if this template belongs to a system plan
     final isSystemTemplate = plan?.isSystemPlan ?? false;
     final hasSelectedClient = accessController.hasSelectedClient;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final canEditTemplate = hasSelectedClient ||
+        !AppPrivileges.isProWithCoach ||
+        (userId != null && template.isOwnedBy(userId));
 
     final allLogsForTemplate = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: template.id)
@@ -177,7 +182,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             onPressed: context.pop,
           ),
           actions: [
-            if (!isSystemTemplate || hasSelectedClient || AppPrivileges.isSelfCoaching)
+            if (!isSystemTemplate ||
+                hasSelectedClient ||
+                AppPrivileges.canCreateManageRoutines)
               IconButton(
                 onPressed: () => _showMenuBottomSheet(planDto: plan),
                 icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, size: 22),
@@ -565,6 +572,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         : null;
     final isSystemTemplate = plan?.isSystemPlan ?? false;
     final hasSelectedClient = accessController.hasSelectedClient;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final canEditTemplate = hasSelectedClient ||
+        !AppPrivileges.isProWithCoach ||
+        (template != null && userId != null && template.isOwnedBy(userId));
 
     showAppActionBottomSheet(
         context: context,
@@ -574,38 +585,42 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (!isSystemTemplate || hasSelectedClient || AppPrivileges.isSelfCoaching) ...[
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const FaIcon(
-                      FontAwesomeIcons.circlePlus,
-                      size: 22,
+                if (!isSystemTemplate ||
+                    hasSelectedClient ||
+                    AppPrivileges.canCreateManageRoutines) ...[
+                  if (canEditTemplate)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const FaIcon(
+                        FontAwesomeIcons.circlePlus,
+                        size: 22,
+                      ),
+                      horizontalTitleGap: 10,
+                      title: Text("Add exercises",
+                          style: Theme.of(context).textTheme.bodyLarge),
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        await _navigateToRoutineTemplateEditor();
+                        if (mounted) {
+                          _showMenuBottomSheet(planDto: planDto);
+                        }
+                      },
                     ),
-                    horizontalTitleGap: 10,
-                    title: Text("Add exercises",
-                        style: Theme.of(context).textTheme.bodyLarge),
-                    onTap: () async {
-                      Navigator.of(context).pop();
-                      await _navigateToRoutineTemplateEditor();
-                      if (mounted) {
-                        _showMenuBottomSheet(planDto: planDto);
-                      }
-                    },
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const FaIcon(
-                      FontAwesomeIcons.penToSquare,
-                      size: 18,
+                  if (canEditTemplate)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const FaIcon(
+                        FontAwesomeIcons.penToSquare,
+                        size: 18,
+                      ),
+                      horizontalTitleGap: 10,
+                      title: Text("Edit",
+                          style: Theme.of(context).textTheme.bodyLarge),
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        _showRenameTemplateBottomSheet();
+                      },
                     ),
-                    horizontalTitleGap: 10,
-                    title: Text("Edit",
-                        style: Theme.of(context).textTheme.bodyLarge),
-                    onTap: () async {
-                      Navigator.of(context).pop();
-                      _showRenameTemplateBottomSheet();
-                    },
-                  ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const FaIcon(
@@ -620,23 +635,24 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       await _createTemplate(copy: true);
                     },
                   ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const FaIcon(
-                      FontAwesomeIcons.trash,
-                      size: 16,
-                      color: Colors.redAccent,
-                    ),
-                    horizontalTitleGap: 6,
-                    title: Text("Delete",
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(color: Colors.red)),
-                    onTap: () {
-                      Navigator.of(context).pop();
+                  if (canEditTemplate)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const FaIcon(
+                        FontAwesomeIcons.trash,
+                        size: 16,
+                        color: Colors.redAccent,
+                      ),
+                      horizontalTitleGap: 6,
+                      title: Text("Delete",
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(color: Colors.red)),
+                      onTap: () {
+                        Navigator.of(context).pop();
 
-                      if (template != null) {
+                        if (template != null) {
                         showBottomSheetWithSingleAction(
                             context: context,
                             title: "Delete workout?",
