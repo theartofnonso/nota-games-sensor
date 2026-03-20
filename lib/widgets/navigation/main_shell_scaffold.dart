@@ -175,6 +175,8 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
         _feedbackInNavBar &&
         path == CoachFeedbackFeedScreen.routeName) {
       next = 3;
+    } else if (path == AccountSettingsScreen.routeName) {
+      next = _settingsNavIndex;
     } else {
       return;
     }
@@ -211,6 +213,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
     final settingsIdx = _settingsNavIndex;
 
     if (index == settingsIdx) {
+      setState(() => _navIndex = settingsIdx);
       router.go(AccountSettingsScreen.routeName);
       return;
     }
