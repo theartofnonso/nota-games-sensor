@@ -38,6 +38,9 @@ import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
+import 'package:trainware/utils/app_privileges.dart';
+import 'package:trainware/utils/shell_tab_paths.dart';
+import 'package:trainware/widgets/navigation/routines_shell_page.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
@@ -362,19 +365,31 @@ GoRouter _createRouter(ClientOverrideController accessController) {
     observers: [appRouteObserver],
     refreshListenable: accessController,
     redirect: (context, state) {
+      final loc = state.matchedLocation;
+
       if (!AppConfig.isCoach) {
         // Client app: redirect away from coach screen
-        if (state.matchedLocation == '/coach') {
+        if (loc == '/coach') {
+          return '/';
+        }
+        if (isShellCoachFeedbackPath(loc) && !AppPrivileges.isProWithCoach) {
           return '/';
         }
         return null;
       }
 
+      // Coach: client-only shell tabs (routines / templates / feedback) → home
+      if (loc == kShellRoutinesPath ||
+          isShellRoutineTemplatePath(loc) ||
+          isShellCoachFeedbackPath(loc)) {
+        return accessController.hasSelectedClient ? '/' : '/coach';
+      }
+
       // Coach app: if no client selected, must be on client selection screen
       // Allow /log/:logId from deep links (user may need to select client after)
       if (!accessController.hasSelectedClient &&
-          state.matchedLocation != '/coach' &&
-          !state.matchedLocation.startsWith('/log/')) {
+          loc != '/coach' &&
+          !loc.startsWith('/log/')) {
         return '/coach';
       }
       return null;
@@ -413,6 +428,74 @@ GoRouter _createRouter(ClientOverrideController accessController) {
                 child: const CoachClientsScreen(
                   navigateToOverviewOnSelect: true,
                 ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: kShellRoutinesPath,
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const RoutinesShellPage(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: '/routine_template/:templateId',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['templateId'] ?? '';
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: RoutineTemplateScreen(
+                  id: id,
+                  embeddedInShell: true,
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: CoachFeedbackFeedScreen.routeName,
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const CoachFeedbackFeedScreen(embeddedInShell: true),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: AccountSettingsScreen.routeName,
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const AccountSettingsScreen(embeddedInShell: true),
                 transitionsBuilder:
                     (context, animation, secondaryAnimation, child) {
                   return FadeTransition(
@@ -518,34 +601,8 @@ GoRouter _createRouter(ClientOverrideController accessController) {
         },
       ),
       GoRoute(
-        path: CoachFeedbackFeedScreen.routeName,
-        pageBuilder: (context, state) {
-          return CustomTransitionPage(
-            key: state.pageKey,
-            child: const CoachFeedbackFeedScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              const begin = Offset(0.0, 1.0);
-              const end = Offset.zero;
-              const curve = Curves.ease;
-              final tween =
-                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              final offsetAnimation = animation.drive(tween);
-              return SlideTransition(
-                position: offsetAnimation,
-                child: child,
-              );
-            },
-          );
-        },
-      ),
-      GoRoute(
         path: SettingsScreen.routeName,
         builder: (context, state) => const SettingsScreen(),
-      ),
-      GoRoute(
-        path: AccountSettingsScreen.routeName,
-        builder: (context, state) => const AccountSettingsScreen(),
       ),
       GoRoute(
         path: ChatScreen.routeName,

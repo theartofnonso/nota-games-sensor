@@ -24,7 +24,9 @@ import '../../utils/dialog_utils.dart';
 import '../../utils/exercise_logs_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
+import '../../utils/shell_tab_paths.dart';
 import '../../utils/notifications_utils.dart';
+import '../../widgets/navigation/app_floating_navigation_bar.dart';
 import '../../utils/app_privileges.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../shared_prefs.dart';
@@ -59,8 +61,15 @@ class RoutineTemplateScreen extends StatefulWidget {
   final String id;
   final ScrollController? scrollController;
 
-  const RoutineTemplateScreen(
-      {super.key, required this.id, this.scrollController});
+  /// Main shell tab stack: back returns to [kShellRoutinesPath]; reserve nav bar inset.
+  final bool embeddedInShell;
+
+  const RoutineTemplateScreen({
+    super.key,
+    required this.id,
+    this.scrollController,
+    this.embeddedInShell = false,
+  });
 
   @override
   State<RoutineTemplateScreen> createState() => _RoutineTemplateScreenState();
@@ -97,11 +106,14 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     // If deleted while visible, quietly exit instead of flashing "Not Found"
     if (template == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          final navigator = Navigator.maybeOf(context);
-          if (navigator != null && navigator.canPop()) {
-            context.pop();
-          }
+        if (!mounted) return;
+        if (widget.embeddedInShell) {
+          context.go(kShellRoutinesPath);
+          return;
+        }
+        final navigator = Navigator.maybeOf(context);
+        if (navigator != null && navigator.canPop()) {
+          context.pop();
         }
       });
       return const SizedBox.shrink();
@@ -162,6 +174,18 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     final totalSets = template.exerciseTemplates
         .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
 
+    final bottomNavPad = widget.embeddedInShell
+        ? MediaQuery.paddingOf(context).bottom + kAppFloatingNavBarReserveHeight
+        : 0.0;
+
+    void onLeadingPressed() {
+      if (widget.embeddedInShell) {
+        context.go(kShellRoutinesPath);
+      } else {
+        context.pop();
+      }
+    }
+
     return Scaffold(
         floatingActionButton: accessController.hasSelectedClient
             ? null
@@ -178,8 +202,13 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           surfaceTintColor: Colors.transparent,
           scrolledUnderElevation: 0,
           leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
-            onPressed: context.pop,
+            icon: FaIcon(
+              widget.embeddedInShell
+                  ? FontAwesomeIcons.chevronLeft
+                  : FontAwesomeIcons.solidCircleXmark,
+              size: 28,
+            ),
+            onPressed: onLeadingPressed,
           ),
           actions: [
             if (!isSystemTemplate ||
@@ -201,6 +230,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
             minimum: const EdgeInsets.only(top: 10.0),
             child: SingleChildScrollView(
               controller: widget.scrollController,
+              padding: EdgeInsets.only(bottom: bottomNavPad),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

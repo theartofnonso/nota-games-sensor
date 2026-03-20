@@ -68,8 +68,8 @@ class DeleteAccountSection extends StatelessWidget {
 
 const String _deleteAccountConfirmationPhrase = 'Delete my account';
 
-/// Tighter padding for delete-account sheets (keeps actions obvious, less tall).
-const EdgeInsets _deleteSheetPadding = EdgeInsets.fromLTRB(20, 16, 20, 20);
+/// Matches [confirmLogoutBottomSheet] and other action sheets (padding + type scale).
+const EdgeInsets _deleteSheetPadding = EdgeInsets.all(26);
 
 /// Runs the full account deletion flow: two confirmation sheets, then
 /// Agora → Supabase delete → sign out. Calls [setLoading] with
@@ -89,18 +89,16 @@ Future<void> requestAccountDeletion(
         children: [
           Text(
             'Delete account',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(context).textTheme.titleLarge,
             textAlign: TextAlign.start,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             'Your account and all associated data (workouts, plans, nutrition logs) will be permanently deleted. This cannot be undone.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.35),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
             textAlign: TextAlign.start,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: OpacityButtonWidgetTwo(
@@ -211,24 +209,35 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'To confirm, type "$_deleteAccountConfirmationPhrase" below.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.35),
+                'Confirm deletion',
+                style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.start,
               ),
               const SizedBox(height: 8),
+              Text(
+                'To confirm, type "$_deleteAccountConfirmationPhrase" below.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
+                textAlign: TextAlign.start,
+              ),
+              const SizedBox(height: 12),
               TextField(
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodyLarge,
                 onChanged: (value) => setSheetState(() => typed = value),
                 decoration: InputDecoration(
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   hintText: _deleteAccountConfirmationPhrase,
+                  hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.38),
+                      ),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: OpacityButtonWidgetTwo(

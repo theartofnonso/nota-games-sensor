@@ -23,6 +23,7 @@ import '../dtos/viewmodels/routine_template_arguments.dart';
 import '../enums/routine_editor_type_enums.dart';
 import '../screens/editors/routine_template_editor_screen.dart';
 import '../screens/logs/coach_feedback_feed_screen.dart';
+import 'shell_tab_paths.dart';
 import '../screens/logs/routine_log_screen.dart';
 import '../screens/routines/routine_plan.dart';
 import '../screens/video/incoming_call_screen.dart';
@@ -150,9 +151,16 @@ Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
   return log;
 }
 
-Future<void> navigateToRoutineTemplatePreview(
-    {required BuildContext context,
-    required RoutineTemplateDto template}) async {
+Future<void> navigateToRoutineTemplatePreview({
+  required BuildContext context,
+  required RoutineTemplateDto template,
+  bool embeddedInShell = false,
+}) async {
+  if (embeddedInShell) {
+    if (!context.mounted) return;
+    context.go('/routine_template/${template.id}');
+    return;
+  }
   await navigateWithSlideTransition(
     context: context,
     child: RoutineTemplateScreen(id: template.id),
@@ -187,34 +195,23 @@ Future<void> navigateToExerciseHome(
 
 Future<void> navigateToSettings({required BuildContext context}) async {
   final path = GoRouterState.of(context).uri.path;
-  final isShellTab =
-      path == '/' || path == Home.routeName || path == '/coach';
+  final isShellTab = path == '/' ||
+      path == Home.routeName ||
+      path == '/coach' ||
+      path == kShellRoutinesPath ||
+      isShellRoutineTemplatePath(path) ||
+      path == CoachFeedbackFeedScreen.routeName ||
+      path == AccountSettingsScreen.routeName;
 
   if (!isShellTab) {
     return;
   }
 
   if (!context.mounted) return;
-
-  await Navigator.of(context, rootNavigator: true).push<void>(
-    PageRouteBuilder<void>(
-      pageBuilder: (ctx, animation, secondaryAnimation) =>
-          const AccountSettingsScreen(),
-      transitionsBuilder: (ctx, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        final tween = Tween(begin: begin, end: end)
-            .chain(CurveTween(curve: Curves.easeOutCubic));
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
-      },
-    ),
-  );
+  context.go(AccountSettingsScreen.routeName);
 }
 
-/// Opens chat as a slide-up route with app-bar close (not a shell tab).
+/// Opens chat with a fade (not a shell tab); app bar close for full-screen chat.
 Future<void> navigateToChat({
   required BuildContext context,
 }) async {
@@ -280,20 +277,13 @@ Future<void> navigateToChat({
         embeddedInShell: false,
       ),
       transitionsBuilder: (ctx, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        final tween = Tween(begin: begin, end: end)
-            .chain(CurveTween(curve: Curves.easeOutCubic));
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
       },
     ),
   );
 }
 
-/// Coach feedback feed (Pro clients with a coach). Slide-up with app-bar close.
+/// Coach feedback feed (Pro clients with a coach). Shell tab with bottom nav.
 Future<void> navigateToCoachFeedbackFeed({
   required BuildContext context,
 }) async {
@@ -308,26 +298,10 @@ Future<void> navigateToCoachFeedbackFeed({
     return;
   }
   if (!context.mounted) return;
-
-  await Navigator.of(context, rootNavigator: true).push<void>(
-    PageRouteBuilder<void>(
-      pageBuilder: (ctx, animation, secondaryAnimation) =>
-          const CoachFeedbackFeedScreen(),
-      transitionsBuilder: (ctx, animation, secondaryAnimation, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        final tween = Tween(begin: begin, end: end)
-            .chain(CurveTween(curve: Curves.easeOutCubic));
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
-      },
-    ),
-  );
+  context.go(CoachFeedbackFeedScreen.routeName);
 }
 
-/// Primary routine plan (first plan) as a slide-up route with close.
+/// Primary routine plan (first plan) as a fade route with close.
 Future<void> navigateToPrimaryRoutinePlan({
   required BuildContext context,
 }) async {
@@ -343,11 +317,12 @@ Future<void> navigateToPrimaryRoutinePlan({
   }
 
   final controller = context.read<SupabaseExerciseAndRoutineController>();
+  if (!context.mounted) return;
+
   if (controller.plans.isEmpty) {
     final canCreate = AppPrivileges.canCreateManageRoutines;
-    if (canCreate) {
-      await navigateToRoutinePlanEditor(context: context);
-    } else if (context.mounted) {
+    context.go(kShellRoutinesPath);
+    if (!canCreate && context.mounted) {
       showSnackbar(
         context: context,
         message: 'Your coach hasn’t assigned a routine plan yet.',
@@ -356,15 +331,26 @@ Future<void> navigateToPrimaryRoutinePlan({
     return;
   }
 
-  if (!context.mounted) return;
-  await navigateWithSlideTransition(
-    context: context,
-    child: RoutinePlanScreen(id: controller.plans.first.id),
-    rootNavigator: true,
-  );
+  context.go(kShellRoutinesPath);
 }
 
-/// Create a screen on demand
+/// Fade transition (matches shell tab [CustomTransitionPage] in [main.dart]).
+Future<T?> navigateWithFadeTransition<T>({
+  required BuildContext context,
+  required Widget child,
+  bool rootNavigator = false,
+}) {
+  final route = PageRouteBuilder<T>(
+    pageBuilder: (context, animation, secondaryAnimation) => child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
+  );
+
+  return Navigator.of(context, rootNavigator: rootNavigator).push<T>(route);
+}
+
+/// Create a screen on demand (slide up)
 Future<T?> navigateWithSlideTransition<T>({
   required BuildContext context,
   required Widget child,

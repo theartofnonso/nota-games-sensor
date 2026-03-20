@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,7 +24,13 @@ import 'package:trainware/widgets/settings/logout_section.dart';
 class AccountSettingsScreen extends StatefulWidget {
   static const routeName = '/account-settings';
 
-  const AccountSettingsScreen({super.key});
+  /// When true, hide close; bottom nav handles leaving the screen.
+  final bool embeddedInShell;
+
+  const AccountSettingsScreen({
+    super.key,
+    this.embeddedInShell = false,
+  });
 
   @override
   State<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
@@ -32,11 +39,26 @@ class AccountSettingsScreen extends StatefulWidget {
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   bool _loading = false;
   late WeightUnit _weightUnit;
+  String _appVersionLabel = '';
 
   @override
   void initState() {
     super.initState();
     _weightUnit = WeightUnit.fromString(SharedPrefs().weightUnit);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAppVersion());
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+      setState(() {
+        _appVersionLabel =
+            'Version ${info.version} (${info.buildNumber})';
+      });
+    } catch (_) {
+      if (mounted) setState(() => _appVersionLabel = '');
+    }
   }
 
   @override
@@ -70,13 +92,16 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 title: const Text('Account & preferences'),
                 backgroundColor: Colors.transparent,
                 surfaceTintColor: Colors.transparent,
-                leading: IconButton(
-                  icon: const FaIcon(
-                    FontAwesomeIcons.solidCircleXmark,
-                    size: 28,
-                  ),
-                  onPressed: () => context.pop(),
-                ),
+                automaticallyImplyLeading: !widget.embeddedInShell,
+                leading: widget.embeddedInShell
+                    ? null
+                    : IconButton(
+                        icon: const FaIcon(
+                          FontAwesomeIcons.solidCircleXmark,
+                          size: 28,
+                        ),
+                        onPressed: () => context.pop(),
+                      ),
               ),
               Expanded(
                 child: ListView(
@@ -152,12 +177,30 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       ),
                     ],
                     _buildAccountSessionEntry(isCoach: isCoach),
-                    SizedBox(
-                      height:
-                          bottomInset + kAppFloatingNavBarReserveHeight + 24,
-                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  24,
+                  bottomInset + kAppFloatingNavBarReserveHeight + 16,
+                ),
+                child: _appVersionLabel.isEmpty
+                    ? const SizedBox(height: 14)
+                    : Text(
+                        _appVersionLabel,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.45),
+                              fontSize: 12,
+                            ),
+                      ),
               ),
             ],
           ),

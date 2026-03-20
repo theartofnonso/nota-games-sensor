@@ -51,8 +51,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     with WidgetsBindingObserver {
   bool _loading = false;
 
-  String _appVersion = "";
-
   String _environment = "";
   String _bundleId = "";
   String _deviceToken = "";
@@ -155,8 +153,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   void _getAppVersion() async {
     final packageInfo = await PackageInfo.fromPlatform();
-    final version = packageInfo.version;
-    final buildNumber = packageInfo.buildNumber;
     final bundleId = packageInfo.packageName;
 
     String env;
@@ -183,7 +179,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     if (!mounted) return;
     setState(() {
-      _appVersion = "APP VERSION: $version (BUILD $buildNumber)";
       _environment = env;
       _bundleId = bundleId;
       _deviceToken = deviceToken;
@@ -203,8 +198,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_appVersion, style: style),
-          const SizedBox(height: 4),
           if (kDebugMode) ...[
             Text('Environment: $_environment', style: style),
             Text('Bundle ID: $_bundleId', style: style),

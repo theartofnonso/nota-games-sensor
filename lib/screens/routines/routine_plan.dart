@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trainware/utils/shell_tab_paths.dart';
 import 'package:intl/intl.dart';
 
 import 'package:provider/provider.dart';
@@ -28,6 +29,7 @@ import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../widgets/empty_states/list_empty_state.dart';
 import '../../widgets/icons/custom_icon.dart';
+import '../../widgets/navigation/app_floating_navigation_bar.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 
@@ -71,11 +73,14 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     // If deleted while visible, quietly exit instead of flashing "Not Found"
     if (plan == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          final navigator = Navigator.maybeOf(context);
-          if (navigator != null && navigator.canPop()) {
-            context.pop();
-          }
+        if (!mounted) return;
+        if (widget.embeddedInShell) {
+          context.go(kShellRoutinesPath);
+          return;
+        }
+        final navigator = Navigator.maybeOf(context);
+        if (navigator != null && navigator.canPop()) {
+          context.pop();
         }
       });
       return const SizedBox.shrink();
@@ -105,11 +110,18 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
               template: template,
               plan: plan,
               onTap: () => navigateToRoutineTemplatePreview(
-                  context: context, template: template),
+                context: context,
+                template: template,
+                embeddedInShell: widget.embeddedInShell,
+              ),
             ),
           ),
         )
         .toList();
+
+    final bottomNavPad = widget.embeddedInShell
+        ? MediaQuery.paddingOf(context).bottom + kAppFloatingNavBarReserveHeight
+        : 0.0;
 
     final exercises = routineTemplates
         .expand((routineTemplate) => routineTemplate.exerciseTemplates);
@@ -212,6 +224,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                                 message:
                                     "It might feel quiet now, but your workout templates will soon appear here."),
                           ),
+                    SizedBox(height: bottomNavPad),
                   ]),
             ),
           ),

@@ -7,7 +7,10 @@ import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/services/chat_unread_service.dart';
+import 'package:trainware/screens/logs/coach_feedback_feed_screen.dart';
+import 'package:trainware/screens/preferences/account_settings_screen.dart';
 import 'package:trainware/utils/app_privileges.dart';
+import 'package:trainware/utils/shell_tab_paths.dart';
 import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/badges/unread_badge.dart';
@@ -40,6 +43,13 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
     if (AppConfig.isCoach) return 3;
     if (_feedbackInNavBar) return 4;
     return 2;
+  }
+
+  /// Coach clients picker is full-screen; no bottom nav on `/coach`.
+  bool _showFloatingNavBar(BuildContext context) {
+    if (!AppConfig.isCoach) return true;
+    final path = GoRouterState.of(context).uri.path;
+    return path != '/coach';
   }
 
   @override
@@ -157,6 +167,14 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
       next = 0;
     } else if (AppConfig.isCoach && path == '/coach') {
       next = 1;
+    } else if (!AppConfig.isCoach && path == kShellRoutinesPath) {
+      next = 1;
+    } else if (!AppConfig.isCoach && isShellRoutineTemplatePath(path)) {
+      next = 1;
+    } else if (!AppConfig.isCoach &&
+        _feedbackInNavBar &&
+        path == CoachFeedbackFeedScreen.routeName) {
+      next = 3;
     } else {
       return;
     }
@@ -172,10 +190,14 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
     _syncNavIndexFromRoute();
   }
 
-  Future<void> _openRoutinePlanOverlay() async {
-    setState(() => _navIndex = 1);
-    await navigateToPrimaryRoutinePlan(context: context);
-    if (mounted) _syncNavIndexFromRoute();
+  @override
+  void didUpdateWidget(covariant MainShellScaffold oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.child != widget.child) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _syncNavIndexFromRoute();
+      });
+    }
   }
 
   Future<void> _openChatOverlay() async {
@@ -184,20 +206,12 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
     if (mounted) _syncNavIndexFromRoute();
   }
 
-  Future<void> _openCoachFeedbackOverlay() async {
-    setState(() => _navIndex = 3);
-    await navigateToCoachFeedbackFeed(context: context);
-    if (mounted) _syncNavIndexFromRoute();
-  }
-
   void _onDestinationSelected(int index) {
     final router = GoRouter.of(context);
     final settingsIdx = _settingsNavIndex;
 
     if (index == settingsIdx) {
-      navigateToSettings(context: context).then((_) {
-        if (mounted) _syncNavIndexFromRoute();
-      });
+      router.go(AccountSettingsScreen.routeName);
       return;
     }
 
@@ -228,13 +242,13 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
           router.go('/');
           break;
         case 1:
-          _openRoutinePlanOverlay();
+          navigateToPrimaryRoutinePlan(context: context);
           break;
         case 2:
           _openChatOverlay();
           break;
         case 3:
-          _openCoachFeedbackOverlay();
+          navigateToCoachFeedbackFeed(context: context);
           break;
       }
       if (index == 0) {
@@ -251,7 +265,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
         router.go('/');
         break;
       case 1:
-        _openRoutinePlanOverlay();
+        navigateToPrimaryRoutinePlan(context: context);
         break;
     }
     if (index == 0) {
@@ -315,6 +329,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   Widget build(BuildContext context) {
     final navItems = _buildNavItems();
     final bottomSafe = MediaQuery.paddingOf(context).bottom;
+    final showNav = _showFloatingNavBar(context);
 
     return Scaffold(
       extendBody: true,
@@ -323,16 +338,17 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
         fit: StackFit.expand,
         children: [
           widget.child,
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: bottomSafe + 10,
-            child: AppFloatingNavigationBar(
-              currentIndex: _navIndex,
-              onDestinationSelected: _onDestinationSelected,
-              items: navItems,
+          if (showNav)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: bottomSafe + 10,
+              child: AppFloatingNavigationBar(
+                currentIndex: _navIndex,
+                onDestinationSelected: _onDestinationSelected,
+                items: navItems,
+              ),
             ),
-          ),
         ],
       ),
     );

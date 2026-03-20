@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/utils/general_utils.dart';
+import 'package:trainware/widgets/navigation/app_floating_navigation_bar.dart';
 
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../logs/routine_log_screen.dart';
@@ -14,7 +15,13 @@ import '../logs/routine_log_screen.dart';
 class CoachFeedbackFeedScreen extends StatelessWidget {
   static const routeName = '/coach_feedback_feed';
 
-  const CoachFeedbackFeedScreen({super.key});
+  /// When true (main shell tab), hide close; use bottom nav. Reserve space above nav bar.
+  final bool embeddedInShell;
+
+  const CoachFeedbackFeedScreen({
+    super.key,
+    this.embeddedInShell = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +32,10 @@ class CoachFeedbackFeedScreen extends StatelessWidget {
             log.coachNote != null && log.coachNote!.trim().isNotEmpty)
         .toList()
       ..sort((a, b) => b.endTime.compareTo(a.endTime));
+
+    final bottomNavPad = embeddedInShell
+        ? MediaQuery.paddingOf(context).bottom + kAppFloatingNavBarReserveHeight
+        : 0.0;
 
     return Scaffold(
       body: Container(
@@ -40,16 +51,24 @@ class CoachFeedbackFeedScreen extends StatelessWidget {
                 title: const Text('Coach feedback'),
                 backgroundColor: Colors.transparent,
                 surfaceTintColor: Colors.transparent,
-                leading: IconButton(
-                  icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
-                  onPressed: () => context.pop(),
-                ),
+                automaticallyImplyLeading: !embeddedInShell,
+                leading: embeddedInShell
+                    ? null
+                    : IconButton(
+                        icon: const FaIcon(
+                            FontAwesomeIcons.solidCircleXmark,
+                            size: 28),
+                        onPressed: () => context.pop(),
+                      ),
               ),
               Expanded(
                 child: withNotes.isEmpty
-                    ? _EmptyState()
+                    ? Padding(
+                        padding: EdgeInsets.only(bottom: bottomNavPad),
+                        child: _EmptyState(),
+                      )
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: EdgeInsets.fromLTRB(0, 8, 0, 8 + bottomNavPad),
                         itemCount: withNotes.length,
                         itemBuilder: (context, index) {
                           final log = withNotes[index];

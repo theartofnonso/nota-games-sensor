@@ -32,7 +32,7 @@ class CoachFeedbackCard extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => context.push(CoachFeedbackFeedScreen.routeName),
+              onTap: () => context.go(CoachFeedbackFeedScreen.routeName),
               borderRadius: BorderRadius.circular(20),
               child: FrostedCard(
                 borderRadius: 20,

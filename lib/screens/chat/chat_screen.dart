@@ -497,6 +497,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     if (body is ChatVoiceMessageBody) {
       return body.localPath.isNotEmpty && File(body.localPath).existsSync();
     }
+    if (body is ChatFileMessageBody && _isAgoraAudioFileMessage(body)) {
+      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
+    }
     return false;
   }
 
@@ -594,6 +597,22 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
 
     if (body is ChatVoiceMessageBody) {
+      final hasLocal =
+          body.localPath.isNotEmpty && File(body.localPath).existsSync();
+      if (hasLocal) return;
+
+      _attachmentDownloadsInFlight.add(msgId);
+      Future<void>(() async {
+        await ChatClient.getInstance.chatManager.downloadAttachment(message);
+      }).whenComplete(() {
+        _attachmentDownloadsInFlight.remove(msgId);
+        if (mounted) setState(() {});
+      });
+      return;
+    }
+
+    // Voice sometimes arrives as a generic file attachment from the server / other clients.
+    if (body is ChatFileMessageBody && _isAgoraAudioFileMessage(body)) {
       final hasLocal =
           body.localPath.isNotEmpty && File(body.localPath).existsSync();
       if (hasLocal) return;
@@ -871,11 +890,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     int durationSeconds,
   ) async {
     try {
-      final durationMs = durationSeconds * 1000;
+      // Agora Chat SDK expects duration in **seconds** (see createVoiceSendMessage).
+      // Passing milliseconds broke voice classification for recipients (often arrived as generic file).
       final message = ChatMessage.createVoiceSendMessage(
         targetId: targetId,
         filePath: path,
-        duration: durationMs,
+        duration: durationSeconds,
       );
       message.chatType = ChatType.Chat;
       await ChatClient.getInstance.chatManager.sendMessage(message);
@@ -1327,6 +1347,11 @@ class _MessageBody extends StatelessWidget {
 
     if (body is ChatVoiceMessageBody) {
       return _VoiceAttachment(body: body, textColor: textColor);
+    }
+
+    // Server may classify voice (e.g. m4a) as FILE instead of VOICE — still playable.
+    if (body is ChatFileMessageBody && _isAgoraAudioFileMessage(body)) {
+      return _VoiceFileAttachment(body: body, textColor: textColor);
     }
 
     return Text(
@@ -1896,11 +1921,11 @@ class _VoiceAttachmentState extends State<_VoiceAttachment> {
     super.dispose();
   }
 
-  String _formatDuration(int ms) {
-    if (ms <= 0) return '0:00';
-    final s = (ms / 1000).round();
-    final m = s ~/ 60;
-    final sec = s % 60;
+  /// [ChatVoiceMessageBody.duration] is in **seconds** (Agora Chat SDK).
+  String _formatVoiceDurationSeconds(int seconds) {
+    if (seconds <= 0) return '0:00';
+    final m = seconds ~/ 60;
+    final sec = seconds % 60;
     return '$m:${sec.toString().padLeft(2, '0')}';
   }
 
@@ -1929,7 +1954,7 @@ class _VoiceAttachmentState extends State<_VoiceAttachment> {
   @override
   Widget build(BuildContext context) {
     final duration = widget.body.duration;
-    final durationStr = _formatDuration(duration);
+    final durationStr = _formatVoiceDurationSeconds(duration);
 
     return InkWell(
       onTap: _togglePlay,
@@ -1956,6 +1981,94 @@ class _VoiceAttachmentState extends State<_VoiceAttachment> {
                 fontWeight: FontWeight.w500,
                 fontFeatures: [const FontFeature.tabularFigures()],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Playable row when the server delivered voice as a generic [ChatFileMessageBody].
+class _VoiceFileAttachment extends StatefulWidget {
+  final ChatFileMessageBody body;
+  final Color textColor;
+
+  const _VoiceFileAttachment({required this.body, required this.textColor});
+
+  @override
+  State<_VoiceFileAttachment> createState() => _VoiceFileAttachmentState();
+}
+
+class _VoiceFileAttachmentState extends State<_VoiceFileAttachment> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = state == PlayerState.playing;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlay() async {
+    final localPath = widget.body.localPath;
+    final remotePath = widget.body.remotePath;
+    String? path;
+    if (localPath.isNotEmpty && File(localPath).existsSync()) {
+      path = localPath;
+    } else if (remotePath != null && remotePath.isNotEmpty) {
+      path = remotePath;
+    }
+    if (path == null) return;
+
+    if (_isPlaying) {
+      await _player.pause();
+    } else {
+      if (path.startsWith('http')) {
+        await _player.play(UrlSource(path));
+      } else {
+        await _player.play(DeviceFileSource(path));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: _togglePlay,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: widget.textColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _isPlaying ? Icons.pause : Icons.play_arrow,
+              color: widget.textColor,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Voice message',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: widget.textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
           ],
         ),
@@ -2346,9 +2459,7 @@ String _messageContent(ChatMessage message) {
   if (body is ChatTextMessageBody) {
     return body.content;
   }
-  if (body is ChatFileMessageBody) {
-    return body.displayName ?? '';
-  }
+  // Subclasses of ChatFileMessageBody must be checked before the generic file branch.
   if (body is ChatImageMessageBody) {
     return body.displayName ?? 'image';
   }
@@ -2358,7 +2469,35 @@ String _messageContent(ChatMessage message) {
   if (body is ChatVoiceMessageBody) {
     return 'voice:${body.duration}';
   }
+  if (body is ChatFileMessageBody && _isAgoraAudioFileMessage(body)) {
+    return 'voice:file';
+  }
+  if (body is ChatFileMessageBody) {
+    return body.displayName ?? '';
+  }
   return '';
+}
+
+/// True when a file message is almost certainly audio (voice sent as generic FILE).
+bool _isAgoraAudioFileMessage(ChatFileMessageBody body) {
+  if (body is ChatVoiceMessageBody) return false;
+  if (body is ChatImageMessageBody || body is ChatVideoMessageBody) {
+    return false;
+  }
+  bool pathLooksLikeAudio(String? s) {
+    if (s == null || s.isEmpty) return false;
+    final lower = s.toLowerCase();
+    return lower.contains('.m4a') ||
+        lower.contains('.aac') ||
+        lower.contains('.mp3') ||
+        lower.contains('.wav') ||
+        lower.contains('.amr') ||
+        lower.contains('voice_');
+  }
+
+  return pathLooksLikeAudio(body.displayName) ||
+      pathLooksLikeAudio(body.localPath) ||
+      pathLooksLikeAudio(body.remotePath);
 }
 
 class _ChatDateDivider extends StatelessWidget {
