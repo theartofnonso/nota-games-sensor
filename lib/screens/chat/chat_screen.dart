@@ -404,23 +404,40 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   /// Fetch recent messages from server in background (non-blocking)
   /// Called after login completes - no need to check login state
+  ///
+  /// Agora Chat SDK: [fetchHistoryMessagesByOption] only allows **pageSize in [1, 50]**
+  /// and returns a **cursor** for the next page. A single call with a huge pageSize does
+  /// not load full history; we must paginate with [cursor] until exhausted.
   Future<void> _fetchRecentMessagesFromServer() async {
     final targetAgoraUserId = _targetAgoraUserId;
     if (targetAgoraUserId == null) return;
 
+    // SDK-enforced max per request (see agora_chat_sdk ChatManager.fetchHistoryMessagesByOption).
+    const agoraMaxPageSize = 50;
+    // Safety cap so a bad cursor loop cannot run forever (~25k messages).
+    const maxPages = 500;
+
     try {
-      // Fetch all messages from server (using large pageSize to load all)
-      final cursorResult =
-          await ChatClient.getInstance.chatManager.fetchHistoryMessagesByOption(
-        targetAgoraUserId,
-        ChatConversationType.Chat,
-        options: const FetchMessageOptions(
-          direction: ChatSearchDirection.Up,
-          needSave: true, // Save to local DB for future cache hits
-        ),
-        pageSize: 10000, // Load all messages
-      );
-      final serverMessages = cursorResult.data;
+      final List<ChatMessage> serverMessages = [];
+      String? cursor;
+      for (var page = 0; page < maxPages; page++) {
+        final cursorResult =
+            await ChatClient.getInstance.chatManager.fetchHistoryMessagesByOption(
+          targetAgoraUserId,
+          ChatConversationType.Chat,
+          options: const FetchMessageOptions(
+            direction: ChatSearchDirection.Up,
+            needSave: true, // Save to local DB for future cache hits
+          ),
+          cursor: cursor,
+          pageSize: agoraMaxPageSize,
+        );
+        serverMessages.addAll(cursorResult.data);
+        if (cursorResult.data.isEmpty) break;
+        final next = cursorResult.cursor;
+        if (next == null || next.isEmpty) break;
+        cursor = next;
+      }
 
       if (!mounted) return;
 
