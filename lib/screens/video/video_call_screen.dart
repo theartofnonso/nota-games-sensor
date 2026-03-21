@@ -56,8 +56,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
         showBottomSheetWithSingleAction(
           context: context,
           title: 'Unable to make the call',
-          description:
-              "We couldn't set up the call. Please try again.",
+          description: "We couldn't set up the call. Please try again.",
           action: () {
             Navigator.of(context).pop(); // close sheet
             if (mounted) Navigator.of(context).pop(); // close video screen
@@ -126,8 +125,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                     'The connection could not be established. Please try again.',
                 action: () {
                   Navigator.of(context).pop(); // close sheet
-                  if (mounted)
+                  if (mounted) {
                     Navigator.of(context).pop(); // close video screen
+                  }
                 },
                 actionLabel: 'Got it',
                 isDismissible: false,

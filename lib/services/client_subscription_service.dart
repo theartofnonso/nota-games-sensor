@@ -199,10 +199,12 @@ class ClientSubscriptionService {
     try {
       final uri =
           Uri.parse(apiNotathletesBaseUrl).resolve(subscriptionStatusPath);
-      final response = await http.get(
-        uri.replace(queryParameters: {'user_id': userId}),
-        headers: notathletesAuthHeaders(),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(
+            uri.replace(queryParameters: {'user_id': userId}),
+            headers: notathletesAuthHeaders(),
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode < 200 || response.statusCode >= 300) return null;
       final data = jsonDecode(response.body);
       if (data is! Map<String, dynamic>) return null;
@@ -429,8 +431,9 @@ class _ClientSubscriptionPaywallSheetState
 
   String _ctaLabel() {
     if (_isBusy) return 'Processing...';
-    if (_selectedProduct?.id == iapProductIdPro)
+    if (_selectedProduct?.id == iapProductIdPro) {
       return 'Start training with a coach';
+    }
     if (_selectedProduct?.id == iapProductIdSolo) return 'Start training alone';
     return 'Subscribe';
   }
