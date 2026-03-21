@@ -37,16 +37,30 @@ Future<void> sendFcmNotification({
 
 /// Requests the backend to initiate a video call. Backend generates channel name,
 /// sends FCM push to callee, returns channelName. Use returned channel for joining.
+///
+/// Send [callerName] and [callerImageUrl] so the FCM `data` payload can show who is
+/// calling and a full-bleed photo on the incoming screen (omit image when none).
 Future<String?> sendIncomingCallNotification({
   required String calleeUserId,
   required String callerId,
+  String? callerName,
+  String? callerImageUrl,
 }) async {
   try {
     final uri = Uri.parse(_fcmBaseUrl).resolve('/notify-incoming-call');
-    final payload = jsonEncode({
+    final requestMap = <String, dynamic>{
       'calleeUserId': calleeUserId,
       'callerId': callerId,
-    });
+    };
+    final name = callerName?.trim();
+    if (name != null && name.isNotEmpty) {
+      requestMap['callerName'] = name;
+    }
+    final imageUrl = callerImageUrl?.trim();
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      requestMap['callerImageUrl'] = imageUrl;
+    }
+    final payload = jsonEncode(requestMap);
     final response = await http.post(
       uri,
       headers: notathletesAuthHeaders(),
@@ -57,9 +71,9 @@ Future<String?> sendIncomingCallNotification({
       print('[FCM] Incoming call push failed: ${response.statusCode} ${response.body}');
       return null;
     }
-    final body = jsonDecode(response.body);
-    if (body is Map<String, dynamic>) {
-      return body['channelName'] as String?;
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) {
+      return decoded['channelName'] as String?;
     }
     return null;
   } catch (e) {

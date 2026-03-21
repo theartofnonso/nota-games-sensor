@@ -38,4 +38,3 @@ class AppStartupService {
     CoachClientsService.instance.reset();
   }
 }
-

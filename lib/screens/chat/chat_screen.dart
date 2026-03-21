@@ -24,6 +24,7 @@ import '../../services/push_token_service.dart'
         isNotificationPermissionGranted,
         requestNotificationPermission,
         setupPushToken;
+import '../../repositories/supabase/supabase_coaches_repository.dart';
 import '../../services/fcm_push_service.dart';
 import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart'
@@ -31,6 +32,7 @@ import '../../utils/general_utils.dart'
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/chat/chat_layout.dart';
+import '../../widgets/chat/chat_peer_initials_badge.dart';
 import '../video/video_call_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -194,12 +196,35 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   void _pushVideoCallScreen() async {
     final callerId = Supabase.instance.client.auth.currentUser?.id;
     final calleeId = _targetUserId();
-    final callerName = AppConfig.isCoach ? widget.clientName : widget.coachName;
+    // Display name of the *other* party on the local VideoCallScreen (unchanged).
+    final targetDisplayName =
+        AppConfig.isCoach ? widget.clientName : widget.coachName;
+
+    String? notifyCallerName;
+    String? notifyCallerImageUrl;
+    if (AppConfig.isCoach && callerId != null && callerId.isNotEmpty) {
+      // Caller is coach: send name + photo for callee’s incoming UI (FCM).
+      final coach = await SupabaseCoachesRepository().fetchCoachById(callerId);
+      notifyCallerName = coach?.name.trim();
+      if (notifyCallerName == null || notifyCallerName.isEmpty) {
+        notifyCallerName = 'Coach';
+      }
+      final url = coach?.profileImageUrl?.trim();
+      notifyCallerImageUrl =
+          (url != null && url.isNotEmpty) ? url : null;
+    } else {
+      // Caller is client: name only; client profile images not supported yet.
+      notifyCallerName = _clientDisplayName();
+      notifyCallerImageUrl = null;
+    }
+
     String? channelName;
     if (callerId != null && calleeId.isNotEmpty) {
       channelName = await sendIncomingCallNotification(
         calleeUserId: calleeId,
         callerId: callerId,
+        callerName: notifyCallerName,
+        callerImageUrl: notifyCallerImageUrl,
       );
     }
     if (!mounted) return;
@@ -210,7 +235,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         opaque: true,
         pageBuilder: (_, __, ___) => VideoCallScreen(
           targetUserId: calleeId,
-          targetUserName: callerName,
+          targetUserName: targetDisplayName,
           channelName: channelName,
         ),
         transitionsBuilder: (_, animation, __, child) {
@@ -421,8 +446,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       final List<ChatMessage> serverMessages = [];
       String? cursor;
       for (var page = 0; page < maxPages; page++) {
-        final cursorResult =
-            await ChatClient.getInstance.chatManager.fetchHistoryMessagesByOption(
+        final cursorResult = await ChatClient.getInstance.chatManager
+            .fetchHistoryMessagesByOption(
           targetAgoraUserId,
           ChatConversationType.Chat,
           options: const FetchMessageOptions(
@@ -1037,25 +1062,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     return message.from == currentUserId;
   }
 
-  String _clientInitials() {
-    final trimmed = widget.clientName.trim();
-    if (trimmed.isEmpty) return 'C';
-    final parts = trimmed.split(RegExp(r'\s+'));
-    if (parts.length == 1) {
-      final s = parts.first;
-      return s.substring(0, s.length.clamp(0, 2)).toUpperCase();
-    }
-    final first = parts.first[0].toString().toUpperCase();
-    final last = parts.last[0].toString().toUpperCase();
-    return '$first$last';
-  }
-
-  String _coachInitials() {
-    final trimmed = widget.coachName.trim();
-    if (trimmed.isEmpty) return 'U';
-    return trimmed[0].toUpperCase();
-  }
-
   String _clientDisplayName() {
     final trimmed = widget.clientName.trim();
     return trimmed.isEmpty ? 'Client' : trimmed;
@@ -1113,39 +1119,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final colors = theme.extension<TRKRColors>();
-    final displayInitials =
-        AppConfig.isCoach ? _clientInitials() : _coachInitials();
-
     final titleText =
         AppConfig.isCoach ? _clientDisplayName() : _coachDisplayName();
 
-    final headerLeading = displayInitials.isNotEmpty
-        ? Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  (isDarkMode ? Colors.white : Colors.black)
-                      .withValues(alpha: 0.18),
-                  (isDarkMode ? Colors.white : Colors.black)
-                      .withValues(alpha: 0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              displayInitials,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: isDarkMode ? Colors.white : Colors.black,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          )
-        : const SizedBox(width: 36, height: 36);
+    final headerLeading = ChatPeerInitialsBadge(
+      peerName: AppConfig.isCoach ? widget.clientName : widget.coachName,
+      size: 36,
+    );
 
     final iconColor = isDarkMode ? Colors.white : Colors.black;
 
@@ -1229,7 +1209,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                         return _ChatMessageBubble(
                           message: message,
                           isCurrentUser: _isCurrentUserMessage(message),
-                          timestamp: _formatTimestamp(_messageTimestamp(message)),
+                          timestamp:
+                              _formatTimestamp(_messageTimestamp(message)),
                           isDarkMode: isDarkMode,
                           vibrantAccent: colors?.vibrantAccent ?? Colors.green,
                         );
@@ -2378,28 +2359,28 @@ class _VoiceRecordingSheetState extends State<_VoiceRecordingSheet> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_isRecording)
-                    FilledButton.icon(
-                      onPressed: _stopRecording,
-                      icon: const Icon(Icons.stop, size: 20),
-                      label: const Text('Stop'),
-                    )
-                  else if (_path != null && _durationSeconds > 0)
-                    FilledButton.icon(
-                      onPressed: _send,
-                      icon: const Icon(Icons.send, size: 20),
-                      label: const Text('Send'),
-                    )
-                  else
-                    FilledButton.icon(
-                      onPressed: _startRecording,
-                      icon: const Icon(Icons.fiber_manual_record, size: 20),
-                      label: const Text('Record'),
-                    ),
-                ],
+                  children: [
+                    if (_isRecording)
+                      FilledButton.icon(
+                        onPressed: _stopRecording,
+                        icon: const Icon(Icons.stop, size: 20),
+                        label: const Text('Stop'),
+                      )
+                    else if (_path != null && _durationSeconds > 0)
+                      FilledButton.icon(
+                        onPressed: _send,
+                        icon: const Icon(Icons.send, size: 20),
+                        label: const Text('Send'),
+                      )
+                    else
+                      FilledButton.icon(
+                        onPressed: _startRecording,
+                        icon: const Icon(Icons.fiber_manual_record, size: 20),
+                        label: const Text('Record'),
+                      ),
+                  ],
+                ),
               ),
-            ),
             ],
           ),
         ),

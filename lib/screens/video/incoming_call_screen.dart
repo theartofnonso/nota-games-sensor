@@ -4,20 +4,25 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 
+import '../../app_flavor.dart';
 import 'video_call_screen.dart';
 
-/// Shown when the user receives an incoming video call (from FCM push).
-/// Displays caller name, plays ringtone, offers Answer/Decline.
+/// Incoming video call (FCM / deep link). The **callee** sees the **caller’s** photo when
+/// [callerImageUrl] is present; otherwise the usual blurred scrim (no image).
 class IncomingCallScreen extends StatefulWidget {
   final String callerId;
   final String callerName;
   final String channelName;
+
+  /// Caller’s profile image URL from FCM (`callerImageUrl`). Omit or empty = no background photo.
+  final String? callerImageUrl;
 
   const IncomingCallScreen({
     super.key,
     required this.callerId,
     required this.callerName,
     required this.channelName,
+    this.callerImageUrl,
   });
 
   @override
@@ -27,6 +32,11 @@ class IncomingCallScreen extends StatefulWidget {
 class _IncomingCallScreenState extends State<IncomingCallScreen> {
   Timer? _timeoutTimer;
   bool _answered = false;
+
+  String? get _callerPhotoUrl {
+    final u = widget.callerImageUrl?.trim();
+    return (u != null && u.isNotEmpty) ? u : null;
+  }
 
   @override
   void initState() {
@@ -93,25 +103,74 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     Navigator.of(context).pop();
   }
 
+  /// Centered title: client sees "Coach {name}", coach sees caller name.
+  String get _headerTitle {
+    final trimmed = widget.callerName.trim();
+    if (trimmed.isEmpty) {
+      return AppConfig.isClient ? 'Coach' : 'Someone';
+    }
+    if (AppConfig.isClient) {
+      return 'Coach $trimmed';
+    }
+    return trimmed;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final displayName =
-        widget.callerName.trim().isNotEmpty ? widget.callerName : 'Someone';
+    final photoUrl = _callerPhotoUrl;
+    final hasPhoto = photoUrl != null;
 
     return PopScope(
       canPop: false,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
+          fit: StackFit.expand,
           children: [
+            // Full-bleed photo (iPhone-style) or blurred scrim fallback
+            if (photoUrl != null)
+              Positioned.fill(
+                child: Image.network(
+                  photoUrl,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.black87),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const ColoredBox(color: Colors.black87);
+                  },
+                ),
+              )
+            else
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.25),
+                  ),
+                ),
+              ),
+
+            // Readability scrim (stronger when photo is visible)
             Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.25),
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: hasPhoto ? 0.5 : 0.35),
+                        Colors.black.withValues(alpha: hasPhoto ? 0.2 : 0.12),
+                        Colors.black.withValues(alpha: hasPhoto ? 0.75 : 0.45),
+                      ],
+                      stops: const [0.0, 0.42, 1.0],
+                    ),
+                  ),
                 ),
               ),
             ),
+
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(32),
@@ -119,32 +178,14 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Spacer(),
-                    const CircleAvatar(
-                      radius: 56,
-                      backgroundColor: Colors.white12,
-                      child: Icon(
-                        Icons.person,
-                        size: 64,
-                        color: Colors.white54,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
                     Text(
-                      displayName,
+                      _headerTitle,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Incoming video call',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 16,
-                      ),
                     ),
                     const Spacer(),
                     Row(

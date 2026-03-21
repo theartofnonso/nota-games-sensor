@@ -376,11 +376,14 @@ Future<T?> navigateWithSlideTransition<T>({
 }
 
 /// Shows the incoming call screen (from FCM push). Caller must be authenticated.
+///
+/// [callerImageUrl] caller’s photo URL from FCM; empty/absent = no background image.
 void navigateToIncomingCall({
   required BuildContext context,
   required String callerId,
   required String callerName,
   required String channelName,
+  String? callerImageUrl,
 }) {
   Navigator.of(context).push(
     PageRouteBuilder(
@@ -390,16 +393,10 @@ void navigateToIncomingCall({
         callerId: callerId,
         callerName: callerName,
         channelName: channelName,
+        callerImageUrl: callerImageUrl,
       ),
       transitionsBuilder: (_, animation, __, child) {
-        const begin = Offset(0.0, 1.0);
-        const end = Offset.zero;
-        final tween = Tween(begin: begin, end: end)
-            .chain(CurveTween(curve: Curves.easeOutCubic));
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
       },
     ),
   );

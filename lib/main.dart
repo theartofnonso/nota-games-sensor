@@ -129,6 +129,7 @@ void _processPendingNotification() {
     final callerId = payload['callerId'] as String?;
     final callerName = payload['callerName'] as String? ?? '';
     final channelName = payload['channelName'] as String?;
+    final callerImageUrl = payload['callerImageUrl'] as String?;
     if (callerId == null ||
         callerId.isEmpty ||
         channelName == null ||
@@ -143,6 +144,9 @@ void _processPendingNotification() {
       callerId: callerId,
       callerName: callerName,
       channelName: channelName,
+      callerImageUrl: (callerImageUrl != null && callerImageUrl.trim().isNotEmpty)
+          ? callerImageUrl.trim()
+          : null,
     );
     return;
   }
@@ -826,6 +830,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       final callerId = uri.queryParameters['callerId'];
       final channelName = uri.queryParameters['channelName'];
       final callerName = uri.queryParameters['callerName'] ?? '';
+      final callerImageUrl = uri.queryParameters['callerImageUrl'];
       if (callerId == null ||
           callerId.isEmpty ||
           channelName == null ||
@@ -839,6 +844,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           callerId: callerId,
           callerName: callerName,
           channelName: channelName,
+          callerImageUrl: (callerImageUrl != null && callerImageUrl.trim().isNotEmpty)
+              ? callerImageUrl.trim()
+              : null,
         );
       }
     }
