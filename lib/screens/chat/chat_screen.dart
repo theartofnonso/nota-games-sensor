@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -22,10 +24,15 @@ import '../../services/push_token_service.dart'
         isNotificationPermissionGranted,
         requestNotificationPermission,
         setupPushToken;
+import '../../repositories/supabase/supabase_coaches_repository.dart';
+import '../../services/fcm_push_service.dart';
 import '../../utils/dialog_utils.dart';
+import '../../utils/general_utils.dart'
+    show appBarBackgroundColor, themeGradient;
 import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/chat/chat_layout.dart';
+import '../../widgets/chat/chat_peer_initials_badge.dart';
 import '../video/video_call_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -40,6 +47,9 @@ class ChatScreen extends StatefulWidget {
   /// Optional scroll controller for bottom sheet integration
   final ScrollController? scrollController;
 
+  /// When true (main shell tab), hide sheet close; rely on bottom navigation.
+  final bool embeddedInShell;
+
   const ChatScreen({
     super.key,
     required this.coachId,
@@ -47,6 +57,7 @@ class ChatScreen extends StatefulWidget {
     required this.clientUserId,
     required this.clientName,
     this.scrollController,
+    this.embeddedInShell = false,
   });
 
   @override
@@ -182,13 +193,50 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _pushVideoCallScreen() {
+  void _pushVideoCallScreen() async {
+    final callerId = Supabase.instance.client.auth.currentUser?.id;
+    final calleeId = _targetUserId();
+    // Display name of the *other* party on the local VideoCallScreen (unchanged).
+    final targetDisplayName =
+        AppConfig.isCoach ? widget.clientName : widget.coachName;
+
+    String? notifyCallerName;
+    String? notifyCallerImageUrl;
+    if (AppConfig.isCoach && callerId != null && callerId.isNotEmpty) {
+      // Caller is coach: send name + photo for callee’s incoming UI (FCM).
+      final coach = await SupabaseCoachesRepository().fetchCoachById(callerId);
+      notifyCallerName = coach?.name.trim();
+      if (notifyCallerName == null || notifyCallerName.isEmpty) {
+        notifyCallerName = 'Coach';
+      }
+      final url = coach?.profileImageUrl?.trim();
+      notifyCallerImageUrl =
+          (url != null && url.isNotEmpty) ? url : null;
+    } else {
+      // Caller is client: name only; client profile images not supported yet.
+      notifyCallerName = _clientDisplayName();
+      notifyCallerImageUrl = null;
+    }
+
+    String? channelName;
+    if (callerId != null && calleeId.isNotEmpty) {
+      channelName = await sendIncomingCallNotification(
+        calleeUserId: calleeId,
+        callerId: callerId,
+        callerName: notifyCallerName,
+        callerImageUrl: notifyCallerImageUrl,
+      );
+    }
+    if (!mounted) return;
+    if (channelName == null || channelName.isEmpty) return;
     Navigator.of(context).push(
       PageRouteBuilder(
         fullscreenDialog: true,
         opaque: true,
         pageBuilder: (_, __, ___) => VideoCallScreen(
-          targetUserId: _targetUserId(),
+          targetUserId: calleeId,
+          targetUserName: targetDisplayName,
+          channelName: channelName,
         ),
         transitionsBuilder: (_, animation, __, child) {
           const begin = Offset(0.0, 1.0);
@@ -381,23 +429,40 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
   /// Fetch recent messages from server in background (non-blocking)
   /// Called after login completes - no need to check login state
+  ///
+  /// Agora Chat SDK: [fetchHistoryMessagesByOption] only allows **pageSize in [1, 50]**
+  /// and returns a **cursor** for the next page. A single call with a huge pageSize does
+  /// not load full history; we must paginate with [cursor] until exhausted.
   Future<void> _fetchRecentMessagesFromServer() async {
     final targetAgoraUserId = _targetAgoraUserId;
     if (targetAgoraUserId == null) return;
 
+    // SDK-enforced max per request (see agora_chat_sdk ChatManager.fetchHistoryMessagesByOption).
+    const agoraMaxPageSize = 50;
+    // Safety cap so a bad cursor loop cannot run forever (~25k messages).
+    const maxPages = 500;
+
     try {
-      // Fetch all messages from server (using large pageSize to load all)
-      final cursorResult =
-          await ChatClient.getInstance.chatManager.fetchHistoryMessagesByOption(
-        targetAgoraUserId,
-        ChatConversationType.Chat,
-        options: const FetchMessageOptions(
-          direction: ChatSearchDirection.Up,
-          needSave: true, // Save to local DB for future cache hits
-        ),
-        pageSize: 10000, // Load all messages
-      );
-      final serverMessages = cursorResult.data;
+      final List<ChatMessage> serverMessages = [];
+      String? cursor;
+      for (var page = 0; page < maxPages; page++) {
+        final cursorResult = await ChatClient.getInstance.chatManager
+            .fetchHistoryMessagesByOption(
+          targetAgoraUserId,
+          ChatConversationType.Chat,
+          options: const FetchMessageOptions(
+            direction: ChatSearchDirection.Up,
+            needSave: true, // Save to local DB for future cache hits
+          ),
+          cursor: cursor,
+          pageSize: agoraMaxPageSize,
+        );
+        serverMessages.addAll(cursorResult.data);
+        if (cursorResult.data.isEmpty) break;
+        final next = cursorResult.cursor;
+        if (next == null || next.isEmpty) break;
+        cursor = next;
+      }
 
       if (!mounted) return;
 
@@ -469,6 +534,12 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       return body.localPath.isNotEmpty && File(body.localPath).existsSync();
     }
     if (body is ChatVideoMessageBody) {
+      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
+    }
+    if (body is ChatVoiceMessageBody) {
+      return body.localPath.isNotEmpty && File(body.localPath).existsSync();
+    }
+    if (body is ChatFileMessageBody && _isAgoraAudioFileMessage(body)) {
       return body.localPath.isNotEmpty && File(body.localPath).existsSync();
     }
     return false;
@@ -560,6 +631,37 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         if (body.localPath.isEmpty) {
           await ChatClient.getInstance.chatManager.downloadAttachment(message);
         }
+      }).whenComplete(() {
+        _attachmentDownloadsInFlight.remove(msgId);
+        if (mounted) setState(() {});
+      });
+      return;
+    }
+
+    if (body is ChatVoiceMessageBody) {
+      final hasLocal =
+          body.localPath.isNotEmpty && File(body.localPath).existsSync();
+      if (hasLocal) return;
+
+      _attachmentDownloadsInFlight.add(msgId);
+      Future<void>(() async {
+        await ChatClient.getInstance.chatManager.downloadAttachment(message);
+      }).whenComplete(() {
+        _attachmentDownloadsInFlight.remove(msgId);
+        if (mounted) setState(() {});
+      });
+      return;
+    }
+
+    // Voice sometimes arrives as a generic file attachment from the server / other clients.
+    if (body is ChatFileMessageBody && _isAgoraAudioFileMessage(body)) {
+      final hasLocal =
+          body.localPath.isNotEmpty && File(body.localPath).existsSync();
+      if (hasLocal) return;
+
+      _attachmentDownloadsInFlight.add(msgId);
+      Future<void>(() async {
+        await ChatClient.getInstance.chatManager.downloadAttachment(message);
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
         if (mounted) setState(() {});
@@ -671,22 +773,27 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _showAttachmentSheet() async {
-    await showAppBottomSheet<void>(
+    await showAppActionBottomSheet<void>(
       context: context,
-      isScrollControlled: false,
+      isScrollControlled: true,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          16,
+          20,
+          16 + MediaQuery.of(context).viewPadding.bottom,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Share',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
@@ -699,7 +806,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _ShareTile(
                     icon: Icons.videocam,
@@ -707,6 +814,17 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     onTap: () async {
                       Navigator.of(context).pop();
                       await _pickVideo();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ShareTile(
+                    icon: Icons.mic,
+                    label: 'Voice',
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      await _recordAndSendVoice();
                     },
                   ),
                 ),
@@ -735,6 +853,105 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final picked = await _imagePicker.pickVideo(source: ImageSource.gallery);
     if (picked == null) return;
     await _sendVideoMessage(targetAgoraUserId, picked.path);
+  }
+
+  Future<void> _recordAndSendVoice() async {
+    final targetAgoraUserId = _targetAgoraUserId;
+    if (targetAgoraUserId == null) return;
+    final micGranted = await Permission.microphone.isGranted;
+    if (!micGranted) {
+      if (!context.mounted) return;
+      final ctx = context;
+      await showAppActionBottomSheet<void>(
+        context: ctx,
+        isDismissible: true,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Microphone access',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Allow microphone access to record voice messages.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.8),
+                    ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  label: 'Allow',
+                  buttonColor: Theme.of(context).colors.vibrantAccent,
+                  onPressed: () async {
+                    final status = await Permission.microphone.request();
+                    if (!ctx.mounted) return;
+                    Navigator.of(ctx).pop();
+                    if (status == PermissionStatus.granted) {
+                      _recordAndSendVoice();
+                    } else if (ctx.mounted) {
+                      showErrorBottomSheet(
+                        context: ctx,
+                        message:
+                            'Microphone access is required for voice messages.',
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+    final result =
+        await showAppActionBottomSheet<({String path, int duration})>(
+      context: context,
+      isScrollControlled: true,
+      child: _VoiceRecordingSheet(),
+    );
+    if (result == null) return;
+    await _sendVoiceMessage(targetAgoraUserId, result.path, result.duration);
+  }
+
+  Future<void> _sendVoiceMessage(
+    String targetId,
+    String path,
+    int durationSeconds,
+  ) async {
+    try {
+      // Agora Chat SDK expects duration in **seconds** (see createVoiceSendMessage).
+      // Passing milliseconds broke voice classification for recipients (often arrived as generic file).
+      final message = ChatMessage.createVoiceSendMessage(
+        targetId: targetId,
+        filePath: path,
+        duration: durationSeconds,
+      );
+      message.chatType = ChatType.Chat;
+      await ChatClient.getInstance.chatManager.sendMessage(message);
+      if (!mounted) return;
+      setState(() {
+        _mergeMessage(message);
+        _sortMessages();
+      });
+      await _markConversationRead();
+      _refreshUnreadBadges();
+      _scrollToBottom();
+    } catch (e) {
+      _handleSendError(e, 'voice message');
+    }
   }
 
   Future<void> _sendImageMessage(String targetId, String path) async {
@@ -845,25 +1062,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     return message.from == currentUserId;
   }
 
-  String _clientInitials() {
-    final trimmed = widget.clientName.trim();
-    if (trimmed.isEmpty) return 'C';
-    final parts = trimmed.split(RegExp(r'\s+'));
-    if (parts.length == 1) {
-      final s = parts.first;
-      return s.substring(0, s.length.clamp(0, 2)).toUpperCase();
-    }
-    final first = parts.first[0].toString().toUpperCase();
-    final last = parts.last[0].toString().toUpperCase();
-    return '$first$last';
-  }
-
-  String _coachInitials() {
-    final trimmed = widget.coachName.trim();
-    if (trimmed.isEmpty) return 'U';
-    return trimmed[0].toUpperCase();
-  }
-
   String _clientDisplayName() {
     final trimmed = widget.clientName.trim();
     return trimmed.isEmpty ? 'Client' : trimmed;
@@ -921,94 +1119,112 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     final colors = theme.extension<TRKRColors>();
-    final displayInitials =
-        AppConfig.isCoach ? _clientInitials() : _coachInitials();
+    final titleText =
+        AppConfig.isCoach ? _clientDisplayName() : _coachDisplayName();
 
-    final headerLeading = displayInitials.isNotEmpty
-        ? Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  (isDarkMode ? Colors.white : Colors.black)
-                      .withValues(alpha: 0.18),
-                  (isDarkMode ? Colors.white : Colors.black)
-                      .withValues(alpha: 0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              displayInitials,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: isDarkMode ? Colors.white : Colors.black,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          )
-        : const SizedBox(width: 36, height: 36);
+    final headerLeading = ChatPeerInitialsBadge(
+      peerName: AppConfig.isCoach ? widget.clientName : widget.coachName,
+      size: 36,
+    );
 
-    return ChatLayout(
-      headerLeading: headerLeading,
-      title: AppConfig.isCoach ? _clientDisplayName() : _coachDisplayName(),
-      headerActions: [
-        IconButton(
-          icon: Icon(Icons.videocam,
-              color: isDarkMode ? Colors.white : Colors.black, size: 22),
-          onPressed: () => _openVideoCall(),
+    final iconColor = isDarkMode ? Colors.white : Colors.black;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: appBarBackgroundColor(context: context),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: !widget.embeddedInShell,
+        leading: widget.embeddedInShell
+            ? null
+            : IconButton(
+                icon: Icon(
+                  FontAwesomeIcons.solidCircleXmark,
+                  color: iconColor,
+                  size: 22,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+        titleSpacing: widget.embeddedInShell ? 16 : 0,
+        title: Row(
+          children: [
+            headerLeading,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                titleText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: iconColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                ),
+              ),
+            ),
+          ],
         ),
-        IconButton(
-          icon: Icon(
-            FontAwesomeIcons.solidCircleXmark,
-            color: isDarkMode ? Colors.white : Colors.black,
-            size: 22,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.videocam, color: iconColor, size: 22),
+            onPressed: () => _openVideoCall(),
           ),
-          onPressed: () => Navigator.of(context).pop(),
+        ],
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: themeGradient(context: context),
         ),
-      ],
-      messagesContent: _messages.isEmpty
-          ? ChatEmptyState(
-              title: 'No messages yet',
-              subtitle: AppConfig.isCoach
-                  ? 'Start a conversation with your client'
-                  : 'Start a conversation with your coach',
-            )
-          : Builder(
-              builder: (context) {
-                final entries = _buildChatEntries();
-                return ListView.builder(
-                  controller: _scrollController,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.manual,
-                  itemCount: entries.length,
-                  itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    if (entry.isDivider) {
-                      return _ChatDateDivider(label: entry.label!);
-                    }
-                    final message = entry.message!;
-                    return _ChatMessageBubble(
-                      message: message,
-                      isCurrentUser: _isCurrentUserMessage(message),
-                      timestamp: _formatTimestamp(_messageTimestamp(message)),
-                      isDarkMode: isDarkMode,
-                      vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+        child: ChatLayout(
+          showHeader: false,
+          headerLeading: const SizedBox.shrink(),
+          title: '',
+          headerActions: const [],
+          messagesContent: _messages.isEmpty
+              ? ChatEmptyState(
+                  title: 'No messages yet',
+                  subtitle: AppConfig.isCoach
+                      ? 'Start a conversation with your client'
+                      : 'Start a conversation with your coach',
+                )
+              : Builder(
+                  builder: (context) {
+                    final entries = _buildChatEntries();
+                    return ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.manual,
+                      itemCount: entries.length,
+                      itemBuilder: (context, index) {
+                        final entry = entries[index];
+                        if (entry.isDivider) {
+                          return _ChatDateDivider(label: entry.label!);
+                        }
+                        final message = entry.message!;
+                        return _ChatMessageBubble(
+                          message: message,
+                          isCurrentUser: _isCurrentUserMessage(message),
+                          timestamp:
+                              _formatTimestamp(_messageTimestamp(message)),
+                          isDarkMode: isDarkMode,
+                          vibrantAccent: colors?.vibrantAccent ?? Colors.green,
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
-      messageController: _messageController,
-      onSend: _sendMessage,
-      isSending: _isSending,
-      showAttachmentButton: true,
-      onAttachmentTap: _showAttachmentSheet,
+                ),
+          messageController: _messageController,
+          onSend: _sendMessage,
+          isSending: _isSending,
+          showAttachmentButton: true,
+          onAttachmentTap: _showAttachmentSheet,
+        ),
+      ),
     );
   }
 }
@@ -1125,6 +1341,15 @@ class _MessageBody extends StatelessWidget {
 
     if (body is ChatVideoMessageBody) {
       return _VideoAttachment(body: body, textColor: textColor);
+    }
+
+    if (body is ChatVoiceMessageBody) {
+      return _VoiceAttachment(body: body, textColor: textColor);
+    }
+
+    // Server may classify voice (e.g. m4a) as FILE instead of VOICE — still playable.
+    if (body is ChatFileMessageBody && _isAgoraAudioFileMessage(body)) {
+      return _VoiceFileAttachment(body: body, textColor: textColor);
     }
 
     return Text(
@@ -1663,6 +1888,193 @@ class _VideoAttachmentState extends State<_VideoAttachment> {
   }
 }
 
+class _VoiceAttachment extends StatefulWidget {
+  final ChatVoiceMessageBody body;
+  final Color textColor;
+
+  const _VoiceAttachment({required this.body, required this.textColor});
+
+  @override
+  State<_VoiceAttachment> createState() => _VoiceAttachmentState();
+}
+
+class _VoiceAttachmentState extends State<_VoiceAttachment> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = state == PlayerState.playing;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  /// [ChatVoiceMessageBody.duration] is in **seconds** (Agora Chat SDK).
+  String _formatVoiceDurationSeconds(int seconds) {
+    if (seconds <= 0) return '0:00';
+    final m = seconds ~/ 60;
+    final sec = seconds % 60;
+    return '$m:${sec.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _togglePlay() async {
+    final localPath = widget.body.localPath;
+    final remotePath = widget.body.remotePath;
+    String? path;
+    if (localPath.isNotEmpty && File(localPath).existsSync()) {
+      path = localPath;
+    } else if (remotePath != null && remotePath.isNotEmpty) {
+      path = remotePath;
+    }
+    if (path == null) return;
+
+    if (_isPlaying) {
+      await _player.pause();
+    } else {
+      if (path.startsWith('http')) {
+        await _player.play(UrlSource(path));
+      } else {
+        await _player.play(DeviceFileSource(path));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = widget.body.duration;
+    final durationStr = _formatVoiceDurationSeconds(duration);
+
+    return InkWell(
+      onTap: _togglePlay,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: widget.textColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _isPlaying ? Icons.pause : Icons.play_arrow,
+              color: widget.textColor,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              durationStr,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: widget.textColor,
+                fontWeight: FontWeight.w500,
+                fontFeatures: [const FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Playable row when the server delivered voice as a generic [ChatFileMessageBody].
+class _VoiceFileAttachment extends StatefulWidget {
+  final ChatFileMessageBody body;
+  final Color textColor;
+
+  const _VoiceFileAttachment({required this.body, required this.textColor});
+
+  @override
+  State<_VoiceFileAttachment> createState() => _VoiceFileAttachmentState();
+}
+
+class _VoiceFileAttachmentState extends State<_VoiceFileAttachment> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerStateChanged.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        _isPlaying = state == PlayerState.playing;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlay() async {
+    final localPath = widget.body.localPath;
+    final remotePath = widget.body.remotePath;
+    String? path;
+    if (localPath.isNotEmpty && File(localPath).existsSync()) {
+      path = localPath;
+    } else if (remotePath != null && remotePath.isNotEmpty) {
+      path = remotePath;
+    }
+    if (path == null) return;
+
+    if (_isPlaying) {
+      await _player.pause();
+    } else {
+      if (path.startsWith('http')) {
+        await _player.play(UrlSource(path));
+      } else {
+        await _player.play(DeviceFileSource(path));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: _togglePlay,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: widget.textColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _isPlaying ? Icons.pause : Icons.play_arrow,
+              color: widget.textColor,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Voice message',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: widget.textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 Widget? _videoThumbnail(ChatVideoMessageBody body) {
   final localThumb = body.thumbnailLocalPath;
   if (localThumb != null && localThumb.isNotEmpty) {
@@ -1838,6 +2250,145 @@ class _ChatListEntry {
   bool get isDivider => label != null;
 }
 
+class _VoiceRecordingSheet extends StatefulWidget {
+  @override
+  State<_VoiceRecordingSheet> createState() => _VoiceRecordingSheetState();
+}
+
+class _VoiceRecordingSheetState extends State<_VoiceRecordingSheet> {
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _isRecording = false;
+  String? _path;
+  int _durationSeconds = 0;
+  String _durationDisplay = '0:00';
+
+  @override
+  void dispose() {
+    if (_isRecording) {
+      _recorder.stop().ignore();
+    }
+    _recorder.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startRecording() async {
+    if (_isRecording) return;
+    final tempDir = await getTemporaryDirectory();
+    final fileName = 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    _path = '${tempDir.path}/$fileName';
+    final config = RecordConfig(
+      encoder: AudioEncoder.aacLc,
+      sampleRate: 44100,
+      numChannels: 1,
+      bitRate: 128000,
+    );
+    await _recorder.start(config, path: _path!);
+    setState(() {
+      _isRecording = true;
+      _durationSeconds = 0;
+      _durationDisplay = '0:00';
+    });
+    _runDurationTimer();
+  }
+
+  void _runDurationTimer() {
+    Future.doWhile(() async {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      if (!mounted || !_isRecording) return false;
+      setState(() {
+        _durationSeconds++;
+        final m = _durationSeconds ~/ 60;
+        final s = _durationSeconds % 60;
+        _durationDisplay = '$m:${s.toString().padLeft(2, '0')}';
+      });
+      return true;
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    if (!_isRecording) return;
+    final path = await _recorder.stop();
+    setState(() {
+      _isRecording = false;
+      _path = path;
+    });
+  }
+
+  void _send() {
+    if (_path != null && _durationSeconds > 0) {
+      Navigator.of(context).pop((path: _path!, duration: _durationSeconds));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        16 + MediaQuery.of(context).viewPadding.bottom,
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 180,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _isRecording ? 'Recording...' : 'Voice message',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Center(
+                child: Text(
+                  _durationDisplay,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: [const FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (_isRecording)
+                      FilledButton.icon(
+                        onPressed: _stopRecording,
+                        icon: const Icon(Icons.stop, size: 20),
+                        label: const Text('Stop'),
+                      )
+                    else if (_path != null && _durationSeconds > 0)
+                      FilledButton.icon(
+                        onPressed: _send,
+                        icon: const Icon(Icons.send, size: 20),
+                        label: const Text('Send'),
+                      )
+                    else
+                      FilledButton.icon(
+                        onPressed: _startRecording,
+                        icon: const Icon(Icons.fiber_manual_record, size: 20),
+                        label: const Text('Record'),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ShareTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1856,13 +2407,13 @@ class _ShareTile extends StatelessWidget {
         ? Colors.white.withValues(alpha: 0.1)
         : Colors.black.withValues(alpha: 0.05);
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isDarkMode
                 ? Colors.white.withValues(alpha: 0.12)
@@ -1873,24 +2424,24 @@ class _ShareTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: isDarkMode
                     ? Colors.white.withValues(alpha: 0.16)
                     : Colors.black.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
                 color: isDarkMode ? Colors.white : Colors.black,
-                size: 24,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
             ),
@@ -1906,16 +2457,45 @@ String _messageContent(ChatMessage message) {
   if (body is ChatTextMessageBody) {
     return body.content;
   }
-  if (body is ChatFileMessageBody) {
-    return body.displayName ?? '';
-  }
+  // Subclasses of ChatFileMessageBody must be checked before the generic file branch.
   if (body is ChatImageMessageBody) {
     return body.displayName ?? 'image';
   }
   if (body is ChatVideoMessageBody) {
     return body.displayName ?? 'video';
   }
+  if (body is ChatVoiceMessageBody) {
+    return 'voice:${body.duration}';
+  }
+  if (body is ChatFileMessageBody && _isAgoraAudioFileMessage(body)) {
+    return 'voice:file';
+  }
+  if (body is ChatFileMessageBody) {
+    return body.displayName ?? '';
+  }
   return '';
+}
+
+/// True when a file message is almost certainly audio (voice sent as generic FILE).
+bool _isAgoraAudioFileMessage(ChatFileMessageBody body) {
+  if (body is ChatVoiceMessageBody) return false;
+  if (body is ChatImageMessageBody || body is ChatVideoMessageBody) {
+    return false;
+  }
+  bool pathLooksLikeAudio(String? s) {
+    if (s == null || s.isEmpty) return false;
+    final lower = s.toLowerCase();
+    return lower.contains('.m4a') ||
+        lower.contains('.aac') ||
+        lower.contains('.mp3') ||
+        lower.contains('.wav') ||
+        lower.contains('.amr') ||
+        lower.contains('voice_');
+  }
+
+  return pathLooksLikeAudio(body.displayName) ||
+      pathLooksLikeAudio(body.localPath) ||
+      pathLooksLikeAudio(body.remotePath);
 }
 
 class _ChatDateDivider extends StatelessWidget {

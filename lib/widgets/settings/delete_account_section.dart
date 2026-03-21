@@ -68,6 +68,9 @@ class DeleteAccountSection extends StatelessWidget {
 
 const String _deleteAccountConfirmationPhrase = 'Delete my account';
 
+/// Matches [confirmLogoutBottomSheet] and other action sheets (padding + type scale).
+const EdgeInsets _deleteSheetPadding = EdgeInsets.all(26);
+
 /// Runs the full account deletion flow: two confirmation sheets, then
 /// Agora → Supabase delete → sign out. Calls [setLoading] with
 /// true/false so the parent can show a loading overlay.
@@ -79,7 +82,7 @@ Future<void> requestAccountDeletion(
     context: context,
     isDismissible: true,
     child: Padding(
-      padding: const EdgeInsets.all(26),
+      padding: _deleteSheetPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -92,7 +95,7 @@ Future<void> requestAccountDeletion(
           const SizedBox(height: 8),
           Text(
             'Your account and all associated data (workouts, plans, nutrition logs) will be permanently deleted. This cannot be undone.',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
             textAlign: TextAlign.start,
           ),
           const SizedBox(height: 24),
@@ -102,6 +105,7 @@ Future<void> requestAccountDeletion(
               onPressed: () => Navigator.of(context).pop(true),
               label: 'Proceed',
               buttonColor: Colors.red,
+              showArrowRight: false,
             ),
           ),
         ],
@@ -192,30 +196,42 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
   String typed = '';
   return showAppBottomSheet<bool>(
     context: context,
+    isDraggable: false,
     isScrollControlled: true,
     isDismissible: true,
     child: StatefulBuilder(
       builder: (context, setSheetState) {
         final matches = typed.trim() == _deleteAccountConfirmationPhrase;
-        final viewInsets = MediaQuery.of(context).viewInsets;
         return Padding(
-          padding: const EdgeInsets.all(26).add(EdgeInsets.only(
-            bottom: viewInsets.bottom,
-          )),
+          padding: _deleteSheetPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'To confirm, type "$_deleteAccountConfirmationPhrase" below.',
-                style: Theme.of(context).textTheme.bodyMedium,
+                'Confirm deletion',
+                style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.start,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              Text(
+                'To confirm, type "$_deleteAccountConfirmationPhrase" below.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
+                textAlign: TextAlign.start,
+              ),
+              const SizedBox(height: 12),
               TextField(
+                style: Theme.of(context).textTheme.bodyLarge,
                 onChanged: (value) => setSheetState(() => typed = value),
                 decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   hintText: _deleteAccountConfirmationPhrase,
+                  hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.38),
+                      ),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
@@ -230,6 +246,7 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
                       : null,
                   label: 'Delete my account',
                   buttonColor: Colors.red,
+                  showArrowRight: false,
                 ),
               ),
             ],

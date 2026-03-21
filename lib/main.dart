@@ -33,16 +33,19 @@ import 'package:trainware/screens/logs/coach_feedback_feed_screen.dart';
 import 'package:trainware/screens/logs/routine_log_screen.dart';
 import 'package:trainware/screens/welcome_screen.dart';
 import 'package:trainware/screens/coach/coach_clients_screen.dart';
+import 'package:trainware/screens/preferences/account_settings_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
+import 'package:trainware/utils/app_privileges.dart';
+import 'package:trainware/utils/shell_tab_paths.dart';
+import 'package:trainware/widgets/navigation/routines_shell_page.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/app_startup_service.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
-import 'package:trainware/services/health_metrics_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -50,6 +53,7 @@ import 'package:trainware/widgets/backgrounds/splash_screen.dart';
 import 'package:trainware/widgets/coach_selection/coach_selection_gate.dart';
 import 'package:trainware/widgets/coach_selection/profile_completion_gate.dart';
 import 'package:trainware/widgets/coach_selection/subscription_gate.dart';
+import 'package:trainware/widgets/navigation/main_shell_scaffold.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
@@ -63,6 +67,7 @@ import 'dtos/viewmodels/routine_plan_arguments.dart';
 import 'dtos/viewmodels/routine_template_arguments.dart';
 import 'app_keys.dart';
 import 'logger.dart';
+
 Map<String, dynamic>? _pendingNotificationPayload;
 int _notificationRetryCount = 0;
 const int _maxNotificationRetries = 10;
@@ -117,6 +122,32 @@ void _processPendingNotification() {
     } else {
       _processClientViewLog(context, logId);
     }
+    return;
+  }
+
+  if (type == 'incoming_call') {
+    final callerId = payload['callerId'] as String?;
+    final callerName = payload['callerName'] as String? ?? '';
+    final channelName = payload['channelName'] as String?;
+    final callerImageUrl = payload['callerImageUrl'] as String?;
+    if (callerId == null ||
+        callerId.isEmpty ||
+        channelName == null ||
+        channelName.isEmpty) {
+      _pendingNotificationPayload = null;
+      return;
+    }
+    _pendingNotificationPayload = null;
+    _notificationRetryCount = 0;
+    navigateToIncomingCall(
+      context: context,
+      callerId: callerId,
+      callerName: callerName,
+      channelName: channelName,
+      callerImageUrl: (callerImageUrl != null && callerImageUrl.trim().isNotEmpty)
+          ? callerImageUrl.trim()
+          : null,
+    );
     return;
   }
 
@@ -263,6 +294,18 @@ Future<void> mainCommon(AppFlavor flavor) async {
     _processPendingNotification();
   });
 
+  // FCM: app in foreground, incoming call data message
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    final data = message.data;
+    if (data.isEmpty) return;
+    final type = data['type'] as String?;
+    if (type == 'incoming_call') {
+      _pendingNotificationPayload = Map<String, dynamic>.from(data);
+      _notificationRetryCount = 0;
+      _processPendingNotification();
+    }
+  });
+
   tz.initializeTimeZones();
   await configureLocalTimezone();
 
@@ -273,8 +316,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
             ClientOverrideController()..initialize(),
       ),
       ChangeNotifierProvider<SupabaseExerciseAndRoutineController>(
-        create: (BuildContext context) =>
-            SupabaseExerciseAndRoutineController(
+        create: (BuildContext context) => SupabaseExerciseAndRoutineController(
           templateRepository: SupabaseRoutineTemplateRepository(),
           planRepository: SupabaseRoutinePlanRepository(),
           logRepository: SupabaseRoutineLogRepository(),
@@ -327,57 +369,148 @@ GoRouter _createRouter(ClientOverrideController accessController) {
     observers: [appRouteObserver],
     refreshListenable: accessController,
     redirect: (context, state) {
+      final loc = state.matchedLocation;
+
       if (!AppConfig.isCoach) {
         // Client app: redirect away from coach screen
-        if (state.matchedLocation == '/coach') {
+        if (loc == '/coach') {
+          return '/';
+        }
+        if (isShellCoachFeedbackPath(loc) && !AppPrivileges.isProWithCoach) {
           return '/';
         }
         return null;
       }
 
+      // Coach: client-only shell tabs (routines / templates / feedback) → home
+      if (loc == kShellRoutinesPath ||
+          isShellRoutineTemplatePath(loc) ||
+          isShellCoachFeedbackPath(loc)) {
+        return accessController.hasSelectedClient ? '/' : '/coach';
+      }
+
       // Coach app: if no client selected, must be on client selection screen
       // Allow /log/:logId from deep links (user may need to select client after)
       if (!accessController.hasSelectedClient &&
-          state.matchedLocation != '/coach' &&
-          !state.matchedLocation.startsWith('/log/')) {
+          loc != '/coach' &&
+          !loc.startsWith('/log/')) {
         return '/coach';
       }
       return null;
     },
     routes: [
       GoRoute(
-        path: "/", // Define the path for Home Screen
-        pageBuilder: (context, state) {
-          return CustomTransitionPage(
-            key: state.pageKey,
-            child: const Home(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-          );
-        },
+        path: Home.routeName,
+        redirect: (context, state) => '/',
       ),
-      GoRoute(
-        path: '/coach',
-        pageBuilder: (context, state) {
-          return CustomTransitionPage(
-            key: state.pageKey,
-            child: const CoachClientsScreen(
-              navigateToOverviewOnSelect: true,
-            ),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
+      ShellRoute(
+        builder: (context, state, child) {
+          return MainShellScaffold(child: child);
+        },
+        routes: [
+          GoRoute(
+            path: '/',
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const Home(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+          GoRoute(
+            path: '/coach',
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const CoachClientsScreen(
+                  navigateToOverviewOnSelect: true,
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: kShellRoutinesPath,
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const RoutinesShellPage(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: '/routine_template/:templateId',
+            pageBuilder: (context, state) {
+              final id = state.pathParameters['templateId'] ?? '';
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: RoutineTemplateScreen(
+                  id: id,
+                  embeddedInShell: true,
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: CoachFeedbackFeedScreen.routeName,
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const CoachFeedbackFeedScreen(embeddedInShell: true),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+          GoRoute(
+            path: AccountSettingsScreen.routeName,
+            pageBuilder: (context, state) {
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: const AccountSettingsScreen(embeddedInShell: true),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: RoutineLogEditorScreen.routeName,
@@ -472,28 +605,6 @@ GoRouter _createRouter(ClientOverrideController accessController) {
         },
       ),
       GoRoute(
-        path: CoachFeedbackFeedScreen.routeName,
-        pageBuilder: (context, state) {
-          return CustomTransitionPage(
-            key: state.pageKey,
-            child: const CoachFeedbackFeedScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              const begin = Offset(0.0, 1.0);
-              const end = Offset.zero;
-              const curve = Curves.ease;
-              final tween =
-                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-              final offsetAnimation = animation.drive(tween);
-              return SlideTransition(
-                position: offsetAnimation,
-                child: child,
-              );
-            },
-          );
-        },
-      ),
-      GoRoute(
         path: SettingsScreen.routeName,
         builder: (context, state) => const SettingsScreen(),
       ),
@@ -520,10 +631,6 @@ GoRouter _createRouter(ClientOverrideController accessController) {
             clientName: clientName,
           );
         },
-      ),
-      GoRoute(
-        path: Home.routeName,
-        builder: (context, state) => const Home(),
       ),
     ],
   );
@@ -591,7 +698,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     if (state == AppLifecycleState.resumed) {
       unawaited(_restoreAgoraOnResume());
-      unawaited(HealthMetricsService.instance.syncToBackend());
     }
   }
 
@@ -716,6 +822,32 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (path.startsWith('/log/') && path.length > 5) {
       if (_accessController.isAuthenticated) {
         _router.go(path);
+      }
+      return;
+    }
+    if (path == '/incoming-call') {
+      if (!_accessController.isAuthenticated) return;
+      final callerId = uri.queryParameters['callerId'];
+      final channelName = uri.queryParameters['channelName'];
+      final callerName = uri.queryParameters['callerName'] ?? '';
+      final callerImageUrl = uri.queryParameters['callerImageUrl'];
+      if (callerId == null ||
+          callerId.isEmpty ||
+          channelName == null ||
+          channelName.isEmpty) {
+        return;
+      }
+      final context = rootNavigatorKey.currentContext;
+      if (context != null) {
+        navigateToIncomingCall(
+          context: context,
+          callerId: callerId,
+          callerName: callerName,
+          channelName: channelName,
+          callerImageUrl: (callerImageUrl != null && callerImageUrl.trim().isNotEmpty)
+              ? callerImageUrl.trim()
+              : null,
+        );
       }
     }
   }

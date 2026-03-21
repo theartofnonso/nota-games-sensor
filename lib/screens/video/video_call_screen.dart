@@ -16,9 +16,17 @@ import '../../urls.dart';
 class VideoCallScreen extends StatefulWidget {
   final String targetUserId;
 
+  /// Display name of the other participant for the call indicator.
+  final String? targetUserName;
+
+  /// When provided (e.g. from backend), use this instead of generating locally.
+  final String? channelName;
+
   const VideoCallScreen({
     super.key,
     required this.targetUserId,
+    this.targetUserName,
+    this.channelName,
   });
 
   @override
@@ -42,6 +50,23 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   /* --------------------------- INIT FLOW --------------------------- */
 
   Future<void> _startVideoCalling() async {
+    final cn = widget.channelName;
+    if (cn == null || cn.isEmpty) {
+      if (mounted) {
+        showBottomSheetWithSingleAction(
+          context: context,
+          title: 'Unable to make the call',
+          description: "We couldn't set up the call. Please try again.",
+          action: () {
+            Navigator.of(context).pop(); // close sheet
+            if (mounted) Navigator.of(context).pop(); // close video screen
+          },
+          actionLabel: 'Got it',
+          isDismissible: false,
+        );
+      }
+      return;
+    }
     await _requestPermissions();
     await _initializeAgora();
     await _setupLocalVideo();
@@ -100,7 +125,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                     'The connection could not be established. Please try again.',
                 action: () {
                   Navigator.of(context).pop(); // close sheet
-                  if (mounted) Navigator.of(context).pop(); // close video screen
+                  if (mounted) {
+                    Navigator.of(context).pop(); // close video screen
+                  }
                 },
                 actionLabel: 'Got it',
                 isDismissible: false,
@@ -118,7 +145,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) throw StateError('User not authenticated');
 
-    final channelName = _generateChannelName();
+    final channelName = _channelName();
     final token = await _fetchAgoraToken(channelName, userId);
 
     if (token == null || token.isEmpty) {
@@ -142,14 +169,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   /* --------------------------- HELPERS --------------------------- */
 
-  String _generateChannelName() {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    final ids = [currentUserId, widget.targetUserId]..sort();
-    final half = (64 - 6) ~/ 2; // 64 max - 'call__' = 58, /2 = 29 each
-    final a = ids[0].replaceAll('-', '').substring(0, half.clamp(0, 32));
-    final b = ids[1].replaceAll('-', '').substring(0, half.clamp(0, 32));
-    return 'call_${a}_$b';
-  }
+  String _channelName() => widget.channelName!;
 
   /// [supabaseUserId] is the raw auth user id; backend derives Agora username for the token.
   Future<String?> _fetchAgoraToken(
@@ -215,6 +235,16 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
+          // Call indicator bar at top
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: _CallIndicatorBar(targetUserName: widget.targetUserName),
+            ),
+          ),
           // Split screen: top half remote, bottom half local (with padding and rounded corners)
           Padding(
             padding: const EdgeInsets.all(_videoPadding),
@@ -288,7 +318,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       controller: VideoViewController.remote(
         rtcEngine: _engine,
         canvas: VideoCanvas(uid: _remoteUid),
-        connection: RtcConnection(channelId: _generateChannelName()),
+        connection: RtcConnection(channelId: _channelName()),
       ),
     );
   }
@@ -358,6 +388,65 @@ class _ControlButton extends StatelessWidget {
           width: 56,
           height: 56,
           child: Icon(icon, color: Colors.white, size: 28),
+        ),
+      ),
+    );
+  }
+}
+
+class _CallIndicatorBar extends StatelessWidget {
+  final String? targetUserName;
+
+  const _CallIndicatorBar({this.targetUserName});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = targetUserName?.trim();
+    final label = name != null && name.isNotEmpty
+        ? 'In a call with ${name.split(' ').first}'
+        : 'In a call';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.green.withValues(alpha: 0.6),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withValues(alpha: 0.6),
+                    blurRadius: 4,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

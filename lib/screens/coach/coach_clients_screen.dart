@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
@@ -29,7 +28,6 @@ class CoachClientsScreen extends StatefulWidget {
 
 class _CoachClientsScreenState extends State<CoachClientsScreen>
     with WidgetsBindingObserver {
-  String _appVersion = '';
   Map<String, int> _unreadByClientId = const {};
   late final TextEditingController _searchController;
   String _searchQuery = '';
@@ -42,7 +40,6 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     _searchController = TextEditingController();
     _unreadByClientId = ChatUnreadCountsService().unreadByClientId.value;
     ChatUnreadCountsService().unreadByClientId.addListener(_handleUnreadChange);
-    _getAppVersion();
     _refreshUnreadWhenAgoraReady();
   }
 
@@ -136,16 +133,6 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
       _isRefreshing = false;
       if (mounted) setState(() {});
     }
-  }
-
-  Future<void> _getAppVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    final version = packageInfo.version;
-    final buildNumber = packageInfo.buildNumber;
-    if (!mounted) return;
-    setState(() {
-      _appVersion = "APP VERSION: $version (BUILD $buildNumber)";
-    });
   }
 
   @override
@@ -380,13 +367,6 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                     },
                                   ),
                                 ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _appVersion,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
                         ),
                         const SizedBox(height: 20),
                       ],

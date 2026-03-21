@@ -43,6 +43,24 @@ class SupabaseCoachesRepository {
     }
   }
 
+  /// Single coach row by `coaches.id` (e.g. logged-in coach’s profile for video call notify).
+  Future<CoachDto?> fetchCoachById(String coachId) async {
+    if (coachId.isEmpty) return null;
+    try {
+      final response = await _client
+          .from('coaches')
+          .select(
+              'id, name, profile_image_url, profile_video_url, description, email')
+          .eq('id', coachId)
+          .maybeSingle();
+      if (response == null) return null;
+      return CoachDto.fromJson(Map<String, dynamic>.from(response));
+    } catch (e) {
+      _logger.e('Error fetching coach $coachId: $e');
+      return null;
+    }
+  }
+
   /// Assign client to coach via POST /coach-clients API.
   /// Backend uses service role to insert; RLS allows service_role.
   /// Returns true on success (201) or already assigned (409).

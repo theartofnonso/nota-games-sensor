@@ -123,17 +123,34 @@ Future<T?> showAppBottomSheet<T>({
     useRootNavigator: useRootNavigator,
     enableDrag: enableDrag ?? isDismissible,
     showDragHandle: false,
-    builder: (context) => AppBottomSheet(
-      isDraggable: isDraggable,
-      isDismissible: isDismissible,
-      initialChildSize: initialChildSize,
-      minChildSize: minChildSize,
-      maxChildSize: maxChildSize,
-      useBlurredTransparentBackground: useBlurredTransparentBackground,
-      blurSigma: blurSigma,
-      builder: builder,
-      child: child,
-    ),
+    builder: (context) {
+      final sheet = AppBottomSheet(
+        isDraggable: isDraggable,
+        isDismissible: isDismissible,
+        initialChildSize: initialChildSize,
+        minChildSize: minChildSize,
+        maxChildSize: maxChildSize,
+        useBlurredTransparentBackground: useBlurredTransparentBackground,
+        blurSigma: blurSigma,
+        builder: builder,
+        child: child,
+      );
+      // Non-draggable + scroll-controlled: hug content height instead of a
+      // tall empty modal region (Flutter default for isScrollControlled: false).
+      if (!isDraggable && isScrollControlled) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            widthFactor: 1.0,
+            child: sheet,
+          ),
+        );
+      }
+      return sheet;
+    },
   );
 }
 
@@ -144,7 +161,7 @@ Future<T?> showAppActionBottomSheet<T>({
   Widget Function(BuildContext context, ScrollController? scrollController)?
       builder,
   Widget? child,
-  bool isScrollControlled = false,
+  bool isScrollControlled = true,
   bool isDismissible = true,
   bool useRootNavigator = false,
   bool useBlurredTransparentBackground = true,

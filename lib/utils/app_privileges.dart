@@ -17,4 +17,8 @@ class AppPrivileges {
 
   /// Pro client with a coach (not solo). Coach feedback, coach selection apply.
   static bool get isProWithCoach => !isCoach && !isSelfCoaching;
+
+  /// Client (solo or pro) who can create and manage their own workout templates/plans.
+  static bool get canCreateManageRoutines =>
+      isCoach || isSelfCoaching || isProWithCoach;
 }

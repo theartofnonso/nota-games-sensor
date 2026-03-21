@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:trainware/urls.dart';
+import 'package:trainware/utils/notathletes_auth_headers.dart';
 
 /// Email from the auth flow (typed by user). Set by auth screen on OTP success;
 /// consumed by ProfileCompletionGate for name derivation. One-time use.
@@ -56,7 +57,7 @@ Future<bool> createAccountProfile({
     final uri = Uri.parse(apiNotathletesBaseUrl).resolve(accountProfilePath);
     final response = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: notathletesAuthHeaders(),
       body: jsonEncode({
         'user_id': userId,
         'name': name.trim(),
@@ -88,7 +89,7 @@ Future<bool> updateAccountProfile({
     }
     final response = await http.patch(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: notathletesAuthHeaders(),
       body: jsonEncode(body),
     ).timeout(const Duration(seconds: 15));
     return response.statusCode >= 200 && response.statusCode < 300;

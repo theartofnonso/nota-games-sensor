@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../bottom_sheets/app_bottom_sheet.dart';
+import '../buttons/opacity_button_widget_two.dart';
+
 /// Logout entry for both clients and coaches.
 /// Same visual style as delete account section.
 class LogoutSection extends StatelessWidget {
@@ -55,6 +58,61 @@ class LogoutSection extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Confirmation sheet (same pattern as delete-account first step). Returns true
+/// if the user confirms they want to log out.
+Future<bool> confirmLogoutBottomSheet(BuildContext context) async {
+  final result = await showAppActionBottomSheet<bool>(
+    context: context,
+    isDismissible: true,
+    child: Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Log out',
+            style: Theme.of(context).textTheme.titleLarge,
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You will be signed out on this device. Unsaved work may be lost. You can sign in again anytime.',
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OpacityButtonWidgetTwo(
+              onPressed: () => Navigator.of(context).pop(true),
+              label: 'Log out',
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+  return result == true;
+}
+
+/// Shows [confirmLogoutBottomSheet], then signs out with loading callbacks.
+Future<void> logoutWithConfirmation(
+  BuildContext context, {
+  required void Function(bool) setLoading,
+}) async {
+  final ok = await confirmLogoutBottomSheet(context);
+  if (!ok || !context.mounted) return;
+  setLoading(true);
+  try {
+    await performLogout();
+  } finally {
+    if (context.mounted) {
+      setLoading(false);
+    }
   }
 }
 

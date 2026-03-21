@@ -50,6 +50,9 @@ PODS:
   - AgoraRtcEngine_iOS/VQA (4.5.2)
   - app_links (6.4.1):
     - Flutter
+  - audioplayers_darwin (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - device_info_plus (0.0.1):
     - Flutter
   - Firebase/CoreOnly (12.8.0):
@@ -89,6 +92,8 @@ PODS:
     - Flutter
   - flutter_native_timezone (0.0.1):
     - Flutter
+  - flutter_ringtone_player (0.0.1):
+    - Flutter
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
@@ -116,8 +121,6 @@ PODS:
   - GoogleUtilities/UserDefaults (8.1.0):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
-  - health (13.3.1):
-    - Flutter
   - HyphenateChat (4.10.2)
   - image_picker_ios (0.0.1):
     - Flutter
@@ -153,6 +156,8 @@ PODS:
   - permission_handler_apple (9.3.0):
     - Flutter
   - PromisesObjC (2.4.0)
+  - record_ios (1.2.0):
+    - Flutter
   - Sentry/HybridSDK (8.56.2)
   - sentry_flutter (9.10.0):
     - Flutter
@@ -176,13 +181,14 @@ DEPENDENCIES:
   - agora_chat_sdk (from `.symlinks/plugins/agora_chat_sdk/ios`)
   - agora_rtc_engine (from `.symlinks/plugins/agora_rtc_engine/ios`)
   - app_links (from `.symlinks/plugins/app_links/ios`)
+  - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - Flutter (from `Flutter`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_native_timezone (from `.symlinks/plugins/flutter_native_timezone/ios`)
-  - health (from `.symlinks/plugins/health/ios`)
+  - flutter_ringtone_player (from `.symlinks/plugins/flutter_ringtone_player/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - in_app_purchase_storekit (from `.symlinks/plugins/in_app_purchase_storekit/darwin`)
   - in_app_review (from `.symlinks/plugins/in_app_review/ios`)
@@ -190,6 +196,7 @@ DEPENDENCIES:
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - record_ios (from `.symlinks/plugins/record_ios/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -222,6 +229,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/agora_rtc_engine/ios"
   app_links:
     :path: ".symlinks/plugins/app_links/ios"
+  audioplayers_darwin:
+    :path: ".symlinks/plugins/audioplayers_darwin/darwin"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
   firebase_core:
@@ -234,8 +243,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   flutter_native_timezone:
     :path: ".symlinks/plugins/flutter_native_timezone/ios"
-  health:
-    :path: ".symlinks/plugins/health/ios"
+  flutter_ringtone_player:
+    :path: ".symlinks/plugins/flutter_ringtone_player/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
   in_app_purchase_storekit:
@@ -250,6 +259,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  record_ios:
+    :path: ".symlinks/plugins/record_ios/ios"
   sentry_flutter:
     :path: ".symlinks/plugins/sentry_flutter/ios"
   share_plus:
@@ -270,6 +281,7 @@ SPEC CHECKSUMS:
   AgoraIrisRTC_iOS: eab58c126439adf5ec99632828a558ea216860da
   AgoraRtcEngine_iOS: 97e2398a2addda9057815a2a583a658e36796ff6
   app_links: 3dbc685f76b1693c66a6d9dd1e9ab6f73d97dc0a
+  audioplayers_darwin: 835ced6edd4c9fc8ebb0a7cc9e294a91d99917d5
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Firebase: 9a58fdbc9d8655ed7b79a19cf9690bb007d3d46d
   firebase_core: ee30637e6744af8e0c12a6a1e8a9718506ec2398
@@ -281,9 +293,9 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
   flutter_native_timezone: 5fe32678d72d1894880e94303ef41c2919f014e5
+  flutter_ringtone_player: a77c42464250845611eaa44c27e8714acc800138
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
-  health: 4decf5d74e8f54c58a8c07a385fc72f629a831d9
   HyphenateChat: 6924f613947f6301bee909fc12c3bb01b50f52c6
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   in_app_purchase_storekit: 22cca7d08eebca9babdf4d07d0baccb73325d3c8
@@ -295,6 +307,7 @@ SPEC CHECKSUMS:
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  record_ios: 412daca2350b228e698fffcd08f1f94ceb1e3844
   Sentry: b53951377b78e21a734f5dc8318e333dbfc682d7
   sentry_flutter: da39d10e3f2f3e060eebc9d7ecea027d34443d66
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a

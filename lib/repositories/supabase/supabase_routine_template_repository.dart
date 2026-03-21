@@ -38,7 +38,7 @@ class SupabaseRoutineTemplateRepository {
       }
 
       final query = _client.from('routine_templates').select(
-            'id,planId,name,notes,clientId,createdAt,updatedAt,template_exercises(id,template_id,exercise_id,order_index,super_set_group,notes,created_at,template_sets(id,template_exercise_id,target_reps,target_weight,target_duration_seconds,order_index),exercises!template_exercises_exercise_id_fkey(id,name,type),exercise_alternatives(order_index,exercises(id,name,type)))',
+            'id,planId,name,notes,clientId,owner,createdAt,updatedAt,template_exercises(id,template_id,exercise_id,order_index,super_set_group,notes,created_at,template_sets(id,template_exercise_id,target_reps,target_weight,target_duration_seconds,order_index),exercises!template_exercises_exercise_id_fkey(id,name,type),exercise_alternatives(order_index,exercises(id,name,type)))',
           );
       final response = requireOwnerAndClient
           ? await query
@@ -90,6 +90,7 @@ class SupabaseRoutineTemplateRepository {
       notes: row['notes'] as String? ?? '',
       exerciseTemplates: exerciseTemplates,
       clientId: row['clientId'] as String?,
+      owner: row['owner'] as String?,
     );
   }
 

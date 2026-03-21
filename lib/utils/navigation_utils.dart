@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -7,10 +5,11 @@ import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/screens/editors/routine_log_editor_screen.dart';
 import 'package:trainware/screens/exercise/history/exercise_home_screen.dart';
-import 'package:trainware/screens/preferences/settings_screen.dart';
+import 'package:trainware/screens/preferences/account_settings_screen.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/app_flavor.dart';
+import 'package:trainware/utils/app_privileges.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
@@ -23,8 +22,11 @@ import '../dtos/viewmodels/routine_plan_arguments.dart';
 import '../dtos/viewmodels/routine_template_arguments.dart';
 import '../enums/routine_editor_type_enums.dart';
 import '../screens/editors/routine_template_editor_screen.dart';
+import '../screens/logs/coach_feedback_feed_screen.dart';
+import 'shell_tab_paths.dart';
 import '../screens/logs/routine_log_screen.dart';
 import '../screens/routines/routine_plan.dart';
+import '../screens/video/incoming_call_screen.dart';
 import '../screens/routines/routine_template_screen.dart';
 import '../utils/name_notes_bottom_sheet.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
@@ -149,9 +151,16 @@ Future<RoutineLogDto?> navigateToRoutineEditorAndReturnLog(
   return log;
 }
 
-Future<void> navigateToRoutineTemplatePreview(
-    {required BuildContext context,
-    required RoutineTemplateDto template}) async {
+Future<void> navigateToRoutineTemplatePreview({
+  required BuildContext context,
+  required RoutineTemplateDto template,
+  bool embeddedInShell = false,
+}) async {
+  if (embeddedInShell) {
+    if (!context.mounted) return;
+    context.go('/routine_template/${template.id}');
+    return;
+  }
   await navigateWithSlideTransition(
     context: context,
     child: RoutineTemplateScreen(id: template.id),
@@ -185,105 +194,169 @@ Future<void> navigateToExerciseHome(
 }
 
 Future<void> navigateToSettings({required BuildContext context}) async {
-  // Only show settings if we're on the overview/home screen
-  final currentRoute = GoRouterState.of(context).uri.path;
-  final isOnOverview = currentRoute == Home.routeName || currentRoute == '/';
+  final path = GoRouterState.of(context).uri.path;
+  final isShellTab = path == '/' ||
+      path == Home.routeName ||
+      path == '/coach' ||
+      path == kShellRoutinesPath ||
+      isShellRoutineTemplatePath(path) ||
+      path == CoachFeedbackFeedScreen.routeName ||
+      path == AccountSettingsScreen.routeName;
 
-  if (!isOnOverview) {
-    // Don't show settings unless on overview screen
+  if (!isShellTab) {
     return;
   }
 
-  await showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: 'Settings',
-    barrierColor: Colors.transparent,
-    transitionDuration: const Duration(milliseconds: 200),
-    pageBuilder: (ctx, animation, secondaryAnimation) {
-      return Stack(
-        children: [
-          // Blurred + dimmed background
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.25),
-              ),
-            ),
-          ),
-          // Full-screen settings content
-          const SettingsScreen(),
-        ],
-      );
-    },
-    transitionBuilder: (ctx, animation, secondaryAnimation, child) {
-      return FadeTransition(
-        opacity: animation,
-        child: child,
-      );
-    },
-  );
+  if (!context.mounted) return;
+  context.go(AccountSettingsScreen.routeName);
 }
 
-/// Navigate to the chat screen
+/// Opens chat with a fade (not a shell tab); app bar close for full-screen chat.
 Future<void> navigateToChat({
   required BuildContext context,
 }) async {
   final accessController = context.read<ClientOverrideController>();
+
+  if (!AppConfig.isCoach && !AppPrivileges.isProWithCoach) {
+    if (context.mounted) {
+      showSnackbar(
+        context: context,
+        message:
+            'Messaging with your coach is available on the Pro plan with a coach.',
+      );
+    }
+    return;
+  }
+
+  if (AppConfig.isCoach &&
+      (accessController.selectedClientId == null ||
+          accessController.selectedClientId!.isEmpty)) {
+    if (context.mounted) {
+      showSnackbar(
+        context: context,
+        message: 'Select a client from the Clients tab to open chat.',
+      );
+    }
+    return;
+  }
+
+  if (!AppConfig.isCoach && (accessController.coachId ?? '').isEmpty) {
+    if (context.mounted) {
+      showSnackbar(
+        context: context,
+        message: 'Connect with a coach to start messaging.',
+      );
+    }
+    return;
+  }
+
   String clientUserId = '';
   String clientName = '';
   String coachId = '';
   String coachName = '';
 
   if (AppConfig.isCoach) {
-    // Coach app: coach viewing a client
-
     clientUserId = accessController.selectedClientId ?? '';
     clientName = accessController.selectedClientName ?? '';
-
-    // Get coach info (current user)
     coachId = accessController.userId ?? '';
   } else {
-    // Use stored coach data (should already be set when client logs in)
     coachId = accessController.coachId ?? '';
     coachName = accessController.coachName ?? '';
-
-    // Client app: client viewing their coach
     clientUserId = accessController.userId ?? '';
   }
 
   if (!context.mounted) return;
-  await showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    isDismissible: true,
-    enableDrag: true,
-    showDragHandle: false,
-    useSafeArea: true,
-    barrierColor: Colors.black.withValues(alpha: 0.55),
-    builder: (context) => AppBottomSheet(
-      isDraggable: true,
-      isDismissible: true,
-      initialChildSize: 1.0,
-      minChildSize: 1.0,
-      maxChildSize: 1.0,
-      child: ChatScreen(
+
+  await Navigator.of(context, rootNavigator: true).push<void>(
+    PageRouteBuilder<void>(
+      pageBuilder: (ctx, animation, secondaryAnimation) => ChatScreen(
         coachId: coachId,
         coachName: coachName,
         clientUserId: clientUserId,
         clientName: clientName,
-        scrollController: null,
+        embeddedInShell: false,
       ),
+      transitionsBuilder: (ctx, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
     ),
   );
 }
 
-/// Create a screen on demand
-Future navigateWithSlideTransition(
-    {required BuildContext context, required Widget child}) {
-  final route = PageRouteBuilder(
+/// Coach feedback feed (Pro clients with a coach). Shell tab with bottom nav.
+Future<void> navigateToCoachFeedbackFeed({
+  required BuildContext context,
+}) async {
+  if (!AppPrivileges.isProWithCoach) {
+    if (context.mounted) {
+      showSnackbar(
+        context: context,
+        message:
+            'Coach feedback is available when you are on Pro with a coach.',
+      );
+    }
+    return;
+  }
+  if (!context.mounted) return;
+  context.go(CoachFeedbackFeedScreen.routeName);
+}
+
+/// Primary routine plan (first plan) as a fade route with close.
+Future<void> navigateToPrimaryRoutinePlan({
+  required BuildContext context,
+}) async {
+  final access = context.read<ClientOverrideController>();
+  if (AppConfig.isCoach && !access.hasSelectedClient) {
+    if (context.mounted) {
+      showSnackbar(
+        context: context,
+        message: 'Select a client to view their routine plan.',
+      );
+    }
+    return;
+  }
+
+  final controller = context.read<SupabaseExerciseAndRoutineController>();
+  if (!context.mounted) return;
+
+  if (controller.plans.isEmpty) {
+    final canCreate = AppPrivileges.canCreateManageRoutines;
+    context.go(kShellRoutinesPath);
+    if (!canCreate && context.mounted) {
+      showSnackbar(
+        context: context,
+        message: 'Your coach hasn’t assigned a routine plan yet.',
+      );
+    }
+    return;
+  }
+
+  context.go(kShellRoutinesPath);
+}
+
+/// Fade transition (matches shell tab [CustomTransitionPage] in [main.dart]).
+Future<T?> navigateWithFadeTransition<T>({
+  required BuildContext context,
+  required Widget child,
+  bool rootNavigator = false,
+}) {
+  final route = PageRouteBuilder<T>(
+    pageBuilder: (context, animation, secondaryAnimation) => child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
+  );
+
+  return Navigator.of(context, rootNavigator: rootNavigator).push<T>(route);
+}
+
+/// Create a screen on demand (slide up)
+Future<T?> navigateWithSlideTransition<T>({
+  required BuildContext context,
+  required Widget child,
+  bool rootNavigator = false,
+}) {
+  final route = PageRouteBuilder<T>(
     pageBuilder: (context, animation, secondaryAnimation) => child,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       const begin = Offset(0.0, 1.0);
@@ -299,5 +372,32 @@ Future navigateWithSlideTransition(
     },
   );
 
-  return Navigator.of(context).push(route);
+  return Navigator.of(context, rootNavigator: rootNavigator).push<T>(route);
+}
+
+/// Shows the incoming call screen (from FCM push). Caller must be authenticated.
+///
+/// [callerImageUrl] caller’s photo URL from FCM; empty/absent = no background image.
+void navigateToIncomingCall({
+  required BuildContext context,
+  required String callerId,
+  required String callerName,
+  required String channelName,
+  String? callerImageUrl,
+}) {
+  Navigator.of(context).push(
+    PageRouteBuilder(
+      fullscreenDialog: true,
+      opaque: false,
+      pageBuilder: (_, __, ___) => IncomingCallScreen(
+        callerId: callerId,
+        callerName: callerName,
+        channelName: channelName,
+        callerImageUrl: callerImageUrl,
+      ),
+      transitionsBuilder: (_, animation, __, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    ),
+  );
 }

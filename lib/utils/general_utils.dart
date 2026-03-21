@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:trainware/screens/preferences/settings_screen.dart';
+import 'package:trainware/enums/height_unit.dart';
+import 'package:trainware/enums/weight_unit.dart';
 import 'package:trainware/widgets/icons/custom_wordmark_icon.dart';
 
 import '../colors.dart';
