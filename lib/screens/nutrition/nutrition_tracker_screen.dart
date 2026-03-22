@@ -412,6 +412,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
       return false;
     }
 
+    if (!mounted) return false;
     await context.read<NutritionLogController>().removeLog(id: log.id);
     return true;
   }

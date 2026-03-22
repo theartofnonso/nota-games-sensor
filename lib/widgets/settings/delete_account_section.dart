@@ -114,6 +114,7 @@ Future<void> requestAccountDeletion(
   );
   if (proceeded != true) return;
 
+  if (!context.mounted) return;
   final confirmed = await _showDeleteAccountConfirmSheet(context);
   if (confirmed != true) return;
 

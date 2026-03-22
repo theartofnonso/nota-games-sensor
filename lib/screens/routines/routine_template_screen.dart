@@ -462,7 +462,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         showSnackbar(context: context, message: "Unable to remove workout");
       }
     } finally {
-      if (AppConfig.isCoach) hideCoachLoadingOverlay(context);
+      if (AppConfig.isCoach && mounted) {
+        hideCoachLoadingOverlay(context);
+      }
     }
   }
 
@@ -484,7 +486,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       compact: true,
     ).then((result) async {
       if (result == null) return;
-      if (!context.mounted) return;
+      if (!mounted) return;
       final updated = template.copyWith(
         name: result.name,
         notes: result.notes,
@@ -493,7 +495,9 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
       try {
         await controller.updateTemplate(template: updated);
       } finally {
-        if (AppConfig.isCoach) hideCoachLoadingOverlay(context);
+        if (AppConfig.isCoach && mounted) {
+          hideCoachLoadingOverlay(context);
+        }
       }
     });
   }

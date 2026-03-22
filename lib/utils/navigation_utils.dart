@@ -71,6 +71,7 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
 
   if (details == null) return null;
 
+  if (!context.mounted) return null;
   final controller = context.read<SupabaseExerciseAndRoutineController>();
   if (AppConfig.isCoach) showCoachLoadingOverlay(context);
   try {
@@ -92,7 +93,9 @@ Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
       return created;
     }
   } finally {
-    if (AppConfig.isCoach) hideCoachLoadingOverlay(context);
+    if (context.mounted && AppConfig.isCoach) {
+      hideCoachLoadingOverlay(context);
+    }
   }
 }
 

@@ -34,6 +34,7 @@ import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/chat/chat_layout.dart';
 import '../../widgets/chat/chat_peer_initials_badge.dart';
+import '../video/outgoing_call_screen.dart';
 import '../video/video_call_screen.dart';
 
 /// Cap initial local DB load (memory / first frame). Older messages are loaded
@@ -179,8 +180,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       return;
     }
     if (!mounted) return;
+    await _presentVideoCallPermissionSheet(context);
+  }
+
+  /// [sheetContext] must be the caller's [context] after a [mounted] check.
+  Future<void> _presentVideoCallPermissionSheet(
+      BuildContext sheetContext) async {
     await showAppActionBottomSheet<void>(
-      context: context,
+      context: sheetContext,
       isDismissible: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
@@ -190,15 +197,15 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           children: [
             Text(
               'Camera and microphone access',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: 12),
             Text(
               'Allow access to your camera and microphone to make video calls with your coach or client.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
+              style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(sheetContext)
                         .colorScheme
                         .onSurface
                         .withValues(alpha: 0.8),
@@ -209,21 +216,22 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               width: double.infinity,
               child: OpacityButtonWidgetTwo(
                 label: 'Allow',
-                buttonColor: Theme.of(context).colors.vibrantAccent,
+                buttonColor: Theme.of(sheetContext).colors.vibrantAccent,
                 onPressed: () async {
                   final statuses = await [
                     Permission.camera,
                     Permission.microphone,
                   ].request();
-                  if (!context.mounted) return;
-                  Navigator.of(context).pop();
+                  if (!sheetContext.mounted) return;
+                  Navigator.of(sheetContext).pop();
                   if (statuses[Permission.camera] == PermissionStatus.granted &&
                       statuses[Permission.microphone] ==
                           PermissionStatus.granted) {
                     _pushVideoCallScreen();
                   } else {
+                    if (!sheetContext.mounted) return;
                     showErrorBottomSheet(
-                      context: context,
+                      context: sheetContext,
                       message:
                           'Camera and microphone access is required for video calls.',
                     );
@@ -237,50 +245,99 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _pushVideoCallScreen() async {
+  Future<void> _pushVideoCallScreen() async {
     final callerId = Supabase.instance.client.auth.currentUser?.id;
     final calleeId = _targetUserId();
     // Display name of the *other* party on the local VideoCallScreen (unchanged).
     final targetDisplayName =
         AppConfig.isCoach ? widget.clientName : widget.coachName;
 
+    if (!mounted) return;
+    final nav = Navigator.of(context);
+    var outgoingCancelled = false;
+
+    late final Route<void> outgoingRoute;
+    outgoingRoute = PageRouteBuilder<void>(
+      settings: const RouteSettings(name: 'outgoing_call'),
+      opaque: true,
+      fullscreenDialog: true,
+      pageBuilder: (_, __, ___) => OutgoingCallScreen(
+        calleeName: targetDisplayName,
+        coachIdForProfilePhoto: AppConfig.isClient ? widget.coachId : null,
+        onCancel: () => outgoingCancelled = true,
+      ),
+      transitionsBuilder: (_, animation, __, child) {
+        const begin = Offset(0.0, 1.0);
+        const end = Offset.zero;
+        final tween = Tween(begin: begin, end: end)
+            .chain(CurveTween(curve: Curves.easeOutCubic));
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: child,
+        );
+      },
+    );
+    nav.push(outgoingRoute);
+
     String? notifyCallerName;
     String? notifyCallerImageUrl;
-    if (AppConfig.isCoach && callerId != null && callerId.isNotEmpty) {
-      // Caller is coach: send name + photo for callee’s incoming UI (FCM).
-      final coach = await SupabaseCoachesRepository().fetchCoachById(callerId);
-      notifyCallerName = coach?.name.trim();
-      if (notifyCallerName == null || notifyCallerName.isEmpty) {
-        notifyCallerName = 'Coach';
+    String? channelName;
+
+    try {
+      if (AppConfig.isCoach && callerId != null && callerId.isNotEmpty) {
+        // Caller is coach: send name + photo for callee’s incoming UI (FCM).
+        final coach =
+            await SupabaseCoachesRepository().fetchCoachById(callerId);
+        notifyCallerName = coach?.name.trim();
+        if (notifyCallerName == null || notifyCallerName.isEmpty) {
+          notifyCallerName = 'Coach';
+        }
+        final url = coach?.profileImageUrl?.trim();
+        notifyCallerImageUrl =
+            (url != null && url.isNotEmpty) ? url : null;
+      } else {
+        // Caller is client: name only; client profile images not supported yet.
+        notifyCallerName = _clientDisplayName();
+        notifyCallerImageUrl = null;
       }
-      final url = coach?.profileImageUrl?.trim();
-      notifyCallerImageUrl =
-          (url != null && url.isNotEmpty) ? url : null;
-    } else {
-      // Caller is client: name only; client profile images not supported yet.
-      notifyCallerName = _clientDisplayName();
-      notifyCallerImageUrl = null;
+
+      if (callerId != null && calleeId.isNotEmpty) {
+        channelName = await sendIncomingCallNotification(
+          calleeUserId: calleeId,
+          callerId: callerId,
+          callerName: notifyCallerName,
+          callerImageUrl: notifyCallerImageUrl,
+        );
+      }
+    } catch (e, st) {
+      debugPrint('Error placing video call: $e\n$st');
     }
 
-    String? channelName;
-    if (callerId != null && calleeId.isNotEmpty) {
-      channelName = await sendIncomingCallNotification(
-        calleeUserId: calleeId,
-        callerId: callerId,
-        callerName: notifyCallerName,
-        callerImageUrl: notifyCallerImageUrl,
-      );
-    }
     if (!mounted) return;
-    if (channelName == null || channelName.isEmpty) return;
-    Navigator.of(context).push(
-      PageRouteBuilder(
+
+    if (outgoingCancelled || !outgoingRoute.isCurrent) {
+      return;
+    }
+
+    if (channelName == null || channelName.isEmpty) {
+      nav.pop();
+      if (!mounted) return;
+      showErrorBottomSheet(
+        context: context,
+        message:
+            'Could not start the video call. Check your connection and try again.',
+      );
+      return;
+    }
+
+    nav.pushReplacement(
+      PageRouteBuilder<void>(
         fullscreenDialog: true,
         opaque: true,
         pageBuilder: (_, __, ___) => VideoCallScreen(
           targetUserId: calleeId,
           targetUserName: targetDisplayName,
-          channelName: channelName,
+          channelName: channelName!,
         ),
         transitionsBuilder: (_, animation, __, child) {
           const begin = Offset(0.0, 1.0);
@@ -302,9 +359,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   Future<void> _showNotificationPermissionSheetIfNeeded() async {
     if (await isNotificationPermissionGranted()) return;
     if (!mounted) return;
+    await _presentNotificationPermissionSheet(context);
+  }
 
+  Future<void> _presentNotificationPermissionSheet(
+      BuildContext sheetContext) async {
     await showAppActionBottomSheet<void>(
-      context: context,
+      context: sheetContext,
       isDismissible: true,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
@@ -314,15 +375,15 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           children: [
             Text(
               'Get notified of new messages',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: 12),
             Text(
               'Allow notifications to receive alerts when your coach or client sends you a message.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
+              style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(sheetContext)
                         .colorScheme
                         .onSurface
                         .withValues(alpha: 0.8),
@@ -333,12 +394,11 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               width: double.infinity,
               child: OpacityButtonWidgetTwo(
                 label: 'Enable notifications',
-                buttonColor: Theme.of(context).colors.vibrantAccent,
+                buttonColor: Theme.of(sheetContext).colors.vibrantAccent,
                 onPressed: () async {
                   await requestNotificationPermission();
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
+                  if (!sheetContext.mounted) return;
+                  Navigator.of(sheetContext).pop();
                 },
               ),
             ),
@@ -1068,64 +1128,68 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     await _sendVideoMessage(targetAgoraUserId, picked.path);
   }
 
+  Future<void> _presentMicPermissionSheet(BuildContext sheetContext) async {
+    await showAppActionBottomSheet<void>(
+      context: sheetContext,
+      isDismissible: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Microphone access',
+              style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Allow microphone access to record voice messages.',
+              style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(sheetContext)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.8),
+                  ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Allow',
+                buttonColor: Theme.of(sheetContext).colors.vibrantAccent,
+                onPressed: () async {
+                  final status = await Permission.microphone.request();
+                  if (!sheetContext.mounted) return;
+                  Navigator.of(sheetContext).pop();
+                  if (status == PermissionStatus.granted) {
+                    _recordAndSendVoice();
+                  } else {
+                    if (!sheetContext.mounted) return;
+                    showErrorBottomSheet(
+                      context: sheetContext,
+                      message:
+                          'Microphone access is required for voice messages.',
+                    );
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _recordAndSendVoice() async {
     final targetAgoraUserId = _targetAgoraUserId;
     if (targetAgoraUserId == null) return;
     final micGranted = await Permission.microphone.isGranted;
     if (!micGranted) {
-      if (!context.mounted) return;
-      final ctx = context;
-      await showAppActionBottomSheet<void>(
-        context: ctx,
-        isDismissible: true,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Microphone access',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Allow microphone access to record voice messages.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.8),
-                    ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: OpacityButtonWidgetTwo(
-                  label: 'Allow',
-                  buttonColor: Theme.of(context).colors.vibrantAccent,
-                  onPressed: () async {
-                    final status = await Permission.microphone.request();
-                    if (!ctx.mounted) return;
-                    Navigator.of(ctx).pop();
-                    if (status == PermissionStatus.granted) {
-                      _recordAndSendVoice();
-                    } else if (ctx.mounted) {
-                      showErrorBottomSheet(
-                        context: ctx,
-                        message:
-                            'Microphone access is required for voice messages.',
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      if (!mounted) return;
+      await _presentMicPermissionSheet(context);
       return;
     }
     if (!mounted) return;

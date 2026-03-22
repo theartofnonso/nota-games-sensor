@@ -249,7 +249,8 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                       return InkWell(
                                         borderRadius: BorderRadius.circular(18),
                                         onTap: () async {
-                                          showCoachLoadingOverlay(context);
+                                          final itemContext = context;
+                                          showCoachLoadingOverlay(itemContext);
                                           try {
                                             await routineController
                                                 .loadClientData(
@@ -262,7 +263,10 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                               clientId: client.clientId,
                                             );
                                           } finally {
-                                            hideCoachLoadingOverlay(context);
+                                            if (itemContext.mounted) {
+                                              hideCoachLoadingOverlay(
+                                                  itemContext);
+                                            }
                                           }
                                           if (!mounted || !context.mounted) {
                                             return;

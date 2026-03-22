@@ -212,9 +212,11 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             : (bool didPop, dynamic result) async {
                 if (didPop) return;
 
+                final navigator = Navigator.of(context);
                 final shouldPop = await _handleBackNavigation();
-                if (shouldPop && mounted) {
-                  Navigator.of(context).pop();
+                if (!mounted) return;
+                if (shouldPop) {
+                  navigator.pop();
                 }
               },
         child: Scaffold(
@@ -558,6 +560,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
       // Clear SharedPrefs draft only after successful save to Supabase.
       await exerciseLogController.onClear();
 
+      if (!mounted) return;
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop(savedLog);
       }

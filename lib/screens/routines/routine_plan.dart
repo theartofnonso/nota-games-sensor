@@ -314,7 +314,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       compact: true,
     ).then((result) async {
       if (result == null) return;
-      if (!context.mounted) return;
+      if (!mounted) return;
       if (AppConfig.isCoach) showCoachLoadingOverlay(context);
       try {
         final exerciseAndRoutineController =
@@ -330,7 +330,9 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
         await exerciseAndRoutineController.saveTemplate(templateDto: template);
       } finally {
-        if (AppConfig.isCoach) hideCoachLoadingOverlay(context);
+        if (AppConfig.isCoach && mounted) {
+          hideCoachLoadingOverlay(context);
+        }
       }
     });
   }

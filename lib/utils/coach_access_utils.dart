@@ -30,6 +30,7 @@ Future<bool> requireCoachAccess({
   final canProceed = await checkCoachAccess(email);
   if (canProceed) return true;
 
+  if (!context.mounted) return false;
   await _showCoachAccessRequiredSheet(context);
   if (signOutOnFail && onDenied != null) {
     await onDenied();

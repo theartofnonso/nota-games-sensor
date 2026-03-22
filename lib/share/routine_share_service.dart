@@ -35,6 +35,7 @@ class RoutineShareService {
     final file = await _generateSummaryImage(
         context: context, log: log, summary: summary, variant: variant);
 
+    if (!context.mounted) return;
     final size = MediaQuery.of(context).size;
     final shareOrigin = Rect.fromCenter(
       center: Offset(size.width / 2, size.height / 2),
