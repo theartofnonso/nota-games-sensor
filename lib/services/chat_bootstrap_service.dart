@@ -9,6 +9,7 @@ import '../urls.dart';
 import '../utils/coach_mapping_utils.dart';
 import '../utils/notathletes_auth_headers.dart';
 import '../utils/agora_chat_utils.dart';
+import 'chat_unread_counts_service.dart';
 import 'chat_unread_service.dart';
 import 'push_token_service.dart';
 
@@ -27,6 +28,23 @@ class ChatBootstrapService {
 
   /// True once Agora Chat has logged in this session (or was already logged in).
   static final ValueNotifier<bool> agoraLoggedIn = ValueNotifier(false);
+
+  /// Resets unread notifiers and [agoraLoggedIn]. Call on sign-out (before or
+  /// after [logoutAgoraChat]) so badges don’t show the previous user’s counts.
+  static void clearLocalChatState() {
+    agoraLoggedIn.value = false;
+    ChatUnreadService().clear();
+    ChatUnreadCountsService().clear();
+  }
+
+  /// Clears local chat UI state and logs out of Agora. Does **not** sign out
+  /// Supabase — call [SupabaseClient.auth.signOut] after this when needed.
+  static Future<void> logoutAgoraChat() async {
+    clearLocalChatState();
+    try {
+      await ChatClient.getInstance.logout(true);
+    } catch (_) {}
+  }
 
   /// Fetches an Agora Chat token for the given [supabaseUserId] (raw auth user id).
   /// Backend derives the Agora username. Shared by bootstrap and ChatScreen. Returns null on failure.
@@ -70,12 +88,14 @@ class ChatBootstrapService {
       final token = await resolveAgoraChatToken(supabaseUserId);
       if (token == null || token.isEmpty) {
         debugPrint('[ChatBootstrap] No Agora token; skipping login');
+        agoraLoggedIn.value = false;
         return;
       }
 
       await ChatClient.getInstance.loginWithToken(agoraUserId, token);
       if (ChatClient.getInstance.currentUserId != agoraUserId) {
         debugPrint('[ChatBootstrap] Login verification failed');
+        agoraLoggedIn.value = false;
         return;
       }
       debugPrint('[ChatBootstrap] Agora login OK');
@@ -104,6 +124,7 @@ class ChatBootstrapService {
       }
     } catch (e) {
       debugPrint('[ChatBootstrap] Error: $e');
+      agoraLoggedIn.value = false;
     }
   }
 }

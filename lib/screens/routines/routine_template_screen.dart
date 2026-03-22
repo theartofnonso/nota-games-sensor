@@ -26,7 +26,6 @@ import '../../utils/general_utils.dart';
 import '../../utils/navigation_utils.dart';
 import '../../utils/shell_tab_paths.dart';
 import '../../utils/notifications_utils.dart';
-import '../../widgets/navigation/app_floating_navigation_bar.dart';
 import '../../utils/app_privileges.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../shared_prefs.dart';
@@ -61,7 +60,8 @@ class RoutineTemplateScreen extends StatefulWidget {
   final String id;
   final ScrollController? scrollController;
 
-  /// Main shell tab stack: back returns to [kShellRoutinesPath]; reserve nav bar inset.
+  /// Main shell tab stack: back returns to [kShellRoutinesPath]; bottom inset is
+  /// safe area only (floating nav is hidden on this route).
   final bool embeddedInShell;
 
   const RoutineTemplateScreen({
@@ -175,7 +175,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
         .fold<int>(0, (sum, exercise) => sum + exercise.sets.length);
 
     final bottomNavPad = widget.embeddedInShell
-        ? MediaQuery.paddingOf(context).bottom + kAppFloatingNavBarReserveHeight
+        ? MediaQuery.paddingOf(context).bottom
         : 0.0;
 
     void onLeadingPressed() {

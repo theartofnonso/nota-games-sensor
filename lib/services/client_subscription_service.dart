@@ -16,6 +16,7 @@ import '../utils/theme/color_extensions.dart';
 import '../utils/uri_utils.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
+import 'chat_bootstrap_service.dart';
 import 'iap_service.dart';
 
 const String _privacyPolicyUrl = 'https://www.notathletes.com/privacy';
@@ -823,6 +824,7 @@ class _ClientSubscriptionPaywallSheetState
                       Center(
                         child: TextButton(
                           onPressed: () async {
+                            await ChatBootstrapService.logoutAgoraChat();
                             await Supabase.instance.client.auth.signOut();
                           },
                           child: const Text('Log out'),

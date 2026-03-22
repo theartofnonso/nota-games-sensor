@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../services/chat_bootstrap_service.dart';
 import '../../utils/notathletes_auth_headers.dart';
 import '../../utils/dialog_utils.dart';
 import '../../urls.dart';
@@ -183,12 +183,10 @@ Future<void> requestAccountDeletion(
     return;
   }
 
-  // 3. Sign out
+  // 3. Sign out (clear unread + Agora session, then Supabase)
   if (!context.mounted) return;
   setLoading(false);
-  try {
-    await ChatClient.getInstance.logout(true);
-  } catch (_) {}
+  await ChatBootstrapService.logoutAgoraChat();
   await Supabase.instance.client.auth.signOut();
 }
 

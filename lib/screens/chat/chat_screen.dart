@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -34,6 +35,16 @@ import '../../widgets/buttons/opacity_button_widget_two.dart';
 import '../../widgets/chat/chat_layout.dart';
 import '../../widgets/chat/chat_peer_initials_badge.dart';
 import '../video/video_call_screen.dart';
+
+/// Cap initial local DB load (memory / first frame). Older messages are loaded
+/// on demand via the "Load earlier" control ([fetchHistoryMessages] / cursor).
+const int _kMaxLocalChatMessagesLoad = 500;
+
+/// Agora server page size for history APIs (SDK max 50 for [fetchHistoryMessagesByOption]).
+const int _kLoadEarlierServerPageSize = 50;
+
+/// Near the top of the message list, auto-load older messages (no tap).
+const double _kLoadEarlierScrollThreshold = 88;
 
 class ChatScreen extends StatefulWidget {
   static const routeName = '/chat_screen';
@@ -74,6 +85,15 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   String? _targetAgoraUserId;
   late final String _messageHandlerId;
   final Set<String> _attachmentDownloadsInFlight = {};
+  /// Avoid overlapping [fetchHistoryMessagesByOption] calls (can trigger Agora 400/303).
+  Future<void>? _historyFetchInFlight;
+
+  /// More older messages may exist on the Agora server (or we haven't ruled it out yet).
+  bool _hasMoreEarlierHistory = false;
+  bool _loadingEarlier = false;
+
+  /// Cursor for the next server page after the first [fetchHistoryMessages] anchor request.
+  String? _earlierServerCursor;
 
   bool _isSending = false;
   final ImagePicker _imagePicker = ImagePicker();
@@ -83,8 +103,29 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _scrollController = widget.scrollController ?? ScrollController();
+    _scrollController.addListener(_onScrollLoadEarlierIfNeeded);
     _messageHandlerId = 'chat_screen_${DateTime.now().millisecondsSinceEpoch}';
     _initializeChat();
+  }
+
+  /// When the user scrolls to the top, fetch the next page from the server.
+  void _onScrollLoadEarlierIfNeeded() {
+    if (!_scrollController.hasClients) return;
+    if (_messages.isEmpty || !_hasMoreEarlierHistory || _loadingEarlier) {
+      return;
+    }
+    final pos = _scrollController.position;
+    if (pos.pixels <= _kLoadEarlierScrollThreshold) {
+      unawaited(_loadEarlierFromServer());
+    }
+  }
+
+  /// Short threads may sit at offset 0 without firing [ScrollController] notifications.
+  void _scheduleScrollLoadEarlierCheck() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _onScrollLoadEarlierIfNeeded();
+    });
   }
 
   @override
@@ -95,6 +136,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       _conversation = null;
       _targetAgoraUserId = toAgoraUsername(_targetUserId());
       _messages.clear();
+      _hasMoreEarlierHistory = false;
+      _loadingEarlier = false;
+      _earlierServerCursor = null;
       _initializeChat();
     }
   }
@@ -410,7 +454,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
       final messages = await _conversation!.loadMessages(
         startMsgId: '',
-        loadCount: 10000, // Load all cached messages
+        loadCount: _kMaxLocalChatMessagesLoad,
         direction: ChatSearchDirection.Up,
       );
 
@@ -421,26 +465,158 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           _ensureAttachmentAvailable(message);
         }
         _sortMessages();
+        // Allow pulling older history from the server for any non-empty thread.
+        _hasMoreEarlierHistory = messages.isNotEmpty;
       });
+      _scheduleScrollLoadEarlierCheck();
     } catch (e) {
       debugPrint('Error loading cached messages: $e');
+    }
+  }
+
+  /// Oldest loaded message id — server [fetchHistoryMessages] loads older than this anchor.
+  String? _oldestLoadedMessageId() {
+    for (final m in _messages) {
+      if (m.msgId.isNotEmpty) return m.msgId;
+    }
+    return null;
+  }
+
+  /// Pull the next page of **older** messages from the Agora server (not local DB).
+  ///
+  /// First request uses deprecated [fetchHistoryMessages] with [startMsgId] = oldest
+  /// shown message; continuation uses [fetchHistoryMessagesByOption] + [needSave] so
+  /// rows persist locally for next app launch.
+  Future<void> _loadEarlierFromServer() async {
+    if (_loadingEarlier || !_hasMoreEarlierHistory) return;
+    final targetAgoraUserId = _targetAgoraUserId;
+    if (targetAgoraUserId == null) return;
+
+    final inflight = _historyFetchInFlight;
+    if (inflight != null) {
+      try {
+        await inflight;
+      } catch (_) {}
+      if (!mounted) return;
+    }
+
+    final scroll = _scrollController;
+    final maxBefore =
+        scroll.hasClients ? scroll.position.maxScrollExtent : 0.0;
+    final pixelsBefore = scroll.hasClients ? scroll.position.pixels : 0.0;
+
+    setState(() => _loadingEarlier = true);
+    try {
+      late final ChatCursorResult<ChatMessage> result;
+      if (_earlierServerCursor == null || _earlierServerCursor!.isEmpty) {
+        final anchorId = _oldestLoadedMessageId();
+        if (anchorId == null || anchorId.isEmpty) {
+          if (mounted) {
+            setState(() {
+              _hasMoreEarlierHistory = false;
+              _loadingEarlier = false;
+            });
+          }
+          return;
+        }
+        // ignore: deprecated_member_use
+        result = await ChatClient.getInstance.chatManager.fetchHistoryMessages(
+          conversationId: targetAgoraUserId,
+          type: ChatConversationType.Chat,
+          pageSize: _kLoadEarlierServerPageSize,
+          direction: ChatSearchDirection.Up,
+          startMsgId: anchorId,
+        );
+      } else {
+        result = await ChatClient.getInstance.chatManager
+            .fetchHistoryMessagesByOption(
+          targetAgoraUserId,
+          ChatConversationType.Chat,
+          options: const FetchMessageOptions(
+            direction: ChatSearchDirection.Up,
+            needSave: true,
+          ),
+          cursor: _earlierServerCursor,
+          pageSize: _kLoadEarlierServerPageSize,
+        );
+      }
+
+      if (!mounted) return;
+
+      final page = result.data;
+      final nextCursor = result.cursor;
+      final cursorNonEmpty = nextCursor != null && nextCursor.isNotEmpty;
+
+      if (page.isEmpty) {
+        setState(() {
+          _earlierServerCursor = cursorNonEmpty ? nextCursor : null;
+          _hasMoreEarlierHistory = cursorNonEmpty;
+          _loadingEarlier = false;
+        });
+        _scheduleScrollLoadEarlierCheck();
+        return;
+      }
+
+      setState(() {
+        for (final message in page) {
+          _mergeMessage(message);
+          _ensureAttachmentAvailable(message);
+        }
+        _sortMessages();
+        _earlierServerCursor = cursorNonEmpty ? nextCursor : null;
+        _hasMoreEarlierHistory = page.length >= _kLoadEarlierServerPageSize ||
+            (_earlierServerCursor != null &&
+                _earlierServerCursor!.isNotEmpty);
+        _loadingEarlier = false;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !scroll.hasClients) return;
+        final delta = scroll.position.maxScrollExtent - maxBefore;
+        if (delta > 0) {
+          scroll.jumpTo((pixelsBefore + delta).clamp(
+            scroll.position.minScrollExtent,
+            scroll.position.maxScrollExtent,
+          ));
+        }
+        _scheduleScrollLoadEarlierCheck();
+      });
+    } catch (e) {
+      debugPrint('Error loading earlier messages from server: $e');
+      if (mounted) {
+        setState(() => _loadingEarlier = false);
+      }
     }
   }
 
   /// Fetch recent messages from server in background (non-blocking)
   /// Called after login completes - no need to check login state
   ///
-  /// Agora Chat SDK: [fetchHistoryMessagesByOption] only allows **pageSize in [1, 50]**
-  /// and returns a **cursor** for the next page. A single call with a huge pageSize does
-  /// not load full history; we must paginate with [cursor] until exhausted.
+  /// Light server sync after local cache: a few pages of the **newest** history so new
+  /// messages merge in without downloading the whole thread (older = "Load earlier").
+  ///
+  /// [fetchHistoryMessagesByOption] allows **pageSize in [1, 50]** and returns a cursor.
   Future<void> _fetchRecentMessagesFromServer() async {
+    if (_historyFetchInFlight != null) {
+      return _historyFetchInFlight!;
+    }
+    final run = _fetchRecentMessagesFromServerImpl();
+    _historyFetchInFlight = run;
+    try {
+      await run;
+    } finally {
+      _historyFetchInFlight = null;
+    }
+  }
+
+  Future<void> _fetchRecentMessagesFromServerImpl() async {
     final targetAgoraUserId = _targetAgoraUserId;
     if (targetAgoraUserId == null) return;
 
     // SDK-enforced max per request (see agora_chat_sdk ChatManager.fetchHistoryMessagesByOption).
     const agoraMaxPageSize = 50;
-    // Safety cap so a bad cursor loop cannot run forever (~25k messages).
-    const maxPages = 500;
+    // Only pull a small slice of the newest server history on open; full backfill = "Load earlier".
+    const maxPages = 3;
 
     try {
       final List<ChatMessage> serverMessages = [];
@@ -490,7 +666,10 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       }
       // Always refresh UI after fetch so list reflects current _messages (e.g. after first load)
       if (mounted) setState(() {});
+      _scheduleScrollLoadEarlierCheck();
     } catch (e) {
+      // Agora may return HTTP 400 on messageroaming + SDK code 303 if roaming isn’t
+      // enabled, cursor is invalid, or the server rejects the request — cached UI still works.
       debugPrint('Error fetching chat history from server: $e');
       // Silently fail - cached messages are already shown
       if (mounted) setState(() {});
@@ -568,6 +747,24 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     _messages.add(message);
   }
 
+  /// Native SDK updates the local DB after [downloadAttachment] / [downloadThumbnail],
+  /// but our in-memory [ChatMessage] instances stay stale until we reload from the DB.
+  Future<void> _reloadChatMessageFromLocalDb(String msgId) async {
+    if (msgId.isEmpty) return;
+    final conv = _conversation;
+    if (conv == null) return;
+    try {
+      final refreshed = await conv.loadMessage(msgId);
+      if (!mounted || refreshed == null) return;
+      setState(() {
+        _mergeMessage(refreshed);
+        _sortMessages();
+      });
+    } catch (e) {
+      debugPrint('Failed to refresh message $msgId after attachment download: $e');
+    }
+  }
+
   void _ensureAttachmentAvailable(ChatMessage message) {
     final msgId = message.msgId;
     if (msgId.isEmpty) return;
@@ -597,7 +794,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                 .downloadAttachment(message);
           }).whenComplete(() {
             _attachmentDownloadsInFlight.remove(msgId);
-            if (mounted) setState(() {});
+            if (mounted) unawaited(_reloadChatMessageFromLocalDb(msgId));
           });
         }
         return;
@@ -613,7 +810,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         }
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
-        if (mounted) setState(() {});
+        if (mounted) unawaited(_reloadChatMessageFromLocalDb(msgId));
       });
       return;
     }
@@ -633,7 +830,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         }
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
-        if (mounted) setState(() {});
+        if (mounted) unawaited(_reloadChatMessageFromLocalDb(msgId));
       });
       return;
     }
@@ -648,7 +845,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         await ChatClient.getInstance.chatManager.downloadAttachment(message);
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
-        if (mounted) setState(() {});
+        if (mounted) unawaited(_reloadChatMessageFromLocalDb(msgId));
       });
       return;
     }
@@ -664,7 +861,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         await ChatClient.getInstance.chatManager.downloadAttachment(message);
       }).whenComplete(() {
         _attachmentDownloadsInFlight.remove(msgId);
-        if (mounted) setState(() {});
+        if (mounted) unawaited(_reloadChatMessageFromLocalDb(msgId));
       });
     }
   }
@@ -714,12 +911,28 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _handleResume() async {
-    final userId = _currentAgoraUserId;
-    if (userId == null) {
+    final supabaseUserId =
+        Supabase.instance.client.auth.currentUser?.id ?? _supabaseUserId;
+    if (supabaseUserId == null) {
       await _initializeChat();
       return;
     }
-    // Just refresh messages - login was done once at start
+
+    // [MyApp] may have logged Agora out while backgrounded; restore before API calls.
+    if (ChatClient.getInstance.currentUserId == null) {
+      await ChatBootstrapService.ensureAgoraAndPushSetup(supabaseUserId);
+      if (ChatClient.getInstance.currentUserId == null) {
+        try {
+          await _ensureAgoraLoggedIn(supabaseUserId);
+        } catch (e) {
+          debugPrint('Error resuming chat (re-login): $e');
+          return;
+        }
+      }
+    }
+
+    if (!mounted) return;
+
     try {
       await _refreshMessages();
       await _markConversationRead();
@@ -967,6 +1180,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _mergeMessage(message);
         _sortMessages();
       });
+      await _markConversationRead();
+      _refreshUnreadBadges();
       _scrollToBottom();
     } catch (e) {
       _handleSendError(e, 'image');
@@ -988,6 +1203,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         _mergeMessage(message);
         _sortMessages();
       });
+      await _markConversationRead();
+      _refreshUnreadBadges();
       _scrollToBottom();
     } catch (e) {
       _handleSendError(e, 'video');
@@ -1031,6 +1248,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     ChatClient.getInstance.chatManager.removeEventHandler(_messageHandlerId);
+    _scrollController.removeListener(_onScrollLoadEarlierIfNeeded);
     _messageController.dispose();
     if (widget.scrollController == null) {
       _scrollController.dispose();
@@ -1193,28 +1411,60 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               : Builder(
                   builder: (context) {
                     final entries = _buildChatEntries();
-                    return ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.manual,
-                      itemCount: entries.length,
-                      itemBuilder: (context, index) {
-                        final entry = entries[index];
-                        if (entry.isDivider) {
-                          return _ChatDateDivider(label: entry.label!);
-                        }
-                        final message = entry.message!;
-                        return _ChatMessageBubble(
-                          message: message,
-                          isCurrentUser: _isCurrentUserMessage(message),
-                          timestamp:
-                              _formatTimestamp(_messageTimestamp(message)),
-                          isDarkMode: isDarkMode,
-                          vibrantAccent: colors?.vibrantAccent ?? Colors.green,
-                        );
-                      },
+                    final accent = colors?.vibrantAccent ?? Colors.green;
+                    return Stack(
+                      fit: StackFit.expand,
+                      clipBehavior: Clip.none,
+                      children: [
+                        ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.manual,
+                          itemCount: entries.length,
+                          itemBuilder: (context, index) {
+                            final entry = entries[index];
+                            if (entry.isDivider) {
+                              return _ChatDateDivider(label: entry.label!);
+                            }
+                            final message = entry.message!;
+                            return KeyedSubtree(
+                              key: ValueKey(
+                                message.msgId.isNotEmpty
+                                    ? 'm_${message.msgId}'
+                                    : 'm_idx_$index',
+                              ),
+                              child: _ChatMessageBubble(
+                                message: message,
+                                isCurrentUser: _isCurrentUserMessage(message),
+                                timestamp: _formatTimestamp(
+                                    _messageTimestamp(message)),
+                                isDarkMode: isDarkMode,
+                                vibrantAccent: accent,
+                              ),
+                            );
+                          },
+                        ),
+                        if (_loadingEarlier)
+                          Positioned(
+                            top: 4,
+                            left: 0,
+                            right: 0,
+                            child: IgnorePointer(
+                              child: Center(
+                                child: SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: accent,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     );
                   },
                 ),
@@ -1888,6 +2138,41 @@ class _VideoAttachmentState extends State<_VideoAttachment> {
   }
 }
 
+/// Plays local file or remote URL; catches iOS [PlatformException] when AVPlayer
+/// rejects the URL (expired signed URL, ATS, etc.) so Sentry doesn’t see an unhandled error.
+Future<void> _playChatVoiceAudio({
+  required BuildContext context,
+  required AudioPlayer player,
+  required String path,
+}) async {
+  try {
+    // Clear any previous source (helps iOS AVPlayer when re-opening chat / replaying).
+    await player.stop();
+    if (path.startsWith('http')) {
+      await player.play(UrlSource(path));
+    } else {
+      await player.play(DeviceFileSource(path));
+    }
+  } on PlatformException catch (e, st) {
+    debugPrint('Voice playback (PlatformException): $e\n$st');
+    if (context.mounted) {
+      showSnackbar(
+        context: context,
+        message:
+            'Could not play this audio. Try again in a moment, or ensure the file finished downloading.',
+      );
+    }
+  } catch (e, st) {
+    debugPrint('Voice playback failed: $e\n$st');
+    if (context.mounted) {
+      showSnackbar(
+        context: context,
+        message: 'Could not play this audio.',
+      );
+    }
+  }
+}
+
 class _VoiceAttachment extends StatefulWidget {
   final ChatVoiceMessageBody body;
   final Color textColor;
@@ -1941,11 +2226,11 @@ class _VoiceAttachmentState extends State<_VoiceAttachment> {
     if (_isPlaying) {
       await _player.pause();
     } else {
-      if (path.startsWith('http')) {
-        await _player.play(UrlSource(path));
-      } else {
-        await _player.play(DeviceFileSource(path));
-      }
+      await _playChatVoiceAudio(
+        context: context,
+        player: _player,
+        path: path,
+      );
     }
   }
 
@@ -2033,11 +2318,11 @@ class _VoiceFileAttachmentState extends State<_VoiceFileAttachment> {
     if (_isPlaying) {
       await _player.pause();
     } else {
-      if (path.startsWith('http')) {
-        await _player.play(UrlSource(path));
-      } else {
-        await _player.play(DeviceFileSource(path));
-      }
+      await _playChatVoiceAudio(
+        context: context,
+        player: _player,
+        path: path,
+      );
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/screens/home.dart';
+import 'package:trainware/services/app_bottom_sheet_visibility.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/screens/logs/coach_feedback_feed_screen.dart';
@@ -46,10 +47,19 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   }
 
   /// Coach clients picker is full-screen; no bottom nav on `/coach`.
+  /// Client workout template detail (`/routine_template/...`) is a drill-down from
+  /// Routines; hide nav there so it matches a stacked detail screen.
   bool _showFloatingNavBar(BuildContext context) {
-    if (!AppConfig.isCoach) return true;
     final path = GoRouterState.of(context).uri.path;
-    return path != '/coach';
+    if (AppConfig.isCoach && path == '/coach') return false;
+    if (isShellRoutineTemplatePath(path)) return false;
+    return true;
+  }
+
+  /// [AppBottomSheetVisibility] is updated by [showAppBottomSheet] / [showAppActionBottomSheet].
+  bool _shouldShowFloatingNavBar(BuildContext context, int openSheetCount) {
+    if (openSheetCount > 0) return false;
+    return _showFloatingNavBar(context);
   }
 
   @override
@@ -332,7 +342,6 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   Widget build(BuildContext context) {
     final navItems = _buildNavItems();
     final bottomSafe = MediaQuery.paddingOf(context).bottom;
-    final showNav = _showFloatingNavBar(context);
 
     return Scaffold(
       extendBody: true,
@@ -341,17 +350,24 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
         fit: StackFit.expand,
         children: [
           widget.child,
-          if (showNav)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: bottomSafe + 10,
-              child: AppFloatingNavigationBar(
-                currentIndex: _navIndex,
-                onDestinationSelected: _onDestinationSelected,
-                items: navItems,
-              ),
-            ),
+          ValueListenableBuilder<int>(
+            valueListenable: AppBottomSheetVisibility.instance.openCount,
+            builder: (context, openSheetCount, _) {
+              if (!_shouldShowFloatingNavBar(context, openSheetCount)) {
+                return const SizedBox.shrink();
+              }
+              return Positioned(
+                left: 16,
+                right: 16,
+                bottom: bottomSafe + 10,
+                child: AppFloatingNavigationBar(
+                  currentIndex: _navIndex,
+                  onDestinationSelected: _onDestinationSelected,
+                  items: navItems,
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

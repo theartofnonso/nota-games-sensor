@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:trainware/services/app_bottom_sheet_visibility.dart';
 import 'package:trainware/utils/general_utils.dart';
 
 /// Unified bottom sheet component for the entire app
@@ -55,6 +56,10 @@ class AppBottomSheet extends StatelessWidget {
 
     if (isDraggable) {
       return DraggableScrollableSheet(
+        // Let the modal barrier / scrim receive taps above the sheet. With the
+        // default expand: true, the sheet layer fills the screen and blocks
+        // barrier dismiss (only drag-to-close worked).
+        expand: false,
         initialChildSize: initialChildSize ?? 0.7,
         minChildSize: minChildSize ?? 0.5,
         maxChildSize: maxChildSize ?? 0.9,
@@ -115,42 +120,75 @@ Future<T?> showAppBottomSheet<T>({
   assert(builder != null || child != null,
       'Either builder or child must be provided');
 
-  return showModalBottomSheet<T>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: isScrollControlled,
-    isDismissible: isDismissible,
-    useRootNavigator: useRootNavigator,
-    enableDrag: enableDrag ?? isDismissible,
-    showDragHandle: false,
-    builder: (context) {
-      final sheet = AppBottomSheet(
-        isDraggable: isDraggable,
-        isDismissible: isDismissible,
-        initialChildSize: initialChildSize,
-        minChildSize: minChildSize,
-        maxChildSize: maxChildSize,
-        useBlurredTransparentBackground: useBlurredTransparentBackground,
-        blurSigma: blurSigma,
-        builder: builder,
-        child: child,
-      );
-      // Non-draggable + scroll-controlled: hug content height instead of a
-      // tall empty modal region (Flutter default for isScrollControlled: false).
-      if (!isDraggable && isScrollControlled) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            widthFactor: 1.0,
-            child: sheet,
-          ),
+  return AppBottomSheetVisibility.instance.track(
+    showModalBottomSheet<T>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: isScrollControlled,
+      isDismissible: isDismissible,
+      useRootNavigator: useRootNavigator,
+      enableDrag: enableDrag ?? isDismissible,
+      showDragHandle: false,
+      builder: (context) {
+        Future<void> dismissOnBarrierTap() async {
+          if (!isDismissible) return;
+          if (onBarrierTap != null) {
+            final should = await onBarrierTap();
+            if (!context.mounted) return;
+            if (should) Navigator.of(context).pop();
+          } else {
+            Navigator.of(context).maybePop();
+          }
+        }
+
+        Widget sheet = AppBottomSheet(
+          isDraggable: isDraggable,
+          isDismissible: isDismissible,
+          initialChildSize: initialChildSize,
+          minChildSize: minChildSize,
+          maxChildSize: maxChildSize,
+          useBlurredTransparentBackground: useBlurredTransparentBackground,
+          blurSigma: blurSigma,
+          builder: builder,
+          child: child,
         );
-      }
-      return sheet;
-    },
+        // Non-draggable + scroll-controlled: hug content height instead of a
+        // tall empty modal region (Flutter default for isScrollControlled: false).
+        if (!isDraggable && isScrollControlled) {
+          sheet = Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              widthFactor: 1.0,
+              child: sheet,
+            ),
+          );
+        }
+
+        // Modal page sits above the route barrier, so the barrier never gets
+        // pointer events. A full-screen hit target behind the sheet closes on tap.
+        if (!isDismissible) {
+          return sheet;
+        }
+
+        return Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => dismissOnBarrierTap(),
+                behavior: HitTestBehavior.opaque,
+                child: const SizedBox.expand(),
+              ),
+            ),
+            sheet,
+          ],
+        );
+      },
+    ),
   );
 }
 

@@ -687,10 +687,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    // Disconnect Agora when app loses foreground so Agora marks user offline
-    // and push notifications can be delivered for new messages.
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused ||
+    // Disconnect Agora when the app is fully backgrounded (not on `inactive`,
+    // which also fires for Control Center / task switcher and would churn login).
+    if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       unawaited(_logoutAgoraForBackground());
       return;
@@ -717,12 +716,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _restoreAgoraOnResume() async {
-    if (_agoraLifecycleTransitionInFlight) return;
     if (!_accessController.isAuthenticated ||
         _accessController.userId == null) {
       return;
     }
     if (ChatClient.getInstance.currentUserId != null) return;
+
+    // If [resumed] fires while background logout is still running, wait instead
+    // of skipping restore (otherwise Agora can stay logged out until next pause).
+    for (var i = 0; i < 30 && _agoraLifecycleTransitionInFlight; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    if (!mounted) return;
+    if (ChatClient.getInstance.currentUserId != null) return;
+
     await ChatBootstrapService.ensureAgoraAndPushSetup(
         _accessController.userId);
   }
@@ -779,6 +786,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
 
     if (!isAuthenticated && _lastAuthenticated) {
+      // Covers session expiry / remote sign-out (not only in-app performLogout).
+      unawaited(ChatBootstrapService.logoutAgoraChat());
       _startupComplete = false;
       _startupTasksStarted = false;
       AppStartupService.instance.reset();

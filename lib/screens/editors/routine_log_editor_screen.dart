@@ -366,8 +366,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                               ],
                             ),
                           ),
-                          if (AppPrivileges.isCoach ||
-                              AppPrivileges.isSelfCoaching)
+                          if (AppPrivileges.canCreateManageRoutines)
                             IconButton(
                               onPressed: _selectExercisesInLibrary,
                               icon: const FaIcon(
@@ -383,8 +382,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                       Expanded(
                           child: exerciseLogs.isEmpty
                             ? ListEmptyState(
-                                message: (AppPrivileges.isCoach ||
-                                        AppPrivileges.isSelfCoaching)
+                                message: AppPrivileges.canCreateManageRoutines
                                     ? 'No exercises yet.\nTap + to add exercises and start logging.'
                                     : 'No exercises yet.\nStart logging from your assigned workout.',
                                 lottieFuture: _emptyStateLottieFuture,

@@ -301,7 +301,7 @@ class _RoutineTemplateEditorScreenState
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  if (AppConfig.isCoach)
+                                  if (AppPrivileges.canCreateManageRoutines)
                                     IconButton(
                                       onPressed: _selectExercisesInLibrary,
                                       icon: const FaIcon(
