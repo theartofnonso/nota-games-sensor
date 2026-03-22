@@ -202,10 +202,8 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
           surfaceTintColor: Colors.transparent,
           scrolledUnderElevation: 0,
           leading: IconButton(
-            icon: FaIcon(
-              widget.embeddedInShell
-                  ? FontAwesomeIcons.chevronLeft
-                  : FontAwesomeIcons.solidCircleXmark,
+            icon: const FaIcon(
+              FontAwesomeIcons.solidCircleXmark,
               size: 28,
             ),
             onPressed: onLeadingPressed,

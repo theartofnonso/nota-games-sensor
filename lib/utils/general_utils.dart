@@ -7,12 +7,7 @@ import 'package:trainware/enums/weight_unit.dart';
 import 'package:trainware/widgets/icons/custom_wordmark_icon.dart';
 
 import '../colors.dart';
-import '../dtos/appsync/routine_log_dto.dart';
-import '../dtos/viewmodels/routine_log_arguments.dart';
-import '../enums/routine_editor_type_enums.dart';
 import '../shared_prefs.dart';
-import 'navigation_utils.dart';
-import 'unsaved_workout_utils.dart';
 
 bool isDefaultWeightUnit() {
   final weightString = SharedPrefs().weightUnit;
@@ -255,27 +250,6 @@ Color appBarBackgroundColor({required BuildContext context}) {
   Brightness systemBrightness = Theme.of(context).brightness;
   final isDarkMode = systemBrightness == Brightness.dark;
   return isDarkMode ? sapphireDark80 : Colors.white;
-}
-
-Future<void> logEmptyRoutine(
-    {required BuildContext context, String? workoutVideoUrl}) async {
-  // Prevent starting a new live session when there's an unsaved one
-  if (SharedPrefs().routineLog.isNotEmpty) {
-    await navigateToUnsavedSession(context);
-    return;
-  }
-
-  final log = RoutineLogDto(
-      id: "",
-      templateId: "",
-      name: "${timeOfDay()} Session",
-      exerciseLogs: [],
-      startTime: DateTime.now(),
-      endTime: DateTime.now());
-
-  final arguments =
-      RoutineLogArguments(log: log, editorMode: RoutineEditorMode.log);
-  navigateToRoutineLogEditor(context: context, arguments: arguments);
 }
 
 bool isOutsideReasonableRange(List<num> numbers, num newNumber,

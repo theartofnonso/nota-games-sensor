@@ -126,7 +126,7 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
           surfaceTintColor: Colors.transparent,
           scrolledUnderElevation: 0,
           leading: IconButton(
-              icon: const FaIcon(FontAwesomeIcons.arrowLeftLong),
+              icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 28),
               onPressed: context.pop)),
       body: Container(
         decoration: BoxDecoration(

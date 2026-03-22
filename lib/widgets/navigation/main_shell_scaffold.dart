@@ -41,8 +41,14 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   bool get _feedbackInNavBar => AppPrivileges.isProWithCoach;
 
   int get _settingsNavIndex {
-    if (AppConfig.isCoach) return 3;
+    if (AppConfig.isCoach) return 4;
     if (_feedbackInNavBar) return 4;
+    return 2;
+  }
+
+  /// Bottom-nav index of the Chat tab (varies by flavor / item count).
+  int get _chatNavIndex {
+    if (AppConfig.isCoach) return 3;
     return 2;
   }
 
@@ -181,6 +187,10 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
       next = 1;
     } else if (!AppConfig.isCoach && isShellRoutineTemplatePath(path)) {
       next = 1;
+    } else if (AppConfig.isCoach && path == kShellRoutinesPath) {
+      next = 2;
+    } else if (AppConfig.isCoach && isShellRoutineTemplatePath(path)) {
+      next = 2;
     } else if (!AppConfig.isCoach &&
         _feedbackInNavBar &&
         path == CoachFeedbackFeedScreen.routeName) {
@@ -213,7 +223,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   }
 
   Future<void> _openChatOverlay() async {
-    setState(() => _navIndex = 2);
+    setState(() => _navIndex = _chatNavIndex);
     await navigateToChat(context: context);
     if (mounted) _syncNavIndexFromRoute();
   }
@@ -237,10 +247,13 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
           router.go('/coach');
           break;
         case 2:
+          navigateToPrimaryRoutinePlan(context: context);
+          break;
+        case 3:
           _openChatOverlay();
           break;
       }
-      if (index == 0 || index == 1) {
+      if (index == 0 || index == 1 || index == 2) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _syncNavIndexFromRoute();
         });
@@ -289,7 +302,6 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   }
 
   List<AppFloatingNavItem> _buildNavItems() {
-    final middleLabel = AppConfig.isCoach ? 'Clients' : 'Routines';
     final items = <AppFloatingNavItem>[
       AppFloatingNavItem(
         label: 'Home',
@@ -297,7 +309,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
         selectedIcon: const Icon(Icons.home, size: 24),
       ),
       AppFloatingNavItem(
-        label: middleLabel,
+        label: AppConfig.isCoach ? 'Clients' : 'Routines',
         icon: AppConfig.isCoach
             ? const Icon(Icons.people_outline, size: 24)
             : const _NavDumbbellsAssetIcon(),
@@ -305,6 +317,12 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
             ? const Icon(Icons.people, size: 24)
             : const _NavDumbbellsAssetIcon(),
       ),
+      if (AppConfig.isCoach)
+        AppFloatingNavItem(
+          label: 'Routines',
+          icon: const _NavDumbbellsAssetIcon(),
+          selectedIcon: const _NavDumbbellsAssetIcon(),
+        ),
     ];
 
     if (_chatInNavBar) {

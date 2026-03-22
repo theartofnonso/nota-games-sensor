@@ -382,11 +382,16 @@ GoRouter _createRouter(ClientOverrideController accessController) {
         return null;
       }
 
-      // Coach: client-only shell tabs (routines / templates / feedback) → home
-      if (loc == kShellRoutinesPath ||
-          isShellRoutineTemplatePath(loc) ||
-          isShellCoachFeedbackPath(loc)) {
+      // Coach feedback shell tab is for clients (Pro + coach), not coach app.
+      if (isShellCoachFeedbackPath(loc)) {
         return accessController.hasSelectedClient ? '/' : '/coach';
+      }
+
+      // Coach: routine plan / template detail need a selected client; otherwise
+      // send them to the client picker (do not redirect to home when client is selected).
+      if ((loc == kShellRoutinesPath || isShellRoutineTemplatePath(loc)) &&
+          !accessController.hasSelectedClient) {
+        return '/coach';
       }
 
       // Coach app: if no client selected, must be on client selection screen

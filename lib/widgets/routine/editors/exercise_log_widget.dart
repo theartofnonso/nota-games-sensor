@@ -34,6 +34,7 @@ import '../../exercise/exercise_instruction_sheet.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../empty_states/list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
+import 'package:trainware/widgets/routine/coach_instruction_video_section.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
@@ -971,6 +972,65 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                             ],
                           ),
                         ),
+                        // Coach instruction: full-bleed divider + label (same pattern as alternative exercises).
+                        if ((isTemplateMode && AppConfig.isCoach) ||
+                            (isLogMode &&
+                                (exerciseLog.coachInstructionVideoPath
+                                        ?.trim()
+                                        .isNotEmpty ??
+                                    false))) ...[
+                          Builder(builder: (context) {
+                            final isDark =
+                                Theme.of(context).brightness == Brightness.dark;
+                            final color = isDark
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : Colors.black.withValues(alpha: 0.06);
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              child: Divider(
+                                thickness: 0.5,
+                                color: color,
+                                height: 16,
+                              ),
+                            );
+                          }),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  child: Text(
+                                    'Coach instruction',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white70,
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16),
+                                  child: CoachInstructionVideoSection(
+                                    key: ValueKey(
+                                      '${exerciseLog.id}_${exerciseLog.templateExerciseId}_${exerciseLog.sessionExerciseId}_${exerciseLog.coachInstructionVideoPath}',
+                                    ),
+                                    exerciseLog: exerciseLog,
+                                    templateId: widget.templateId,
+                                    coachCanEdit:
+                                        isTemplateMode && AppConfig.isCoach,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         // Notes section - always shown
                         Builder(builder: (context) {
                           final isDark =

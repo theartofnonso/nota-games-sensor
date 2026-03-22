@@ -19,12 +19,14 @@ import 'package:trainware/widgets/routine/editors/exercise_log_list_item.dart';
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/exercise_dto.dart';
 import '../../enums/routine_editor_type_enums.dart';
+import '../../shared_prefs.dart';
+import '../../utils/dialog_utils.dart';
 import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
+import '../../utils/routine_session_template_utils.dart';
 import '../../extensions/duration_extension.dart';
 import '../../utils/lottie_exercise_registry.dart';
 import '../../widgets/empty_states/list_empty_state.dart';
-import '../../utils/dialog_utils.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/routine-log-editor';
@@ -588,18 +590,13 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
             if (!widget.cached) {
               // Find the most recent log for this template (excluding the current log if it exists)
               final templateId = widget.log.templateId;
-              List<RoutineLogDto> templateLogs;
-              if (templateId.isNotEmpty) {
-                templateLogs = exerciseAndRoutineController
-                    .whereLogsWithTemplateId(templateId: templateId)
-                    .where(
-                        (log) => log.id != widget.log.id) // Exclude current log
-                    .toList();
-              } else {
-                templateLogs = [];
-              }
+              final templateLogs = exerciseAndRoutineController
+                  .whereLogsWithTemplateId(templateId: templateId)
+                  .where(
+                      (log) => log.id != widget.log.id) // Exclude current log
+                  .toList();
 
-              // If we have a template and previous logs, use sets from the most recent log
+              // If we have previous logs for this template, use sets from the most recent log
               if (templateLogs.isNotEmpty) {
                 // Sort logs by startTime (most recent first)
                 final sortedLogs = List<RoutineLogDto>.from(templateLogs)
@@ -701,6 +698,21 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   @override
   void initState() {
     super.initState();
+
+    if (widget.mode == RoutineEditorMode.log &&
+        !hasValidWorkoutSessionTemplateId(widget.log.templateId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        SharedPrefs().remove(key: SharedPrefs().routineLogKey);
+        Navigator.of(context).pop();
+        showSnackbar(
+          context: context,
+          message:
+              'Start a workout from a plan — ad-hoc sessions without a template aren\'t supported.',
+        );
+      });
+      return;
+    }
 
     // Disable suggestions
     WidgetsBinding.instance.addObserver(this);

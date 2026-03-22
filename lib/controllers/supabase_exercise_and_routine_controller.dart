@@ -19,9 +19,11 @@ import '../repositories/supabase/supabase_routine_plan_repository.dart';
 import '../repositories/supabase/supabase_routine_template_repository.dart';
 import '../utils/app_privileges.dart';
 import '../utils/notifications_utils.dart';
+import '../utils/routine_session_template_utils.dart';
 import '../utils/routine_utils.dart';
 import 'access_controller.dart';
 import '../app_flavor.dart';
+import '../services/coach_instruction_video_service.dart';
 import '../services/fcm_push_service.dart';
 
 class SupabaseExerciseAndRoutineController extends ChangeNotifier {
@@ -578,6 +580,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// only after successful save (caller must call exerciseLogController.onClear).
   Future<RoutineLogDto?> saveLog({required RoutineLogDto logDto}) async {
     if (_blockIfClientMode()) return null;
+    if (!hasValidWorkoutSessionTemplateId(logDto.templateId)) {
+      errorMessage =
+          'This workout must be started from a plan. Go back and open a workout template.';
+      notifyListeners();
+      return null;
+    }
     isLoading = true;
     try {
       final id = logDto.id.isEmpty ? const Uuid().v4() : logDto.id;
@@ -620,6 +628,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   /// Update a routine log in Supabase.
   Future<bool> updateLog({required RoutineLogDto log}) async {
     if (_blockIfClientMode()) return false;
+    if (!hasValidWorkoutSessionTemplateId(log.templateId)) {
+      errorMessage =
+          'This workout must be linked to a template. It cannot be updated in this state.';
+      notifyListeners();
+      return false;
+    }
     isLoading = true;
     bool success = false;
     try {
@@ -665,6 +679,47 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       notifyListeners();
     }
     return success;
+  }
+
+  /// Coach-only: attach, replace, or remove instructional video on a template exercise
+  /// (template editor). Refreshes the selected client's templates.
+  Future<bool> updateCoachTemplateExerciseInstructionVideo({
+    required String templateExerciseId,
+    String? newStoragePath,
+    String? previousStoragePath,
+  }) async {
+    if (!AppConfig.isCoach || !accessController.hasSelectedClient) {
+      return false;
+    }
+    final clientId = accessController.selectedClientId!;
+    isLoading = true;
+    errorMessage = '';
+    var ok = false;
+    try {
+      final video = CoachInstructionVideoService();
+      final prev = previousStoragePath?.trim();
+      final next = newStoragePath?.trim();
+      if (prev != null &&
+          prev.isNotEmpty &&
+          (next == null || next.isEmpty || next != prev)) {
+        await video.deleteVideoAtPath(prev);
+      }
+      await _templateRepository.updateCoachInstructionVideoPath(
+        templateExerciseId: templateExerciseId,
+        storagePath: (next != null && next.isNotEmpty) ? next : null,
+      );
+      await _loadRemoteForClient(clientId);
+      ok = true;
+    } catch (e, stackTrace) {
+      errorMessage = 'Could not update coaching video. Try again.';
+      logger.e('updateCoachTemplateExerciseInstructionVideo: $e',
+          error: e, stackTrace: stackTrace);
+    } finally {
+      isLoading = false;
+      errorMessage = '';
+      notifyListeners();
+    }
+    return ok;
   }
 
   /// Delete a routine log from Supabase.

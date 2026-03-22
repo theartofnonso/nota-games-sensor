@@ -72,7 +72,9 @@ class RoutineTemplateDto {
         id: "",
         templateId: id,
         name: name,
-        exerciseLogs: List.from(exerciseTemplates),
+        exerciseLogs: exerciseTemplates
+            .map((e) => e.forLiveSessionFromTemplate())
+            .toList(),
         startTime: DateTime.now(),
         endTime: DateTime.now());
   }

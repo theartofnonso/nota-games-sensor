@@ -9,6 +9,7 @@ import 'package:trainware/enums/routine_editor_type_enums.dart';
 import 'package:trainware/extensions/duration_extension.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/utils/navigation_utils.dart';
+import 'package:trainware/utils/routine_session_template_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
@@ -24,6 +25,13 @@ Future<void> navigateToUnsavedSession(BuildContext context) async {
   try {
     final json = jsonDecode(cache);
     final routineLog = RoutineLogDto.fromJson(json: json);
+    if (!hasValidWorkoutSessionTemplateId(routineLog.templateId)) {
+      SharedPrefs().remove(key: SharedPrefs().routineLogKey);
+      debugPrint(
+        '[UnsavedSession] Dropped cached session without template_id (not supported).',
+      );
+      return;
+    }
     final arguments = RoutineLogArguments(
       log: routineLog,
       editorMode: RoutineEditorMode.log,
@@ -44,6 +52,13 @@ Future<void> showUnsavedWorkoutBottomSheet(BuildContext context) async {
   try {
     final json = jsonDecode(cache);
     final routineLog = RoutineLogDto.fromJson(json: json);
+    if (!hasValidWorkoutSessionTemplateId(routineLog.templateId)) {
+      SharedPrefs().remove(key: SharedPrefs().routineLogKey);
+      debugPrint(
+        '[UnsavedSession] Dropped cached session without template_id (not supported).',
+      );
+      return;
+    }
 
     void resumeTraining() {
       Navigator.of(context).pop(); // Close bottom sheet

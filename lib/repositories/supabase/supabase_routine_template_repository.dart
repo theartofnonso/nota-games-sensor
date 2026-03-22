@@ -38,7 +38,7 @@ class SupabaseRoutineTemplateRepository {
       }
 
       final query = _client.from('routine_templates').select(
-            'id,planId,name,notes,clientId,owner,createdAt,updatedAt,template_exercises(id,template_id,exercise_id,order_index,super_set_group,notes,created_at,template_sets(id,template_exercise_id,target_reps,target_weight,target_duration_seconds,order_index),exercises!template_exercises_exercise_id_fkey(id,name,type),exercise_alternatives(order_index,exercises(id,name,type)))',
+            'id,planId,name,notes,clientId,owner,createdAt,updatedAt,template_exercises(id,template_id,exercise_id,order_index,super_set_group,notes,created_at,coach_instruction_video_path,template_sets(id,template_exercise_id,target_reps,target_weight,target_duration_seconds,order_index),exercises!template_exercises_exercise_id_fkey(id,name,type),exercise_alternatives(order_index,exercises(id,name,type)))',
           );
       final response = requireOwnerAndClient
           ? await query
@@ -146,6 +146,12 @@ class SupabaseRoutineTemplateRepository {
       );
     }).toList();
 
+    final teId = row['id'] as String?;
+    final rawVideo = row['coach_instruction_video_path'] as String?;
+    final coachVideo = rawVideo != null && rawVideo.trim().isNotEmpty
+        ? rawVideo.trim()
+        : null;
+
     return ExerciseLogDto(
       id: exercise.id,
       routineLogId: templateId,
@@ -155,6 +161,8 @@ class SupabaseRoutineTemplateRepository {
       sets: sets,
       alternatives: alternatives,
       createdAt: DateTime.now(),
+      templateExerciseId: teId,
+      coachInstructionVideoPath: coachVideo,
     );
   }
 
@@ -183,16 +191,21 @@ class SupabaseRoutineTemplateRepository {
 
     for (var exIndex = 0; exIndex < template.exerciseTemplates.length; exIndex++) {
       final exLog = template.exerciseTemplates[exIndex];
+      final videoPath = exLog.coachInstructionVideoPath?.trim();
+      final insertMap = <String, dynamic>{
+        'template_id': template.id,
+        'exercise_id': exLog.exercise.id,
+        'order_index': exIndex,
+        'super_set_group':
+            exLog.superSetId.isEmpty ? null : exLog.superSetId,
+        'notes': exLog.notes.isEmpty ? null : exLog.notes,
+      };
+      if (videoPath != null && videoPath.isNotEmpty) {
+        insertMap['coach_instruction_video_path'] = videoPath;
+      }
       final inserted = await _client
           .from('template_exercises')
-          .insert({
-            'template_id': template.id,
-            'exercise_id': exLog.exercise.id,
-            'order_index': exIndex,
-            'super_set_group':
-                exLog.superSetId.isEmpty ? null : exLog.superSetId,
-            'notes': exLog.notes.isEmpty ? null : exLog.notes,
-          })
+          .insert(insertMap)
           .select('id')
           .single();
       final templateExerciseId = inserted['id'] as String;
@@ -266,5 +279,24 @@ class SupabaseRoutineTemplateRepository {
           dateTime: now,
         ),
     };
+  }
+
+  /// Coach-only: set or clear instructional video on one template exercise row.
+  Future<void> updateCoachInstructionVideoPath({
+    required String templateExerciseId,
+    required String? storagePath,
+  }) async {
+    final path = storagePath?.trim();
+    final res = await _client.from('template_exercises').update({
+      'coach_instruction_video_path':
+          (path != null && path.isNotEmpty) ? path : null,
+    }).eq('id', templateExerciseId).select('id');
+
+    final list = res as List<dynamic>;
+    if (list.isEmpty) {
+      throw Exception(
+        'updateCoachInstructionVideoPath(template): no row for id=$templateExerciseId',
+      );
+    }
   }
 }

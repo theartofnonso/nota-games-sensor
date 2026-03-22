@@ -102,7 +102,9 @@ class ExerciseLogRepository {
     exerciseLogs[oldExerciseLogIndex] = oldExerciseLog.copyWith(
         id: newExercise.id,
         exercise: newExercise,
-        sets: withReps(type: newExercise.type) ? [newSet] : []);
+        sets: withReps(type: newExercise.type) ? [newSet] : [],
+        wipeSessionExerciseFields: true,
+        wipeTemplateExerciseFields: true);
 
     _exerciseLogs = [...exerciseLogs];
   }
@@ -423,5 +425,34 @@ class ExerciseLogRepository {
 
   void clear() {
     _exerciseLogs = [];
+  }
+
+  /// Updates coach instruction video path for an exercise row (in-memory).
+  void updateCoachInstructionVideoPath({
+    required String exerciseLogId,
+    String? storagePath,
+    String? sessionExerciseId,
+    String? templateExerciseId,
+  }) {
+    final exerciseLogIndex =
+        _indexWhereExerciseLog(exerciseLogId: exerciseLogId);
+    if (exerciseLogIndex == -1) return;
+
+    final newExerciseLogs = _copyExerciseLogs();
+    final exerciseLog = newExerciseLogs[exerciseLogIndex];
+    if (storagePath == null || storagePath.trim().isEmpty) {
+      newExerciseLogs[exerciseLogIndex] = exerciseLog.copyWith(
+        clearCoachInstructionVideo: true,
+        sessionExerciseId: sessionExerciseId ?? exerciseLog.sessionExerciseId,
+        templateExerciseId: templateExerciseId ?? exerciseLog.templateExerciseId,
+      );
+    } else {
+      newExerciseLogs[exerciseLogIndex] = exerciseLog.copyWith(
+        coachInstructionVideoPath: storagePath.trim(),
+        sessionExerciseId: sessionExerciseId ?? exerciseLog.sessionExerciseId,
+        templateExerciseId: templateExerciseId ?? exerciseLog.templateExerciseId,
+      );
+    }
+    _exerciseLogs = newExerciseLogs;
   }
 }

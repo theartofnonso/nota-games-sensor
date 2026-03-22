@@ -6,6 +6,9 @@ import '../exercise_log_dto.dart';
 
 class RoutineLogDto {
   final String id;
+
+  /// Required for saved/live sessions: UUID of [RoutineTemplateDto] (`workout_sessions.template_id`).
+  /// Ad-hoc sessions without a template are not supported.
   final String templateId;
   final String name;
   final DateTime startTime;

@@ -113,6 +113,7 @@ Future<void> navigateToRoutineLogEditor(
     if (context.mounted) {
       navigateWithSlideTransition(
         context: context,
+        rootNavigator: true,
         child: RoutineLogScreen(
           id: log.id,
           isEditable: true,
@@ -182,6 +183,7 @@ Future<void> navigateToRoutineLogPreview(
     bool showShareOnLoad = false}) {
   return navigateWithSlideTransition(
     context: context,
+    rootNavigator: true,
     child: RoutineLogScreen(
       id: log.id,
       isEditable: isEditable,

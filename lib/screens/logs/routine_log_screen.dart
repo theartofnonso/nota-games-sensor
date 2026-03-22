@@ -183,18 +183,16 @@ class _RoutineLogScreenState extends State<RoutineLogScreen> {
                           Builder(
                             builder: (context) {
                               String? attribution;
-                              if (updatedLog.templateId.isNotEmpty) {
-                                final template = exerciseAndRoutineController
-                                    .templateWhere(id: updatedLog.templateId);
-                                if (template != null) {
-                                  final plan = exerciseAndRoutineController
-                                      .planWhere(id: template.planId);
-                                  final isSystemTemplate =
-                                      plan?.isSystemPlan ?? false;
-                                  attribution = isSystemTemplate
-                                      ? 'Not Athletes'
-                                      : 'Created by you';
-                                }
+                              final template = exerciseAndRoutineController
+                                  .templateWhere(id: updatedLog.templateId);
+                              if (template != null) {
+                                final plan = exerciseAndRoutineController
+                                    .planWhere(id: template.planId);
+                                final isSystemTemplate =
+                                    plan?.isSystemPlan ?? false;
+                                attribution = isSystemTemplate
+                                    ? 'Not Athletes'
+                                    : 'Created by you';
                               }
 
                               return Column(

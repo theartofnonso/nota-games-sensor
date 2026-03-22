@@ -12,6 +12,7 @@ import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
 
 import '../../logger.dart';
+import '../../utils/routine_session_template_utils.dart';
 
 class SupabaseRoutineLogRepository {
   final logger = getLogger(className: "SupabaseRoutineLogRepository");
@@ -58,7 +59,7 @@ class SupabaseRoutineLogRepository {
       final relationalResponse = await _client
           .from('workout_sessions')
           .select(
-              'id,user_id,template_id,name,notes,coach_note,start_time,end_time,created_at,updated_at,session_exercises(id,session_id,exercise_id,template_exercise_id,order_index,super_set_group,notes,exercises!session_exercises_exercise_id_fkey(id,name,type),session_sets(id,session_exercise_id,reps,weight,duration_seconds,is_completed,order_index))')
+              'id,user_id,template_id,name,notes,coach_note,start_time,end_time,created_at,updated_at,session_exercises(id,session_id,exercise_id,template_exercise_id,order_index,super_set_group,notes,exercises!session_exercises_exercise_id_fkey(id,name,type),template_exercises(coach_instruction_video_path),session_sets(id,session_exercise_id,reps,weight,duration_seconds,is_completed,order_index))')
           .eq('user_id', userId)
           .gte('start_time', startDate.toIso8601String())
           .lte('start_time', endDate.toIso8601String())
@@ -138,6 +139,18 @@ class SupabaseRoutineLogRepository {
         .map((setRow) => _buildSessionSet(setRow: setRow, type: exercise.type))
         .toList();
 
+    final seId = row['id'] as String?;
+    final templateExerciseFk = row['template_exercise_id'] as String?;
+
+    String? videoPath;
+    final teEmbed = row['template_exercises'];
+    if (teEmbed is Map<String, dynamic>) {
+      final raw = teEmbed['coach_instruction_video_path'] as String?;
+      if (raw != null && raw.trim().isNotEmpty) {
+        videoPath = raw.trim();
+      }
+    }
+
     return ExerciseLogDto(
       id: exercise.id,
       routineLogId: sessionId,
@@ -147,6 +160,9 @@ class SupabaseRoutineLogRepository {
       sets: sets,
       alternatives: const [],
       createdAt: sessionStartTime,
+      sessionExerciseId: seId,
+      templateExerciseId: templateExerciseFk,
+      coachInstructionVideoPath: videoPath,
     );
   }
 
@@ -210,10 +226,16 @@ class SupabaseRoutineLogRepository {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw Exception('No user logged in');
 
+    if (!hasValidWorkoutSessionTemplateId(log.templateId)) {
+      throw Exception(
+        'workout_sessions.template_id is required; start the session from a workout template.',
+      );
+    }
+
     await _client.from('workout_sessions').upsert({
       'id': log.id,
       'user_id': userId,
-      'template_id': _asUuidOrNull(log.templateId),
+      'template_id': log.templateId.trim(),
       'name': log.name,
       'notes': null,
       'coach_note': log.coachNote,
@@ -229,17 +251,19 @@ class SupabaseRoutineLogRepository {
 
     for (var exIndex = 0; exIndex < log.exerciseLogs.length; exIndex++) {
       final exLog = log.exerciseLogs[exIndex];
+      final insertRow = <String, dynamic>{
+        'session_id': log.id,
+        'exercise_id': exLog.exercise.id,
+        'template_exercise_id': _asUuidOrNull(exLog.templateExerciseId ?? ''),
+        'order_index': exIndex,
+        'super_set_group':
+            exLog.superSetId.isEmpty ? null : exLog.superSetId,
+        'notes': exLog.notes.isEmpty ? null : exLog.notes,
+      };
+
       final inserted = await _client
           .from('session_exercises')
-          .insert({
-            'session_id': log.id,
-            'exercise_id': exLog.exercise.id,
-            'template_exercise_id': null,
-            'order_index': exIndex,
-            'super_set_group':
-                exLog.superSetId.isEmpty ? null : exLog.superSetId,
-            'notes': exLog.notes.isEmpty ? null : exLog.notes,
-          })
+          .insert(insertRow)
           .select('id')
           .single();
       final sessionExerciseId = inserted['id'] as String;

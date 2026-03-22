@@ -10,6 +10,7 @@ import '../dtos/set_dtos/set_dto.dart';
 import '../logger.dart';
 import '../repositories/exercise_log_repository.dart';
 import '../shared_prefs.dart';
+import '../utils/routine_session_template_utils.dart';
 
 class ExerciseLogController extends ChangeNotifier {
   late ExerciseLogRepository _exerciseLogRepository;
@@ -26,26 +27,33 @@ class ExerciseLogController extends ChangeNotifier {
   RoutineLogDto? _initialRoutineLog;
   bool _shouldCacheToSharedPrefs = false;
 
+  /// Non-null when editing a concrete workout session (log mode / coach view).
+  RoutineLogDto? get loadedRoutineLog => _initialRoutineLog;
+
   void loadRoutineLog(
       {required RoutineLogDto routineLog, bool shouldCache = false}) {
     _initialRoutineLog = routineLog;
     // Only enable caching if explicitly requested (for live workout sessions)
     // and if this matches the cached workout (to prevent mixing data)
     if (shouldCache) {
-      final cachedLog = SharedPrefs().routineLog;
-      if (cachedLog.isNotEmpty) {
-        try {
-          final cachedJson = jsonDecode(cachedLog);
-          final cachedRoutineLog = RoutineLogDto.fromJson(json: cachedJson);
-          // Only cache if we're editing the same workout that's cached
-          _shouldCacheToSharedPrefs = cachedRoutineLog.id == routineLog.id;
-        } catch (e) {
-          // If we can't parse cached log, don't cache
-          _shouldCacheToSharedPrefs = false;
-        }
+      if (!hasValidWorkoutSessionTemplateId(routineLog.templateId)) {
+        _shouldCacheToSharedPrefs = false;
       } else {
-        // No cached workout, enable caching for new workout
-        _shouldCacheToSharedPrefs = true;
+        final cachedLog = SharedPrefs().routineLog;
+        if (cachedLog.isNotEmpty) {
+          try {
+            final cachedJson = jsonDecode(cachedLog);
+            final cachedRoutineLog = RoutineLogDto.fromJson(json: cachedJson);
+            // Only cache if we're editing the same workout that's cached
+            _shouldCacheToSharedPrefs = cachedRoutineLog.id == routineLog.id;
+          } catch (e) {
+            // If we can't parse cached log, don't cache
+            _shouldCacheToSharedPrefs = false;
+          }
+        } else {
+          // No cached workout, enable caching for new workout
+          _shouldCacheToSharedPrefs = true;
+        }
       }
     } else {
       // Not a live workout session, don't cache
@@ -109,6 +117,23 @@ class ExerciseLogController extends ChangeNotifier {
       {required String exerciseLogId, required String value}) {
     _exerciseLogRepository.updateExerciseLogNotes(
         exerciseLogId: exerciseLogId, value: value);
+    _cache();
+    notifyListeners();
+  }
+
+  /// Sync in-memory path after coach upload/remove (server already updated).
+  void applyCoachInstructionVideoPath({
+    required String exerciseLogId,
+    String? storagePath,
+    String? sessionExerciseId,
+    String? templateExerciseId,
+  }) {
+    _exerciseLogRepository.updateCoachInstructionVideoPath(
+      exerciseLogId: exerciseLogId,
+      storagePath: storagePath,
+      sessionExerciseId: sessionExerciseId,
+      templateExerciseId: templateExerciseId,
+    );
     _cache();
     notifyListeners();
   }
@@ -237,6 +262,10 @@ class ExerciseLogController extends ChangeNotifier {
     final routineLog = _initialRoutineLog?.copyWith(
         exerciseLogs: exerciseLogs, endTime: DateTime.now());
     if (routineLog != null) {
+      if (!hasValidWorkoutSessionTemplateId(routineLog.templateId)) {
+        logger.w('Skip SharedPrefs cache: session requires template_id');
+        return;
+      }
       SharedPrefs().routineLog = jsonEncode(routineLog,
           toEncodable: (Object? value) => value is RoutineLogDto
               ? value.toJson()
