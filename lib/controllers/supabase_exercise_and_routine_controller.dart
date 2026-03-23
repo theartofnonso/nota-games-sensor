@@ -681,12 +681,33 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     return success;
   }
 
+  /// Resolves the live `template_exercises.id` (handles stale ids after template upsert).
+  Future<String?> resolveCoachTemplateExerciseRowId({
+    required String templateId,
+    required String candidateTemplateExerciseId,
+    required String exerciseId,
+    int? templateExerciseOrderIndex,
+  }) {
+    return _templateRepository.resolveTemplateExerciseRowId(
+      templateId: templateId,
+      candidateTemplateExerciseId: candidateTemplateExerciseId,
+      exerciseId: exerciseId,
+      orderIndex: templateExerciseOrderIndex,
+    );
+  }
+
   /// Coach-only: attach, replace, or remove instructional video on a template exercise
   /// (template editor). Refreshes the selected client's templates.
+  ///
+  /// [templateId], [exerciseId], and [templateExerciseOrderIndex] let the server find the
+  /// correct row after a template re-save (ids are recreated on each upsert).
   Future<bool> updateCoachTemplateExerciseInstructionVideo({
     required String templateExerciseId,
     String? newStoragePath,
     String? previousStoragePath,
+    required String templateId,
+    required String exerciseId,
+    int? templateExerciseOrderIndex,
   }) async {
     if (!AppConfig.isCoach || !accessController.hasSelectedClient) {
       return false;
@@ -707,6 +728,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       await _templateRepository.updateCoachInstructionVideoPath(
         templateExerciseId: templateExerciseId,
         storagePath: (next != null && next.isNotEmpty) ? next : null,
+        templateId: templateId,
+        exerciseId: exerciseId,
+        orderIndex: templateExerciseOrderIndex,
       );
       await _loadRemoteForClient(clientId);
       ok = true;

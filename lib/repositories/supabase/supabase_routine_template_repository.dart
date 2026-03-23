@@ -281,21 +281,76 @@ class SupabaseRoutineTemplateRepository {
     };
   }
 
+  /// After [upsertTemplate], all `template_exercises` rows are re-inserted with **new** ids.
+  /// UI may still hold stale [candidateTemplateExerciseId]; use [templateId] + [orderIndex] +
+  /// [exerciseId] to resolve the live row when the direct id no longer exists.
+  Future<String?> resolveTemplateExerciseRowId({
+    required String templateId,
+    required String candidateTemplateExerciseId,
+    required String exerciseId,
+    int? orderIndex,
+  }) async {
+    final trimmed = candidateTemplateExerciseId.trim();
+    if (trimmed.isNotEmpty) {
+      final check = await _client
+          .from('template_exercises')
+          .select('id')
+          .eq('id', trimmed)
+          .maybeSingle();
+      if (check != null) return check['id'] as String;
+    }
+    if (orderIndex == null) return null;
+    final row = await _client
+        .from('template_exercises')
+        .select('id')
+        .eq('template_id', templateId)
+        .eq('order_index', orderIndex)
+        .eq('exercise_id', exerciseId)
+        .maybeSingle();
+    return row?['id'] as String?;
+  }
+
   /// Coach-only: set or clear instructional video on one template exercise row.
   Future<void> updateCoachInstructionVideoPath({
     required String templateExerciseId,
     required String? storagePath,
+    required String templateId,
+    required String exerciseId,
+    int? orderIndex,
   }) async {
     final path = storagePath?.trim();
-    final res = await _client.from('template_exercises').update({
-      'coach_instruction_video_path':
-          (path != null && path.isNotEmpty) ? path : null,
-    }).eq('id', templateExerciseId).select('id');
+    var rowId = templateExerciseId.trim();
 
-    final list = res as List<dynamic>;
+    Future<List<dynamic>> doUpdate(String id) async {
+      final res = await _client.from('template_exercises').update({
+        'coach_instruction_video_path':
+            (path != null && path.isNotEmpty) ? path : null,
+      }).eq('id', id).select('id');
+      return res as List<dynamic>;
+    }
+
+    var list = await doUpdate(rowId);
+    if (list.isEmpty) {
+      final resolved = await resolveTemplateExerciseRowId(
+        templateId: templateId,
+        candidateTemplateExerciseId: rowId,
+        exerciseId: exerciseId,
+        orderIndex: orderIndex,
+      );
+      if (resolved == null) {
+        throw Exception(
+          'updateCoachInstructionVideoPath(template): no row for id=$templateExerciseId '
+          '(try saving the workout, then reopen this exercise)',
+        );
+      }
+      rowId = resolved;
+      list = await doUpdate(rowId);
+    }
     if (list.isEmpty) {
       throw Exception(
-        'updateCoachInstructionVideoPath(template): no row for id=$templateExerciseId',
+        'updateCoachInstructionVideoPath(template): update blocked for id=$rowId '
+        '(likely missing UPDATE RLS on template_exercises — apply migration '
+        '20250302170000_template_exercises_coach_video_rls.sql)',
       );
     }
   }

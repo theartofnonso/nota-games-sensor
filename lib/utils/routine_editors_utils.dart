@@ -44,6 +44,9 @@ void showExerciseLogEditor({
   required RoutineEditorMode editorType,
   bool showSetCheck = true,
   String? templateId,
+  /// List index in [RoutineTemplateEditorScreen] — used to fix stale `template_exercises.id`
+  /// after the workout is saved (rows are re-inserted with new ids).
+  int? templateExerciseOrderIndex,
 }) {
   final timerRunningNotifier = ValueNotifier<bool>(false);
   // Check if exercise type is duration (DR) to prevent closing without confirmation
@@ -69,6 +72,7 @@ void showExerciseLogEditor({
         showSetCheck: showSetCheck,
         timerRunningNotifier: timerRunningNotifier,
         templateId: templateId,
+        templateExerciseOrderIndex: templateExerciseOrderIndex,
       );
 
       // For duration exercises, intercept all close attempts (drag, barrier tap, back).

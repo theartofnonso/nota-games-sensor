@@ -43,13 +43,17 @@ class ExerciseLogWidget extends StatefulWidget {
   final ValueNotifier<bool>? timerRunningNotifier;
   final String? templateId;
 
+  /// See [showExerciseLogEditor.templateExerciseOrderIndex].
+  final int? templateExerciseOrderIndex;
+
   const ExerciseLogWidget(
       {super.key,
       this.editorType = RoutineEditorMode.edit,
       required this.exerciseLogId,
       this.showSetCheck = true,
       this.timerRunningNotifier,
-      this.templateId});
+      this.templateId,
+      this.templateExerciseOrderIndex});
 
   @override
   State<ExerciseLogWidget> createState() => _ExerciseLogWidgetState();
@@ -972,7 +976,7 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                             ],
                           ),
                         ),
-                        // Coach instruction: full-bleed divider + label (same pattern as alternative exercises).
+                        // Coach instruction: full-bleed divider + section (same pattern as alternatives).
                         if ((isTemplateMode && AppConfig.isCoach) ||
                             (isLogMode &&
                                 (exerciseLog.coachInstructionVideoPath
@@ -986,7 +990,8 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                 ? Colors.white.withValues(alpha: 0.12)
                                 : Colors.black.withValues(alpha: 0.06);
                             return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 24),
                               child: Divider(
                                 thickness: 0.5,
                                 color: color,
@@ -1019,10 +1024,12 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                     horizontal: 16),
                                   child: CoachInstructionVideoSection(
                                     key: ValueKey(
-                                      '${exerciseLog.id}_${exerciseLog.templateExerciseId}_${exerciseLog.sessionExerciseId}_${exerciseLog.coachInstructionVideoPath}',
+                                      '${exerciseLog.id}_${exerciseLog.templateExerciseId}_${exerciseLog.sessionExerciseId}_${exerciseLog.coachInstructionVideoPath}_${widget.templateExerciseOrderIndex}',
                                     ),
                                     exerciseLog: exerciseLog,
                                     templateId: widget.templateId,
+                                    templateExerciseOrderIndex:
+                                        widget.templateExerciseOrderIndex,
                                     coachCanEdit:
                                         isTemplateMode && AppConfig.isCoach,
                                   ),

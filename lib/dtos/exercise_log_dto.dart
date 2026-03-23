@@ -21,7 +21,7 @@ class ExerciseLogDto {
   /// Supabase `template_exercises.id` when loaded from a saved routine template.
   final String? templateExerciseId;
 
-  /// Storage path in the `coach_instruction_videos` bucket (coach-only writes).
+  /// Storage path in the `coach-instruction-videos` bucket (coach-only writes).
   final String? coachInstructionVideoPath;
 
   const ExerciseLogDto(

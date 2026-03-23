@@ -5,4 +5,4 @@ ALTER TABLE public.template_exercises
   ADD COLUMN IF NOT EXISTS coach_instruction_video_path text;
 
 COMMENT ON COLUMN public.template_exercises.coach_instruction_video_path IS
-  'Path in coach_instruction_videos bucket; canonical store for coach clips.';
+  'Path in coach-instruction-videos bucket; canonical store for coach clips.';

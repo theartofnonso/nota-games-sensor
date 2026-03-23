@@ -44,8 +44,14 @@ void showCoachLoadingOverlay(BuildContext context) {
 /// Hides the coach loading overlay. Call after the coach operation completes.
 /// Uses [rootNavigatorKey] when [context] is unmounted (e.g. user navigated
 /// away during the async operation) so the overlay is always dismissed.
+///
+/// Uses [Navigator.canPop] so we never pop GoRouter's last page (e.g. when the
+/// overlay was already removed by [context.pop] or dispose order is wrong).
 void hideCoachLoadingOverlay(BuildContext context) {
   final ctx = context.mounted ? context : rootNavigatorKey.currentContext;
   if (ctx == null) return;
-  Navigator.of(ctx, rootNavigator: true).pop();
+  final nav = Navigator.of(ctx, rootNavigator: true);
+  if (nav.canPop()) {
+    nav.pop();
+  }
 }

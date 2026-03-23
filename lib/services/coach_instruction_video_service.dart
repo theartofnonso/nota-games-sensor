@@ -6,19 +6,15 @@ import 'package:uuid/uuid.dart';
 
 /// Upload / delete coach instruction videos (session or template exercise rows).
 ///
-/// **Supabase setup** (manual):
-/// 1. Run `20250302120000_session_exercise_coach_video.sql` and
-///    `20250302130000_template_exercise_coach_video.sql`
-/// 2. Create bucket `coach_instruction_videos` (private).
-/// 3. RLS policies: coaches can upload/update/delete objects under paths for
-///    their clients; clients can read (signed URLs) for their own sessions.
+/// **Supabase**: table column migrations + `20250302160000_coach_instruction_videos_storage.sql`
+/// (bucket `coach-instruction-videos` + storage RLS). Missing RLS → upload 403.
 class CoachInstructionVideoService {
   CoachInstructionVideoService({SupabaseClient? client})
       : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
 
-  static const String bucketName = 'coach_instruction_videos';
+  static const String bucketName = 'coach-instruction-videos';
 
   /// Hard cap for MVP (bytes).
   static const int maxFileBytes = 50 * 1024 * 1024;

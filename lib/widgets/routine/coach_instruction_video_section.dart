@@ -22,6 +22,10 @@ class CoachInstructionVideoSection extends StatefulWidget {
   /// Non-null when opened from [RoutineTemplateEditorScreen] (workout template id).
   final String? templateId;
 
+  /// Index of this exercise in the template list — used to resolve DB row when
+  /// [ExerciseLogDto.templateExerciseId] is stale after a template save.
+  final int? templateExerciseOrderIndex;
+
   /// True only in template editor for coaches — enables upload/remove.
   final bool coachCanEdit;
 
@@ -29,6 +33,7 @@ class CoachInstructionVideoSection extends StatefulWidget {
     super.key,
     required this.exerciseLog,
     this.templateId,
+    this.templateExerciseOrderIndex,
     this.coachCanEdit = false,
   });
 
@@ -92,22 +97,25 @@ class _CoachInstructionVideoSectionState
     });
   }
 
-  /// Template editor: coach + client + saved template row ids.
+  /// Template editor: coach + client + template id + hint to find `template_exercises` row.
   bool get _canCoachEditTemplate {
     if (!AppConfig.isCoach || !widget.coachCanEdit) return false;
     final access = context.read<ClientOverrideController>();
     if (!access.hasSelectedClient) return false;
-    final te = widget.exerciseLog.templateExerciseId?.trim();
-    if (te == null || te.isEmpty) return false;
     final tid = widget.templateId?.trim();
-    return tid != null && tid.isNotEmpty;
+    if (tid == null || tid.isEmpty) return false;
+    final hasId =
+        widget.exerciseLog.templateExerciseId?.trim().isNotEmpty ?? false;
+    final hasOrder = widget.templateExerciseOrderIndex != null;
+    return hasId || hasOrder;
   }
 
   Future<void> _onPickAndUpload() async {
     if (!_canCoachEditTemplate || _uploading) return;
-    final templateExerciseId = widget.exerciseLog.templateExerciseId!;
     final exerciseLogId = widget.exerciseLog.id;
     final templateId = widget.templateId!.trim();
+    final exerciseId = widget.exerciseLog.exercise.id;
+    final candidateTeId = widget.exerciseLog.templateExerciseId?.trim() ?? '';
     final clientId =
         context.read<ClientOverrideController>().selectedClientId?.trim();
     if (clientId == null || clientId.isEmpty) {
@@ -117,6 +125,8 @@ class _CoachInstructionVideoSectionState
       );
       return;
     }
+
+    final routine = context.read<SupabaseExerciseAndRoutineController>();
 
     final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
     if (picked == null || !mounted) return;
@@ -142,12 +152,29 @@ class _CoachInstructionVideoSectionState
     }
 
     setState(() => _uploading = true);
+    final resolvedTeId = await routine.resolveCoachTemplateExerciseRowId(
+      templateId: templateId,
+      candidateTemplateExerciseId: candidateTeId,
+      exerciseId: exerciseId,
+      templateExerciseOrderIndex: widget.templateExerciseOrderIndex,
+    );
+    if (resolvedTeId == null || resolvedTeId.isEmpty) {
+      if (!mounted) return;
+      setState(() => _uploading = false);
+      showErrorBottomSheet(
+        context: context,
+        message:
+            'Save this workout first, then reopen it to attach a coaching video.',
+      );
+      return;
+    }
+
     final videoSvc = CoachInstructionVideoService();
     final path = await videoSvc.uploadTemplateVideo(
       file: file,
       clientUserId: clientId,
       templateId: templateId,
-      templateExerciseId: templateExerciseId,
+      templateExerciseId: resolvedTeId,
     );
 
     if (!mounted) return;
@@ -161,12 +188,14 @@ class _CoachInstructionVideoSectionState
       return;
     }
 
-    final routine = context.read<SupabaseExerciseAndRoutineController>();
     final prev = widget.exerciseLog.coachInstructionVideoPath?.trim();
     final ok = await routine.updateCoachTemplateExerciseInstructionVideo(
-      templateExerciseId: templateExerciseId,
+      templateExerciseId: resolvedTeId,
       newStoragePath: path,
       previousStoragePath: prev,
+      templateId: templateId,
+      exerciseId: exerciseId,
+      templateExerciseOrderIndex: widget.templateExerciseOrderIndex,
     );
 
     if (!mounted) return;
@@ -191,25 +220,47 @@ class _CoachInstructionVideoSectionState
       context.read<ExerciseLogController>().applyCoachInstructionVideoPath(
             exerciseLogId: exerciseLogId,
             storagePath: path,
-            templateExerciseId: templateExerciseId,
+            templateExerciseId: resolvedTeId,
           );
     }
   }
 
   Future<void> _onRemove() async {
     if (!_canCoachEditTemplate || _uploading) return;
-    final templateExerciseId = widget.exerciseLog.templateExerciseId!;
     final exerciseLogId = widget.exerciseLog.id;
     final templateId = widget.templateId!.trim();
+    final exerciseId = widget.exerciseLog.exercise.id;
+    final candidateTeId = widget.exerciseLog.templateExerciseId?.trim() ?? '';
     final prev = widget.exerciseLog.coachInstructionVideoPath?.trim();
     if (prev == null || prev.isEmpty) return;
 
-    setState(() => _uploading = true);
     final routine = context.read<SupabaseExerciseAndRoutineController>();
+
+    setState(() => _uploading = true);
+    final resolvedTeId = await routine.resolveCoachTemplateExerciseRowId(
+      templateId: templateId,
+      candidateTemplateExerciseId: candidateTeId,
+      exerciseId: exerciseId,
+      templateExerciseOrderIndex: widget.templateExerciseOrderIndex,
+    );
+    if (resolvedTeId == null || resolvedTeId.isEmpty) {
+      if (!mounted) return;
+      setState(() => _uploading = false);
+      showErrorBottomSheet(
+        context: context,
+        message:
+            'Save this workout first, then reopen it to change coaching videos.',
+      );
+      return;
+    }
+
     final ok = await routine.updateCoachTemplateExerciseInstructionVideo(
-      templateExerciseId: templateExerciseId,
+      templateExerciseId: resolvedTeId,
       newStoragePath: null,
       previousStoragePath: prev,
+      templateId: templateId,
+      exerciseId: exerciseId,
+      templateExerciseOrderIndex: widget.templateExerciseOrderIndex,
     );
     if (!mounted) return;
     setState(() => _uploading = false);
@@ -233,7 +284,7 @@ class _CoachInstructionVideoSectionState
       context.read<ExerciseLogController>().applyCoachInstructionVideoPath(
             exerciseLogId: exerciseLogId,
             storagePath: null,
-            templateExerciseId: templateExerciseId,
+            templateExerciseId: resolvedTeId,
           );
     }
   }

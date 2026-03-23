@@ -105,6 +105,9 @@ class _RoutineTemplateEditorScreenState
       await Provider.of<SupabaseExerciseAndRoutineController>(context,
               listen: false)
           .saveTemplate(templateDto: template);
+      if (AppConfig.isCoach && mounted) {
+        hideCoachLoadingOverlay(context);
+      }
       if (mounted) _navigateBack();
     } finally {
       if (AppConfig.isCoach && mounted) {
@@ -130,6 +133,9 @@ class _RoutineTemplateEditorScreenState
               final didUpdate = await _doUpdateRoutineTemplate(
                 updatedTemplate: updatedTemplate,
               );
+              if (AppConfig.isCoach && mounted) {
+                hideCoachLoadingOverlay(context);
+              }
               if (didUpdate && mounted) {
                 _navigateBack(template: updatedTemplate);
               }
@@ -205,6 +211,9 @@ class _RoutineTemplateEditorScreenState
           if (AppConfig.isCoach) showCoachLoadingOverlay(context);
           try {
             await _doUpdateRoutineTemplate(updatedTemplate: updatedTemplate);
+            if (AppConfig.isCoach && mounted) {
+              hideCoachLoadingOverlay(context);
+            }
             if (mounted) _navigateBack(template: updatedTemplate);
           } finally {
             if (AppConfig.isCoach && mounted) {
@@ -393,6 +402,8 @@ class _RoutineTemplateEditorScreenState
                                                         RoutineEditorMode.edit,
                                                     showSetCheck: false,
                                                     templateId: widget.template?.id,
+                                                    templateExerciseOrderIndex:
+                                                        index,
                                                   );
                                                 },
                                               ),
