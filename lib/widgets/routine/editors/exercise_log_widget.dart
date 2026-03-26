@@ -1019,20 +1019,16 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                   ),
                                 ),
                                 const SizedBox(height: 12),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16),
-                                  child: CoachInstructionVideoSection(
-                                    key: ValueKey(
-                                      '${exerciseLog.id}_${exerciseLog.templateExerciseId}_${exerciseLog.sessionExerciseId}_${exerciseLog.coachInstructionVideoPath}_${widget.templateExerciseOrderIndex}',
-                                    ),
-                                    exerciseLog: exerciseLog,
-                                    templateId: widget.templateId,
-                                    templateExerciseOrderIndex:
-                                        widget.templateExerciseOrderIndex,
-                                    coachCanEdit:
-                                        isTemplateMode && AppConfig.isCoach,
+                                CoachInstructionVideoSection(
+                                  key: ValueKey(
+                                    '${exerciseLog.id}_${exerciseLog.templateExerciseId}_${exerciseLog.sessionExerciseId}_${exerciseLog.coachInstructionVideoPath}_${widget.templateExerciseOrderIndex}',
                                   ),
+                                  exerciseLog: exerciseLog,
+                                  templateId: widget.templateId,
+                                  templateExerciseOrderIndex:
+                                      widget.templateExerciseOrderIndex,
+                                  coachCanEdit:
+                                      isTemplateMode && AppConfig.isCoach,
                                 ),
                               ],
                             ),

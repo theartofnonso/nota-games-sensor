@@ -6,6 +6,10 @@ class CoachDto {
   final String? profileVideoUrl;
   final String? description;
   final String? email;
+  final int? yearsExperience;
+  final String? qualifications;
+  final String? specialties;
+  final String? interestsHobbies;
 
   const CoachDto({
     required this.id,
@@ -14,6 +18,10 @@ class CoachDto {
     this.profileVideoUrl,
     this.description,
     this.email,
+    this.yearsExperience,
+    this.qualifications,
+    this.specialties,
+    this.interestsHobbies,
   });
 
   factory CoachDto.fromJson(Map<String, dynamic> json) {
@@ -24,6 +32,10 @@ class CoachDto {
       profileVideoUrl: json['profile_video_url'] as String?,
       description: json['description'] as String?,
       email: json['email'] as String?,
+      yearsExperience: (json['years_experience'] as num?)?.toInt(),
+      qualifications: json['qualifications'] as String?,
+      specialties: json['specialties'] as String?,
+      interestsHobbies: json['interests_hobbies'] as String?,
     );
   }
 }

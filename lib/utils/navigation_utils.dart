@@ -10,6 +10,7 @@ import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/chat/chat_screen.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/utils/app_privileges.dart';
+import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
@@ -216,7 +217,7 @@ Future<void> navigateToSettings({required BuildContext context}) async {
   context.go(AccountSettingsScreen.routeName);
 }
 
-/// Opens chat with a fade (not a shell tab); app bar close for full-screen chat.
+/// Opens the dedicated one-to-one chat route via go_router.
 Future<void> navigateToChat({
   required BuildContext context,
 }) async {
@@ -245,16 +246,6 @@ Future<void> navigateToChat({
     return;
   }
 
-  if (!AppConfig.isCoach && (accessController.coachId ?? '').isEmpty) {
-    if (context.mounted) {
-      showSnackbar(
-        context: context,
-        message: 'Connect with a coach to start messaging.',
-      );
-    }
-    return;
-  }
-
   String clientUserId = '';
   String clientName = '';
   String coachId = '';
@@ -265,27 +256,49 @@ Future<void> navigateToChat({
     clientName = accessController.selectedClientName ?? '';
     coachId = accessController.userId ?? '';
   } else {
-    coachId = accessController.coachId ?? '';
-    coachName = accessController.coachName ?? '';
+    coachId = (accessController.coachId ?? '').trim();
+    coachName = (accessController.coachName ?? '').trim();
     clientUserId = accessController.userId ?? '';
+
+    // [MainShellScaffold] sets coach async; user may open chat before it runs.
+    // Re-fetch assignment so assigned clients are not blocked by stale memory.
+    if (coachId.isEmpty && clientUserId.isNotEmpty) {
+      final coachData = await fetchCoachForClient(clientUserId);
+      if (coachData != null) {
+        final resolvedId = (coachData['coachId'] ?? '').trim();
+        if (resolvedId.isNotEmpty) {
+          coachName = (coachData['coachName'] ?? '').trim();
+          accessController.setCoachData(
+            coachId: resolvedId,
+            coachName: coachName,
+          );
+          coachId = resolvedId;
+        }
+      }
+    }
+
+    if (coachId.isEmpty) {
+      if (context.mounted) {
+        showSnackbar(
+          context: context,
+          message: 'Connect with a coach to start messaging.',
+        );
+      }
+      return;
+    }
   }
 
   if (!context.mounted) return;
-
-  await Navigator.of(context, rootNavigator: true).push<void>(
-    PageRouteBuilder<void>(
-      pageBuilder: (ctx, animation, secondaryAnimation) => ChatScreen(
-        coachId: coachId,
-        coachName: coachName,
-        clientUserId: clientUserId,
-        clientName: clientName,
-        embeddedInShell: false,
-      ),
-      transitionsBuilder: (ctx, animation, secondaryAnimation, child) {
-        return FadeTransition(opacity: animation, child: child);
-      },
-    ),
+  final chatUri = Uri(
+    path: ChatScreen.routeName,
+    queryParameters: <String, String>{
+      'coachId': coachId,
+      'coachName': coachName,
+      'clientUserId': clientUserId,
+      'clientName': clientName,
+    },
   );
+  await context.push(chatUri.toString());
 }
 
 /// Coach feedback feed (Pro clients with a coach). Shell tab with bottom nav.

@@ -10,7 +10,7 @@ import 'package:uuid/uuid.dart';
 /// (bucket `coach-instruction-videos` + storage RLS). Missing RLS → upload 403.
 class CoachInstructionVideoService {
   CoachInstructionVideoService({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+    : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
 
@@ -53,7 +53,9 @@ class CoachInstructionVideoService {
         '$clientUserId/$sessionId/${sessionExerciseId}_${_uuid.v4()}.$ext';
 
     try {
-      await _client.storage.from(bucketName).upload(
+      await _client.storage
+          .from(bucketName)
+          .upload(
             objectPath,
             file,
             fileOptions: const FileOptions(
@@ -92,7 +94,9 @@ class CoachInstructionVideoService {
         '$clientUserId/templates/$templateId/${templateExerciseId}_${_uuid.v4()}.$ext';
 
     try {
-      await _client.storage.from(bucketName).upload(
+      await _client.storage
+          .from(bucketName)
+          .upload(
             objectPath,
             file,
             fileOptions: const FileOptions(
@@ -123,10 +127,9 @@ class CoachInstructionVideoService {
   }) async {
     if (storagePath.trim().isEmpty) return null;
     try {
-      return await _client.storage.from(bucketName).createSignedUrl(
-            storagePath.trim(),
-            expiresInSeconds,
-          );
+      return await _client.storage
+          .from(bucketName)
+          .createSignedUrl(storagePath.trim(), expiresInSeconds);
     } catch (e) {
       debugPrint('[CoachInstructionVideo] Signed URL failed: $e');
       return null;

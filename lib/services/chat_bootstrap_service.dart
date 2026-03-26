@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:agora_chat_sdk/agora_chat_sdk.dart';
+import 'package:agora_chat_uikit/chat_uikit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -78,7 +78,7 @@ class ChatBootstrapService {
     if (supabaseUserId == null || supabaseUserId.isEmpty) return;
 
     final agoraUserId = toAgoraUsername(supabaseUserId);
-    if (ChatClient.getInstance.currentUserId == agoraUserId) {
+    if (ChatUIKit.instance.currentUserId == agoraUserId) {
       debugPrint('[ChatBootstrap] Already logged in as $agoraUserId');
       agoraLoggedIn.value = true;
       return;
@@ -92,8 +92,11 @@ class ChatBootstrapService {
         return;
       }
 
-      await ChatClient.getInstance.loginWithToken(agoraUserId, token);
-      if (ChatClient.getInstance.currentUserId != agoraUserId) {
+      await ChatUIKit.instance.loginWithToken(
+        userId: agoraUserId,
+        token: token,
+      );
+      if (ChatUIKit.instance.currentUserId != agoraUserId) {
         debugPrint('[ChatBootstrap] Login verification failed');
         agoraLoggedIn.value = false;
         return;

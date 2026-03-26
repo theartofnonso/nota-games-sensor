@@ -311,7 +311,8 @@ class SupabaseRoutineTemplateRepository {
   }
 
   /// Coach-only: set or clear instructional video on one template exercise row.
-  Future<void> updateCoachInstructionVideoPath({
+  /// Returns the previous storage path from DB (before update), if any.
+  Future<String?> updateCoachInstructionVideoPath({
     required String templateExerciseId,
     required String? storagePath,
     required String templateId,
@@ -321,16 +322,19 @@ class SupabaseRoutineTemplateRepository {
     final path = storagePath?.trim();
     var rowId = templateExerciseId.trim();
 
-    Future<List<dynamic>> doUpdate(String id) async {
-      final res = await _client.from('template_exercises').update({
-        'coach_instruction_video_path':
-            (path != null && path.isNotEmpty) ? path : null,
-      }).eq('id', id).select('id');
-      return res as List<dynamic>;
+    Map<String, dynamic>? currentRow;
+    if (rowId.isNotEmpty) {
+      final check = await _client
+          .from('template_exercises')
+          .select('id,coach_instruction_video_path')
+          .eq('id', rowId)
+          .maybeSingle();
+      if (check != null) {
+        currentRow = Map<String, dynamic>.from(check);
+      }
     }
 
-    var list = await doUpdate(rowId);
-    if (list.isEmpty) {
+    if (currentRow == null) {
       final resolved = await resolveTemplateExerciseRowId(
         templateId: templateId,
         candidateTemplateExerciseId: rowId,
@@ -344,8 +348,32 @@ class SupabaseRoutineTemplateRepository {
         );
       }
       rowId = resolved;
-      list = await doUpdate(rowId);
+      final check = await _client
+          .from('template_exercises')
+          .select('id,coach_instruction_video_path')
+          .eq('id', rowId)
+          .maybeSingle();
+      if (check != null) {
+        currentRow = Map<String, dynamic>.from(check);
+      }
     }
+
+    if (currentRow == null) {
+      throw Exception(
+        'updateCoachInstructionVideoPath(template): no row for id=$rowId '
+        '(likely missing SELECT access on template_exercises)',
+      );
+    }
+
+    final prevRaw = currentRow['coach_instruction_video_path'] as String?;
+    final previousPath =
+        (prevRaw != null && prevRaw.trim().isNotEmpty) ? prevRaw.trim() : null;
+
+    final res = await _client.from('template_exercises').update({
+      'coach_instruction_video_path':
+          (path != null && path.isNotEmpty) ? path : null,
+    }).eq('id', rowId).select('id');
+    final list = res as List<dynamic>;
     if (list.isEmpty) {
       throw Exception(
         'updateCoachInstructionVideoPath(template): update blocked for id=$rowId '
@@ -353,5 +381,7 @@ class SupabaseRoutineTemplateRepository {
         '20250302170000_template_exercises_coach_video_rls.sql)',
       );
     }
+
+    return previousPath;
   }
 }

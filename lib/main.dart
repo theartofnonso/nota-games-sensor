@@ -56,7 +56,7 @@ import 'package:trainware/widgets/coach_selection/subscription_gate.dart';
 import 'package:trainware/widgets/navigation/main_shell_scaffold.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:agora_chat_sdk/agora_chat_sdk.dart';
+import 'package:agora_chat_uikit/chat_uikit.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'firebase_options_coach.dart' as coach_options;
 import 'firebase_options_client.dart' as client_options;
@@ -234,7 +234,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
     logger.d(
         'APNs cert name for push: "${ChatConfig.apnsCertName}" (must match Agora Console Push Certificate)');
   }
-  await ChatClient.getInstance.init(chatOptions);
+  await ChatUIKit.instance.init(options: chatOptions);
 
   await SharedPrefs().init();
 
@@ -615,25 +615,36 @@ GoRouter _createRouter(ClientOverrideController accessController) {
       ),
       GoRoute(
         path: ChatScreen.routeName,
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final coachId = state.uri.queryParameters['coachId'] ?? '';
           final coachName = state.uri.queryParameters['coachName'] ?? '';
           final clientUserId = state.uri.queryParameters['clientUserId'] ?? '';
           final clientName = state.uri.queryParameters['clientName'] ?? '';
 
-          // Validate required parameters - redirect to home if missing
-          if (coachId.isEmpty ||
-              coachName.isEmpty ||
-              clientUserId.isEmpty ||
-              clientName.isEmpty) {
-            return const Home();
+          // Names may be empty from deep links; chat screen uses fallbacks.
+          if (coachId.isEmpty || clientUserId.isEmpty) {
+            return CustomTransitionPage(
+              key: state.pageKey,
+              child: const Home(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+            );
           }
 
-          return ChatScreen(
-            coachId: coachId,
-            coachName: coachName,
-            clientUserId: clientUserId,
-            clientName: clientName,
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: ChatScreen(
+              coachId: coachId,
+              coachName: coachName,
+              clientUserId: clientUserId,
+              clientName: clientName,
+            ),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
           );
         },
       ),
@@ -713,6 +724,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       await ChatClient.getInstance
           .logout(false)
           .timeout(const Duration(seconds: 2));
+      // Keep SDK connection cleared from UI kit context (logout(false) skips full unbind).
+      ChatUIKitContext.instance.currentUserId = null;
     } catch (_) {
       // Best effort: app may suspend before logout completes.
     } finally {
@@ -926,6 +939,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             theme: TRKRTheme.darkTheme,
             darkTheme: TRKRTheme.darkTheme,
             routerConfig: _router,
+            supportedLocales: ChatUIKitLocalizations().supportedLocales,
+            localizationsDelegates:
+                ChatUIKitLocalizations().localizationsDelegates,
+            localeResolutionCallback:
+                ChatUIKitLocalizations().localeResolutionCallback,
           ),
         ),
       ),

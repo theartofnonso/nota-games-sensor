@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_flavor.dart';
@@ -35,20 +36,19 @@ class CoachClientsService {
       final response = await Supabase.instance.client
           .from('coach_clients')
           .select(
-              'id, coach_id, client_id, created_at, clients!inner(id, email, name, created_at), coaches (id, email, name)')
+            'id, coach_id, client_id, created_at, clients(id, email, name, created_at)',
+          )
           .eq('coach_id', coachId)
           .order('created_at', ascending: false);
       final rows = response as List<dynamic>;
-      _clients = rows
-          .map((row) {
-            final clientsMap = row['clients'] as Map<String, dynamic>?;
-            if (clientsMap == null) return null;
-            final coachesMap = row['coaches'] as Map<String, dynamic>?;
-            return CoachClientDto.fromJson(
-                row as Map<String, dynamic>, clientsMap, coachesMap);
-          })
-          .whereType<CoachClientDto>()
-          .toList();
+      _clients = rows.map((row) {
+        final rowMap = row as Map<String, dynamic>;
+        final rawClient = rowMap['clients'];
+        final clientsMap = rawClient is Map
+            ? Map<String, dynamic>.from(rawClient)
+            : null;
+        return CoachClientDto.fromJson(rowMap, clientsMap);
+      }).toList();
       _loaded = true;
 
       try {
@@ -57,9 +57,11 @@ class CoachClientsService {
       } catch (_) {
         // Don't fail clients load if Agora/unread service fails
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[CoachClients] load failed: $e\n$st');
       _loadError = e;
       _clients = [];
+      _loaded = true;
     }
   }
 

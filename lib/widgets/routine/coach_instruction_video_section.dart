@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -45,9 +46,13 @@ class CoachInstructionVideoSection extends StatefulWidget {
 class _CoachInstructionVideoSectionState
     extends State<CoachInstructionVideoSection> {
   VideoPlayerController? _player;
-  Future<void>? _init;
   String? _signedUrl;
   bool _uploading = false;
+  bool _loadingSignedUrl = false;
+  String? _playbackError;
+  int _signedUrlRequestId = 0;
+  bool _hasOptimisticOverride = false;
+  String? _optimisticStoragePath;
 
   @override
   void didUpdateWidget(covariant CoachInstructionVideoSection oldWidget) {
@@ -56,8 +61,10 @@ class _CoachInstructionVideoSectionState
             widget.exerciseLog.coachInstructionVideoPath ||
         oldWidget.exerciseLog.templateExerciseId !=
             widget.exerciseLog.templateExerciseId) {
+      _hasOptimisticOverride = false;
+      _optimisticStoragePath = null;
       _disposePlayer();
-      _loadSignedUrl();
+      unawaited(_loadSignedUrl());
     }
   }
 
@@ -70,8 +77,9 @@ class _CoachInstructionVideoSectionState
   void _disposePlayer() {
     _player?.dispose();
     _player = null;
-    _init = null;
     _signedUrl = null;
+    _playbackError = null;
+    _loadingSignedUrl = false;
   }
 
   @override
@@ -80,21 +88,81 @@ class _CoachInstructionVideoSectionState
     super.dispose();
   }
 
+  String? get _effectiveStoragePath {
+    final raw =
+        _hasOptimisticOverride
+            ? _optimisticStoragePath
+            : widget.exerciseLog.coachInstructionVideoPath;
+    final trimmed = raw?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
+
   Future<void> _loadSignedUrl() async {
-    final path = widget.exerciseLog.coachInstructionVideoPath?.trim();
+    final path = _effectiveStoragePath;
+    _signedUrlRequestId++;
+    final reqId = _signedUrlRequestId;
+    _player?.dispose();
+    _player = null;
+    _signedUrl = null;
+    _playbackError = null;
     if (path == null || path.isEmpty) {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {
+          _loadingSignedUrl = false;
+        });
+      }
       return;
+    }
+    if (mounted) {
+      setState(() {
+        _loadingSignedUrl = true;
+      });
     }
     final service = CoachInstructionVideoService();
     final url = await service.createSignedPlaybackUrl(path);
-    if (!mounted) return;
-    setState(() => _signedUrl = url);
-    if (url == null || url.isEmpty) return;
-    _player = VideoPlayerController.networkUrl(Uri.parse(url));
-    _init = _player!.initialize().then((_) {
-      if (mounted) setState(() {});
+    if (!mounted || reqId != _signedUrlRequestId) return;
+    if (url == null || url.isEmpty) {
+      setState(() {
+        _loadingSignedUrl = false;
+        _playbackError = 'Could not open video.';
+      });
+      return;
+    }
+    setState(() {
+      _signedUrl = url;
+      _loadingSignedUrl = false;
     });
+    _player = VideoPlayerController.networkUrl(Uri.parse(url));
+    _player!
+        .initialize()
+        .then((_) {
+          if (!mounted || reqId != _signedUrlRequestId) return;
+          setState(() {});
+        })
+        .catchError((Object e) {
+          if (!mounted || reqId != _signedUrlRequestId) return;
+          _player?.dispose();
+          _player = null;
+          setState(() {
+            _playbackError = 'Could not load preview.';
+          });
+        });
+  }
+
+  Future<void> _openFullscreenVideo() async {
+    final url = _signedUrl;
+    if (url == null || url.isEmpty) return;
+    await Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        pageBuilder: (_, _, _) => _CoachInstructionFullscreenVideo(url: url),
+        transitionDuration: const Duration(milliseconds: 220),
+        reverseTransitionDuration: const Duration(milliseconds: 180),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
 
   /// Template editor: coach + client + template id + hint to find `template_exercises` row.
@@ -144,10 +212,7 @@ class _CoachInstructionVideoSectionState
     }
     if (!CoachInstructionVideoService.isAllowedExtension(picked.path)) {
       if (!mounted) return;
-      showErrorBottomSheet(
-        context: context,
-        message: 'Use MP4, MOV, or M4V.',
-      );
+      showErrorBottomSheet(context: context, message: 'Use MP4, MOV, or M4V.');
       return;
     }
 
@@ -188,11 +253,9 @@ class _CoachInstructionVideoSectionState
       return;
     }
 
-    final prev = widget.exerciseLog.coachInstructionVideoPath?.trim();
     final ok = await routine.updateCoachTemplateExerciseInstructionVideo(
       templateExerciseId: resolvedTeId,
       newStoragePath: path,
-      previousStoragePath: prev,
       templateId: templateId,
       exerciseId: exerciseId,
       templateExerciseOrderIndex: widget.templateExerciseOrderIndex,
@@ -202,26 +265,31 @@ class _CoachInstructionVideoSectionState
     setState(() => _uploading = false);
 
     if (!ok) {
-      final msg = routine.errorMessage.isNotEmpty
-          ? routine.errorMessage
-          : 'Could not save video link.';
+      final msg =
+          routine.errorMessage.isNotEmpty
+              ? routine.errorMessage
+              : 'Could not save video link.';
       await videoSvc.deleteVideoAtPath(path);
       if (!mounted) return;
       showErrorBottomSheet(context: context, message: msg);
       return;
     }
 
+    _hasOptimisticOverride = true;
+    _optimisticStoragePath = path;
+    unawaited(_loadSignedUrl());
+
     final fresh = routine.templateWhere(id: templateId);
     if (fresh != null) {
       context.read<ExerciseLogController>().loadExerciseLogs(
-            exerciseLogs: fresh.exerciseTemplates,
-          );
+        exerciseLogs: fresh.exerciseTemplates,
+      );
     } else {
       context.read<ExerciseLogController>().applyCoachInstructionVideoPath(
-            exerciseLogId: exerciseLogId,
-            storagePath: path,
-            templateExerciseId: resolvedTeId,
-          );
+        exerciseLogId: exerciseLogId,
+        storagePath: path,
+        templateExerciseId: resolvedTeId,
+      );
     }
   }
 
@@ -257,7 +325,6 @@ class _CoachInstructionVideoSectionState
     final ok = await routine.updateCoachTemplateExerciseInstructionVideo(
       templateExerciseId: resolvedTeId,
       newStoragePath: null,
-      previousStoragePath: prev,
       templateId: templateId,
       exerciseId: exerciseId,
       templateExerciseOrderIndex: widget.templateExerciseOrderIndex,
@@ -268,32 +335,38 @@ class _CoachInstructionVideoSectionState
     if (!ok) {
       showErrorBottomSheet(
         context: context,
-        message: routine.errorMessage.isNotEmpty
-            ? routine.errorMessage
-            : 'Could not remove video.',
+        message:
+            routine.errorMessage.isNotEmpty
+                ? routine.errorMessage
+                : 'Could not remove video.',
       );
       return;
     }
 
+    _hasOptimisticOverride = true;
+    _optimisticStoragePath = null;
+    _disposePlayer();
+    setState(() {});
+
     final fresh = routine.templateWhere(id: templateId);
     if (fresh != null) {
       context.read<ExerciseLogController>().loadExerciseLogs(
-            exerciseLogs: fresh.exerciseTemplates,
-          );
+        exerciseLogs: fresh.exerciseTemplates,
+      );
     } else {
       context.read<ExerciseLogController>().applyCoachInstructionVideoPath(
-            exerciseLogId: exerciseLogId,
-            storagePath: null,
-            templateExerciseId: resolvedTeId,
-          );
+        exerciseLogId: exerciseLogId,
+        storagePath: null,
+        templateExerciseId: resolvedTeId,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final path = widget.exerciseLog.coachInstructionVideoPath?.trim();
-    final hasVideo = path != null && path.isNotEmpty;
-    final showPlayer = hasVideo && (_signedUrl != null && _signedUrl!.isNotEmpty);
+    final hasVideo = _effectiveStoragePath != null;
+    final showPreview =
+        hasVideo && _signedUrl != null && _signedUrl!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,75 +380,80 @@ class _CoachInstructionVideoSectionState
               !context.read<ClientOverrideController>().hasSelectedClient
                   ? 'Select a client to add coaching videos to their workout templates.'
                   : 'Save this workout first, then reopen it to attach a coaching video.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Colors.white54),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.white54),
             ),
           ),
         ],
-        if (showPlayer) ...[
+        if (hasVideo) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: FutureBuilder<void>(
-              future: _init,
-              builder: (context, snap) {
-                if (snap.connectionState != ConnectionState.done ||
-                    _player == null ||
-                    !_player!.value.isInitialized) {
-                  return const AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                }
-                return AspectRatio(
-                  aspectRatio: _player!.value.aspectRatio == 0
-                      ? 16 / 9
-                      : _player!.value.aspectRatio,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      VideoPlayer(_player!),
-                      Material(
-                        color: Colors.black45,
-                        shape: const CircleBorder(),
-                        child: IconButton(
-                          iconSize: 40,
-                          color: Colors.white,
-                          icon: Icon(
-                            _player!.value.isPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: GestureDetector(
+              onTap: _openFullscreenVideo,
+              child: Container(
+                width: 156,
+                height: 96,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.black26,
+                  border: Border.all(color: Colors.white24),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (showPreview &&
+                        _player != null &&
+                        _player!.value.isInitialized)
+                      SizedBox.expand(
+                        child: FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width: _player!.value.size.width,
+                            height: _player!.value.size.height,
+                            child: VideoPlayer(_player!),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              if (_player!.value.isPlaying) {
-                                _player!.pause();
-                              } else {
-                                _player!.play();
-                              }
-                            });
-                          },
                         ),
                       ),
-                    ],
-                  ),
-                );
-              },
+                    if (_loadingSignedUrl)
+                      const CircularProgressIndicator(strokeWidth: 2)
+                    else
+                      const Icon(
+                        Icons.play_circle_fill_rounded,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+                    if (_playbackError != null)
+                      Positioned(
+                        left: 6,
+                        right: 6,
+                        bottom: 6,
+                        child: Text(
+                          _playbackError!,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelSmall?.copyWith(color: Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
         if (_canCoachEditTemplate) ...[
           if (_uploading)
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: LinearProgressIndicator(minHeight: 3),
             )
           else ...[
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -419,10 +497,9 @@ class _CoachInstructionVideoSectionState
                     Expanded(
                       child: Text(
                         'Tap to add a coaching video',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: Colors.white54),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: Colors.white54),
                       ),
                     ),
                   ],
@@ -430,18 +507,132 @@ class _CoachInstructionVideoSectionState
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
                 'MP4/MOV/M4V · max ${CoachInstructionVideoService.maxFileBytes ~/ (1024 * 1024)} MB',
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.copyWith(color: Colors.white38),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: Colors.white38),
               ),
             ),
           ],
         ],
       ],
+    );
+  }
+}
+
+class _CoachInstructionFullscreenVideo extends StatefulWidget {
+  const _CoachInstructionFullscreenVideo({required this.url});
+
+  final String url;
+
+  @override
+  State<_CoachInstructionFullscreenVideo> createState() =>
+      _CoachInstructionFullscreenVideoState();
+}
+
+class _CoachInstructionFullscreenVideoState
+    extends State<_CoachInstructionFullscreenVideo> {
+  VideoPlayerController? _controller;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller!
+        .initialize()
+        .then((_) {
+          if (!mounted) return;
+          _controller!.play();
+          setState(() {
+            _loading = false;
+          });
+        })
+        .catchError((Object _) {
+          if (!mounted) return;
+          setState(() {
+            _loading = false;
+            _error = 'Could not play video.';
+          });
+        });
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          Center(
+            child:
+                _loading
+                    ? const CircularProgressIndicator(strokeWidth: 2)
+                    : (_error != null ||
+                        _controller == null ||
+                        !_controller!.value.isInitialized)
+                    ? Text(
+                      _error ?? 'Unable to load video.',
+                      style: const TextStyle(color: Colors.white70),
+                    )
+                    : GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (_controller!.value.isPlaying) {
+                            _controller!.pause();
+                          } else {
+                            _controller!.play();
+                          }
+                        });
+                      },
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox.expand(
+                            child: FittedBox(
+                              fit: BoxFit.cover,
+                              child: SizedBox(
+                                width: _controller!.value.size.width,
+                                height: _controller!.value.size.height,
+                                child: VideoPlayer(_controller!),
+                              ),
+                            ),
+                          ),
+                          AnimatedOpacity(
+                            duration: const Duration(milliseconds: 150),
+                            opacity: _controller!.value.isPlaying ? 0.0 : 1.0,
+                            child: const Icon(
+                              Icons.play_circle_fill_rounded,
+                              color: Colors.white,
+                              size: 72,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+          ),
+          Positioned(
+            top: 12,
+            left: 12,
+            child: SafeArea(
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const FaIcon(FontAwesomeIcons.solidCircleXmark, size: 22),
+                color: Colors.white,
+                tooltip: 'Close',
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

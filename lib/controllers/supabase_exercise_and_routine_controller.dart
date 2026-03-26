@@ -704,7 +704,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<bool> updateCoachTemplateExerciseInstructionVideo({
     required String templateExerciseId,
     String? newStoragePath,
-    String? previousStoragePath,
     required String templateId,
     required String exerciseId,
     int? templateExerciseOrderIndex,
@@ -718,21 +717,21 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
     var ok = false;
     try {
       final video = CoachInstructionVideoService();
-      final prev = previousStoragePath?.trim();
       final next = newStoragePath?.trim();
-      if (prev != null &&
-          prev.isNotEmpty &&
-          (next == null || next.isEmpty || next != prev)) {
-        await video.deleteVideoAtPath(prev);
-      }
-      await _templateRepository.updateCoachInstructionVideoPath(
+      final prevFromDb = await _templateRepository.updateCoachInstructionVideoPath(
         templateExerciseId: templateExerciseId,
         storagePath: (next != null && next.isNotEmpty) ? next : null,
         templateId: templateId,
         exerciseId: exerciseId,
         orderIndex: templateExerciseOrderIndex,
       );
+      if (prevFromDb != null &&
+          prevFromDb.isNotEmpty &&
+          (next == null || next.isEmpty || next != prevFromDb)) {
+        await video.deleteVideoAtPath(prevFromDb);
+      }
       await _loadRemoteForClient(clientId);
+      errorMessage = '';
       ok = true;
     } catch (e, stackTrace) {
       errorMessage = 'Could not update coaching video. Try again.';
@@ -740,7 +739,6 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
           error: e, stackTrace: stackTrace);
     } finally {
       isLoading = false;
-      errorMessage = '';
       notifyListeners();
     }
     return ok;
