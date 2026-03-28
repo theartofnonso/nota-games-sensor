@@ -12,6 +12,8 @@ import 'package:trainware/controllers/supabase_exercise_and_routine_controller.d
 import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/services/coach_instruction_video_service.dart';
 import 'package:trainware/utils/dialog_utils.dart';
+import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 import 'package:video_player/video_player.dart';
 
 /// Coach instruction video: coaches add/replace/remove in the **template editor**.
@@ -272,6 +274,7 @@ class _CoachInstructionVideoSectionState
       await videoSvc.deleteVideoAtPath(path);
       if (!mounted) return;
       showErrorBottomSheet(context: context, message: msg);
+      routine.clearErrorMessageAfterDisplay();
       return;
     }
 
@@ -293,8 +296,51 @@ class _CoachInstructionVideoSectionState
     }
   }
 
+  Future<bool> _confirmRemoveVideo() async {
+    var confirmed = false;
+    await showAppActionBottomSheet<void>(
+      context: context,
+      child: Padding(
+        padding: const EdgeInsets.all(26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Remove coaching video?',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This removes the video from this exercise in this template. Clients will no longer see it.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                label: 'Remove video',
+                buttonColor: Colors.red,
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  confirmed = true;
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    return confirmed;
+  }
+
   Future<void> _onRemove() async {
     if (!_canCoachEditTemplate || _uploading) return;
+    final confirmed = await _confirmRemoveVideo();
+    if (!confirmed || !mounted) return;
     final exerciseLogId = widget.exerciseLog.id;
     final templateId = widget.templateId!.trim();
     final exerciseId = widget.exerciseLog.exercise.id;
@@ -333,13 +379,12 @@ class _CoachInstructionVideoSectionState
     setState(() => _uploading = false);
 
     if (!ok) {
-      showErrorBottomSheet(
-        context: context,
-        message:
-            routine.errorMessage.isNotEmpty
-                ? routine.errorMessage
-                : 'Could not remove video.',
-      );
+      final msg =
+          routine.errorMessage.isNotEmpty
+              ? routine.errorMessage
+              : 'Could not remove video.';
+      showErrorBottomSheet(context: context, message: msg);
+      routine.clearErrorMessageAfterDisplay();
       return;
     }
 
@@ -504,15 +549,6 @@ class _CoachInstructionVideoSectionState
                     ),
                   ],
                 ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(
-                'MP4/MOV/M4V · max ${CoachInstructionVideoService.maxFileBytes ~/ (1024 * 1024)} MB',
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: Colors.white38),
               ),
             ),
           ],

@@ -237,8 +237,11 @@ class _RoutineTemplateEditorScreenState
             listen: true);
 
     if (routineTemplateController.errorMessage.isNotEmpty) {
+      final msg = routineTemplateController.errorMessage;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showSnackbar(routineTemplateController.errorMessage);
+        if (!mounted) return;
+        _showSnackbar(msg);
+        routineTemplateController.clearErrorMessageAfterDisplay();
       });
     }
 

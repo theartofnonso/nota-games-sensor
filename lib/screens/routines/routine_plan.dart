@@ -87,10 +87,11 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
     }
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
+      final msg = exerciseAndRoutineController.errorMessage;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showSnackbar(
-            context: context,
-            message: exerciseAndRoutineController.errorMessage);
+        if (!mounted) return;
+        showSnackbar(context: context, message: msg);
+        exerciseAndRoutineController.clearErrorMessageAfterDisplay();
       });
     }
 

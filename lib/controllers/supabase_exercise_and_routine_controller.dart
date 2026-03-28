@@ -31,6 +31,16 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   String errorMessage = '';
   final logger = getLogger(className: "SupabaseExerciseAndRoutineController");
 
+  /// Clears [errorMessage] after it has been shown in the UI. Without this,
+  /// screens that surface errors from [build] via [addPostFrameCallback] would
+  /// open the same bottom sheet again on every rebuild (e.g. returning from a
+  /// nested route) while the message stays non-empty.
+  void clearErrorMessageAfterDisplay() {
+    if (errorMessage.isEmpty) return;
+    errorMessage = '';
+    notifyListeners();
+  }
+
   late SupabaseRoutineTemplateRepository _templateRepository;
   late SupabaseRoutinePlanRepository _planRepository;
   late SupabaseRoutineLogRepository _logRepository;

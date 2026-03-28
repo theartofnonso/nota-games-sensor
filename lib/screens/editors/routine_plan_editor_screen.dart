@@ -115,8 +115,11 @@ class _RoutinePlanEditorScreenState extends State<RoutinePlanEditorScreen> {
             listen: false);
 
     if (exerciseAndRoutineController.errorMessage.isNotEmpty) {
+      final msg = exerciseAndRoutineController.errorMessage;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showSnackbar(exerciseAndRoutineController.errorMessage);
+        if (!mounted) return;
+        _showSnackbar(msg);
+        exerciseAndRoutineController.clearErrorMessageAfterDisplay();
       });
     }
 
