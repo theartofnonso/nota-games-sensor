@@ -44,6 +44,7 @@ import 'package:trainware/widgets/navigation/routines_shell_page.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
 import 'package:trainware/utils/theme/system_ui_overlay.dart';
+import 'package:trainware/utils/theme/chat_uikit_trainware_theme.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/app_startup_service.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
@@ -236,8 +237,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
         'APNs cert name for push: "${ChatConfig.apnsCertName}" (must match Agora Console Push Certificate)');
   }
   await ChatUIKit.instance.init(options: chatOptions);
-  // Match app Material dark theme (MaterialApp uses TRKRTheme.darkTheme).
-  ChatUIKitTheme.instance.setColor(ChatUIKitColor.dark());
+  applyTrainwareChatUIKitTheme();
 
   await SharedPrefs().init();
 

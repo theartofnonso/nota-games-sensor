@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:agora_chat_uikit/chat_uikit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/screens/chat/chat_video_launcher.dart';
@@ -12,6 +13,7 @@ import 'package:trainware/services/push_token_service.dart'
     show isNotificationPermissionGranted, requestNotificationPermission;
 import 'package:trainware/utils/agora_chat_utils.dart';
 import 'package:trainware/utils/general_utils.dart' show themeGradient;
+import 'package:trainware/utils/theme/chat_uikit_trainware_theme.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
@@ -250,11 +252,18 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     final peerAgora = toAgoraUsername(_peerSupabaseId);
     final peerName = _peerDisplayName();
 
-    final messages = MessagesView.arguments(
+    return MessagesView.arguments(
       MessagesViewArguments(
         profile: ChatUIKitProfile.contact(id: peerAgora, nickname: peerName),
+        backgroundWidget: trainwareChatBackground(context),
+        bubbleBuilder: trainwareChatBubbleBuilder,
         appBarModel: ChatUIKitAppBarModel(
           showBackButton: !widget.embeddedInShell,
+          backgroundColor: Colors.transparent,
+          bottomLine: false,
+          systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark,
           trailingActions: [
             ChatVideoLauncher.videoCallAppBarAction(
               coachId: widget.coachId,
@@ -265,13 +274,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           ],
         ),
       ),
-    );
-
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(gradient: themeGradient(context: context)),
-      child: messages,
     );
   }
 }
