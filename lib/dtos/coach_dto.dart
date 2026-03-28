@@ -1,4 +1,5 @@
-/// DTO matching [public.coaches] schema.
+/// Client model for coach list/detail: built from `coaches` plus optional
+/// nested `coach_profiles` (see [SupabaseCoachesRepository]).
 class CoachDto {
   final String id;
   final String name;

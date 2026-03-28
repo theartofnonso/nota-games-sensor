@@ -55,8 +55,10 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
     setState(() => _isLoading = true);
 
     if (AppConfig.isCoach) {
-      final canProceed =
-          await requireCoachAccess(context: context, email: email);
+      final canProceed = await requireCoachAccess(
+        context: context,
+        email: email,
+      );
       if (!mounted) return;
       if (!canProceed) {
         setState(() => _isLoading = false);
@@ -114,7 +116,8 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       }
     } on AuthException catch (error) {
       debugPrint(
-          '[Auth] AuthException on sendOTP: ${error.message} (statusCode: ${error.statusCode})');
+        '[Auth] AuthException on sendOTP: ${error.message} (statusCode: ${error.statusCode})',
+      );
       if (mounted) {
         showSnackbar(
           context: context,
@@ -174,7 +177,8 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       }
     } on AuthException catch (error) {
       debugPrint(
-          '[Auth] AuthException on verifyOTP: ${error.message} (statusCode: ${error.statusCode})');
+        '[Auth] AuthException on verifyOTP: ${error.message} (statusCode: ${error.statusCode})',
+      );
       if (mounted) {
         showSnackbar(
           context: context,
@@ -212,96 +216,98 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
       child: Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
-        children: [
-          // ----------------- GRADIENT BACKGROUND -----------------
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: themeGradient(context: context),
+          children: [
+            // ----------------- GRADIENT BACKGROUND -----------------
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: themeGradient(context: context),
+                ),
               ),
             ),
-          ),
 
-          // ----------------- CONTENT --------------------
-          GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            behavior: HitTestBehavior.translucent,
-            child: SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Text(
-                          AppConfig.appName,
-                          style: const TextStyle(
-                            fontFamily: 'GroutpixFlow',
-                            color: Colors.white70,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      if (!_otpSent)
-                        _ModernEmailInput(
-                          controller: _emailController,
-                          onSubmit: _sendOTP,
-                          isLoading: _isLoading,
-                          isDarkMode: isDarkMode,
-                        ),
-
-                      // OTP field (shown after email submitted)
-                      if (_otpSent) ...[
-                        _ModernOTPInput(
-                          controller: _otpController,
-                          onSubmit: _verifyOTP,
-                          isLoading: _isLoading,
-                          isDarkMode: isDarkMode,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Enter the 6-digit code sent to ${_emailController.text.trim()}',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.6),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        TextButton(
-                          onPressed: _resetForm,
+            // ----------------- CONTENT --------------------
+            GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              behavior: HitTestBehavior.translucent,
+              child: SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
                           child: Text(
-                            'Use different email',
-                            style: TextStyle(
-                              color: theme.colorScheme.primary,
-                              fontSize: 14,
+                            AppConfig.appName,
+                            style: const TextStyle(
+                              fontFamily: 'GroutpixFlow',
+                              color: Colors.white70,
+                              fontSize: 18,
                             ),
                           ),
                         ),
-                        TextButton(
-                          onPressed: _isLoading ? null : _sendOTP,
-                          child: Text(
-                            'Resend code',
+                        const SizedBox(height: 28),
+                        if (!_otpSent)
+                          _ModernEmailInput(
+                            controller: _emailController,
+                            onSubmit: _sendOTP,
+                            isLoading: _isLoading,
+                            isDarkMode: isDarkMode,
+                          ),
+
+                        // OTP field (shown after email submitted)
+                        if (_otpSent) ...[
+                          _ModernOTPInput(
+                            controller: _otpController,
+                            onSubmit: _verifyOTP,
+                            isLoading: _isLoading,
+                            isDarkMode: isDarkMode,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Enter the 6-digit code sent to ${_emailController.text.trim()}',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.7),
                               fontSize: 14,
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 24),
+                          TextButton(
+                            onPressed: _resetForm,
+                            child: Text(
+                              'Use different email',
+                              style: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _isLoading ? null : _sendOTP,
+                            child: Text(
+                              'Resend code',
+                              style: TextStyle(
+                                color: theme.colorScheme.primary.withValues(
+                                  alpha: 0.7,
+                                ),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -328,19 +334,12 @@ class _ModernEmailInput extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(50),
-        border: Border.all(
-          color: colors.borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: colors.borderLight, width: 1),
       ),
       padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
       child: Row(
         children: [
-          Icon(
-            Icons.email_outlined,
-            color: colors.textSecondary,
-            size: 20,
-          ),
+          Icon(Icons.email_outlined, color: colors.textSecondary, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
@@ -351,10 +350,7 @@ class _ModernEmailInput extends StatelessWidget {
               ),
               decoration: InputDecoration(
                 hintText: 'your@email.com',
-                hintStyle: TextStyle(
-                  color: colors.textSecondary,
-                  fontSize: 15,
-                ),
+                hintStyle: TextStyle(color: colors.textSecondary, fontSize: 15),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -372,27 +368,31 @@ class _ModernEmailInput extends StatelessWidget {
               onTap: isLoading ? null : onSubmit,
               borderRadius: BorderRadius.circular(50),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: colors.vibrantAccent,
                   borderRadius: BorderRadius.circular(50),
                 ),
-                child: isLoading
-                    ? SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.black),
+                child:
+                    isLoading
+                        ? SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.black,
+                            ),
+                          ),
+                        )
+                        : FaIcon(
+                          FontAwesomeIcons.arrowRight,
+                          color: Colors.black,
+                          size: 16,
                         ),
-                      )
-                    : FaIcon(
-                        FontAwesomeIcons.arrowRight,
-                        color: Colors.black,
-                        size: 16,
-                      ),
               ),
             ),
           ),
@@ -423,19 +423,12 @@ class _ModernOTPInput extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(50),
-        border: Border.all(
-          color: colors.borderLight,
-          width: 1,
-        ),
+        border: Border.all(color: colors.borderLight, width: 1),
       ),
       padding: const EdgeInsets.only(left: 20, top: 6, bottom: 6, right: 6),
       child: Row(
         children: [
-          Icon(
-            Icons.lock_outline,
-            color: colors.textSecondary,
-            size: 20,
-          ),
+          Icon(Icons.lock_outline, color: colors.textSecondary, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
@@ -471,40 +464,44 @@ class _ModernOTPInput extends StatelessWidget {
               onTap: isLoading ? null : onSubmit,
               borderRadius: BorderRadius.circular(50),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: colors.vibrantAccent,
                   borderRadius: BorderRadius.circular(50),
                 ),
-                child: isLoading
-                    ? SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.black),
-                        ),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'verify',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 15,
+                child:
+                    isLoading
+                        ? SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.black,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          FaIcon(
-                            FontAwesomeIcons.arrowRight,
-                            color: Colors.black,
-                            size: 14,
-                          ),
-                        ],
-                      ),
+                        )
+                        : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'verify',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            FaIcon(
+                              FontAwesomeIcons.arrowRight,
+                              color: Colors.black,
+                              size: 14,
+                            ),
+                          ],
+                        ),
               ),
             ),
           ),

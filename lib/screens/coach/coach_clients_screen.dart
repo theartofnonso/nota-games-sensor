@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/dtos/coach_client_dto.dart';
@@ -9,6 +12,7 @@ import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/services/coach_clients_service.dart';
 import 'package:trainware/utils/general_utils.dart';
+import 'package:trainware/widgets/navigation/app_floating_navigation_bar.dart';
 import 'package:trainware/widgets/search_bar.dart';
 import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 import 'package:trainware/widgets/badges/unread_badge.dart';
@@ -40,7 +44,19 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     _searchController = TextEditingController();
     _unreadByClientId = ChatUnreadCountsService().unreadByClientId.value;
     ChatUnreadCountsService().unreadByClientId.addListener(_handleUnreadChange);
+    CoachClientsService.instance.addListener(_onCoachClientsServiceChanged);
     _refreshUnreadWhenAgoraReady();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final uid = context.read<ClientOverrideController>().userId;
+      unawaited(
+        CoachClientsService.instance.loadClients(coachAuthUserId: uid),
+      );
+    });
+  }
+
+  void _onCoachClientsServiceChanged() {
+    if (mounted) setState(() {});
   }
 
   /// Refresh unread counts when Agora has logged in. Clients are pre-loaded
@@ -60,15 +76,17 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
       ChatBootstrapService.agoraLoggedIn.removeListener(listener);
       doRefresh();
     }
+
     ChatBootstrapService.agoraLoggedIn.addListener(listener);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    ChatUnreadCountsService()
-        .unreadByClientId
-        .removeListener(_handleUnreadChange);
+    CoachClientsService.instance.removeListener(_onCoachClientsServiceChanged);
+    ChatUnreadCountsService().unreadByClientId.removeListener(
+      _handleUnreadChange,
+    );
     _searchController.dispose();
     super.dispose();
   }
@@ -93,7 +111,8 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     _isRefreshing = true;
     if (mounted) setState(() {});
     try {
-      await CoachClientsService.instance.loadClients();
+      final uid = context.read<ClientOverrideController>().userId;
+      await CoachClientsService.instance.loadClients(coachAuthUserId: uid);
       await ChatUnreadCountsService().refreshUnreadCounts();
     } finally {
       _isRefreshing = false;
@@ -127,7 +146,8 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     _isRefreshing = true;
     if (mounted) setState(() {});
     try {
-      await CoachClientsService.instance.loadClients();
+      final uid = context.read<ClientOverrideController>().userId;
+      await CoachClientsService.instance.loadClients(coachAuthUserId: uid);
       if (mounted) setState(() {});
     } finally {
       _isRefreshing = false;
@@ -142,17 +162,20 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
         context.read<SupabaseExerciseAndRoutineController>();
     final nutritionController = context.read<NutritionLogController>();
 
+    final navBarBottomInset =
+        MediaQuery.paddingOf(context).bottom + kAppFloatingNavBarReserveHeight;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: themeGradient(context: context),
-        ),
+        decoration: BoxDecoration(gradient: themeGradient(context: context)),
         child: SafeArea(
           bottom: false,
           minimum: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-          child: Builder(
-            builder: (context) {
+          child: Padding(
+            padding: EdgeInsets.only(bottom: navBarBottomInset),
+            child: Builder(
+              builder: (context) {
               final theme = Theme.of(context);
               final service = CoachClientsService.instance;
 
@@ -173,14 +196,18 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                         ),
                         const SizedBox(height: 16),
                         TextButton.icon(
-                          onPressed: _isRefreshing ? null : () => _retryLoadClients(),
-                          icon: _isRefreshing
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.refresh),
+                          onPressed:
+                              _isRefreshing ? null : () => _retryLoadClients(),
+                          icon:
+                              _isRefreshing
+                                  ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : const Icon(Icons.refresh),
                           label: Text(_isRefreshing ? 'Retrying…' : 'Retry'),
                         ),
                       ],
@@ -228,149 +255,177 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                     child: Column(
                       children: [
                         Expanded(
-                          child: clients.isEmpty
-                              ? const ListEmptyState(
-                                  message:
-                                      'No clients found yet. Once clients are added, they’ll appear here.',
-                                )
-                              : RefreshIndicator(
-                                  onRefresh: _refreshClientsAndUnread,
-                                  child: ListView.separated(
-                                    itemCount: clients.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 12),
-                                    itemBuilder: (context, index) {
-                                      final client = clients[index];
-                                      final unreadCount =
-                                          _unreadByClientId[client.clientId] ??
-                                              0;
-                                      final joinedLabel = DateFormat('MMM yyyy')
-                                          .format(client.createdAt.toLocal());
-                                      return InkWell(
-                                        borderRadius: BorderRadius.circular(18),
-                                        onTap: () async {
-                                          final itemContext = context;
-                                          showCoachLoadingOverlay(itemContext);
-                                          try {
-                                            await routineController
-                                                .loadClientData(
-                                              clientId: client.clientId,
-                                              clientName:
-                                                  client.clientName ?? '',
+                          child:
+                              clients.isEmpty
+                                  ? const ListEmptyState(
+                                    message:
+                                        'No clients found yet. Once clients join, they’ll appear here.',
+                                  )
+                                  : RefreshIndicator(
+                                    onRefresh: _refreshClientsAndUnread,
+                                    child: ListView.separated(
+                                      itemCount: clients.length,
+                                      separatorBuilder:
+                                          (_, __) => const SizedBox(height: 12),
+                                      itemBuilder: (context, index) {
+                                        final client = clients[index];
+                                        final unreadCount =
+                                            _unreadByClientId[client
+                                                .clientId] ??
+                                            0;
+                                        final joinedLabel = DateFormat(
+                                          'MMM yyyy',
+                                        ).format(client.createdAt.toLocal());
+                                        return InkWell(
+                                          borderRadius: BorderRadius.circular(
+                                            18,
+                                          ),
+                                          onTap: () async {
+                                            final itemContext = context;
+                                            showCoachLoadingOverlay(
+                                              itemContext,
                                             );
-                                            await nutritionController
-                                                .loadClientData(
-                                              clientId: client.clientId,
-                                            );
-                                          } finally {
-                                            if (itemContext.mounted) {
-                                              hideCoachLoadingOverlay(
-                                                  itemContext);
+                                            try {
+                                              await routineController
+                                                  .loadClientData(
+                                                    clientId: client.clientId,
+                                                    clientName:
+                                                        client.clientName ?? '',
+                                                  );
+                                              await nutritionController
+                                                  .loadClientData(
+                                                    clientId: client.clientId,
+                                                  );
+                                            } finally {
+                                              if (itemContext.mounted) {
+                                                hideCoachLoadingOverlay(
+                                                  itemContext,
+                                                );
+                                              }
                                             }
-                                          }
-                                          if (!mounted || !context.mounted) {
-                                            return;
-                                          }
-                                          if (widget
-                                              .navigateToOverviewOnSelect) {
-                                            context.go('/');
-                                          } else {
-                                            Navigator.of(context).pop();
-                                          }
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 14,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.06),
-                                            borderRadius:
-                                                BorderRadius.circular(18),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                width: 42,
-                                                height: 42,
-                                                alignment: Alignment.center,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.08),
-                                                  borderRadius:
-                                                      BorderRadius.circular(14),
-                                                ),
-                                                child: Text(
-                                                  client.initials,
-                                                  style: theme
-                                                      .textTheme.titleSmall
-                                                      ?.copyWith(
-                                                    fontWeight: FontWeight.w700,
-                                                    color: isDarkMode
-                                                        ? Colors.white
-                                                        : Colors.black,
-                                                  ),
-                                                ),
+                                            if (!mounted || !context.mounted) {
+                                              return;
+                                            }
+                                            if (widget
+                                                .navigateToOverviewOnSelect) {
+                                              context.go('/');
+                                            } else {
+                                              Navigator.of(context).pop();
+                                            }
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 14,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.06,
                                               ),
-                                              const SizedBox(width: 14),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      client.clientName ?? '',
-                                                      style: theme
-                                                          .textTheme.titleMedium
-                                                          ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 6),
-                                                    Text(
-                                                      'Client since $joinedLabel',
-                                                      style: theme
-                                                          .textTheme.bodySmall
-                                                          ?.copyWith(
-                                                        color: Colors.white
-                                                            .withValues(
-                                                                alpha: 0.6),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  if (unreadCount > 0) ...[
-                                                    UnreadBadge(
-                                                      count: unreadCount,
-                                                      fontSize: 11,
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 4),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                  ],
-                                                  Icon(
-                                                    Icons.chevron_right_rounded,
+                                              borderRadius:
+                                                  BorderRadius.circular(18),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  width: 42,
+                                                  height: 42,
+                                                  alignment: Alignment.center,
+                                                  decoration: BoxDecoration(
                                                     color: Colors.white
-                                                        .withValues(alpha: 0.7),
-                                                    size: 22,
+                                                        .withValues(
+                                                          alpha: 0.08,
+                                                        ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          14,
+                                                        ),
                                                   ),
-                                                ],
-                                              ),
-                                            ],
+                                                  child: Text(
+                                                    client.initials,
+                                                    style: theme
+                                                        .textTheme
+                                                        .titleSmall
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color:
+                                                              isDarkMode
+                                                                  ? Colors.white
+                                                                  : Colors
+                                                                      .black,
+                                                        ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 14),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        client.clientName ?? '',
+                                                        style: theme
+                                                            .textTheme
+                                                            .titleMedium
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
+                                                      ),
+                                                      const SizedBox(height: 6),
+                                                      Text(
+                                                        'Client since $joinedLabel',
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodySmall
+                                                            ?.copyWith(
+                                                              color: Colors
+                                                                  .white
+                                                                  .withValues(
+                                                                    alpha: 0.6,
+                                                                  ),
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    if (unreadCount > 0) ...[
+                                                      UnreadBadge(
+                                                        count: unreadCount,
+                                                        fontSize: 11,
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                    ],
+                                                    Icon(
+                                                      Icons
+                                                          .chevron_right_rounded,
+                                                      color: Colors.white
+                                                          .withValues(
+                                                            alpha: 0.7,
+                                                          ),
+                                                      size: 22,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
                         ),
                         const SizedBox(height: 20),
                       ],
@@ -378,7 +433,8 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                   ),
                 ],
               );
-            },
+              },
+            ),
           ),
         ),
       ),

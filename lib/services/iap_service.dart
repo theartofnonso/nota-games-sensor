@@ -5,15 +5,15 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import '../logger.dart';
 
 /// Product IDs configured in App Store Connect.
-/// - notathletes_monthly: Not Athletes Pro (coach-led)
+/// - notathletes_coach_monthly: Not Athletes Pro (coach-led)
 /// - notathletes_solo_monthly: Not Athletes (self-coaching)
 const Set<String> _iapProductIds = <String>{
-  'notathletes_monthly',
+  'notathletes_coach_monthly',
   'notathletes_solo_monthly',
 };
 
 /// Product ID for Pro tier (coach-led).
-const String iapProductIdPro = 'notathletes_monthly';
+const String iapProductIdPro = 'notathletes_coach_monthly';
 
 /// Product ID for self-coaching tier (create/manage own routines, no coach).
 const String iapProductIdSolo = 'notathletes_solo_monthly';

@@ -23,7 +23,7 @@ const String _privacyPolicyUrl = 'https://www.notathletes.com/privacy';
 const String _termsOfUseUrl =
     'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
-/// Subscription duration text inferred from product ID (e.g. notathletes_monthly → per month).
+/// Subscription duration text inferred from product ID (e.g. notathletes_coach_monthly → per month).
 String _subscriptionDuration(String? productId) {
   if (productId == null || productId.isEmpty) return '';
   final lower = productId.toLowerCase();
@@ -366,6 +366,11 @@ class _ClientSubscriptionPaywallSheetState
   Future<void> _loadStatusAndProduct() async {
     final access =
         await widget.service._fetchBackendAccess(userId: widget.userId);
+    // Populate [iapService.purchasedProductIds] so [_isSelectedProductActive] matches
+    // the tier the user actually owns (startup refresh may not have run yet).
+    if (access == true) {
+      await iapService.restorePurchases();
+    }
     final products = await widget.service.loadProducts();
     if (!mounted) return;
     ProductDetails? defaultProduct;
@@ -767,58 +772,59 @@ class _ClientSubscriptionPaywallSheetState
                           textAlign: TextAlign.center,
                         ),
                       ),
-                    Center(
-                      child: Wrap(
-                        alignment: WrapAlignment.center,
-                        children: [
-                          Text(
-                            'By continuing, you agree to our ',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: (isDark ? Colors.white : Colors.black)
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () =>
-                                openUrl(url: _termsOfUseUrl, context: context),
-                            child: Text(
-                              'Terms of Use',
+                    if (!_isSelectedProductActive())
+                      Center(
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          children: [
+                            Text(
+                              'By continuing, you agree to our ',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                decoration: TextDecoration.underline,
-                                color: accent,
-                                fontWeight: FontWeight.w700,
+                                color: (isDark ? Colors.white : Colors.black)
+                                    .withValues(alpha: 0.6),
                               ),
                             ),
-                          ),
-                          Text(
-                            ' and ',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: (isDark ? Colors.white : Colors.black)
-                                  .withValues(alpha: 0.6),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => openUrl(
-                                url: _privacyPolicyUrl, context: context),
-                            child: Text(
-                              'Privacy Policy',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                decoration: TextDecoration.underline,
-                                color: accent,
-                                fontWeight: FontWeight.w700,
+                            GestureDetector(
+                              onTap: () =>
+                                  openUrl(url: _termsOfUseUrl, context: context),
+                              child: Text(
+                                'Terms of Use',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  decoration: TextDecoration.underline,
+                                  color: accent,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                          ),
-                          Text(
-                            '.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: (isDark ? Colors.white : Colors.black)
-                                  .withValues(alpha: 0.6),
+                            Text(
+                              ' and ',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: (isDark ? Colors.white : Colors.black)
+                                    .withValues(alpha: 0.6),
+                              ),
                             ),
-                          ),
-                        ],
+                            GestureDetector(
+                              onTap: () => openUrl(
+                                  url: _privacyPolicyUrl, context: context),
+                              child: Text(
+                                'Privacy Policy',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  decoration: TextDecoration.underline,
+                                  color: accent,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: (isDark ? Colors.white : Colors.black)
+                                    .withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                     if (!widget.showCloseButton) ...[
                       const SizedBox(height: 24),
                       Center(

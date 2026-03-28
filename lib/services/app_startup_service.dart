@@ -27,7 +27,9 @@ class AppStartupService {
       tasks.add(ClientSubscriptionService.instance.refreshSubscriptionStatus());
     }
     if (AppConfig.isCoach) {
-      tasks.add(CoachClientsService.instance.loadClients());
+      tasks.add(
+        CoachClientsService.instance.loadClients(coachAuthUserId: userId),
+      );
     }
     await Future.wait(tasks);
   }

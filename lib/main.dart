@@ -43,6 +43,7 @@ import 'package:trainware/utils/shell_tab_paths.dart';
 import 'package:trainware/widgets/navigation/routines_shell_page.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/supabase_config.dart';
+import 'package:trainware/utils/theme/system_ui_overlay.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/app_startup_service.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
@@ -235,6 +236,8 @@ Future<void> mainCommon(AppFlavor flavor) async {
         'APNs cert name for push: "${ChatConfig.apnsCertName}" (must match Agora Console Push Certificate)');
   }
   await ChatUIKit.instance.init(options: chatOptions);
+  // Match app Material dark theme (MaterialApp uses TRKRTheme.darkTheme).
+  ChatUIKitTheme.instance.setColor(ChatUIKitColor.dark());
 
   await SharedPrefs().init();
 
@@ -890,6 +893,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(trkrDarkSystemUiOverlay);
+
     if (_accessController.isLoading || !_startupComplete) {
       return MaterialApp(
         themeMode: ThemeMode.dark,
@@ -898,15 +903,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         home: const SplashScreen(),
       );
     }
-
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.black,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.black,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    );
 
     // Welcome first: users must dismiss before Auth until firstLaunch is false
     if (SharedPrefs().firstLaunch && !_welcomeDismissed) {

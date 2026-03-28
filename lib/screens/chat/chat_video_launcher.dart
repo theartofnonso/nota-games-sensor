@@ -263,6 +263,12 @@ class ChatVideoLauncher {
     );
   }
 
+  /// Same contrast as [ChatUIKitAppBar] title / readable on neutralColor98 bar.
+  static Color _chatAppBarActionIconColor() {
+    final c = ChatUIKitTheme.instance.color;
+    return c.isDark ? c.neutralColor95 : c.neutralColor1;
+  }
+
   /// Trailing action for Agora Chat UI Kit app bar (video call).
   static ChatUIKitAppBarAction videoCallAppBarAction({
     required String coachId,
@@ -271,7 +277,11 @@ class ChatVideoLauncher {
     required String clientName,
   }) {
     return ChatUIKitAppBarAction(
-      child: const Icon(Icons.videocam, size: 22),
+      child: Icon(
+        Icons.videocam,
+        size: 22,
+        color: _chatAppBarActionIconColor(),
+      ),
       onTap: (ctx) {
         openVideoCall(
           ctx,

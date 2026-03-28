@@ -123,7 +123,8 @@ class ChatBootstrapService {
         debugPrint('[ChatBootstrap] Push token setup OK');
       } else {
         debugPrint(
-            '[ChatBootstrap] Push token setup failed (check Agora Console APNs config)');
+          '[ChatBootstrap] Push token setup failed (check Agora Console APNs config)',
+        );
       }
     } catch (e) {
       debugPrint('[ChatBootstrap] Error: $e');

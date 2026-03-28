@@ -8,11 +8,14 @@ import '../widgets/buttons/opacity_button_widget_two.dart';
 /// Checks if an email exists in the coaches table.
 Future<bool> checkCoachAccess(String email) async {
   try {
-    final record = await Supabase.instance.client
-        .from('coaches')
-        .select('email, name')
-        .eq('email', email)
-        .maybeSingle();
+    final normalized = email.trim().toLowerCase();
+    final record =
+        await Supabase.instance.client
+            .from('coaches')
+            .select('email, name')
+            .eq('email', normalized)
+            .eq('active', true)
+            .maybeSingle();
     return record != null;
   } catch (_) {
     return false;

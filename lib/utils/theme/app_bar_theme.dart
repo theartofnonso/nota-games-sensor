@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../colors.dart';
 import 'icon_theme.dart';
+import 'system_ui_overlay.dart';
 
 class TRKRAppBarTheme {
   TRKRAppBarTheme._();
@@ -19,6 +20,7 @@ class TRKRAppBarTheme {
       backgroundColor: bgPrimary,
       foregroundColor: textPrimary,
       actionsIconTheme: TRKRIconTheme.darkTheme,
+      systemOverlayStyle: trkrDarkSystemUiOverlay,
       titleTextStyle: const TextStyle(
           fontFamily: 'Grift',
           fontWeight: FontWeight.w700,

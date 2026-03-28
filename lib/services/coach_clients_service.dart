@@ -7,7 +7,10 @@ import 'chat_unread_counts_service.dart';
 
 /// Loads and caches coach clients. Used at startup (splash) so the coach
 /// client list is ready before the first screen.
-class CoachClientsService {
+///
+/// Extends [ChangeNotifier] so [CoachClientsScreen] rebuilds when a load
+/// finishes (the service can update after the first frame).
+class CoachClientsService extends ChangeNotifier {
   CoachClientsService._();
   static final CoachClientsService instance = CoachClientsService._();
 
@@ -21,14 +24,21 @@ class CoachClientsService {
 
   /// Loads coach clients from Supabase. Called during app startup for coaches
   /// and on pull-to-refresh in CoachClientsScreen.
-  Future<void> loadClients() async {
+  ///
+  /// Pass [coachAuthUserId] when you already have the signed-in user id (e.g.
+  /// from [ClientOverrideController]) so this matches startup auth state even
+  /// if [SupabaseClient.auth.currentUser] lags briefly after session restore.
+  Future<void> loadClients({String? coachAuthUserId}) async {
     if (!AppConfig.isCoach) return;
 
     _loadError = null;
-    final coachId = Supabase.instance.client.auth.currentUser?.id;
+    final coachId = (coachAuthUserId != null && coachAuthUserId.isNotEmpty)
+        ? coachAuthUserId
+        : Supabase.instance.client.auth.currentUser?.id;
     if (coachId == null) {
       _clients = [];
       _loaded = true;
+      notifyListeners();
       return;
     }
 
@@ -63,6 +73,7 @@ class CoachClientsService {
       _clients = [];
       _loaded = true;
     }
+    notifyListeners();
   }
 
   /// Clears cached data (e.g. on logout).
@@ -70,5 +81,6 @@ class CoachClientsService {
     _clients = [];
     _loadError = null;
     _loaded = false;
+    notifyListeners();
   }
 }

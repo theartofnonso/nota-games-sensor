@@ -32,4 +32,3 @@ const accountDeletionPath = '/account/delete';
 const accountProfilePath = '/account/profile';
 const subscriptionStatusPath = '/subscription/status';
 const coachClientsPath = '/coach-clients';
-const coachProfilesPath = '/coach-profiles';

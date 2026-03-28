@@ -34,8 +34,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   int _chatUnreadCount = 0;
   ClientOverrideController? _accessController;
 
-  bool get _chatInNavBar =>
-      AppConfig.isCoach || AppPrivileges.isProWithCoach;
+  bool get _chatInNavBar => AppConfig.isCoach || AppPrivileges.isProWithCoach;
 
   /// Pro client with coach: full feedback feed in nav (matches settings card).
   bool get _feedbackInNavBar => AppPrivileges.isProWithCoach;
@@ -83,12 +82,12 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   void _attachChatListeners() {
     if (AppConfig.isCoach) {
       _chatUnreadCount = 0;
-      ChatUnreadCountsService()
-          .totalUnreadCount
-          .addListener(_handleChatUnreadChange);
-      ChatUnreadCountsService()
-          .unreadByClientId
-          .addListener(_handleChatUnreadChange);
+      ChatUnreadCountsService().totalUnreadCount.addListener(
+        _handleChatUnreadChange,
+      );
+      ChatUnreadCountsService().unreadByClientId.addListener(
+        _handleChatUnreadChange,
+      );
       _accessController!.addListener(_handleChatUnreadChange);
     } else {
       _chatUnreadCount = ChatUnreadService().unreadCount.value;
@@ -134,9 +133,11 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
       if (AppConfig.isCoach) {
         if (accessController == null) return;
         final clientId = accessController.selectedClientId;
-        _chatUnreadCount = clientId == null
-            ? 0
-            : (ChatUnreadCountsService().unreadByClientId.value[clientId] ?? 0);
+        _chatUnreadCount =
+            clientId == null
+                ? 0
+                : (ChatUnreadCountsService().unreadByClientId.value[clientId] ??
+                    0);
       } else {
         _chatUnreadCount = ChatUnreadService().unreadCount.value;
       }
@@ -147,12 +148,12 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     if (AppConfig.isCoach) {
-      ChatUnreadCountsService()
-          .totalUnreadCount
-          .removeListener(_handleChatUnreadChange);
-      ChatUnreadCountsService()
-          .unreadByClientId
-          .removeListener(_handleChatUnreadChange);
+      ChatUnreadCountsService().totalUnreadCount.removeListener(
+        _handleChatUnreadChange,
+      );
+      ChatUnreadCountsService().unreadByClientId.removeListener(
+        _handleChatUnreadChange,
+      );
       _accessController?.removeListener(_handleChatUnreadChange);
     } else {
       ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
@@ -310,12 +311,14 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
       ),
       AppFloatingNavItem(
         label: AppConfig.isCoach ? 'Clients' : 'Routines',
-        icon: AppConfig.isCoach
-            ? const Icon(Icons.people_outline, size: 24)
-            : const _NavDumbbellsAssetIcon(),
-        selectedIcon: AppConfig.isCoach
-            ? const Icon(Icons.people, size: 24)
-            : const _NavDumbbellsAssetIcon(),
+        icon:
+            AppConfig.isCoach
+                ? const Icon(Icons.people_outline, size: 24)
+                : const _NavDumbbellsAssetIcon(),
+        selectedIcon:
+            AppConfig.isCoach
+                ? const Icon(Icons.people, size: 24)
+                : const _NavDumbbellsAssetIcon(),
       ),
       if (AppConfig.isCoach)
         AppFloatingNavItem(
@@ -400,8 +403,8 @@ class _NavDumbbellsAssetIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = IconTheme.of(context).color ??
-        Theme.of(context).colorScheme.onSurface;
+    final color =
+        IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
     return SizedBox(
       width: 24,
       height: 24,
@@ -424,19 +427,15 @@ class _BadgedChatBubbleIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = IconTheme.of(context).color ??
-        Theme.of(context).colorScheme.onSurface;
+    final color =
+        IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.center,
       children: [
         Padding(
           padding: const EdgeInsets.all(2),
-          child: FaIcon(
-            FontAwesomeIcons.comment,
-            size: 22,
-            color: color,
-          ),
+          child: FaIcon(FontAwesomeIcons.comment, size: 22, color: color),
         ),
         if (unreadCount > 0)
           Positioned(
