@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/chat_bootstrap_service.dart';
+import '../../services/revenue_cat_bootstrap.dart';
 import '../bottom_sheets/app_bottom_sheet.dart';
 import '../buttons/opacity_button_widget_two.dart';
 
@@ -119,5 +120,6 @@ Future<void> logoutWithConfirmation(
 /// Signs out the user from Agora Chat and Supabase.
 Future<void> performLogout() async {
   await ChatBootstrapService.logoutAgoraChat();
+  await RevenueCatBootstrap.logOutIfClient();
   await Supabase.instance.client.auth.signOut();
 }

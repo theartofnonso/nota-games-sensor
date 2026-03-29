@@ -57,10 +57,15 @@ class NutritionLogController extends ChangeNotifier {
     return templates.first;
   }
 
-  double get proteinTarget => nutritionTemplate?.protein ?? 0;
-  double get carbsTarget => nutritionTemplate?.carbs ?? 0;
-  double get fatsTarget => nutritionTemplate?.fats ?? 0;
-  double get calorieTarget => nutritionTemplate?.calories ?? 0;
+  double get proteinTarget =>
+      nutritionTemplate?.protein ?? NutritionTemplateDto.defaultProteinG;
+  double get carbsTarget =>
+      nutritionTemplate?.carbs ?? NutritionTemplateDto.defaultCarbsG;
+  double get fatsTarget =>
+      nutritionTemplate?.fats ?? NutritionTemplateDto.defaultFatsG;
+  double get calorieTarget =>
+      nutritionTemplate?.kcalDerivedFromMacros ??
+      NutritionTemplateDto.defaultKcalFromMacros;
   String? get activeUserId =>
       accessController.selectedClientId ??
       Supabase.instance.client.auth.currentUser?.id;

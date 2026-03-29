@@ -4,10 +4,10 @@ import '../services/client_subscription_service.dart';
 /// Centralized privilege checks. Use these instead of raw isCoach/isClient
 /// since solo users share some privileges with coaches but not others.
 ///
-/// **Tiers:**
+/// **Tiers (client app uses RevenueCat entitlements):**
 /// - **Coach** (coach app): full access, views clients
-/// - **Pro client** (client app, has coach): coach feedback, coach selection
-/// - **Solo** (client app, self-coaching): edit own routines/nutrition, no coach
+/// - **Coach-tier client** (`coach_access`): coach feedback, coach selection, chat in nav
+/// - **Solo client** (`app_access` only): self-coaching UX, skips coach selection
 class AppPrivileges {
   AppPrivileges._();
 
@@ -15,8 +15,9 @@ class AppPrivileges {
   static bool get isSelfCoaching =>
       ClientSubscriptionService.instance.isSelfCoaching;
 
-  /// Pro client with a coach (not solo). Coach feedback, coach selection apply.
-  static bool get isProWithCoach => !isCoach && !isSelfCoaching;
+  /// Client with **coach_access** (not the coach app). Requires **app_access** + entitlement.
+  static bool get isProWithCoach =>
+      !isCoach && ClientSubscriptionService.instance.hasCoachAccess;
 
   /// Client (solo or pro) who can create and manage their own workout templates/plans.
   static bool get canCreateManageRoutines =>

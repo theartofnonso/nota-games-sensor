@@ -1665,8 +1665,8 @@ class _NutritionCreateRow extends StatelessWidget {
     return _CreateSectionFrostedCard(
       title: 'Nutrition',
       description: isSelfCoaching
-          ? 'Create a nutrition template to set calorie and macro targets for yourself.'
-          : 'Create a nutrition template to set calorie and macro targets for this client.',
+          ? 'Create a nutrition template to set macro targets for yourself.'
+          : 'Create a nutrition template to set macro targets for this client.',
       ctaLabel: 'Create nutrition template',
       onPressed: () => showNutritionTemplateSheet(context),
       gradientColors: [

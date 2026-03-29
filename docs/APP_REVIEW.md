@@ -96,7 +96,7 @@ This account has pre-populated workout programs, nutrition logs, and messaging a
 | **1. Auth screen** | Enter `client@ware.health` → tap Continue → **auto sign-in** (password used internally, no OTP) | Enter email → tap Continue → OTP sent → enter 6-digit code → tap Verify |
 | **2. ProfileCompletionGate** | Profile already exists (seeded in `clients` table) → pass through | New user: auto-create profile from email → pass through |
 | **3. CoachSelectionGate** | Coach already assigned (seeded in `coach_clients`) → pass through | No coach: show CoachSelectionScreen until they select/complete |
-| **4. SubscriptionGate** | Same as real: check backend subscription status | Check backend → if no subscription, show paywall |
+| **4. SubscriptionGate** | Same as real: RevenueCat subscription / entitlements | If no active subscription in RevenueCat, show paywall |
 | **5. Post-gates** | Pre-populated workouts, nutrition, plans (from seed) | Empty or their own data |
 
 ### Coach app

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:trainware/app_flavor.dart';
+import 'package:trainware/services/revenue_cat_bootstrap.dart';
 
 /// Manages authentication state and selected client for coaches.
 ///
@@ -78,7 +80,14 @@ class ClientOverrideController extends ChangeNotifier {
         final session = data.session;
         _isAuthenticated = session != null;
         _userId = session?.user.id;
-        if (!_isAuthenticated) {
+        if (_isAuthenticated && _userId != null && _userId!.isNotEmpty) {
+          if (AppConfig.isClient) {
+            await RevenueCatBootstrap.logInUser(_userId!);
+          }
+        } else {
+          if (AppConfig.isClient) {
+            await RevenueCatBootstrap.logOutIfClient();
+          }
           _selectedClientId = null;
           _selectedClientName = null;
           _selectedClientEmail = null;
@@ -87,7 +96,10 @@ class ClientOverrideController extends ChangeNotifier {
         }
         notifyListeners();
       },
-      onError: (_) {
+      onError: (_) async {
+        if (AppConfig.isClient) {
+          await RevenueCatBootstrap.logOutIfClient();
+        }
         _isAuthenticated = false;
         _userId = null;
         _selectedClientId = null;

@@ -29,6 +29,109 @@ class ChatBootstrapService {
   /// True once Agora Chat has logged in this session (or was already logged in).
   static final ValueNotifier<bool> agoraLoggedIn = ValueNotifier(false);
 
+  static const int _peerHistoryPageSize = 50;
+  static const int _peerHistoryMaxPages = 80;
+  static const int _localScanPageSize = 300;
+  static const int _localScanMaxPages = 50;
+
+  static Message? _oldestByServerTime(Iterable<Message> messages) {
+    Message? o;
+    for (final m in messages) {
+      if (o == null || m.serverTime < o.serverTime) o = m;
+    }
+    return o;
+  }
+
+  /// Oldest message id stored locally for [peer], or null if the conversation
+  /// is empty. Paged scan so we do not miss history beyond the first N rows.
+  static Future<String?> _oldestLocalMessageId(String peer) async {
+    Message? globalOldest;
+    var startId = '';
+    for (var p = 0; p < _localScanMaxPages; p++) {
+      final batch = await ChatUIKit.instance.loadLocalMessages(
+        conversationId: peer,
+        type: ConversationType.Chat,
+        count: _localScanPageSize,
+        startId: startId,
+        direction: SearchDirection.Up,
+      );
+      if (batch.isEmpty) break;
+      final pageOldest = _oldestByServerTime(batch);
+      if (pageOldest != null) {
+        if (globalOldest == null ||
+            pageOldest.serverTime < globalOldest.serverTime) {
+          globalOldest = pageOldest;
+        }
+      }
+      if (batch.length < _localScanPageSize) break;
+      final nextStart = pageOldest?.msgId.trim() ?? '';
+      if (nextStart.isEmpty || nextStart == startId) break;
+      startId = nextStart;
+    }
+    return globalOldest?.msgId.trim();
+  }
+
+  /// The UI Kit message list only reads the **local** DB. This pulls server
+  /// history into that DB:
+  /// - **Empty local:** start from latest and page backward.
+  /// - **Some local (e.g. partial sync or only live messages):** anchor on the
+  ///   **oldest** stored message and fetch **older** pages until the server has
+  ///   no more — we no longer bail out just because `count >= 1` locally.
+  static Future<void> ensurePeerChatHistoryLoaded(String peerAgoraUserId) async {
+    final peer = peerAgoraUserId.trim();
+    if (peer.isEmpty) return;
+    final me = ChatUIKit.instance.currentUserId?.trim();
+    if (me == null || me.isEmpty) return;
+
+    try {
+      final anyLocal = await ChatUIKit.instance.loadLocalMessages(
+        conversationId: peer,
+        type: ConversationType.Chat,
+        count: 1,
+      );
+      // Peer user id = conversationId for 1:1. Empty [startMsgId] = latest window;
+      // each response's [cursor] is the next [startMsgId] for older messages
+      // (see Agora Chat `fetchHistoryMessages` docs).
+      var startMsgId = '';
+      if (anyLocal.isNotEmpty) {
+        startMsgId = (await _oldestLocalMessageId(peer)) ?? '';
+      }
+
+      for (var page = 0; page < _peerHistoryMaxPages; page++) {
+        try {
+          final pageResult = await ChatUIKit.instance.fetchHistoryMessages(
+            conversationId: peer,
+            type: ConversationType.Chat,
+            pageSize: _peerHistoryPageSize,
+            startMsgId: startMsgId,
+            direction: SearchDirection.Up,
+          );
+
+          final batch = pageResult.data;
+          if (batch.isEmpty) break;
+
+          final nextCursor = pageResult.cursor?.trim() ?? '';
+
+          // Match Agora's recommended stop conditions: no cursor or short page.
+          if (nextCursor.isEmpty || batch.length < _peerHistoryPageSize) {
+            break;
+          }
+          if (nextCursor == startMsgId) break;
+          startMsgId = nextCursor;
+        } on ChatError catch (e) {
+          debugPrint(
+            '[ChatBootstrap] fetchHistoryMessages ChatError: '
+            '${e.code} ${e.description}',
+          );
+          break;
+        }
+      }
+      debugPrint('[ChatBootstrap] Server history sync peer $peer');
+    } catch (e, st) {
+      debugPrint('[ChatBootstrap] ensurePeerChatHistoryLoaded: $e\n$st');
+    }
+  }
+
   /// Resets unread notifiers and [agoraLoggedIn]. Call on sign-out (before or
   /// after [logoutAgoraChat]) so badges don’t show the previous user’s counts.
   static void clearLocalChatState() {

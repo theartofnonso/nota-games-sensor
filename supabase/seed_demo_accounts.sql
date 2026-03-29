@@ -11,10 +11,8 @@
 -- Run: Supabase Dashboard → SQL Editor → paste this entire file → Run.
 -- Re-running deletes prior demo-linked rows for these two users and repopulates.
 --
--- Subscription (client app): Access is decided by https://api.notathletes.com
--- (GET /subscription/status). This script only touches Supabase. Ensure the
--- backend treats client@ware.health as subscribed for review, OR reviewers use
--- sandbox purchase — see docs/APP_REVIEW.md.
+-- Subscription (client app): Access is decided by RevenueCat (sandbox purchase /
+-- Test Store). This script only touches Supabase — see docs/APP_REVIEW.md for review flow.
 --
 -- Schema note: workout_sessions.template_id is NOT NULL (migrations).
 -- session_exercises.template_exercise_id links to template_exercises for the
@@ -236,7 +234,7 @@ BEGIN
   END LOOP;
 
   INSERT INTO public.nutrition_templates (id, owner, client_id, calories_kcal, protein_g, carbs_g, fats_g, created_at, updated_at)
-  VALUES (nutrition_template_id, coach_uuid, client_uuid, 2200, 150, 250, 75, now(), now())
+  VALUES (nutrition_template_id, coach_uuid, client_uuid, 3950, 250, 400, 150, now(), now())
   ON CONFLICT (id) DO UPDATE SET
     calories_kcal = EXCLUDED.calories_kcal,
     protein_g = EXCLUDED.protein_g,

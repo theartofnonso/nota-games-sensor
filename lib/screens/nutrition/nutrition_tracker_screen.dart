@@ -26,13 +26,18 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
   final nutritionController = context.read<NutritionLogController>();
   final template = nutritionController.nutritionTemplate;
 
-  const maxCalories = 5000.0;
   const maxMacro = 500.0;
 
-  double calories = (template?.calories ?? 0).clamp(0.0, maxCalories);
-  double protein = (template?.protein ?? 0).clamp(0.0, maxMacro);
-  double carbs = (template?.carbs ?? 0).clamp(0.0, maxMacro);
-  double fats = (template?.fats ?? 0).clamp(0.0, maxMacro);
+  double protein = (template?.protein ?? NutritionTemplateDto.defaultProteinG)
+      .clamp(0.0, maxMacro);
+  double carbs = (template?.carbs ?? NutritionTemplateDto.defaultCarbsG).clamp(
+    0.0,
+    maxMacro,
+  );
+  double fats = (template?.fats ?? NutritionTemplateDto.defaultFatsG).clamp(
+    0.0,
+    maxMacro,
+  );
 
   await showAppActionBottomSheet<void>(
     context: context,
@@ -42,8 +47,9 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
         final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
         final textColor = isDark ? Colors.white : Colors.black;
-        final mutedColor =
-            (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6);
+        final mutedColor = (isDark ? Colors.white : Colors.black).withValues(
+          alpha: 0.6,
+        );
         final accent = Theme.of(ctx).colors.vibrantAccent;
 
         const colorCalories = Color(0xFFF59E0B);
@@ -59,9 +65,10 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
           required ValueChanged<double> onChanged,
           String? unit,
         }) {
-          final displayValue = value == value.roundToDouble()
-              ? value.round().toString()
-              : value.toStringAsFixed(1);
+          final displayValue =
+              value == value.roundToDouble()
+                  ? value.round().toString()
+                  : value.toStringAsFixed(1);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -71,16 +78,16 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
                   Text(
                     label,
                     style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: mutedColor,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: mutedColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(
                     unit != null ? '$displayValue $unit' : displayValue,
                     style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                          color: textColor,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -95,7 +102,7 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
                   value: value.clamp(0.0, max),
                   min: 0,
                   max: max,
-                  divisions: max == maxCalories ? 500 : 50,
+                  divisions: 50,
                   onChanged: (v) {
                     HapticFeedback.selectionClick();
                     onChanged(v);
@@ -103,6 +110,52 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
                 ),
               ),
             ],
+          );
+        }
+
+        Widget buildCalorieTargetFromMacros({
+          required double proteinG,
+          required double carbsG,
+          required double fatsG,
+        }) {
+          final kcal = NutritionTemplateDto.kcalFromMacroGrams(
+            proteinG,
+            carbsG,
+            fatsG,
+          );
+          final display =
+              kcal == kcal.roundToDouble()
+                  ? '${kcal.round()}'
+                  : kcal.toStringAsFixed(1);
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color:
+                  isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Calorie target',
+                  style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                    color: mutedColor,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                Text(
+                  '$display kcal',
+                  style: Theme.of(ctx).textTheme.bodyLarge?.copyWith(
+                    color: colorCalories,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
           );
         }
 
@@ -125,28 +178,24 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
                     children: [
                       Text(
                         'Nutrition template',
-                        style: Theme.of(ctx)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Set target calories and macros for this client.',
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                              color: mutedColor,
-                            ),
+                        'Set macro targets. Calorie goal updates when you adjust them.',
+                        style: Theme.of(
+                          ctx,
+                        ).textTheme.bodySmall?.copyWith(color: mutedColor),
                       ),
                       const SizedBox(height: 20),
-                      buildSliderRow(
-                        label: 'Calories',
-                        value: calories,
-                        max: maxCalories,
-                        trackColor: colorCalories,
-                        unit: 'kcal',
-                        onChanged: (v) => setSheetState(() => calories = v),
+                      buildCalorieTargetFromMacros(
+                        proteinG: protein,
+                        carbsG: carbs,
+                        fatsG: fats,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
                       buildSliderRow(
                         label: 'Protein',
                         value: protein,
@@ -192,11 +241,17 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
                             }
 
                             final now = DateTime.now();
+                            final derivedCalories =
+                                NutritionTemplateDto.kcalFromMacroGrams(
+                                  protein,
+                                  carbs,
+                                  fats,
+                                );
                             final updated = NutritionTemplateDto(
                               id: template?.id ?? const Uuid().v4(),
                               owner: ownerId,
                               clientId: clientId,
-                              calories: calories,
+                              calories: derivedCalories,
                               protein: protein,
                               carbs: carbs,
                               fats: fats,
@@ -252,17 +307,19 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
   Widget build(BuildContext context) {
     final controller = context.watch<NutritionLogController>();
     final todayLogs = _logsForToday(controller.logs);
-    final sortedLogs = controller.logs.toList()
-      ..sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
+    final sortedLogs =
+        controller.logs.toList()
+          ..sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
     final logEntries = _buildLogEntries(sortedLogs);
     final consumedCalories = _sumCaloriesToday(todayLogs);
     final goalCalories = controller.calorieTarget;
     final hasLogsToday = todayLogs.isNotEmpty;
-    final remainingCalories = goalCalories > 0
-        ? (hasLogsToday
-            ? (goalCalories - consumedCalories).clamp(0.0, goalCalories)
-            : goalCalories)
-        : 0.0;
+    final remainingCalories =
+        goalCalories > 0
+            ? (hasLogsToday
+                ? (goalCalories - consumedCalories).clamp(0.0, goalCalories)
+                : goalCalories)
+            : 0.0;
     final consumedProtein = _sumProteinToday(todayLogs);
     final consumedCarbs = _sumCarbsToday(todayLogs);
     final consumedFats = _sumFatsToday(todayLogs);
@@ -303,11 +360,12 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            tooltip: AppConfig.isCoach
-                ? (controller.nutritionTemplate != null
-                    ? 'Edit template'
-                    : 'Configure template')
-                : 'Add entry',
+            tooltip:
+                AppConfig.isCoach
+                    ? (controller.nutritionTemplate != null
+                        ? 'Edit template'
+                        : 'Configure template')
+                    : 'Add entry',
           ),
           const SizedBox(width: 6),
         ],
@@ -344,27 +402,25 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                       ),
                     )
                   else
-                    ...logEntries.map(
-                      (entry) {
-                        if (entry.isWeekDivider) {
-                          return _LogWeekDivider(label: entry.label!);
-                        }
-                        if (entry.isDivider) {
-                          return _LogDateDivider(
-                            label: entry.label!,
-                            totals: entry.totals ?? const _MacroTotals(),
-                          );
-                        }
-                        return _MacroLogCard(
-                          log: entry.log!,
-                          isDarkMode: isDarkMode,
-                          calorieTarget: controller.calorieTarget,
-                          canDelete: !AppConfig.isCoach,
-                          onDelete: () => _confirmDelete(entry.log!),
-                          onTap: () => _showMacroDetails(entry.log!),
+                    ...logEntries.map((entry) {
+                      if (entry.isWeekDivider) {
+                        return _LogWeekDivider(label: entry.label!);
+                      }
+                      if (entry.isDivider) {
+                        return _LogDateDivider(
+                          label: entry.label!,
+                          totals: entry.totals ?? const _MacroTotals(),
                         );
-                      },
-                    ),
+                      }
+                      return _MacroLogCard(
+                        log: entry.log!,
+                        isDarkMode: isDarkMode,
+                        calorieTarget: controller.calorieTarget,
+                        canDelete: !AppConfig.isCoach,
+                        onDelete: () => _confirmDelete(entry.log!),
+                        onTap: () => _showMacroDetails(entry.log!),
+                      );
+                    }),
                 ],
               ),
             ),
@@ -437,9 +493,10 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.white,
+                  color:
+                      isDarkMode
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.white,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
                     color: (isDarkMode ? Colors.white : Colors.black)
@@ -464,12 +521,11 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                   children: [
                                     Text(
                                       log.foodName,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                       textAlign: TextAlign.start,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -477,17 +533,19 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                     const SizedBox(height: 4),
                                     Text(
                                       timeLabel,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: isDarkMode
-                                                ? Colors.white
-                                                    .withValues(alpha: 0.6)
-                                                : Colors.black
-                                                    .withValues(alpha: 0.5),
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(
+                                        color:
+                                            isDarkMode
+                                                ? Colors.white.withValues(
+                                                  alpha: 0.6,
+                                                )
+                                                : Colors.black.withValues(
+                                                  alpha: 0.5,
+                                                ),
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -496,20 +554,22 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                   children: [
                                     Text(
                                       '${log.caloriesRounded}',
-                                      style: Theme.of(context)
-                                              .textTheme
-                                              .displaySmall
-                                              ?.copyWith(
-                                                color: isDarkMode
+                                      style:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.displaySmall?.copyWith(
+                                            color:
+                                                isDarkMode
                                                     ? Colors.white
                                                     : Colors.black,
-                                                fontWeight: FontWeight.w900,
-                                                height: 1.0,
-                                              ) ??
+                                            fontWeight: FontWeight.w900,
+                                            height: 1.0,
+                                          ) ??
                                           TextStyle(
-                                            color: isDarkMode
-                                                ? Colors.white
-                                                : Colors.black,
+                                            color:
+                                                isDarkMode
+                                                    ? Colors.white
+                                                    : Colors.black,
                                             fontSize: 32,
                                             fontWeight: FontWeight.w900,
                                             height: 1.0,
@@ -519,23 +579,29 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                     const SizedBox(height: 4),
                                     Text(
                                       '${calorieTarget.toStringAsFixed(0)} kcal goal',
-                                      style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: isDarkMode
-                                                    ? Colors.white
-                                                        .withValues(alpha: 0.6)
-                                                    : Colors.black
-                                                        .withValues(alpha: 0.6),
-                                                fontWeight: FontWeight.w500,
-                                              ) ??
+                                      style:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.copyWith(
+                                            color:
+                                                isDarkMode
+                                                    ? Colors.white.withValues(
+                                                      alpha: 0.6,
+                                                    )
+                                                    : Colors.black.withValues(
+                                                      alpha: 0.6,
+                                                    ),
+                                            fontWeight: FontWeight.w500,
+                                          ) ??
                                           TextStyle(
-                                            color: isDarkMode
-                                                ? Colors.white
-                                                    .withValues(alpha: 0.6)
-                                                : Colors.black
-                                                    .withValues(alpha: 0.6),
+                                            color:
+                                                isDarkMode
+                                                    ? Colors.white.withValues(
+                                                      alpha: 0.6,
+                                                    )
+                                                    : Colors.black.withValues(
+                                                      alpha: 0.6,
+                                                    ),
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
                                           ),
@@ -548,9 +614,13 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                         ),
                         const SizedBox(width: 12),
                         CalorieGauge(
-                          progress: calorieTarget <= 0
-                              ? 0
-                              : (log.calories / calorieTarget).clamp(0.0, 1.0),
+                          progress:
+                              calorieTarget <= 0
+                                  ? 0
+                                  : (log.calories / calorieTarget).clamp(
+                                    0.0,
+                                    1.0,
+                                  ),
                           progressColor: Colors.white,
                           trackColor: Colors.white.withValues(alpha: 0.08),
                           knobColor: Colors.white,
@@ -585,10 +655,10 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                       Text(
                         log.summary!,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: (isDarkMode ? Colors.white : Colors.black)
-                                  .withValues(alpha: 0.75),
-                              height: 1.4,
-                            ),
+                          color: (isDarkMode ? Colors.white : Colors.black)
+                              .withValues(alpha: 0.75),
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ],
@@ -622,8 +692,9 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
               final maxSheetHeight = MediaQuery.of(context).size.height * 0.42;
               final isDarkMode =
                   Theme.of(context).brightness == Brightness.dark;
-              final loggedAtLabel =
-                  DateFormat('EEE, MMM d • h:mm a').format(selectedLoggedAt);
+              final loggedAtLabel = DateFormat(
+                'EEE, MMM d • h:mm a',
+              ).format(selectedLoggedAt);
 
               return Padding(
                 padding: EdgeInsets.only(
@@ -646,10 +717,12 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                         const SizedBox(height: 2),
                         Text(
                           'Describe what you ate.',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: (isDarkMode ? Colors.white : Colors.black)
-                                    .withValues(alpha: 0.6),
-                              ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(
+                            color: (isDarkMode ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.6),
+                          ),
                         ),
                         const SizedBox(height: 8),
                         TextField(
@@ -687,7 +760,9 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 10),
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(12),
@@ -705,13 +780,12 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   loggedAtLabel,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.8),
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
@@ -756,8 +830,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
     for (final log in logs) {
       final label = _dateBucketLabel(log.loggedAt.toLocal());
-      totalsByLabel[label] =
-          (totalsByLabel[label] ?? const _MacroTotals()).addLog(log);
+      totalsByLabel[label] = (totalsByLabel[label] ?? const _MacroTotals())
+          .addLog(log);
     }
 
     for (final log in logs) {
@@ -871,10 +945,7 @@ class _LogMealButtonState extends State<_LogMealButton> {
 
     final meal = widget.mealController.text.trim();
     if (meal.isEmpty) {
-      showSnackbar(
-        context: context,
-        message: 'Describe what you ate.',
-      );
+      showSnackbar(context: context, message: 'Describe what you ate.');
       return;
     }
 
@@ -949,23 +1020,20 @@ class _MacroDetailRow extends StatelessWidget {
                   Text(
                     label,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const Spacer(),
                   Text(
                     '${value.toStringAsFixed(1)} / ${target.toStringAsFixed(1)} g',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
-              _MacroProgressBar(
-                progress: progress,
-                barColor: barColor,
-              ),
+              _MacroProgressBar(progress: progress, barColor: barColor),
             ],
           ),
         ),
@@ -978,10 +1046,7 @@ class _MacroProgressBar extends StatelessWidget {
   final double progress;
   final Color barColor;
 
-  const _MacroProgressBar({
-    required this.progress,
-    required this.barColor,
-  });
+  const _MacroProgressBar({required this.progress, required this.barColor});
 
   @override
   Widget build(BuildContext context) {
@@ -1015,9 +1080,10 @@ class _MacroLogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeLabel = DateFormat('h:mm a').format(log.loggedAt);
-    final calorieProgress = calorieTarget <= 0
-        ? 0.0
-        : (log.calories / calorieTarget).clamp(0.0, 1.0);
+    final calorieProgress =
+        calorieTarget <= 0
+            ? 0.0
+            : (log.calories / calorieTarget).clamp(0.0, 1.0);
     final iconData = _iconForHour(log.loggedAt.hour);
     final iconColor = _iconColorForHour(log.loggedAt.hour);
     final cardContent = GestureDetector(
@@ -1025,9 +1091,8 @@ class _MacroLogCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.06)
-              : Colors.white,
+          color:
+              isDarkMode ? Colors.white.withValues(alpha: 0.06) : Colors.white,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
@@ -1045,11 +1110,7 @@ class _MacroLogCard extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    iconData,
-                    size: 16,
-                    color: iconColor,
-                  ),
+                  child: Icon(iconData, size: 16, color: iconColor),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1059,19 +1120,20 @@ class _MacroLogCard extends StatelessWidget {
                       Text(
                         log.foodName,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: isDarkMode ? Colors.white : Colors.black,
-                            ),
+                          fontWeight: FontWeight.w600,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${log.caloriesRounded} / ${calorieTarget.toStringAsFixed(0)} kcal',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: isDarkMode
+                          color:
+                              isDarkMode
                                   ? Colors.white.withValues(alpha: 0.65)
                                   : Colors.black.withValues(alpha: 0.6),
-                              fontWeight: FontWeight.w600,
-                            ),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -1080,11 +1142,12 @@ class _MacroLogCard extends StatelessWidget {
                 Text(
                   timeLabel,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: isDarkMode
+                    color:
+                        isDarkMode
                             ? Colors.white.withValues(alpha: 0.6)
                             : Colors.black.withValues(alpha: 0.5),
-                        fontWeight: FontWeight.w600,
-                      ),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -1106,11 +1169,12 @@ class _MacroLogCard extends StatelessWidget {
               '${log.carbs.toStringAsFixed(1)}g carbs, '
               'and ${log.fats.toStringAsFixed(1)}g fat',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: isDarkMode
+                color:
+                    isDarkMode
                         ? Colors.white.withValues(alpha: 0.6)
                         : Colors.black.withValues(alpha: 0.5),
-                    fontWeight: FontWeight.w500,
-                  ),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -1119,15 +1183,16 @@ class _MacroLogCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: canDelete
-          ? Dismissible(
-              key: ValueKey(log.id),
-              direction: DismissDirection.endToStart,
-              confirmDismiss: (_) => onDelete(),
-              background: const SizedBox.shrink(),
-              child: cardContent,
-            )
-          : cardContent,
+      child:
+          canDelete
+              ? Dismissible(
+                key: ValueKey(log.id),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (_) => onDelete(),
+                background: const SizedBox.shrink(),
+                child: cardContent,
+              )
+              : cardContent,
     );
   }
 
@@ -1165,16 +1230,16 @@ class _LogListEntry {
   final bool isWeekDivider;
 
   const _LogListEntry.log(this.log)
-      : label = null,
-        totals = null,
-        isWeekDivider = false;
+    : label = null,
+      totals = null,
+      isWeekDivider = false;
   const _LogListEntry.divider(this.label, this.totals)
-      : log = null,
-        isWeekDivider = false;
+    : log = null,
+      isWeekDivider = false;
   const _LogListEntry.weekDivider(this.label)
-      : log = null,
-        totals = null,
-        isWeekDivider = true;
+    : log = null,
+      totals = null,
+      isWeekDivider = true;
 
   bool get isDivider => label != null;
 }
@@ -1229,15 +1294,13 @@ class _LogDateDivider extends StatelessWidget {
   final String label;
   final _MacroTotals totals;
 
-  const _LogDateDivider({
-    required this.label,
-    required this.totals,
-  });
+  const _LogDateDivider({required this.label, required this.totals});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final totalsLabel = 'Calories ${totals.calories.toStringAsFixed(0)} • '
+    final totalsLabel =
+        'Calories ${totals.calories.toStringAsFixed(0)} • '
         'Protein ${totals.protein.toStringAsFixed(1)}g • '
         'Carbs ${totals.carbs.toStringAsFixed(1)}g • '
         'Fats ${totals.fats.toStringAsFixed(1)}g';

@@ -47,6 +47,7 @@ import 'package:trainware/utils/theme/system_ui_overlay.dart';
 import 'package:trainware/utils/theme/chat_uikit_trainware_theme.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/app_startup_service.dart';
+import 'package:trainware/services/revenue_cat_bootstrap.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
@@ -248,6 +249,8 @@ Future<void> mainCommon(AppFlavor flavor) async {
     url: SupabaseConfig.supabaseUrl,
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
+
+  await RevenueCatBootstrap.configureForClient();
 
   const DarwinInitializationSettings iOSInitializationSettingsDarwin =
       DarwinInitializationSettings(
@@ -809,6 +812,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (!isAuthenticated && _lastAuthenticated) {
       // Covers session expiry / remote sign-out (not only in-app performLogout).
       unawaited(ChatBootstrapService.logoutAgoraChat());
+      unawaited(RevenueCatBootstrap.logOutIfClient());
       _startupComplete = false;
       _startupTasksStarted = false;
       AppStartupService.instance.reset();

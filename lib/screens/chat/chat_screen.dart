@@ -114,6 +114,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       final peerAgora = toAgoraUsername(_peerSupabaseId);
       final name = _peerDisplayName();
 
+      await ChatBootstrapService.ensurePeerChatHistoryLoaded(peerAgora);
+      if (!mounted) return;
+
       ChatUIKitProvider.instance.addProfiles([
         ChatUIKitProfile.contact(id: selfAgora, nickname: 'You'),
         ChatUIKitProfile.contact(id: peerAgora, nickname: name),

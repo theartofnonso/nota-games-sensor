@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/chat_bootstrap_service.dart';
+import '../../services/revenue_cat_bootstrap.dart';
 import '../../utils/notathletes_auth_headers.dart';
 import '../../utils/dialog_utils.dart';
 import '../../urls.dart';
@@ -188,6 +189,7 @@ Future<void> requestAccountDeletion(
   if (!context.mounted) return;
   setLoading(false);
   await ChatBootstrapService.logoutAgoraChat();
+  await RevenueCatBootstrap.logOutIfClient();
   await Supabase.instance.client.auth.signOut();
 }
 

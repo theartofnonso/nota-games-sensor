@@ -9,6 +9,23 @@ class NutritionTemplateDto {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Default macro targets when no template is saved yet (coach/client UI).
+  static const double defaultProteinG = 250;
+  static const double defaultCarbsG = 400;
+  static const double defaultFatsG = 150;
+
+  static double get defaultKcalFromMacros =>
+      kcalFromMacroGrams(defaultProteinG, defaultCarbsG, defaultFatsG);
+
+  /// Protein & carbs 4 kcal/g, fat 9 kcal/g (standard Atwater factors).
+  static double kcalFromMacroGrams(double proteinG, double carbsG, double fatsG) {
+    return proteinG * 4 + carbsG * 4 + fatsG * 9;
+  }
+
+  /// Calorie goal implied by macro targets (ignores stored [calories] if inconsistent).
+  double get kcalDerivedFromMacros =>
+      kcalFromMacroGrams(protein, carbs, fats);
+
   const NutritionTemplateDto({
     required this.id,
     required this.owner,

@@ -1,46 +1,19 @@
-# Client Subscription Status – api.notathletes.com
+# Client subscription access
 
-Current app behavior is subscription handling from the client Settings entry point.
-The legacy `check-active` endpoint is no longer used by the app.
+The **Trainware client app** gates access from **RevenueCat `CustomerInfo` entitlements**:
+**`app_access`** (enter app) and **`coach_access`** (coach-tier UI). Subscription purchase UI is a
+**custom paywall** that loads **RevenueCat offerings** (packages).
+The app does **not** call `api.notathletes.com`
+for subscription status.
 
-## API Endpoints (api.notathletes.com)
+Other `api.notathletes.com` endpoints (e.g. account profile, account deletion, coach-clients) may
+still be used where referenced in code.
 
-### 1. Subscription Status
+## Flow summary
 
-**GET** `/subscription/status?email={email}`
+1. Client signs in; `Purchases.logIn` uses the Supabase user id.
+2. On startup / refresh, the app loads `CustomerInfo` and sets access from RevenueCat.
+3. Purchases use the RevenueCat SDK (`getOfferings`, `purchase(package)`).
 
-Returns:
-
-```json
-{ "access": true }
-```
-
-- `access` (bool): whether this client should be treated as subscribed
-
-### 2. Activate Client (post-IAP/restore sync)
-
-**POST** `/account/activate`
-
-**Body:**
-
-```json
-{
-  "email": "client@example.com",
-  "first_name": "Jane",
-  "last_name": "Doe"
-}
-```
-
-- `email` (required)
-- `first_name`, `last_name` (optional)
-
-This call is best-effort sync after purchase/restore success.
-
-## Flow Summary
-
-1. Client signs in/signs up normally.
-2. Client opens Settings → Account → Manage subscription.
-3. App checks `GET /subscription/status`.
-4. If already active, app shows already-subscribed info.
-5. If not active, app offers restore/purchase.
-6. On restore/purchase success, app calls `POST /account/activate` in background.
+If you need server-side subscription truth (e.g. webhooks, support tools), configure **RevenueCat
+webhooks** to your backend rather than a separate subscription-status API for the mobile client.
