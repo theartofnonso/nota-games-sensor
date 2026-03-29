@@ -171,8 +171,9 @@ Widget? trainwareChatBubbleBuilder(
     needSmallCorner: model.message.getQuote == null,
     isLeft: left,
     color: color,
-    isVisible: !(model.message.bodyType == MessageType.VIDEO ||
-        model.message.bodyType == MessageType.IMAGE),
+    isVisible:
+        !(model.message.bodyType == MessageType.VIDEO ||
+            model.message.bodyType == MessageType.IMAGE),
     child: child,
   );
 }
