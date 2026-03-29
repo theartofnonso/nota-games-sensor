@@ -14,7 +14,7 @@ class RevenueCatConfig {
 
   static const String appleApiKey = String.fromEnvironment(
     'REVENUECAT_APPLE_API_KEY',
-    defaultValue: '',
+    defaultValue: 'appl_LOmdujaTAONZmBjcCAcZphCwRJb',
   );
 
   static const String googleApiKey = String.fromEnvironment(
