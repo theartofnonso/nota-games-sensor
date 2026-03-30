@@ -1,57 +1,36 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../dtos/coach_dto.dart';
 import '../../logger.dart';
+import '../../services/notathletes_coach_profile_api.dart';
 import '../../urls.dart';
 import '../../utils/dummy_mode_utils.dart';
 import '../../utils/notathletes_auth_headers.dart';
 
-/// Reads coach rows from [public.coaches] with embedded [coach_profiles].
-/// Assignments use the Not Athletes API.
+/// Coach **list and detail** come from Not Athletes
+/// `GET https://api.notathletes.com/coach-profiles` and
+/// `GET …/coach-profiles/:id` ([fetchCoachProfilesListFromNotathletesApi],
+/// [fetchCoachProfileFromNotathletesApi]). Assignments use `POST /coach-clients`.
 class SupabaseCoachesRepository {
   final _logger = getLogger(className: 'SupabaseCoachesRepository');
-  final SupabaseClient _client = Supabase.instance.client;
 
-  /// Coach list columns + full profile row (via `coach_profile_id` FK).
-  static const String _coachSelectWithProfile = '''
-id,
-name,
-email,
-coach_profile_id,
-coach_profiles (*)
-''';
-
-  /// Active coaches from Supabase (with profiles), ordered by name.
-  /// Release builds hide the demo coach.
+  /// Public coach profiles from Not Athletes API, ordered by name.
+  /// The demo coach ([coachDemoEmail]) is never returned (client acquisition).
   Future<List<CoachDto>> fetchCoaches() async {
     try {
-      final response = await _client
-          .from('coaches')
-          .select(_coachSelectWithProfile)
-          .eq('active', true)
-          .order('name', ascending: true);
-
-      var coaches =
-          (response as List<dynamic>)
-              .map(
-                (item) => _coachDtoFromJoinedRow(
-                  Map<String, dynamic>.from(item as Map),
-                ),
+      var coaches = await fetchCoachProfilesListFromNotathletesApi();
+      coaches =
+          coaches
+              .where(
+                (c) =>
+                    (c.email?.toLowerCase().trim() ?? '') !=
+                    coachDemoEmail.toLowerCase(),
               )
               .toList();
-
-      if (kReleaseMode) {
-        coaches =
-            coaches
-                .where(
-                  (c) =>
-                      (c.email?.toLowerCase().trim() ?? '') != coachDemoEmail,
-                )
-                .toList();
+      for (final c in coaches) {
+        _logMappedCoach(c);
       }
       return coaches;
     } catch (e) {
@@ -60,84 +39,51 @@ coach_profiles (*)
     }
   }
 
-  /// Single coach by `coaches.id`, including embedded `coach_profiles`.
+  /// Single coach profile from Not Athletes API.
   Future<CoachDto?> fetchCoachById(String coachId) async {
     if (coachId.isEmpty) return null;
     try {
-      final response =
-          await _client
-              .from('coaches')
-              .select(_coachSelectWithProfile)
-              .eq('id', coachId)
-              .maybeSingle();
-      if (response == null) return null;
-      return _coachDtoFromJoinedRow(Map<String, dynamic>.from(response as Map));
+      final coach = await fetchCoachProfileFromNotathletesApi(coachId);
+      if (coach != null) {
+        _logMappedCoach(coach);
+      }
+      return coach;
     } catch (e) {
       _logger.e('Error fetching coach $coachId: $e');
       return null;
     }
   }
 
-  /// Maps a `coaches` row plus optional nested `coach_profiles` object to [CoachDto].
-  ///
-  /// Supports common column names on `coach_profiles` (and legacy API-style names).
-  static CoachDto _coachDtoFromJoinedRow(Map<String, dynamic> row) {
-    final raw = row['coach_profiles'];
-    final Map<String, dynamic>? profile =
-        raw is Map ? Map<String, dynamic>.from(raw) : null;
-
-    final coachName = (row['name'] as String?)?.trim() ?? '';
-    final profileName = _firstNonEmptyString(profile, const [
-      'full_name',
-      'display_name',
-    ]);
-
-    return CoachDto(
-      id: row['id'] as String? ?? '',
-      name: profileName ?? coachName,
-      profileImageUrl: _firstNonEmptyString(profile, const [
-        'profile_image_url',
-        'profile_photo_url',
-      ]),
-      profileVideoUrl: _firstNonEmptyString(profile, const [
-        'profile_video_url',
-        'intro_video_url',
-      ]),
-      description: _firstNonEmptyString(profile, const [
-        'description',
-        'short_bio',
-      ]),
-      email: row['email'] as String?,
-      yearsExperience: _firstInt(profile, const ['years_experience']),
-      yearsExperienceText: null,
-      qualifications: _firstNonEmptyString(profile, const ['qualifications']),
-      specialties: _firstNonEmptyString(profile, const ['specialties']),
-      interestsHobbies: _firstNonEmptyString(profile, const [
-        'interests_hobbies',
-      ]),
-    );
-  }
-
-  static String? _firstNonEmptyString(
-    Map<String, dynamic>? map,
-    List<String> keys,
-  ) {
-    if (map == null) return null;
-    for (final k in keys) {
-      final v = map[k];
-      if (v is String && v.trim().isNotEmpty) return v.trim();
+  void _logMappedCoach(CoachDto coach) {
+    const maxLen = 240;
+    String? clip(String? s) {
+      if (s == null) return null;
+      final t = s.trim();
+      if (t.length <= maxLen) return t;
+      return '${t.substring(0, maxLen)}…';
     }
-    return null;
-  }
 
-  static int? _firstInt(Map<String, dynamic>? map, List<String> keys) {
-    if (map == null) return null;
-    for (final k in keys) {
-      final v = map[k];
-      if (v is int) return v;
-      if (v is num) return v.toInt();
+    try {
+      final payload = <String, dynamic>{
+        'id': coach.id,
+        'name': coach.name,
+        'email': coach.email,
+        'profileImageUrl': coach.profileImageUrl,
+        'profileVideoUrl': coach.profileVideoUrl,
+        'description': clip(coach.description),
+        'yearsExperience': coach.yearsExperience,
+        'yearsExperienceText': coach.yearsExperienceText,
+        'experienceDisplayLine': coach.experienceDisplayLine,
+        'qualifications': clip(coach.qualifications),
+        'specialties': clip(coach.specialties),
+        'interestsHobbies': clip(coach.interestsHobbies),
+      };
+      _logger.i('Mapped coach (Not Athletes API): ${jsonEncode(payload)}');
+    } catch (e, st) {
+      _logger.w(
+        'Mapped coach log encode failed id=${coach.id} name=${coach.name}: $e\n$st',
+      );
     }
-    return null;
   }
 
   /// Assign client to coach via POST /coach-clients API.

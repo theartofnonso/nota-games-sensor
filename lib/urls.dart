@@ -30,9 +30,11 @@ const exerciseInstructionPath = '/exercise';
 const apiNotathletesBaseUrl = 'https://api.notathletes.com';
 const accountDeletionPath = '/account/delete';
 const accountProfilePath = '/account/profile';
+/// POST body `{ fullName, email, coachId }` — see [ClientAcquisitionSignupService].
+const clientCoachSignupPath = '/client-coach-signup';
 const coachClientsPath = '/coach-clients';
 
-/// GET /coach-profiles/:coachId — coach + profile for app subscribe UI.
+/// GET /coach-profiles — list coach profiles; GET /coach-profiles/:id — one profile.
 const coachProfilesPath = '/coach-profiles';
 
 /// fcm.notathletes.com — push coach when a client gains subscription (client app).

@@ -61,7 +61,7 @@ class _CoachFrostChip extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: _blurSigma, sigmaY: _blurSigma),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.18),
             borderRadius: _pill,
@@ -73,11 +73,65 @@ class _CoachFrostChip extends StatelessWidget {
   }
 }
 
-/// Qualifications, specialties, interests as small frosted chips in one [Wrap].
+class _CoachChipScrollRow extends StatelessWidget {
+  const _CoachChipScrollRow({
+    required this.items,
+    required this.chipTextStyle,
+    required this.paddingStart,
+    required this.paddingEnd,
+  });
+
+  final List<String> items;
+  final TextStyle chipTextStyle;
+  final double paddingStart;
+  final double paddingEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 32,
+      width: double.infinity,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.fromLTRB(paddingStart, 0, paddingEnd, 0),
+        physics: const BouncingScrollPhysics(),
+        itemCount: items.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 6),
+        itemBuilder: (context, i) {
+          return Center(
+            child: _CoachFrostChip(
+              label: items[i],
+              textStyle: chipTextStyle,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Qualifications, specialties, and hobbies as separate full-width horizontal chip rows
+/// (no section labels). Order: qualifications → specialties → hobbies & interests (last).
 class CoachProfileChips extends StatelessWidget {
-  const CoachProfileChips({super.key, required this.coach});
+  const CoachProfileChips({
+    super.key,
+    required this.coach,
+    this.horizontalContentPadding = 20,
+    this.horizontalContentPaddingStart,
+    this.horizontalContentPaddingEnd,
+  });
 
   final CoachDto coach;
+
+  /// Default horizontal inset for chip [ListView] when [horizontalContentPaddingStart]
+  /// / [horizontalContentPaddingEnd] are omitted (paywall uses 20).
+  final double horizontalContentPadding;
+
+  /// Optional leading inset for horizontal chip scroll; defaults to [horizontalContentPadding].
+  final double? horizontalContentPaddingStart;
+
+  /// Optional trailing inset for horizontal chip scroll; defaults to [horizontalContentPadding].
+  final double? horizontalContentPaddingEnd;
 
   static bool hasChipsFor(CoachDto? coach) {
     if (coach == null) return false;
@@ -98,26 +152,59 @@ class CoachProfileChips extends StatelessWidget {
     final chipTextStyle =
         Theme.of(context).textTheme.labelMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.95),
-              height: 1.2,
+              height: 1.15,
               fontWeight: FontWeight.w300,
               fontSize: 12.5,
             ) ??
             TextStyle(
               color: Colors.white.withValues(alpha: 0.95),
-              height: 1.2,
+              height: 1.15,
               fontWeight: FontWeight.w300,
               fontSize: 12.5,
             );
-    final children = <Widget>[
-      for (final item in [...qual, ...spec, ...hobby])
-        _CoachFrostChip(label: item, textStyle: chipTextStyle),
-    ];
 
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 6,
-      runSpacing: 6,
-      children: children,
+    final padStart =
+        horizontalContentPaddingStart ?? horizontalContentPadding;
+    final padEnd = horizontalContentPaddingEnd ?? horizontalContentPadding;
+
+    final planes = <Widget>[];
+    if (qual.isNotEmpty) {
+      planes.add(
+        _CoachChipScrollRow(
+          items: qual,
+          chipTextStyle: chipTextStyle,
+          paddingStart: padStart,
+          paddingEnd: padEnd,
+        ),
+      );
+    }
+    if (spec.isNotEmpty) {
+      if (planes.isNotEmpty) planes.add(const SizedBox(height: 4));
+      planes.add(
+        _CoachChipScrollRow(
+          items: spec,
+          chipTextStyle: chipTextStyle,
+          paddingStart: padStart,
+          paddingEnd: padEnd,
+        ),
+      );
+    }
+    if (hobby.isNotEmpty) {
+      if (planes.isNotEmpty) planes.add(const SizedBox(height: 4));
+      planes.add(
+        _CoachChipScrollRow(
+          items: hobby,
+          chipTextStyle: chipTextStyle,
+          paddingStart: padStart,
+          paddingEnd: padEnd,
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: planes,
     );
   }
 }

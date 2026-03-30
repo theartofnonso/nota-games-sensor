@@ -1,5 +1,5 @@
-/// Client model for coach list/detail: built from `coaches` plus optional
-/// nested `coach_profiles` (see [SupabaseCoachesRepository]).
+/// Client model for coach list/detail: built from Not Athletes
+/// `GET /coach-profiles` / `GET /coach-profiles/:id` JSON ([CoachDto.fromJson]).
 ///
 /// [fromJson] avoids throwing on mixed API types (e.g. new fields as bool/list);
 /// a thrown parse would drop the whole profile in [fetchCoachProfileFromNotathletesApi].

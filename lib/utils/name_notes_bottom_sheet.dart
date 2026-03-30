@@ -5,10 +5,14 @@ import 'dialog_utils.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
 
-/// Shared bottom sheet for capturing a name + optional notes.
+/// Shared bottom sheet for capturing a name + second field (default: optional notes).
 ///
-/// Returns a record with [name] and [notes] when the user confirms,
-/// or null if the sheet is dismissed/cancelled.
+/// Use [notesFieldKeyboardType], [notesFieldRequired], and related params to reuse the
+/// same layout for e.g. name + email ([showTrainWithCoachSheet]).
+///
+/// Returns a record with [name] and [notes] when the user confirms (second value is
+/// still named [notes] for API stability; it holds email when configured as email).
+/// Returns null if the sheet is dismissed/cancelled.
 Future<({String name, String notes})?> showNameNotesBottomSheet({
   required BuildContext context,
   required String title,
@@ -18,29 +22,49 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
   String initialNotes = '',
   String emptyNameMessage = 'Please provide a name',
   bool compact = false,
+  String nameFieldHint = 'Name',
+  String notesFieldHint = 'notes (optional)',
+  TextInputType notesFieldKeyboardType = TextInputType.multiline,
+  int? notesFieldMaxLines,
+  bool notesFieldRequired = false,
+  String notesFieldInvalidMessage = 'Please enter a valid email',
 }) async {
   final nameController = TextEditingController(text: initialName);
   final notesController = TextEditingController(text: initialNotes);
 
   ({String name, String notes})? result;
 
+  final isEmailSecondField =
+      notesFieldKeyboardType == TextInputType.emailAddress;
+
+  /// Caps multiline height so the sheet can shrink-wrap (same idea as [showSingleTextAreaBottomSheet]).
+  int secondFieldMaxLines() {
+    final override = notesFieldMaxLines;
+    if (override != null) return override;
+    if (notesFieldKeyboardType == TextInputType.multiline) return 10;
+    return 1;
+  }
+
   final sheetContent = Builder(
     builder: (ctx) {
-      final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
       final isDark = Theme.of(ctx).brightness == Brightness.dark;
 
+      final secondIsPrimaryStyle =
+          notesFieldRequired && isEmailSecondField;
+
       return Padding(
-        padding: EdgeInsets.only(
+        padding: const EdgeInsets.only(
           left: 26,
           right: 26,
           top: 26,
-          bottom: 26 + bottomInset,
+          bottom: 26,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        // No [SingleChildScrollView] here: it expands to the modal max height and makes
+        // the frosted sheet look full-screen (other input sheets use a plain [Column]).
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
               title,
               style: Theme.of(ctx)
@@ -60,8 +84,8 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
             TextField(
               controller: nameController,
               cursorColor: isDark ? Colors.white : Colors.black,
-              decoration: const InputDecoration(
-                hintText: "Name",
+              decoration: InputDecoration(
+                hintText: nameFieldHint,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -78,18 +102,23 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
             TextField(
               controller: notesController,
               cursorColor: isDark ? Colors.white : Colors.black,
-              decoration: const InputDecoration(
-                hintText: "notes (optional)",
+              decoration: InputDecoration(
+                hintText: notesFieldHint,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
               ),
-              keyboardType: TextInputType.multiline,
-              textCapitalization: TextCapitalization.sentences,
-              maxLines: null,
+              keyboardType: notesFieldKeyboardType,
+              autocorrect: isEmailSecondField ? false : true,
+              textCapitalization: isEmailSecondField
+                  ? TextCapitalization.none
+                  : TextCapitalization.sentences,
+              maxLines: secondFieldMaxLines(),
               style: TextStyle(
                 fontWeight: FontWeight.w400,
-                color: isDark ? Colors.white70 : Colors.black87,
+                color: secondIsPrimaryStyle
+                    ? (isDark ? Colors.white : Colors.black)
+                    : (isDark ? Colors.white70 : Colors.black87),
                 fontSize: 14,
               ),
             ),
@@ -108,13 +137,23 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
                     return;
                   }
 
+                  if (notesFieldRequired) {
+                    if (notes.isEmpty ||
+                        (isEmailSecondField && !notes.contains('@'))) {
+                      showSnackbar(
+                        context: ctx,
+                        message: notesFieldInvalidMessage,
+                      );
+                      return;
+                    }
+                  }
+
                   result = (name: name, notes: notes);
                   Navigator.of(ctx).pop();
                 },
               ),
             ),
           ],
-          ),
         ),
       );
     },
@@ -138,7 +177,7 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
 }
 
 /// Shared bottom sheet for a single multiline text field (e.g. session feedback).
-/// Uses [Builder] + viewInsets so the sheet stays visible when the keyboard opens.
+/// Keyboard avoidance is handled by [showAppActionBottomSheet] (outer padding).
 ///
 /// Returns the trimmed text when the user taps the primary button, or null if dismissed.
 Future<String?> showSingleTextAreaBottomSheet({
@@ -156,15 +195,14 @@ Future<String?> showSingleTextAreaBottomSheet({
     isScrollControlled: true,
     child: Builder(
       builder: (ctx) {
-        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
 
         return Padding(
-          padding: EdgeInsets.only(
+          padding: const EdgeInsets.only(
             left: 26,
             right: 26,
             top: 26,
-            bottom: 26 + bottomInset,
+            bottom: 26,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

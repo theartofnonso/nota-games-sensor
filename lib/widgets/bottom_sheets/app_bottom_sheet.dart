@@ -153,18 +153,21 @@ Future<T?> showAppBottomSheet<T>({
           builder: builder,
           child: child,
         );
-        // Non-draggable + scroll-controlled: hug content height instead of a
-        // tall empty modal region (Flutter default for isScrollControlled: false).
-        if (!isDraggable && isScrollControlled) {
+        // Keyboard: pad the whole sheet up by [viewInsets.bottom] once here.
+        // Do not also add viewInsets to inner content padding — that *increases* the
+        // sheet's intrinsic height by the keyboard amount (looks like the sheet "grows").
+        if (isScrollControlled) {
+          final kb = MediaQuery.viewInsetsOf(context).bottom;
           sheet = Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.viewInsetsOf(context).bottom,
-            ),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              widthFactor: 1.0,
-              child: sheet,
-            ),
+            padding: EdgeInsets.only(bottom: kb),
+            child: isDraggable
+                ? sheet
+                : Align(
+                    alignment: Alignment.bottomCenter,
+                    widthFactor: 1.0,
+                    heightFactor: 1.0,
+                    child: sheet,
+                  ),
           );
         }
 

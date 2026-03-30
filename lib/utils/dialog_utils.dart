@@ -126,7 +126,7 @@ void showBottomSheetWithNoAction(
       ));
 }
 
-void showBottomSheetWithSingleAction(
+Future<void> showBottomSheetWithSingleAction(
     {required BuildContext context,
     required String title,
     required String description,
@@ -135,7 +135,7 @@ void showBottomSheetWithSingleAction(
     bool isDestructive = false,
     Color? actionColor,
     bool isDismissible = true}) {
-  showAppActionBottomSheet(
+  return showAppActionBottomSheet<void>(
       context: context,
       isDismissible: isDismissible,
       child: Padding(
@@ -168,13 +168,13 @@ void showBottomSheetWithSingleAction(
 /// Shows a non-dismissible bottom sheet with a message and "Got it" button
 /// The sheet can only be dismissed by tapping the "Got it" button
 /// Use this to replace SnackBars for error messages
-void showErrorBottomSheet({
+Future<void> showErrorBottomSheet({
   required BuildContext context,
   required String message,
   String title = 'Error',
 }) {
   final sanitizedMessage = _sanitizeBottomSheetMessage(message);
-  showBottomSheetWithSingleAction(
+  return showBottomSheetWithSingleAction(
     context: context,
     title: title,
     description: sanitizedMessage,

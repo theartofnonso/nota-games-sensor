@@ -5,8 +5,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../app_flavor.dart';
 import '../../services/chat_bootstrap_service.dart';
 import '../../services/revenue_cat_bootstrap.dart';
+import '../../shared_prefs.dart';
 import '../../utils/notathletes_auth_headers.dart';
 import '../../utils/dialog_utils.dart';
 import '../../urls.dart';
@@ -188,6 +190,9 @@ Future<void> requestAccountDeletion(
   // 3. Sign out (clear unread + Agora session, then Supabase)
   if (!context.mounted) return;
   setLoading(false);
+  if (AppConfig.isClient) {
+    SharedPrefs().markClientPreAuthLandingPending();
+  }
   await ChatBootstrapService.logoutAgoraChat();
   await RevenueCatBootstrap.logOutIfClient();
   await Supabase.instance.client.auth.signOut();

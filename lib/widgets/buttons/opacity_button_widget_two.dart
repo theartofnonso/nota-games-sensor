@@ -59,7 +59,11 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
               _themeBackgroundColor(isDarkMode: isDarkMode) ??
                   _defaultBackgroundColor(isDarkMode: isDarkMode)),
           shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(100))),
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(100),
+              side: BorderSide.none,
+            ),
+          ),
           overlayColor: WidgetStateProperty.resolveWith<Color?>(
             (Set<WidgetState> states) {
               return Colors.black

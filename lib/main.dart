@@ -18,9 +18,11 @@ import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
+import 'package:trainware/dtos/coach_dto.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/appsync/routine_template_dto.dart';
 import 'package:trainware/repositories/exercise_log_repository.dart';
+import 'package:trainware/repositories/supabase/supabase_coaches_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_log_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_plan_repository.dart';
 import 'package:trainware/repositories/supabase/supabase_routine_template_repository.dart';
@@ -31,6 +33,7 @@ import 'package:trainware/screens/editors/routine_template_editor_screen.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/screens/logs/coach_feedback_feed_screen.dart';
 import 'package:trainware/screens/logs/routine_log_screen.dart';
+import 'package:trainware/screens/onboarding/coach_discovery_screen.dart';
 import 'package:trainware/screens/welcome_screen.dart';
 import 'package:trainware/screens/coach/coach_clients_screen.dart';
 import 'package:trainware/screens/preferences/account_settings_screen.dart';
@@ -696,6 +699,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool _lastAuthenticated = false;
   bool _lastCoach = false;
   bool _welcomeDismissed = false;
+  /// Client first-launch: full-screen coach discovery (pre-auth).
+  bool _coachDiscoveryOpen = false;
+
+  /// Preloads coach list while welcome is visible (client first launch).
+  Future<List<CoachDto>>? _prefetchedCoachesFuture;
   bool _agoraLifecycleTransitionInFlight = false;
 
   /// True once startup tasks (auth + subscription for clients) have completed.
@@ -730,6 +738,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       DeviceOrientation.portraitUp,
     ]);
     WidgetsBinding.instance.addObserver(this);
+    if (AppConfig.isClient && SharedPrefs().firstLaunch) {
+      _prefetchedCoachesFuture = SupabaseCoachesRepository().fetchCoaches();
+    }
   }
 
   @override
@@ -849,6 +860,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _startupTasksStarted = false;
       AppStartupService.instance.reset();
       SharedPrefs().profileSetupComplete = false;
+      if (AppConfig.isClient &&
+          SharedPrefs().takeClientPreAuthLandingPending()) {
+        SharedPrefs().firstLaunch = true;
+        _welcomeDismissed = false;
+        _coachDiscoveryOpen = false;
+        _prefetchedCoachesFuture =
+            SupabaseCoachesRepository().fetchCoaches();
+      }
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
         controller.clear();
@@ -939,13 +958,53 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       );
     }
 
-    // Welcome first: users must dismiss before Auth until firstLaunch is false
+    // Welcome first: client can discover coaches pre-auth; coach uses single CTA.
     if (SharedPrefs().firstLaunch && !_welcomeDismissed) {
+      if (AppConfig.isClient && _coachDiscoveryOpen) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          themeMode: ThemeMode.dark,
+          theme: TRKRTheme.darkTheme,
+          darkTheme: TRKRTheme.darkTheme,
+          home: CoachDiscoveryScreen(
+            coachesFuture: _prefetchedCoachesFuture,
+            onBack: () => setState(() => _coachDiscoveryOpen = false),
+            onAcquisitionComplete: () {
+              SharedPrefs().firstLaunch = false;
+              setState(() {
+                _coachDiscoveryOpen = false;
+                _welcomeDismissed = true;
+              });
+            },
+            onNeedSignIn: () {
+              SharedPrefs().firstLaunch = false;
+              setState(() {
+                _coachDiscoveryOpen = false;
+                _welcomeDismissed = true;
+              });
+            },
+          ),
+        );
+      }
       return WelcomeScreen(
-        onPressed: () {
-          SharedPrefs().firstLaunch = false;
-          setState(() => _welcomeDismissed = true);
-        },
+        onPressed: AppConfig.isCoach
+            ? () {
+                SharedPrefs().firstLaunch = false;
+                setState(() => _welcomeDismissed = true);
+              }
+            : null,
+        onDiscoverCoaches: AppConfig.isClient
+            ? () => setState(() => _coachDiscoveryOpen = true)
+            : null,
+        onSignIn: AppConfig.isClient
+            ? () {
+                SharedPrefs().firstLaunch = false;
+                setState(() {
+                  _welcomeDismissed = true;
+                  _coachDiscoveryOpen = false;
+                });
+              }
+            : null,
       );
     }
 

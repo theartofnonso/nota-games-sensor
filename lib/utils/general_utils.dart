@@ -254,16 +254,18 @@ LinearGradient paywallCoachHeroScrimGradient({required BuildContext context}) {
 
   if (isDark) {
     final base = themeGradient(context: context).colors.last;
+    // Stronger, taller bottom scrim so text/chips sit on more solid dark (coach grid, paywall, profile).
     return LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
         base.withValues(alpha: 0.0),
         base.withValues(alpha: 0.0),
-        base.withValues(alpha: 0.78),
+        base.withValues(alpha: 0.42),
+        base.withValues(alpha: 0.82),
         base.withValues(alpha: 1.0),
       ],
-      stops: const [0.0, 0.62, 0.78, 1.0],
+      stops: const [0.0, 0.32, 0.50, 0.70, 1.0],
     );
   }
 
@@ -274,10 +276,11 @@ LinearGradient paywallCoachHeroScrimGradient({required BuildContext context}) {
     colors: [
       base.withValues(alpha: 0.0),
       base.withValues(alpha: 0.0),
-      base.withValues(alpha: 0.72),
-      base.withValues(alpha: 0.94),
+      base.withValues(alpha: 0.48),
+      base.withValues(alpha: 0.86),
+      base.withValues(alpha: 0.97),
     ],
-    stops: const [0.0, 0.62, 0.78, 1.0],
+    stops: const [0.0, 0.32, 0.50, 0.70, 1.0],
   );
 }
 

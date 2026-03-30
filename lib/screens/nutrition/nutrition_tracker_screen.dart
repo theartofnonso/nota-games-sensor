@@ -42,7 +42,6 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
     isScrollControlled: true,
     child: Builder(
       builder: (ctx) {
-        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
         final textColor = isDark ? Colors.white : Colors.black;
         final mutedColor = (isDark ? Colors.white : Colors.black).withValues(
@@ -176,11 +175,11 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
           builder: (ctx, setSheetState) {
             final maxSheetHeight = MediaQuery.of(ctx).size.height * 0.72;
             return Padding(
-              padding: EdgeInsets.only(
+              padding: const EdgeInsets.only(
                 left: 26,
                 right: 26,
                 top: 26,
-                bottom: 26 + bottomInset,
+                bottom: 26,
               ),
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: maxSheetHeight),
@@ -692,7 +691,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
         builder: (ctx) {
           return StatefulBuilder(
             builder: (context, setModalState) {
-              final bottomInset = MediaQuery.of(context).viewInsets.bottom;
               final maxSheetHeight = MediaQuery.of(context).size.height * 0.42;
               final isDarkMode =
                   Theme.of(context).brightness == Brightness.dark;
@@ -701,11 +699,11 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
               ).format(selectedLoggedAt);
 
               return Padding(
-                padding: EdgeInsets.only(
+                padding: const EdgeInsets.only(
                   left: 16,
                   right: 16,
                   top: 16,
-                  bottom: 16 + bottomInset,
+                  bottom: 16,
                 ),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: maxSheetHeight),

@@ -70,11 +70,11 @@ Future<void> showSessionDurationSelectorBottomSheet({
         final isValid = errorMessage == null;
 
         return Padding(
-          padding: EdgeInsets.only(
+          padding: const EdgeInsets.only(
             left: 26,
             right: 26,
             top: 26,
-            bottom: 26 + MediaQuery.of(context).viewInsets.bottom,
+            bottom: 26,
           ),
           child: SingleChildScrollView(
             child: Column(

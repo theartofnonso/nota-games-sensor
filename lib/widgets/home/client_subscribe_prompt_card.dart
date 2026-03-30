@@ -89,52 +89,68 @@ class ClientSubscribePromptCard extends StatelessWidget {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _coachTitle(coach),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                18,
+                                20,
+                                18,
+                                coachForChips != null ? 0 : 18,
                               ),
-                              if (_yearsLine(coach) != null) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  _yearsLine(coach)!,
-                                  style: bodyMedium?.copyWith(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.88),
-                                    height: 1.3,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _coachTitle(coach),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                   ),
-                                ),
-                              ],
-                              if (_descriptionText(coach) != null) ...[
-                                const SizedBox(height: 6),
-                                CoachProfileDescriptionPanel(
-                                  text: _descriptionText(coach)!,
-                                  maxLines: coachForChips != null ? 2 : 3,
-                                  style: bodyMedium?.copyWith(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.94),
-                                    height: 1.35,
-                                  ),
-                                ),
-                              ],
-                              if (coachForChips != null) ...[
-                                if (_descriptionText(coach) != null)
-                                  const SizedBox(height: 10),
-                                CoachProfileChips(coach: coachForChips),
-                              ],
+                                  if (_yearsLine(coach) != null) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _yearsLine(coach)!,
+                                      style: bodyMedium?.copyWith(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.88),
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ],
+                                  if (_descriptionText(coach) != null) ...[
+                                    const SizedBox(height: 6),
+                                    CoachProfileDescriptionPanel(
+                                      text: _descriptionText(coach)!,
+                                      maxLines: coachForChips != null ? 2 : 3,
+                                      style: bodyMedium?.copyWith(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.94),
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            if (coachForChips != null) ...[
+                              if (_descriptionText(coach) != null)
+                                const SizedBox(height: 10),
+                              CoachProfileChips(
+                                coach: coachForChips,
+                                horizontalContentPadding: 0,
+                                horizontalContentPaddingStart: 18,
+                              ),
+                              const SizedBox(height: 18),
                             ],
-                          ),
+                          ],
                         ),
                       ),
                     ],
@@ -177,7 +193,7 @@ class _CoachCardImage extends StatelessWidget {
         fit: BoxFit.cover,
         alignment: Alignment.topCenter,
         width: double.infinity,
-        errorBuilder: (_, _, _) => _fallback(),
+        errorBuilder: (_, _, _) => _noPhotoPlaceholder(),
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return ColoredBox(
@@ -196,15 +212,11 @@ class _CoachCardImage extends StatelessWidget {
         },
       );
     }
-    return _fallback();
+    return _noPhotoPlaceholder();
   }
 
-  Widget _fallback() {
-    return Image.asset(
-      'images/background.jpg',
-      fit: BoxFit.cover,
-      alignment: Alignment.center,
-      width: double.infinity,
-    );
+  /// Dark base only; the parent card’s gradient scrim provides the look when there is no photo.
+  Widget _noPhotoPlaceholder() {
+    return const ColoredBox(color: Colors.black);
   }
 }
