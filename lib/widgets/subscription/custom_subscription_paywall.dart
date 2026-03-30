@@ -65,6 +65,30 @@ String _subscriptionPeriodLabel(StoreProduct product) {
   return 'Billed through your app store subscription';
 }
 
+/// Which [Package] should be pre-selected when the paywall loads.
+///
+/// - **Single package** (current backend): always that package so the CTA is
+///   enabled and the row shows selected without a tap.
+/// - **Multiple packages** (future): if the user already has an active
+///   subscription, prefer the matching store product; otherwise [packages.first]
+///   (sorted order from [SubscriptionPurchaseService.loadOfferedPackages]).
+Package? _initialSelectedPackage({
+  required List<Package> packages,
+  required bool hasActiveSubscription,
+  required Set<String> activeStoreProductIds,
+}) {
+  if (packages.isEmpty) return null;
+  if (packages.length == 1) return packages.first;
+  if (hasActiveSubscription) {
+    for (final pkg in packages) {
+      if (activeStoreProductIds.contains(pkg.storeProduct.identifier)) {
+        return pkg;
+      }
+    }
+  }
+  return packages.first;
+}
+
 /// Full-screen subscription UI (pushed as a route — not a bottom sheet).
 /// Plans and copy come from RevenueCat offerings / [StoreProduct].
 class CustomSubscriptionPaywall extends StatefulWidget {
@@ -117,25 +141,18 @@ class _CustomSubscriptionPaywallState extends State<CustomSubscriptionPaywall> {
         await SubscriptionPurchaseService.instance.loadOfferedPackages();
     if (!mounted) return;
 
-    Package? defaultPackage;
     var ownedIds = <String>{};
-    if (packages.isNotEmpty) {
-      if (access) {
-        try {
-          final info = await Purchases.getCustomerInfo();
-          ownedIds = info.activeSubscriptions.toSet();
-        } catch (_) {}
-        for (final pkg in packages) {
-          if (ownedIds.contains(pkg.storeProduct.identifier)) {
-            defaultPackage = pkg;
-            break;
-          }
-        }
-        defaultPackage ??= packages.first;
-      } else {
-        defaultPackage = packages.first;
-      }
+    if (access) {
+      try {
+        final info = await Purchases.getCustomerInfo();
+        ownedIds = info.activeSubscriptions.toSet();
+      } catch (_) {}
     }
+    final defaultPackage = _initialSelectedPackage(
+      packages: packages,
+      hasActiveSubscription: access,
+      activeStoreProductIds: ownedIds,
+    );
 
     AssignedCoachService.instance.adoptIfEmpty(coach);
     setState(() {
@@ -221,7 +238,7 @@ class _CustomSubscriptionPaywallState extends State<CustomSubscriptionPaywall> {
     final ok = await SubscriptionPurchaseService.instance.restorePurchases();
     if (!mounted) return;
     if (ok) {
-      await widget.service.onPaywallSuccess();
+      await widget.service.onPaywallSuccess(notifyCoach: true);
       try {
         final info = await Purchases.getCustomerInfo();
         if (mounted) {
@@ -253,7 +270,7 @@ class _CustomSubscriptionPaywallState extends State<CustomSubscriptionPaywall> {
     if (!mounted) return;
     switch (outcome) {
       case SubscriptionPurchaseOutcome.success:
-        await widget.service.onPaywallSuccess();
+        await widget.service.onPaywallSuccess(notifyCoach: true);
         try {
           final info = await Purchases.getCustomerInfo();
           if (mounted) {

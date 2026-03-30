@@ -1,9 +1,14 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_flavor.dart';
 import '../dtos/coach_dto.dart';
+import '../urls.dart';
 import '../utils/dialog_utils.dart';
 import '../logger.dart';
 import '../widgets/subscription/custom_subscription_paywall.dart';
@@ -122,9 +127,52 @@ class ClientSubscriptionService {
     return false;
   }
 
-  /// Called by paywall when purchase or restore succeeds. Refreshes RevenueCat cache.
-  Future<void> onPaywallSuccess() async {
+  /// Called by paywall when purchase/restore succeeds or when user dismisses as subscribed.
+  ///
+  /// When [notifyCoach] is true (new purchase or restore), posts to
+  /// [notifyClientAssignedPath] so the coach can be notified.
+  Future<void> onPaywallSuccess({bool notifyCoach = false}) async {
     await refreshSubscriptionStatus();
+    if (notifyCoach && AppConfig.isClient) {
+      unawaited(_notifyCoachClientSubscribed());
+    }
+  }
+
+  /// POST [fcmNotathletesBaseUrl]/[notifyClientAssignedPath] with Supabase JWT.
+  Future<void> _notifyCoachClientSubscribed() async {
+    if (!AppConfig.isClient) return;
+    final auth = Supabase.instance.client.auth;
+    final session = auth.currentSession;
+    final user = auth.currentUser;
+    if (session == null || user == null) return;
+    final userId = user.id.trim();
+    final token = session.accessToken.trim();
+    if (userId.isEmpty || token.isEmpty) return;
+
+    final uri = Uri.parse(fcmNotathletesBaseUrl).resolve(notifyClientAssignedPath);
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode({'userId': userId}),
+          )
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        _subscriptionLogger.w(
+          'notify-client-assigned HTTP ${response.statusCode}: ${response.body}',
+        );
+      }
+    } catch (e, st) {
+      _subscriptionLogger.w(
+        'notify-client-assigned failed',
+        error: e,
+        stackTrace: st,
+      );
+    }
   }
 
   /// Pushes the paywall as a **full-screen** route (fade), not a bottom sheet.

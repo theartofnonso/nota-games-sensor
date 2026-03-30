@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +13,6 @@ import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
-import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 import 'package:trainware/widgets/nutrition/calorie_tracking_card.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
@@ -69,6 +67,7 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
               value == value.roundToDouble()
                   ? value.round().toString()
                   : value.toStringAsFixed(1);
+          final valueLabel = unit != null ? '$displayValue $unit' : displayValue;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -82,11 +81,28 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Text(
-                    unit != null ? '$displayValue $unit' : displayValue,
-                    style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                      color: textColor,
-                      fontWeight: FontWeight.w600,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 100),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) {
+                      return ScaleTransition(
+                        scale: Tween<double>(begin: 0.92, end: 1.0).animate(
+                          animation,
+                        ),
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      valueLabel,
+                      key: ValueKey<String>(valueLabel),
+                      style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                        color: textColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -103,10 +119,7 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
                   min: 0,
                   max: max,
                   divisions: 50,
-                  onChanged: (v) {
-                    HapticFeedback.selectionClick();
-                    onChanged(v);
-                  },
+                  onChanged: onChanged,
                 ),
               ),
             ],
@@ -345,8 +358,8 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
         actions: [
           IconButton(
             icon: FaIcon(
-              AppConfig.isCoach && controller.nutritionTemplate != null
-                  ? FontAwesomeIcons.solidPenToSquare
+              AppConfig.isCoach
+                  ? FontAwesomeIcons.gear
                   : FontAwesomeIcons.circlePlus,
               color: isDarkMode ? Colors.white : Colors.black,
               size: 24,
@@ -362,9 +375,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
             constraints: const BoxConstraints(),
             tooltip:
                 AppConfig.isCoach
-                    ? (controller.nutritionTemplate != null
-                        ? 'Edit template'
-                        : 'Configure template')
+                    ? 'Edit nutrition template'
                     : 'Add entry',
           ),
           const SizedBox(width: 6),
@@ -393,14 +404,7 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (sortedLogs.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 50.0),
-                      child: ListEmptyState(
-                        message:
-                            "It might feel quiet now, but your nutrition logs will soon appear here.",
-                      ),
-                    )
+                  if (sortedLogs.isEmpty) const _NutritionLogsEmptyState()
                   else
                     ...logEntries.map((entry) {
                       if (entry.isWeekDivider) {
@@ -911,6 +915,66 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
   double _sumFatsToday(List<NutritionLogDto> logs) {
     return logs.fold(0.0, (sum, log) => sum + log.fats);
+  }
+}
+
+/// Empty log list: same for coach and client; matches [CoachFeedbackFeedScreen]
+/// / [RoutinesShellPage] (circle icon, title, body).
+class _NutritionLogsEmptyState extends StatelessWidget {
+  const _NutritionLogsEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final muted =
+        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.45);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: (isDark ? Colors.white : Colors.black)
+                      .withValues(alpha: 0.05),
+                  shape: BoxShape.circle,
+                ),
+                child: FaIcon(
+                  FontAwesomeIcons.bowlFood,
+                  size: 48,
+                  color: muted,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'No nutrition logs yet',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Tap + to log a meal or snack. Your entries and macros will show up here.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: muted,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

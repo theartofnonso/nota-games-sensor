@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:trainware/colors.dart';
 import 'package:trainware/widgets/cards/frosted_card.dart';
 
 class CalorieTrackingCard extends StatelessWidget {
@@ -26,11 +27,7 @@ class CalorieTrackingCard extends StatelessWidget {
         : 0.0;
 
     final card = FrostedCard(
-      gradientColors: const [
-        Color(0xFFFCD34D),
-        Color(0xFFFBBF24),
-        Color(0xFFF59E0B),
-      ],
+      gradientColors: nutritionFrostedGradientColors,
       child: SizedBox(
         height: 170,
         child: Row(
@@ -199,11 +196,7 @@ class NutritionTrackingCarousel extends StatelessWidget {
                 target: fatsTarget,
                 consumed: consumedFats,
                 hasLogsToday: hasLogsToday,
-                gradientColors: const [
-                  Color(0xFFFCD34D),
-                  Color(0xFFFBBF24),
-                  Color(0xFFF59E0B),
-                ],
+                gradientColors: nutritionFrostedGradientColors,
                 progressColor: Colors.black,
                 onTap: onCardTap,
               ),

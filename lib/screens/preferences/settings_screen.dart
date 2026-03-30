@@ -15,6 +15,7 @@ import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/app_flavor.dart';
+import 'package:trainware/colors.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
 import 'package:trainware/utils/notifications_utils.dart';
@@ -1660,10 +1661,6 @@ class _NutritionSection extends StatelessWidget {
               useSingleStack: true,
               calorieCardHeroTag: 'nutrition_calorie_card',
               onCardTap: () {
-                if (canEditNutrition && nutritionController.logs.isEmpty) {
-                  showNutritionTemplateSheet(context);
-                  return;
-                }
                 Navigator.of(context).push(
                   PageRouteBuilder(
                     pageBuilder: (_, __, ___) => const NutritionTrackerScreen(),
@@ -1712,11 +1709,8 @@ class _NutritionCreateRow extends StatelessWidget {
           'Create a nutrition template to set macro targets for this client.',
       ctaLabel: 'Create nutrition template',
       onPressed: () => showNutritionTemplateSheet(context),
-      gradientColors: [
-        Colors.green.withValues(alpha: 0.3),
-        Colors.teal.withValues(alpha: 0.24),
-        Colors.black.withValues(alpha: 0.45),
-      ],
+      gradientColors: nutritionFrostedGradientColors,
+      darkForeground: true,
     );
   }
 }
@@ -1756,6 +1750,8 @@ class _CreateSectionFrostedCard extends StatelessWidget {
   final String ctaLabel;
   final VoidCallback onPressed;
   final List<Color> gradientColors;
+  /// Dark text for bright gradients (e.g. yellow nutrition card).
+  final bool darkForeground;
 
   const _CreateSectionFrostedCard({
     required this.title,
@@ -1763,10 +1759,16 @@ class _CreateSectionFrostedCard extends StatelessWidget {
     required this.ctaLabel,
     required this.onPressed,
     required this.gradientColors,
+    this.darkForeground = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final titleColor = darkForeground ? Colors.black87 : Colors.white;
+    final bodyColor = darkForeground
+        ? Colors.black.withValues(alpha: 0.78)
+        : Colors.white.withValues(alpha: 0.82);
+
     return FrostedCard(
       gradientColors: gradientColors,
       child: Column(
@@ -1775,7 +1777,7 @@ class _CreateSectionFrostedCard extends StatelessWidget {
           Text(
             title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
+                  color: titleColor,
                   fontWeight: FontWeight.w700,
                 ),
           ),
@@ -1783,17 +1785,40 @@ class _CreateSectionFrostedCard extends StatelessWidget {
           Text(
             description,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.82),
+                  color: bodyColor,
                   height: 1.4,
                 ),
           ),
           const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
-            child: OpacityButtonWidgetTwo(
-              onPressed: onPressed,
-              label: ctaLabel,
-            ),
+            child: darkForeground
+                ? DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: OpacityButtonWidgetTwo(
+                      onPressed: onPressed,
+                      label: ctaLabel,
+                      buttonColor: Colors.transparent,
+                      solidBackground: true,
+                      trailingIconColor: Colors.black87,
+                      textStyle:
+                          Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.bold,
+                              ),
+                    ),
+                  )
+                : OpacityButtonWidgetTwo(
+                    onPressed: onPressed,
+                    label: ctaLabel,
+                  ),
           ),
         ],
       ),

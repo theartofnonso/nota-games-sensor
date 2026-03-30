@@ -11,6 +11,8 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
   final bool showArrowRight;
   final bool solidBackground;
   final EdgeInsetsGeometry? padding;
+  /// When set, the trailing arrow uses this color instead of the themed default.
+  final Color? trailingIconColor;
 
   const OpacityButtonWidgetTwo({
     super.key,
@@ -23,6 +25,7 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
     this.showArrowRight = true,
     this.solidBackground = false,
     this.padding,
+    this.trailingIconColor,
   });
 
   Color _themeForegroundColor({required bool isDarkMode}) {
@@ -91,7 +94,8 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
                 FaIcon(
                   FontAwesomeIcons.arrowRight,
                   size: 12,
-                  color: _themeForegroundColor(isDarkMode: isDarkMode),
+                  color: trailingIconColor ??
+                      _themeForegroundColor(isDarkMode: isDarkMode),
                 ),
             ],
           ),

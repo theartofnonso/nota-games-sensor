@@ -34,6 +34,14 @@ const borderLight = Color(0x1AFFFFFF); // white/10
 const borderMedium = Color(0x33FFFFFF); // white/20
 const borderSubtle = Color(0x0DFFFFFF); // white/5
 
+/// Deeper yellow frosted gradient (nutrition create row, calorie & fat cards).
+/// Tailwind yellow 400 → 600 — still yellow, less harsh than 200–400.
+const nutritionFrostedGradientColors = <Color>[
+  Color(0xFFFACC15), // yellow-400
+  Color(0xFFEAB308), // yellow-500
+  Color(0xFFCA8A04), // yellow-600
+];
+
 // Glow Colors (for shadows/glows)
 const successGlow = Color(0x6622c55e); // rgba(34, 197, 94, 0.4)
 const infoGlow = Color(0x993b82f6); // rgba(59, 130, 246, 0.6)

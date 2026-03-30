@@ -34,3 +34,8 @@ const coachClientsPath = '/coach-clients';
 
 /// GET /coach-profiles/:coachId — coach + profile for app subscribe UI.
 const coachProfilesPath = '/coach-profiles';
+
+/// fcm.notathletes.com — push coach when a client gains subscription (client app).
+const fcmNotathletesBaseUrl = 'https://fcm.notathletes.com';
+/// POST body `{ "userId": "<client-uuid>" }`, `Authorization: Bearer <Supabase access token>`.
+const notifyClientAssignedPath = '/notify-client-assigned';
