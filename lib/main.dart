@@ -844,6 +844,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       unawaited(AssignedCoachService.instance.refreshFromRemote());
     }
 
+    if (isAuthenticated && !_lastAuthenticated) {
+      // [GoRouter] is long-lived; location survives logout while [MyApp] stays alive.
+      // Clear shell routes (e.g. /account-settings) so sign-in lands on home, not the
+      // screen where the user logged out.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _router.go('/');
+      });
+    }
+
     if (isAuthenticated && (!_lastAuthenticated || isCoach != _lastCoach)) {
       // Mark first launch as complete after successful authentication
       if (SharedPrefs().firstLaunch) {
