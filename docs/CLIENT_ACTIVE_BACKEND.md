@@ -1,8 +1,10 @@
 # Client subscription access
 
-The **Trainware client app** gates access from **RevenueCat `CustomerInfo` entitlements**:
-**`app_access`** (enter app) and **`coach_access`** (coach-tier UI). Subscription purchase UI is a
-**custom paywall** that loads **RevenueCat offerings** (packages).
+The **Trainware client app** uses **RevenueCat `CustomerInfo` entitlements** for **both**
+**`app_access`** and **`coach_access`** (coach-led product). Users without both can still open the
+app: navigation and home surface a **subscribe** path; the paywall is a **full-screen route**
+(fade) opened from the home card (not a gate before the shell).
+Subscription purchase UI loads **RevenueCat offerings** (packages).
 The app does **not** call `api.notathletes.com`
 for subscription status.
 

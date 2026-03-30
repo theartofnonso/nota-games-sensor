@@ -3,9 +3,9 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_flavor.dart';
+import '../dtos/coach_dto.dart';
 import '../utils/dialog_utils.dart';
 import '../logger.dart';
-import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/subscription/custom_subscription_paywall.dart';
 import 'revenue_cat_bootstrap.dart';
 import 'revenuecat_subscription_helpers.dart';
@@ -17,28 +17,31 @@ class ClientSubscriptionService {
   static final ClientSubscriptionService instance =
       ClientSubscriptionService._();
 
-  /// In-memory cache of subscription status. Null = not yet checked.
-  /// Checked once at app load when user authenticates; reused at gate points.
-  bool? _cachedAccess;
+  /// Bumps when [hasAccess] may have changed (UI: nav, home card, router redirect).
+  final ValueNotifier<int> accessRevision = ValueNotifier<int>(0);
 
-  /// Cached subscription type from IAP (Pro vs self-coaching). Set when we have
-  /// access and have run restore to get product IDs.
-  bool? _cachedIsSelfCoaching;
+  void _bumpAccessRevision() {
+    accessRevision.value++;
+  }
+
+  /// In-memory cache of subscription status. Null = not yet checked.
+  /// True only when **app_access** and **coach_access** are both active.
+  bool? _cachedAccess;
 
   /// Shared future for in-flight refresh. Prevents duplicate fetches when
   /// app-load refresh and first gate check overlap.
   Future<void>? _refreshInProgress;
 
   /// Loads subscription access from RevenueCat ([Purchases.getCustomerInfo])
-  /// and updates in-memory cache (solo vs coach from entitlements).
+  /// and updates in-memory cache (requires **app_access** + **coach_access**).
   Future<void> refreshSubscriptionStatus() async {
     if (!AppConfig.isClient) return;
 
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.id.trim().isEmpty) {
       _cachedAccess = null;
-      _cachedIsSelfCoaching = null;
       _refreshInProgress = null;
+      _bumpAccessRevision();
       return;
     }
 
@@ -57,20 +60,19 @@ class ClientSubscriptionService {
   }
 
   /// Syncs [Purchases] customer info into the service cache.
-  /// Gate uses **app_access**; solo vs coach uses **coach_access** (see `subscription_catalog.dart`).
+  /// Client access requires **app_access** and **coach_access** (see `subscription_catalog.dart`).
   Future<bool> syncAccessFromRevenueCat() async {
     if (!RevenueCatBootstrap.isConfigured) {
       _cachedAccess = false;
-      _cachedIsSelfCoaching = null;
+      _bumpAccessRevision();
       return false;
     }
     try {
       final info = await Purchases.getCustomerInfo();
-      final access = RevenueCatSubscriptionHelpers.hasAppAccess(info);
+      final access =
+          RevenueCatSubscriptionHelpers.hasCoachLedSubscription(info);
       _cachedAccess = access;
-      _cachedIsSelfCoaching = access
-          ? RevenueCatSubscriptionHelpers.isSoloTier(info)
-          : null;
+      _bumpAccessRevision();
       return access;
     } catch (e, st) {
       _subscriptionLogger.w(
@@ -79,7 +81,7 @@ class ClientSubscriptionService {
         stackTrace: st,
       );
       _cachedAccess = false;
-      _cachedIsSelfCoaching = null;
+      _bumpAccessRevision();
       return false;
     }
   }
@@ -87,20 +89,15 @@ class ClientSubscriptionService {
   /// Clears cached status (e.g. on logout).
   void clearCachedAccess() {
     _cachedAccess = null;
-    _cachedIsSelfCoaching = null;
     _refreshInProgress = null;
+    _bumpAccessRevision();
   }
 
-  /// Whether the client has active subscription access (from last refresh).
+  /// Whether the client has active coach-led subscription (both entitlements).
   bool get hasAccess => _cachedAccess == true;
 
-  /// True when user has **app_access** but not **coach_access** (solo / self-coaching).
-  bool get isSelfCoaching => _cachedIsSelfCoaching == true;
-
-  /// True when **coach_access** is active (from last refresh). Requires [hasAccess].
-  bool get hasCoachAccess =>
-      hasAccess &&
-      !isSelfCoaching;
+  /// Same as [hasAccess] for clients (cache is only true when **coach_access** is active).
+  bool get hasCoachAccess => hasAccess;
 
   /// Whether the cache has been populated (by startup or a prior refresh).
   bool get isCachePopulated => _cachedAccess != null;
@@ -130,8 +127,14 @@ class ClientSubscriptionService {
     await refreshSubscriptionStatus();
   }
 
-  /// Presents the custom paywall (RevenueCat offerings / packages).
-  Future<void> showPaywall({required BuildContext context}) async {
+  /// Pushes the paywall as a **full-screen** route (fade), not a bottom sheet.
+  ///
+  /// Pass [assignedCoach] when already loaded (e.g. from [ClientSubscribePromptCard])
+  /// so the UI can render immediately.
+  Future<void> showPaywall({
+    required BuildContext context,
+    CoachDto? assignedCoach,
+  }) async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.id.trim().isEmpty) {
       showErrorBottomSheet(
@@ -154,36 +157,39 @@ class ClientSubscriptionService {
     }
 
     if (!context.mounted) return;
-    await showAppBottomSheet<void>(
-      context: context,
-      isDraggable: false,
-      isScrollControlled: true,
-      isDismissible: true,
-      child: CustomSubscriptionPaywall(
-        service: this,
-        parentContext: context,
-        showCloseButton: true,
+
+    final parentContext = context;
+    await Navigator.of(context, rootNavigator: true).push<void>(
+      PageRouteBuilder<void>(
+        settings: const RouteSettings(name: 'subscription_paywall'),
+        opaque: true,
+        fullscreenDialog: true,
+        barrierDismissible: false,
+        transitionDuration: const Duration(milliseconds: 280),
+        reverseTransitionDuration: const Duration(milliseconds: 220),
+        pageBuilder: (modalContext, animation, secondaryAnimation) {
+          return CustomSubscriptionPaywall(
+            service: this,
+            parentContext: parentContext,
+            showCloseButton: true,
+            assignedCoach: assignedCoach,
+          );
+        },
+        transitionsBuilder: (modalContext, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+              reverseCurve: Curves.easeIn,
+            ),
+            child: child,
+          );
+        },
       ),
     );
   }
 
-  /// Full-screen subscription gate (custom UI; data from RevenueCat).
-  Widget buildBlockingPaywall({required VoidCallback onComplete}) {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null || user.id.trim().isEmpty) {
-      return const SizedBox.shrink();
-    }
-    if (!RevenueCatBootstrap.isConfigured) {
-      return const _SubscriptionGateRevenueCatDisabled();
-    }
-    return CustomSubscriptionPaywall(
-      service: this,
-      showCloseButton: false,
-      onBlockingComplete: onComplete,
-    );
-  }
-
-  /// Presents the paywall only when **app_access** is not active.
+  /// Presents the paywall when coach-led subscription (both entitlements) is not active.
   Future<void> presentPaywallIfAppAccessMissing({
     required BuildContext context,
   }) async {
@@ -191,7 +197,7 @@ class ClientSubscriptionService {
     try {
       final info = await Purchases.getCustomerInfo();
       if (!context.mounted) return;
-      if (RevenueCatSubscriptionHelpers.hasAppAccess(info)) return;
+      if (RevenueCatSubscriptionHelpers.hasCoachLedSubscription(info)) return;
       await showPaywall(context: context);
     } catch (e, st) {
       _subscriptionLogger.w(
@@ -202,22 +208,4 @@ class ClientSubscriptionService {
     }
   }
 
-}
-
-class _SubscriptionGateRevenueCatDisabled extends StatelessWidget {
-  const _SubscriptionGateRevenueCatDisabled();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          'Subscriptions are not available in this build.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ),
-    );
-  }
 }

@@ -47,15 +47,15 @@ import 'package:trainware/utils/theme/system_ui_overlay.dart';
 import 'package:trainware/utils/theme/chat_uikit_trainware_theme.dart';
 import 'package:trainware/utils/theme/theme.dart';
 import 'package:trainware/services/app_startup_service.dart';
+import 'package:trainware/services/assigned_coach_service.dart';
+import 'package:trainware/services/client_subscription_service.dart';
 import 'package:trainware/services/revenue_cat_bootstrap.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
 import 'package:trainware/widgets/backgrounds/splash_screen.dart';
-import 'package:trainware/widgets/coach_selection/coach_selection_gate.dart';
 import 'package:trainware/widgets/coach_selection/profile_completion_gate.dart';
-import 'package:trainware/widgets/coach_selection/subscription_gate.dart';
 import 'package:trainware/widgets/navigation/main_shell_scaffold.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -368,12 +368,15 @@ RoutineLogDto? _parseRoutineLogFromExtra(dynamic value) {
   return null;
 }
 
-GoRouter _createRouter(ClientOverrideController accessController) {
+GoRouter _createRouter(
+  ClientOverrideController accessController,
+  Listenable subscriptionRevision,
+) {
   return GoRouter(
     initialLocation: "/",
     navigatorKey: rootNavigatorKey,
     observers: [appRouteObserver],
-    refreshListenable: accessController,
+    refreshListenable: Listenable.merge([accessController, subscriptionRevision]),
     redirect: (context, state) {
       final loc = state.matchedLocation;
 
@@ -382,13 +385,19 @@ GoRouter _createRouter(ClientOverrideController accessController) {
         if (loc == '/coach') {
           return '/';
         }
-        if (isShellCoachFeedbackPath(loc) && !AppPrivileges.isProWithCoach) {
-          return '/';
+        // Without subscription: only home + settings — block shell drill-downs
+        if (!AppPrivileges.isProWithCoach) {
+          if (loc == kShellRoutinesPath || isShellRoutineTemplatePath(loc)) {
+            return '/';
+          }
+          if (isShellCoachFeedbackPath(loc)) {
+            return '/';
+          }
         }
         return null;
       }
 
-      // Coach feedback shell tab is for clients (Pro + coach), not coach app.
+      // Coach feedback shell tab is for the client app, not coach app.
       if (isShellCoachFeedbackPath(loc)) {
         return accessController.hasSelectedClient ? '/' : '/coach';
       }
@@ -416,7 +425,12 @@ GoRouter _createRouter(ClientOverrideController accessController) {
       ),
       ShellRoute(
         builder: (context, state, child) {
-          return MainShellScaffold(child: child);
+          return ListenableBuilder(
+            listenable: ClientSubscriptionService.instance.accessRevision,
+            builder: (context, _) {
+              return MainShellScaffold(child: child);
+            },
+          );
         },
         routes: [
           GoRoute(
@@ -622,6 +636,16 @@ GoRouter _createRouter(ClientOverrideController accessController) {
       GoRoute(
         path: ChatScreen.routeName,
         pageBuilder: (context, state) {
+          if (!AppConfig.isCoach && !AppPrivileges.isProWithCoach) {
+            return CustomTransitionPage(
+              key: state.pageKey,
+              child: const Home(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+            );
+          }
           final coachId = state.uri.queryParameters['coachId'] ?? '';
           final coachName = state.uri.queryParameters['coachName'] ?? '';
           final clientUserId = state.uri.queryParameters['clientUserId'] ?? '';
@@ -682,7 +706,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     _accessController = context.read<ClientOverrideController>();
-    _router = _createRouter(_accessController);
+    _router = _createRouter(
+      _accessController,
+      ClientSubscriptionService.instance.accessRevision,
+    );
     _lastAuthenticated = _accessController.isAuthenticated;
     _lastCoach = AppConfig.isCoach;
     _accessController.addListener(_handleAccessChanged);
@@ -801,6 +828,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     _runStartupTasksIfReady();
 
+    if (isAuthenticated && !_lastAuthenticated && AppConfig.isClient) {
+      unawaited(ClientSubscriptionService.instance.refreshSubscriptionStatus());
+      unawaited(AssignedCoachService.instance.refreshFromRemote());
+    }
+
     if (isAuthenticated && (!_lastAuthenticated || isCoach != _lastCoach)) {
       // Mark first launch as complete after successful authentication
       if (SharedPrefs().firstLaunch) {
@@ -816,7 +848,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _startupComplete = false;
       _startupTasksStarted = false;
       AppStartupService.instance.reset();
-      SharedPrefs().coachSelectionComplete = false;
       SharedPrefs().profileSetupComplete = false;
       try {
         final controller = context.read<SupabaseExerciseAndRoutineController>();
@@ -931,21 +962,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     // Show main app if authenticated
     return ProfileCompletionGate(
-      child: SubscriptionGate(
-        child: CoachSelectionGate(
-          child: MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            themeMode: ThemeMode.dark,
-            theme: TRKRTheme.darkTheme,
-            darkTheme: TRKRTheme.darkTheme,
-            routerConfig: _router,
-            supportedLocales: ChatUIKitLocalizations().supportedLocales,
-            localizationsDelegates:
-                ChatUIKitLocalizations().localizationsDelegates,
-            localeResolutionCallback:
-                ChatUIKitLocalizations().localeResolutionCallback,
-          ),
-        ),
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.dark,
+        theme: TRKRTheme.darkTheme,
+        darkTheme: TRKRTheme.darkTheme,
+        routerConfig: _router,
+        supportedLocales: ChatUIKitLocalizations().supportedLocales,
+        localizationsDelegates:
+            ChatUIKitLocalizations().localizationsDelegates,
+        localeResolutionCallback:
+            ChatUIKitLocalizations().localeResolutionCallback,
       ),
     );
   }

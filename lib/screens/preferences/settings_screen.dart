@@ -24,9 +24,9 @@ import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../controllers/access_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../extensions/duration_extension.dart';
+import '../../services/client_subscription_service.dart';
 import '../../services/training_prediction_service.dart';
 import '../../utils/calendar_date_logs_sheet.dart';
-import '../../utils/navigation_utils.dart';
 import '../../utils/theme/color_extensions.dart';
 import '../../utils/unsaved_workout_utils.dart';
 import '../../widgets/backgrounds/trkr_loading_screen.dart';
@@ -34,6 +34,7 @@ import '../../widgets/cards/frosted_card.dart';
 import '../../widgets/nutrition/calorie_tracking_card.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
+import '../../widgets/home/client_subscribe_prompt_card.dart';
 import '../../widgets/navigation/app_floating_navigation_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -128,14 +129,26 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     ),
                   ],
-                  _TrainingInsightsSection(
-                    yearStats: yearStats,
-                    yearHoursStats: yearHoursStats,
-                    predictionInfo: predictionInfo,
+                  ListenableBuilder(
+                    listenable:
+                        ClientSubscriptionService.instance.accessRevision,
+                    builder: (context, _) {
+                      // Clients without subscription: hide (subscribe UX only).
+                      // Subscribed clients and coach app: show progress carousel.
+                      final hideTrainingInsightsCarousel =
+                          AppConfig.isClient &&
+                              !ClientSubscriptionService.instance.hasAccess;
+                      if (hideTrainingInsightsCarousel) {
+                        return const SizedBox.shrink();
+                      }
+                      return _TrainingInsightsSection(
+                        yearStats: yearStats,
+                        yearHoursStats: yearHoursStats,
+                        predictionInfo: predictionInfo,
+                      );
+                    },
                   ),
                   SizedBox(height: _sectionSpacing),
-                  _RoutinePlansSection(),
-                  _SpacerIfRoutinePlansVisible(),
                   _NutritionSection(),
                   _SpacerIfNutritionVisible(),
                   SizedBox(height: _sectionSpacing),
@@ -1589,63 +1602,96 @@ class _NutritionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NutritionLogController>(
-      builder: (context, nutritionController, _) {
-        final canEditNutrition =
-            AppPrivileges.isCoach || AppPrivileges.isSelfCoaching;
-        final isSelfCoaching = AppPrivileges.isSelfCoaching;
-        final template = nutritionController.nutritionTemplate;
+    return ListenableBuilder(
+      listenable: ClientSubscriptionService.instance.accessRevision,
+      builder: (context, _) {
+        final showSubscribe =
+            AppConfig.isClient && !ClientSubscriptionService.instance.hasAccess;
 
-        // Clients (non-self-coaching): hide nutrition section when no template exists
-        if (!canEditNutrition && template == null) return const SizedBox.shrink();
+        return Consumer<NutritionLogController>(
+          builder: (context, nutritionController, _) {
+            final canEditNutrition = AppPrivileges.isCoach;
+            final template = nutritionController.nutritionTemplate;
 
-        if (canEditNutrition && template == null) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: _NutritionCreateRow(isSelfCoaching: isSelfCoaching),
-          );
-        }
+            Widget subscribeBlock() => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: ClientSubscribePromptCard(
+                    onSubscribe: (assignedCoach) {
+                      ClientSubscriptionService.instance.showPaywall(
+                        context: context,
+                        assignedCoach: assignedCoach,
+                      );
+                    },
+                  ),
+                );
 
-        final consumedCalories = _sumCaloriesToday(nutritionController.logs);
-        final goalCalories = nutritionController.calorieTarget;
-        final hasLogsToday = _hasLogsToday(nutritionController.logs);
-        final remainingCalories = goalCalories > 0
-            ? (hasLogsToday
-                ? (goalCalories - consumedCalories).clamp(0.0, goalCalories)
-                : goalCalories)
-            : 0.0;
-
-        return NutritionTrackingCarousel(
-          goalCalories: goalCalories,
-          remainingCalories: remainingCalories,
-          proteinTarget: nutritionController.proteinTarget,
-          carbsTarget: nutritionController.carbsTarget,
-          fatsTarget: nutritionController.fatsTarget,
-          consumedProtein: _sumProteinToday(nutritionController.logs),
-          consumedCarbs: _sumCarbsToday(nutritionController.logs),
-          consumedFats: _sumFatsToday(nutritionController.logs),
-          hasLogsToday: hasLogsToday,
-          useSingleStack: true,
-          calorieCardHeroTag: 'nutrition_calorie_card',
-          onCardTap: () {
-            if (canEditNutrition && nutritionController.logs.isEmpty) {
-              showNutritionTemplateSheet(context);
-              return;
+            // Client, no template: only show subscribe prompt when applicable
+            if (!canEditNutrition && template == null) {
+              if (!showSubscribe) return const SizedBox.shrink();
+              return subscribeBlock();
             }
-            Navigator.of(context).push(
-              PageRouteBuilder(
-                pageBuilder: (_, __, ___) => const NutritionTrackerScreen(),
-                transitionsBuilder: (_, animation, __, child) {
-                  final tween = Tween(
-                    begin: const Offset(0, 1),
-                    end: Offset.zero,
-                  ).chain(CurveTween(curve: Curves.easeOutCubic));
-                  return SlideTransition(
-                    position: animation.drive(tween),
-                    child: child,
-                  );
-                },
-              ),
+
+            if (canEditNutrition && template == null) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: const _NutritionCreateRow(),
+              );
+            }
+
+            final consumedCalories = _sumCaloriesToday(nutritionController.logs);
+            final goalCalories = nutritionController.calorieTarget;
+            final hasLogsToday = _hasLogsToday(nutritionController.logs);
+            final remainingCalories = goalCalories > 0
+                ? (hasLogsToday
+                    ? (goalCalories - consumedCalories).clamp(0.0, goalCalories)
+                    : goalCalories)
+                : 0.0;
+
+            final carousel = NutritionTrackingCarousel(
+              goalCalories: goalCalories,
+              remainingCalories: remainingCalories,
+              proteinTarget: nutritionController.proteinTarget,
+              carbsTarget: nutritionController.carbsTarget,
+              fatsTarget: nutritionController.fatsTarget,
+              consumedProtein: _sumProteinToday(nutritionController.logs),
+              consumedCarbs: _sumCarbsToday(nutritionController.logs),
+              consumedFats: _sumFatsToday(nutritionController.logs),
+              hasLogsToday: hasLogsToday,
+              useSingleStack: true,
+              calorieCardHeroTag: 'nutrition_calorie_card',
+              onCardTap: () {
+                if (canEditNutrition && nutritionController.logs.isEmpty) {
+                  showNutritionTemplateSheet(context);
+                  return;
+                }
+                Navigator.of(context).push(
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => const NutritionTrackerScreen(),
+                    transitionsBuilder: (_, animation, __, child) {
+                      final tween = Tween(
+                        begin: const Offset(0, 1),
+                        end: Offset.zero,
+                      ).chain(CurveTween(curve: Curves.easeOutCubic));
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                  ),
+                );
+              },
+            );
+
+            if (!showSubscribe) return carousel;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                subscribeBlock(),
+                const SizedBox(height: 16),
+                carousel,
+              ],
             );
           },
         );
@@ -1654,19 +1700,16 @@ class _NutritionSection extends StatelessWidget {
   }
 }
 
-/// Coach/self-coaching: empty state with CTA to create nutrition template.
+/// Coach: empty state with CTA to create nutrition template for selected client.
 class _NutritionCreateRow extends StatelessWidget {
-  const _NutritionCreateRow({this.isSelfCoaching = false});
-
-  final bool isSelfCoaching;
+  const _NutritionCreateRow();
 
   @override
   Widget build(BuildContext context) {
     return _CreateSectionFrostedCard(
       title: 'Nutrition',
-      description: isSelfCoaching
-          ? 'Create a nutrition template to set macro targets for yourself.'
-          : 'Create a nutrition template to set macro targets for this client.',
+      description:
+          'Create a nutrition template to set macro targets for this client.',
       ctaLabel: 'Create nutrition template',
       onPressed: () => showNutritionTemplateSheet(context),
       gradientColors: [
@@ -1680,26 +1723,6 @@ class _NutritionCreateRow extends StatelessWidget {
 
 // This function is no longer used - replaced by TrainingPredictionService.deriveTypicalTimeForWeekday
 
-/// Spacer after routine plans - only when that section rendered content.
-/// Avoids double gap when client has no plans (section shrinks).
-class _SpacerIfRoutinePlansVisible extends StatelessWidget {
-  const _SpacerIfRoutinePlansVisible();
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<SupabaseExerciseAndRoutineController>(
-      builder: (context, controller, _) {
-        final hasContent =
-            AppPrivileges.canCreateManageRoutines ||
-                controller.plans.isNotEmpty;
-        return hasContent
-            ? SizedBox(height: _SettingsScreenState._sectionSpacing)
-            : const SizedBox.shrink();
-      },
-    );
-  }
-}
-
 /// Spacer after nutrition - only when that section rendered content.
 /// Avoids double gap when client has no template (section shrinks).
 class _SpacerIfNutritionVisible extends StatelessWidget {
@@ -1707,67 +1730,22 @@ class _SpacerIfNutritionVisible extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NutritionLogController>(
-      builder: (context, controller, _) {
-        final hasContent =
-            (AppPrivileges.isCoach || AppPrivileges.isSelfCoaching) ||
-            controller.nutritionTemplate != null;
-        return hasContent
-            ? SizedBox(height: _SettingsScreenState._sectionSpacing)
-            : const SizedBox.shrink();
+    return ListenableBuilder(
+      listenable: ClientSubscriptionService.instance.accessRevision,
+      builder: (context, _) {
+        final showSubscribe =
+            AppConfig.isClient && !ClientSubscriptionService.instance.hasAccess;
+        return Consumer<NutritionLogController>(
+          builder: (context, controller, _) {
+            final hasContent = AppPrivileges.isCoach ||
+                controller.nutritionTemplate != null ||
+                showSubscribe;
+            return hasContent
+                ? SizedBox(height: _SettingsScreenState._sectionSpacing)
+                : const SizedBox.shrink();
+          },
+        );
       },
-    );
-  }
-}
-
-class _RoutinePlansSection extends StatelessWidget {
-  const _RoutinePlansSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<SupabaseExerciseAndRoutineController>(
-      builder: (context, controller, _) {
-        final canEditPlans = AppPrivileges.canCreateManageRoutines;
-        final isOwnRoutines =
-            AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach;
-        final plansEmpty = controller.plans.isEmpty;
-
-        // Clients (non-self-coaching): hide routine plan section when no plan exists
-        if (!canEditPlans && plansEmpty) return const SizedBox.shrink();
-
-        if (canEditPlans && plansEmpty) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: _RoutinePlansCreateRow(isOwnRoutines: isOwnRoutines),
-          );
-        }
-
-        return const SizedBox.shrink();
-      },
-    );
-  }
-}
-
-/// Coach/self-coaching: empty state with title, description, and bottom-sheet-style CTA.
-class _RoutinePlansCreateRow extends StatelessWidget {
-  const _RoutinePlansCreateRow({this.isOwnRoutines = false});
-
-  final bool isOwnRoutines;
-
-  @override
-  Widget build(BuildContext context) {
-    return _CreateSectionFrostedCard(
-      title: 'Routine Plan',
-      description: isOwnRoutines
-          ? 'Build a custom routine plan for yourself from the ground up.'
-          : 'Build a custom routine plan for this client from the ground up.',
-      ctaLabel: 'Create routine plan',
-      onPressed: () => navigateToRoutinePlanEditor(context: context),
-      gradientColors: [
-        Colors.grey.withValues(alpha: 0.2),
-        Colors.black.withValues(alpha: 0.4),
-        Colors.black.withValues(alpha: 0.5),
-      ],
     );
   }
 }

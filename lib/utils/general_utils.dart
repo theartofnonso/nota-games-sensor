@@ -246,6 +246,41 @@ LinearGradient themeGradient({required BuildContext context}) {
   );
 }
 
+/// Bottom fade on the paywall coach hero image: tints with the **bottom** stop of
+/// [themeGradient] (dark mode: darkest sapphire `sapphireDark`) so it meets the
+/// paywall background.
+LinearGradient paywallCoachHeroScrimGradient({required BuildContext context}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+
+  if (isDark) {
+    final base = themeGradient(context: context).colors.last;
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        base.withValues(alpha: 0.0),
+        base.withValues(alpha: 0.0),
+        base.withValues(alpha: 0.78),
+        base.withValues(alpha: 1.0),
+      ],
+      stops: const [0.0, 0.62, 0.78, 1.0],
+    );
+  }
+
+  final base = Colors.white;
+  return LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      base.withValues(alpha: 0.0),
+      base.withValues(alpha: 0.0),
+      base.withValues(alpha: 0.72),
+      base.withValues(alpha: 0.94),
+    ],
+    stops: const [0.0, 0.62, 0.78, 1.0],
+  );
+}
+
 Color appBarBackgroundColor({required BuildContext context}) {
   Brightness systemBrightness = Theme.of(context).brightness;
   final isDarkMode = systemBrightness == Brightness.dark;

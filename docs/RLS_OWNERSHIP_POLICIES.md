@@ -1,6 +1,6 @@
 # RLS Ownership-Based Policies
 
-RLS policies are refactored to be **ownership-based** rather than role-based. Both coaches and self-coaching clients can create and manage data; access is gated in the app.
+RLS policies are refactored to be **ownership-based** rather than role-based. Coaches and clients can create and manage data according to ownership; coach-led subscription and UX are gated in the app.
 
 ## Policy Summary
 
@@ -14,8 +14,7 @@ RLS policies are refactored to be **ownership-based** rather than role-based. Bo
 ## Who Can Do What
 
 - **Coach**: Creates plans/templates for clients (`owner` = coach, `clientId`/`client_id` = client). Reads client logs via `coach_clients`.
-- **Pro client**: Reads plans/templates assigned to them (`clientId` = their id). Can create and manage their own plans/templates (same as self-coaching client); app allows this.
-- **Self-coaching client**: Creates plans/templates for themselves (`owner` = `clientId` = their id). Same write access as coach for their own data.
+- **Client**: Reads plans/templates assigned to them (`clientId` = their id). Can create and manage their own plans/templates where the app allows; writes use `owner`/`clientId` consistent with their user id.
 
 ## Note
 

@@ -126,10 +126,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
     // Check if this template belongs to a system plan
     final isSystemTemplate = plan?.isSystemPlan ?? false;
     final hasSelectedClient = accessController.hasSelectedClient;
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    final canEditTemplate = hasSelectedClient ||
-        !AppPrivileges.isProWithCoach ||
-        (userId != null && template.isOwnedBy(userId));
 
     final allLogsForTemplate = exerciseAndRoutineController
         .whereLogsWithTemplateId(templateId: template.id)

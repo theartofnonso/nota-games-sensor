@@ -50,19 +50,6 @@ class SharedPrefs {
     _sharedPrefs?.setBool(_firstLaunchKey, value);
   }
 
-  /// Coach selection completed (mock flow). The mock flow doesn't write to
-  /// coach_clients, so fetchCoachForClient stays null. This flag records that
-  /// the user completed the flow so we allow main app access until real backend
-  /// assignment exists. Cleared on logout.
-  final String _coachSelectionCompleteKey = "coach_selection_complete_key";
-
-  bool get coachSelectionComplete =>
-      _sharedPrefs?.getBool(_coachSelectionCompleteKey) ?? false;
-
-  set coachSelectionComplete(bool value) {
-    _sharedPrefs?.setBool(_coachSelectionCompleteKey, value);
-  }
-
   /// Profile setup completed (client has profile in DB). Used to bypass
   /// ProfileCompletionGate on subsequent launches when offline. Cleared on logout.
   final String _profileSetupCompleteKey = "profile_setup_complete_key";

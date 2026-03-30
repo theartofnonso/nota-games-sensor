@@ -31,3 +31,6 @@ const apiNotathletesBaseUrl = 'https://api.notathletes.com';
 const accountDeletionPath = '/account/delete';
 const accountProfilePath = '/account/profile';
 const coachClientsPath = '/coach-clients';
+
+/// GET /coach-profiles/:coachId — coach + profile for app subscribe UI.
+const coachProfilesPath = '/coach-profiles';

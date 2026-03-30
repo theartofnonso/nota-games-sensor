@@ -1,9 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Fetches assigned coach id (and name when RLS allows) for a client.
+/// Reads [coach_clients] for `client_id` → returns `coach_id`.
 ///
-/// Uses [coach_clients] first — avoids relying on a nested `coaches` embed,
-/// which can fail under RLS while the assignment row is still readable.
+/// Coach display data comes from **GET /coach-profiles/:id** ([fetchAssignedCoachProfile]),
+/// not from Supabase `coaches`. [coachName] is left empty here.
 Future<Map<String, String>?> fetchCoachForClient(String clientId) async {
   try {
     final row = await Supabase.instance.client
@@ -12,20 +12,16 @@ Future<Map<String, String>?> fetchCoachForClient(String clientId) async {
         .eq('client_id', clientId)
         .maybeSingle();
     if (row == null) return null;
-    final coachId = row['coach_id'] as String?;
+    final rawId = row['coach_id'];
+    final coachId = switch (rawId) {
+      null => null,
+      final String s when s.trim().isNotEmpty => s.trim(),
+      final num n => n.toString(),
+      _ => rawId.toString().trim().isEmpty ? null : rawId.toString().trim(),
+    };
     if (coachId == null || coachId.isEmpty) return null;
 
-    var coachName = '';
-    try {
-      final coach = await Supabase.instance.client
-          .from('coaches')
-          .select('name')
-          .eq('id', coachId)
-          .maybeSingle();
-      coachName = (coach?['name'] as String?)?.trim() ?? '';
-    } catch (_) {}
-
-    return {'coachId': coachId, 'coachName': coachName};
+    return {'coachId': coachId, 'coachName': ''};
   } catch (_) {
     return null;
   }

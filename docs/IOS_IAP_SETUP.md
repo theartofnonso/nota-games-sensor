@@ -18,7 +18,7 @@ The **coach app** (Not Athletes Coach, `com.notathletes.coach`) must **not** hav
 ## Current Implementation
 
 - **Client app**: Uses Apple In-App Purchase (IAP) for iOS and Google Play Billing for Android.
-- **Product IDs**: `notathletes_monthly` (Pro, coach-led), `notathletes_solo_monthly` (self-coaching).
+- **Product IDs**: coach-led subscription only (e.g. `notathletes_monthly`); must unlock **app_access** and **coach_access** in RevenueCat.
 - **Client Bundle ID**: `com.notathletes.client` – products in App Store Connect must be under this app.
 - **Flow**: User enters email → restore purchases → if none, paywall shows products → subscribe via App Store → sign in with OTP.
 - **Code locations**: 

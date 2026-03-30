@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/app_flavor.dart';
+import 'package:trainware/utils/app_privileges.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/screens/home.dart';
 import 'package:trainware/services/app_bottom_sheet_visibility.dart';
@@ -10,7 +11,6 @@ import 'package:trainware/services/chat_unread_counts_service.dart';
 import 'package:trainware/services/chat_unread_service.dart';
 import 'package:trainware/screens/logs/coach_feedback_feed_screen.dart';
 import 'package:trainware/screens/preferences/account_settings_screen.dart';
-import 'package:trainware/utils/app_privileges.dart';
 import 'package:trainware/utils/shell_tab_paths.dart';
 import 'package:trainware/utils/coach_mapping_utils.dart';
 import 'package:trainware/utils/navigation_utils.dart';
@@ -34,15 +34,19 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   int _chatUnreadCount = 0;
   ClientOverrideController? _accessController;
 
-  bool get _chatInNavBar => AppConfig.isCoach || AppPrivileges.isProWithCoach;
+  /// Client with subscription: full nav. Client without: home + settings only.
+  bool get _clientFullAccess =>
+      !AppConfig.isClient || AppPrivileges.isProWithCoach;
 
-  /// Pro client with coach: full feedback feed in nav (matches settings card).
-  bool get _feedbackInNavBar => AppPrivileges.isProWithCoach;
+  bool get _chatInNavBar =>
+      AppConfig.isCoach || (AppConfig.isClient && _clientFullAccess);
+
+  bool get _feedbackInNavBar => AppConfig.isClient && _clientFullAccess;
 
   int get _settingsNavIndex {
     if (AppConfig.isCoach) return 4;
-    if (_feedbackInNavBar) return 4;
-    return 2;
+    if (_clientFullAccess) return 4;
+    return 1;
   }
 
   /// Bottom-nav index of the Chat tab (varies by flavor / item count).
@@ -106,6 +110,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
         ChatUnreadCountsService().refreshUnreadCountForClient(clientId);
       }
     } else {
+      if (!_clientFullAccess) return;
       final userId = accessController.userId;
       if (userId == null) return;
       final coachData = await fetchCoachForClient(userId);
@@ -184,16 +189,20 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
       next = 0;
     } else if (AppConfig.isCoach && path == '/coach') {
       next = 1;
-    } else if (!AppConfig.isCoach && path == kShellRoutinesPath) {
+    } else if (!AppConfig.isCoach &&
+        _clientFullAccess &&
+        path == kShellRoutinesPath) {
       next = 1;
-    } else if (!AppConfig.isCoach && isShellRoutineTemplatePath(path)) {
+    } else if (!AppConfig.isCoach &&
+        _clientFullAccess &&
+        isShellRoutineTemplatePath(path)) {
       next = 1;
     } else if (AppConfig.isCoach && path == kShellRoutinesPath) {
       next = 2;
     } else if (AppConfig.isCoach && isShellRoutineTemplatePath(path)) {
       next = 2;
     } else if (!AppConfig.isCoach &&
-        _feedbackInNavBar &&
+        _clientFullAccess &&
         path == CoachFeedbackFeedScreen.routeName) {
       next = 3;
     } else if (path == AccountSettingsScreen.routeName) {
@@ -263,19 +272,13 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
     }
 
     // Client app
-    if (_feedbackInNavBar) {
+    if (!_clientFullAccess) {
       switch (index) {
         case 0:
           router.go('/');
           break;
         case 1:
-          navigateToPrimaryRoutinePlan(context: context);
-          break;
-        case 2:
-          _openChatOverlay();
-          break;
-        case 3:
-          navigateToCoachFeedbackFeed(context: context);
+          router.go(AccountSettingsScreen.routeName);
           break;
       }
       if (index == 0) {
@@ -286,13 +289,18 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
       return;
     }
 
-    // Solo / self-coaching client: home, routines, settings
     switch (index) {
       case 0:
         router.go('/');
         break;
       case 1:
         navigateToPrimaryRoutinePlan(context: context);
+        break;
+      case 2:
+        _openChatOverlay();
+        break;
+      case 3:
+        navigateToCoachFeedbackFeed(context: context);
         break;
     }
     if (index == 0) {
@@ -309,17 +317,18 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
         icon: const Icon(Icons.home_outlined, size: 24),
         selectedIcon: const Icon(Icons.home, size: 24),
       ),
-      AppFloatingNavItem(
-        label: AppConfig.isCoach ? 'Clients' : 'Routines',
-        icon:
-            AppConfig.isCoach
-                ? const Icon(Icons.people_outline, size: 24)
-                : const _NavDumbbellsAssetIcon(),
-        selectedIcon:
-            AppConfig.isCoach
-                ? const Icon(Icons.people, size: 24)
-                : const _NavDumbbellsAssetIcon(),
-      ),
+      if (AppConfig.isCoach || _clientFullAccess)
+        AppFloatingNavItem(
+          label: AppConfig.isCoach ? 'Clients' : 'Routines',
+          icon:
+              AppConfig.isCoach
+                  ? const Icon(Icons.people_outline, size: 24)
+                  : const _NavDumbbellsAssetIcon(),
+          selectedIcon:
+              AppConfig.isCoach
+                  ? const Icon(Icons.people, size: 24)
+                  : const _NavDumbbellsAssetIcon(),
+        ),
       if (AppConfig.isCoach)
         AppFloatingNavItem(
           label: 'Routines',

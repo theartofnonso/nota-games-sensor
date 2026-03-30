@@ -228,7 +228,7 @@ Future<void> navigateToChat({
       showSnackbar(
         context: context,
         message:
-            'Messaging with your coach is available on the Pro plan with a coach.',
+            'Subscribe from the home screen to message your coach.',
       );
     }
     return;
@@ -310,7 +310,7 @@ Future<void> navigateToCoachFeedbackFeed({
       showSnackbar(
         context: context,
         message:
-            'Coach feedback is available when you are on Pro with a coach.',
+            'Subscribe from the home screen to see coach feedback.',
       );
     }
     return;
@@ -323,6 +323,15 @@ Future<void> navigateToCoachFeedbackFeed({
 Future<void> navigateToPrimaryRoutinePlan({
   required BuildContext context,
 }) async {
+  if (AppConfig.isClient && !AppPrivileges.isProWithCoach) {
+    if (context.mounted) {
+      showSnackbar(
+        context: context,
+        message: 'Subscribe from the home screen to access your routines.',
+      );
+    }
+    return;
+  }
   final access = context.read<ClientOverrideController>();
   if (AppConfig.isCoach && !access.hasSelectedClient) {
     if (context.mounted) {
@@ -343,7 +352,7 @@ Future<void> navigateToPrimaryRoutinePlan({
     if (!canCreate && context.mounted) {
       showSnackbar(
         context: context,
-        message: 'Your coach hasn’t assigned a routine plan yet.',
+        message: 'Your coach will create a routine plan for you.',
       );
     }
     return;

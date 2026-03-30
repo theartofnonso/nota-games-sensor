@@ -17,14 +17,14 @@ class RevenueCatSubscriptionHelpers {
     return _isEntitlementActive(info, SubscriptionCatalog.entitlementAppAccess);
   }
 
-  /// Coach-led tier: coach UI, feedback, etc.
+  /// Coach-led tier: coach UI, feedback, chat, coach selection, etc.
   static bool hasCoachAccess(CustomerInfo info) {
     return _isEntitlementActive(info, SubscriptionCatalog.entitlementCoachAccess);
   }
 
-  /// Solo / self-coaching: app access without coach tier.
-  static bool isSoloTier(CustomerInfo info) {
-    return hasAppAccess(info) && !hasCoachAccess(info);
+  /// Full client subscription: both entitlements (coach-led product only).
+  static bool hasCoachLedSubscription(CustomerInfo info) {
+    return hasAppAccess(info) && hasCoachAccess(info);
   }
 
   /// Cached or network [CustomerInfo]. Returns null if SDK unavailable or on error.

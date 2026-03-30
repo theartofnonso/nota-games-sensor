@@ -3,14 +3,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/services/account_profile_service.dart';
 import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/utils/general_utils.dart';
+import 'package:trainware/urls.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/utils/theme/theme.dart';
+import 'package:trainware/utils/uri_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
+import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
+import 'package:trainware/widgets/settings/logout_section.dart';
 
-/// Wraps the main app for client users. Both new and returning users go
-/// through this check. If the client has no profile (new user after OTP),
-/// creates the profile immediately with name derived from email.
+/// Wraps the main app for client users. Expects an existing row in [public.clients]
+/// (created on the website). If the signed-in user has no client row, shows a
+/// blocking bottom sheet that deep-links to the web and offers sign-out.
 class ProfileCompletionGate extends StatefulWidget {
   final Widget child;
 
@@ -24,9 +27,7 @@ class ProfileCompletionGate extends StatefulWidget {
 }
 
 class _ProfileCompletionGateState extends State<ProfileCompletionGate> {
-  bool? _needsProfileCompletion;
-  bool _createFailed = false;
-  bool _isCreating = false;
+  _ProfileGatePhase _phase = _ProfileGatePhase.checking;
 
   @override
   void initState() {
@@ -36,160 +37,149 @@ class _ProfileCompletionGateState extends State<ProfileCompletionGate> {
 
   Future<void> _checkProfileStatus() async {
     if (!AppConfig.isClient) {
-      if (mounted) setState(() => _needsProfileCompletion = false);
+      if (mounted) setState(() => _phase = _ProfileGatePhase.ready);
       return;
     }
 
-    final user = Supabase.instance.client.auth.currentUser;
-    final userId = user?.id;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
-      if (mounted) setState(() => _needsProfileCompletion = false);
+      if (mounted) setState(() => _phase = _ProfileGatePhase.ready);
       return;
     }
 
-    // Returning user: skip network check when we've passed this gate before
     if (SharedPrefs().profileSetupComplete) {
-      if (mounted) setState(() => _needsProfileCompletion = false);
+      if (mounted) setState(() => _phase = _ProfileGatePhase.ready);
       return;
     }
 
     final exists = await clientProfileExists(userId);
+    if (!mounted) return;
+
     if (exists) {
       SharedPrefs().profileSetupComplete = true;
-      if (mounted) {
-        setState(() => _needsProfileCompletion = false);
-      }
+      setState(() => _phase = _ProfileGatePhase.ready);
       return;
     }
 
-    // New user: create profile with name derived from email
-    if (mounted) {
-      setState(() {
-        _needsProfileCompletion = true;
-        _isCreating = true;
-        _createFailed = false;
-      });
-    }
-
-    // Prefer email from auth flow (user-typed); fallback to Supabase
-    final email = takeEmailFromAuth() ?? user?.email?.trim() ?? '';
-    final name = nameFromEmail(email);
-    final ok = await createAccountProfile(userId: userId, name: name);
-    if (ok) SharedPrefs().profileSetupComplete = true;
-
-    if (!mounted) return;
-    setState(() {
-      _isCreating = false;
-      _needsProfileCompletion = !ok;
-      _createFailed = !ok;
-    });
+    setState(() => _phase = _ProfileGatePhase.webSignupRequired);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_needsProfileCompletion == null) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: TRKRTheme.darkTheme,
-        darkTheme: TRKRTheme.darkTheme,
-        home: const TRKRLoadingScreen(),
-      );
+    switch (_phase) {
+      case _ProfileGatePhase.checking:
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          themeMode: ThemeMode.dark,
+          theme: TRKRTheme.darkTheme,
+          darkTheme: TRKRTheme.darkTheme,
+          home: const TRKRLoadingScreen(),
+        );
+      case _ProfileGatePhase.ready:
+        return widget.child;
+      case _ProfileGatePhase.webSignupRequired:
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          themeMode: ThemeMode.dark,
+          theme: TRKRTheme.darkTheme,
+          darkTheme: TRKRTheme.darkTheme,
+          home: const _WebClientSignupRequiredScreen(),
+        );
     }
-    if (!_needsProfileCompletion!) {
-      return widget.child;
-    }
-
-    if (_isCreating) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: TRKRTheme.darkTheme,
-        darkTheme: TRKRTheme.darkTheme,
-        home: const TRKRLoadingScreen(),
-      );
-    }
-
-    if (_createFailed) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.dark,
-        theme: TRKRTheme.darkTheme,
-        darkTheme: TRKRTheme.darkTheme,
-        home: _ProfileCreationRetryScreen(
-          onRetry: () {
-            setState(() => _createFailed = false);
-            _checkProfileStatus();
-          },
-        ),
-      );
-    }
-
-    return widget.child;
   }
 }
 
-/// Shown when profile creation fails; user can retry.
-class _ProfileCreationRetryScreen extends StatelessWidget {
-  final VoidCallback onRetry;
+enum _ProfileGatePhase { checking, ready, webSignupRequired }
 
-  const _ProfileCreationRetryScreen({required this.onRetry});
+class _WebClientSignupRequiredScreen extends StatefulWidget {
+  const _WebClientSignupRequiredScreen();
+
+  @override
+  State<_WebClientSignupRequiredScreen> createState() =>
+      _WebClientSignupRequiredScreenState();
+}
+
+class _WebClientSignupRequiredScreenState
+    extends State<_WebClientSignupRequiredScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showWebSignupSheet());
+  }
+
+  Future<void> _showWebSignupSheet() async {
+    if (!mounted) return;
+    final rootContext = context;
+    await showAppActionBottomSheet<void>(
+      context: rootContext,
+      useRootNavigator: true,
+      isDismissible: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Finish signing up on the web',
+              style: Theme.of(rootContext).textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Mobile sign-in is for members who already have an account. '
+              'Go to notathletes.com to subscribe, choose your coach, and create your profile. '
+              'Then return here and sign in with the same email.',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.85),
+                fontSize: 15,
+                height: 1.35,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => openUrl(url: trackrWebUrl, context: rootContext),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(rootContext)
+                        .extension<TRKRColors>()
+                        ?.vibrantAccent ??
+                    Colors.green,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: const Text('Open notathletes.com'),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () async {
+                final nav = Navigator.of(rootContext, rootNavigator: true);
+                if (nav.canPop()) {
+                  nav.pop();
+                }
+                await performLogout();
+              },
+              child: Text(
+                'Sign out',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.9),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      child: Scaffold(
-        body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            gradient: themeGradient(context: context),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'Could not create your account',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Please check your connection and try again.',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: onRetry,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context)
-                          .extension<TRKRColors>()
-                          ?.vibrantAccent ??
-                          Colors.green,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Try again'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+      child: const TRKRLoadingScreen(),
     );
   }
 }

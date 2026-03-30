@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/dtos/appsync/routine_log_dto.dart';
 import 'package:trainware/dtos/exercise_log_dto.dart';
@@ -391,7 +392,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                                     : 'No exercises yet.\nStart logging from your assigned workout.',
                                 lottieFuture: _emptyStateLottieFuture,
                               )
-                            : AppPrivileges.isProWithCoach
+                            : AppConfig.isClient
                                 ? ListView.builder(
                                     padding: const EdgeInsets.only(
                                       top: 8,

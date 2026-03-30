@@ -8,7 +8,6 @@ import 'package:trainware/dtos/nutrition/nutrition_template_dto.dart';
 import '../logger.dart';
 import '../app_flavor.dart';
 import '../repositories/supabase/supabase_nutrition_log_repository.dart';
-import '../utils/app_privileges.dart';
 import '../repositories/supabase/supabase_nutrition_template_repository.dart';
 import 'access_controller.dart';
 
@@ -134,7 +133,7 @@ class NutritionLogController extends ChangeNotifier {
   Future<void> upsertTemplate({required NutritionTemplateDto template}) async {
     try {
       final clientId = accessController.selectedClientId ??
-          (AppPrivileges.isSelfCoaching ? template.clientId : null);
+          (!AppConfig.isCoach ? accessController.userId : null);
       if (clientId == null || clientId.isEmpty) {
         errorMessage = 'Client context is required to save nutrition template.';
         notifyListeners();

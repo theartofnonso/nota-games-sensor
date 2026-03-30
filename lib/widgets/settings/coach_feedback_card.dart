@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/app_flavor.dart';
 import 'package:trainware/colors.dart';
+import 'package:trainware/utils/app_privileges.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
@@ -16,6 +18,9 @@ class CoachFeedbackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!AppConfig.isClient || !AppPrivileges.isProWithCoach) {
+      return const SizedBox.shrink();
+    }
     return Consumer<SupabaseExerciseAndRoutineController>(
       builder: (context, controller, _) {
         final withNotes = controller.logs

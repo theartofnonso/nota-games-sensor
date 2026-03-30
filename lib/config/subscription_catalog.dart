@@ -2,11 +2,11 @@
 ///
 /// ### Entitlements (access control — source of truth for gating)
 /// Identifiers must match **Entitlements → Identifier** exactly.
-/// - **app_access** — user may use the app (subscription gate).
-/// - **coach_access** — coach-led features (vs solo / self-coaching UX).
+/// - **app_access** — base subscription (used with coach_access for clients).
+/// - **coach_access** — coach-led features (chat, coach selection, feedback, etc.).
 ///
-/// Link each subscription **product** to the right entitlement(s) in RevenueCat
-/// (e.g. solo product → `app_access` only; coach product → `app_access` + `coach_access`).
+/// Client builds expect the **coach-led product** to unlock **both** entitlements.
+/// Link the subscription product to `app_access` and `coach_access` in RevenueCat.
 ///
 /// ### Purchasing
 /// The app uses a **custom paywall** that loads **RevenueCat offerings** (packages / store

@@ -8,7 +8,6 @@ import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/utils/coach_access_utils.dart';
-import 'package:trainware/services/account_profile_service.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key});
@@ -79,7 +78,6 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
           email: email.trim(),
           password: password,
         );
-        setEmailFromAuth(email);
         // Success! User will be automatically navigated by the auth state listener
       } catch (error) {
         debugPrint('[Demo Account] Login failed: $error');
@@ -166,10 +164,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
         type: OtpType.email,
       );
 
-      // Pass email to ProfileCompletionGate (used for name derivation)
-      setEmailFromAuth(email);
-
-      // Success! Profile creation for new clients happens in ProfileCompletionGate
+      // Success! Profile gate checks clients table (expect row from website)
       if (mounted) {
         setState(() {
           _isLoading = false;

@@ -94,10 +94,9 @@ This account has pre-populated workout programs, nutrition logs, and messaging a
 | Step | Demo account | Real account |
 |------|--------------|--------------|
 | **1. Auth screen** | Enter `client@ware.health` → tap Continue → **auto sign-in** (password used internally, no OTP) | Enter email → tap Continue → OTP sent → enter 6-digit code → tap Verify |
-| **2. ProfileCompletionGate** | Profile already exists (seeded in `clients` table) → pass through | New user: auto-create profile from email → pass through |
-| **3. CoachSelectionGate** | Coach already assigned (seeded in `coach_clients`) → pass through | No coach: show CoachSelectionScreen until they select/complete |
-| **4. SubscriptionGate** | Same as real: RevenueCat subscription / entitlements | If no active subscription in RevenueCat, show paywall |
-| **5. Post-gates** | Pre-populated workouts, nutrition, plans (from seed) | Empty or their own data |
+| **2. ProfileCompletionGate** | Profile already exists (seeded in `clients` table) → pass through | No `clients` row: blocking sheet → open notathletes.com or sign out |
+| **3. Subscription (client)** | Full nav if sandbox entitlements active | Limited nav + home subscribe card + paywall until subscribed |
+| **4. Post-gates** | Pre-populated workouts, nutrition, plans (from seed) | Empty or their own data |
 
 ### Coach app
 
@@ -105,12 +104,12 @@ This account has pre-populated workout programs, nutrition logs, and messaging a
 |------|--------------|--------------|
 | **1. Auth screen** | Enter `coach@ware.health` → tap Continue → **auto sign-in** (no OTP) | Enter email → OTP flow (same as client) |
 | **2. Pre-OTP check** | `requireCoachAccess` – coach@ware.health is in `coaches` table (seeded) → proceed | `requireCoachAccess` – email must be in `coaches` table or access denied |
-| **3. Post-auth gates** | ProfileCompletionGate (skips – coach), CoachSelectionGate (skips – coach), SubscriptionGate (skips – coach) | Same gate logic |
+| **3. Post-auth gates** | ProfileCompletionGate (skips – coach) | Same gate logic |
 | **4. Main app** | Pre-populated client (Demo Client) with workout data | Their actual clients |
 
 ### Summary of differences
 
-- **Only difference in flow:** Demo accounts skip OTP – they go straight to sign-in with password. Everything else (subscription check, coach selection, profile) is the same.
+- **Only difference in flow:** Demo accounts skip OTP – they go straight to sign-in with password. Everything else (subscription check, profile gate) is the same.
 - **Demo advantage:** Faster login for testing; pre-seeded data so reviewers see content without creating it.
 
 ---

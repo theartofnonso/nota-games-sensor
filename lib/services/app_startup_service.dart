@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../app_flavor.dart';
 import '../controllers/supabase_exercise_and_routine_controller.dart';
+import 'assigned_coach_service.dart';
 import 'chat_bootstrap_service.dart';
 import 'client_subscription_service.dart';
 import 'coach_clients_service.dart';
@@ -25,6 +26,7 @@ class AppStartupService {
     ];
     if (AppConfig.isClient) {
       tasks.add(ClientSubscriptionService.instance.refreshSubscriptionStatus());
+      tasks.add(AssignedCoachService.instance.refreshFromRemote());
     }
     if (AppConfig.isCoach) {
       tasks.add(
@@ -38,5 +40,6 @@ class AppStartupService {
   void reset() {
     ClientSubscriptionService.instance.clearCachedAccess();
     CoachClientsService.instance.reset();
+    AssignedCoachService.instance.clear();
   }
 }

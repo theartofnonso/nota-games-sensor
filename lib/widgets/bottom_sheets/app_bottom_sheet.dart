@@ -127,7 +127,8 @@ Future<T?> showAppBottomSheet<T>({
       isScrollControlled: isScrollControlled,
       isDismissible: isDismissible,
       useRootNavigator: useRootNavigator,
-      enableDrag: enableDrag ?? isDismissible,
+      // Modal drag is separate from sheet content drag ([isDraggable]).
+      enableDrag: enableDrag ?? isDraggable,
       showDragHandle: false,
       builder: (context) {
         Future<void> dismissOnBarrierTap() async {
@@ -216,6 +217,6 @@ Future<T?> showAppActionBottomSheet<T>({
     useRootNavigator: useRootNavigator,
     useBlurredTransparentBackground: useBlurredTransparentBackground,
     blurSigma: blurSigma,
-    enableDrag: enableDrag ?? isDismissible,
+    enableDrag: enableDrag,
   );
 }

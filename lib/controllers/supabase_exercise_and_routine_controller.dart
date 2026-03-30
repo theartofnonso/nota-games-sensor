@@ -271,7 +271,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> updatePlan({required RoutinePlanDto plan}) async {
     final isClientMode = accessController.hasSelectedClient;
     if (!isClientMode &&
-        !(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach) &&
+        !AppPrivileges.isProWithCoach &&
         plan.isSystemPlan) {
       errorMessage = "System plans cannot be edited.";
       logger.w("Attempted to update system plan: ${plan.id}");
@@ -329,8 +329,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   Future<void> deletePlan({required RoutinePlanDto plan}) async {
     final isClientMode = accessController.hasSelectedClient;
     if (!isClientMode &&
-        !(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach) &&
-        plan.isSystemPlan) {
+        !AppPrivileges.isProWithCoach && plan.isSystemPlan) {
       errorMessage = "System plans cannot be deleted.";
       logger.w("Attempted to delete system plan: ${plan.id}");
       notifyListeners();
@@ -409,10 +408,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       }
       return result;
     }
-    // Check if template belongs to a system plan (solo users can add)
+    // Check if template belongs to a system plan (coach-led clients can add)
     final plan = planWhere(id: templateDto.planId);
-    if (!(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach) &&
-        (plan?.isSystemPlan ?? false)) {
+    if (!AppPrivileges.isProWithCoach && (plan?.isSystemPlan ?? false)) {
       errorMessage = "Cannot add workouts to system plans.";
       logger.w(
           "Attempted to save template to system plan: ${templateDto.planId}");
@@ -453,7 +451,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }) async {
     final isClientMode = accessController.hasSelectedClient;
     if (!isClientMode &&
-        !(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach)) {
+        !AppPrivileges.isProWithCoach) {
       final plan = planWhere(id: template.planId);
       if (plan?.isSystemPlan ?? false) {
         errorMessage = "Templates from system plans cannot be edited.";
@@ -525,7 +523,7 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }) async {
     final isClientMode = accessController.hasSelectedClient;
     if (!isClientMode &&
-        !(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach)) {
+        !AppPrivileges.isProWithCoach) {
       final plan = planWhere(id: template.planId);
       if (plan?.isSystemPlan ?? false) {
         errorMessage = "Templates from system plans cannot be deleted.";

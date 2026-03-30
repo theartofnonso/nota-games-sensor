@@ -109,6 +109,7 @@ coach_profiles (*)
       ]),
       email: row['email'] as String?,
       yearsExperience: _firstInt(profile, const ['years_experience']),
+      yearsExperienceText: null,
       qualifications: _firstNonEmptyString(profile, const ['qualifications']),
       specialties: _firstNonEmptyString(profile, const ['specialties']),
       interestsHobbies: _firstNonEmptyString(profile, const [

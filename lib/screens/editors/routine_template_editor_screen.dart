@@ -84,8 +84,7 @@ class _RoutineTemplateEditorScreenState
         listen: false);
     final plan = controller.planWhere(id: widget.planId);
 
-    if (!(AppPrivileges.isSelfCoaching || AppPrivileges.isProWithCoach) &&
-        (plan?.isSystemPlan ?? false)) {
+    if (!AppPrivileges.isProWithCoach && (plan?.isSystemPlan ?? false)) {
       _showSnackbar('Cannot add workouts to system plans.');
       return;
     }
