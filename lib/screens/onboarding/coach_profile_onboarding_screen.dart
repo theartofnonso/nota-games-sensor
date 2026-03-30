@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:trainware/dtos/coach_dto.dart';
-import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 import 'package:trainware/widgets/onboarding/train_with_coach_sheet.dart';
 import 'package:trainware/widgets/subscription/paywall_coach_showcase_card.dart';
 import 'package:video_player/video_player.dart';
 
-/// Pre-auth coach detail: same hero + bio + chips as the paywall; video + CTA below.
-class CoachProfileOnboardingScreen extends StatefulWidget {
+/// Pre-auth coach detail: full-bleed hero + bio + chips; optional intro video via top-right play.
+class CoachProfileOnboardingScreen extends StatelessWidget {
   const CoachProfileOnboardingScreen({
     super.key,
     required this.coach,
@@ -21,242 +20,244 @@ class CoachProfileOnboardingScreen extends StatefulWidget {
   final VoidCallback? onSignupSuccess;
   final VoidCallback? onEmailAlreadyExists;
 
-  @override
-  State<CoachProfileOnboardingScreen> createState() =>
-      _CoachProfileOnboardingScreenState();
-}
-
-class _CoachProfileOnboardingScreenState
-    extends State<CoachProfileOnboardingScreen> {
-  VideoPlayerController? _videoController;
-  bool _videoInitFailed = false;
-  bool _videoReady = false;
-
-  @override
-  void dispose() {
-    _videoController?.dispose();
-    super.dispose();
+  /// Opens this screen with a fade (e.g. from coach discovery).
+  static Route<void> fadeRoute({
+    required CoachDto coach,
+    VoidCallback? onSignupSuccess,
+    VoidCallback? onEmailAlreadyExists,
+  }) {
+    return PageRouteBuilder<void>(
+      opaque: true,
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          CoachProfileOnboardingScreen(
+        coach: coach,
+        onSignupSuccess: onSignupSuccess,
+        onEmailAlreadyExists: onEmailAlreadyExists,
+      ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOut,
+            reverseCurve: Curves.easeIn,
+          ),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 280),
+      reverseTransitionDuration: const Duration(milliseconds: 220),
+    );
   }
 
-  Future<void> _ensureVideoStarted() async {
-    final url = widget.coach.profileVideoUrl?.trim();
-    if (url == null || url.isEmpty) return;
-
-    if (_videoController != null) {
-      if (_videoController!.value.isPlaying) {
-        await _videoController!.pause();
-      } else {
-        await _videoController!.play();
-      }
-      setState(() {});
-      return;
-    }
-
-    try {
-      final c = VideoPlayerController.networkUrl(Uri.parse(url));
-      await c.initialize();
-      if (!mounted) {
-        await c.dispose();
-        return;
-      }
-      _videoController = c;
-      c.setLooping(true);
-      await c.play();
-      setState(() => _videoReady = true);
-    } catch (_) {
-      if (mounted) setState(() => _videoInitFailed = true);
-    }
-  }
-
-  void _openTrainSheet() {
+  void _openTrainSheet(BuildContext context) {
     showTrainWithCoachSheet(
       context: context,
-      coach: widget.coach,
-      onRequireSignIn: () => widget.onEmailAlreadyExists?.call(),
-      onSuccess: () => widget.onSignupSuccess?.call(),
+      coach: coach,
+      onRequireSignIn: () => onEmailAlreadyExists?.call(),
+      onSuccess: () => onSignupSuccess?.call(),
+    );
+  }
+
+  void _openVideo(BuildContext context) {
+    final url = coach.profileVideoUrl?.trim();
+    if (url == null || url.isEmpty) return;
+    Navigator.of(context).push<void>(
+      _CoachIntroVideoPage.fadeRoute(videoUrl: url),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = widget.coach;
+    final c = coach;
     final media = MediaQuery.of(context);
-    final heroH = (media.size.height * 0.52).clamp(360.0, 580.0);
+    final h = media.size.height;
+    final hasVideo =
+        c.profileVideoUrl != null && c.profileVideoUrl!.trim().isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: themeGradient(context: context),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              height: heroH,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  PaywallCoachShowcaseCard(
-                    coach: c,
-                    height: heroH,
-                    useHero: false,
-                  ),
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        top: media.padding.top,
-                        left: 4,
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: FaIcon(
-                              FontAwesomeIcons.solidCircleXmark,
-                              size: 28,
-                              color: Colors.white.withValues(alpha: 0.95),
-                              shadows: const [
-                                Shadow(
-                                  blurRadius: 12,
-                                  color: Colors.black54,
-                                ),
-                              ],
-                            ),
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
-                          const Spacer(),
-                        ],
-                      ),
-                    ),
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          PaywallCoachShowcaseCard(
+            coach: c,
+            height: h,
+            useHero: false,
+            bottomAccessory: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                OpacityButtonWidgetTwo(
+                  label: 'Train with ${c.name}',
+                  onPressed: () => _openTrainSheet(context),
+                  buttonColor: Theme.of(context).colors.vibrantAccent,
+                  outlineColor: Theme.of(context).colors.borderLight,
+                  showArrowRight: false,
+                ),
+                SizedBox(height: media.padding.bottom + 8),
+              ],
+            ),
+          ),
+          Positioned(
+            top: media.padding.top,
+            left: 4,
+            child: IconButton(
+              icon: FaIcon(
+                FontAwesomeIcons.solidCircleXmark,
+                size: 28,
+                color: Colors.white.withValues(alpha: 0.95),
+                shadows: const [
+                  Shadow(
+                    blurRadius: 12,
+                    color: Colors.black54,
                   ),
                 ],
               ),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  24,
-                  20,
-                  32 + media.padding.bottom,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (c.profileVideoUrl != null &&
-                        c.profileVideoUrl!.trim().isNotEmpty) ...[
-                      _IntroVideoCard(
-                        videoReady: _videoReady,
-                        initFailed: _videoInitFailed,
-                        controller: _videoController,
-                        onTapPlay: _ensureVideoStarted,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                    OpacityButtonWidgetTwo(
-                      label: 'Train with ${c.name}',
-                      onPressed: _openTrainSheet,
-                      buttonColor: Theme.of(context).colors.vibrantAccent,
-                      showArrowRight: false,
+          ),
+          if (hasVideo)
+            Positioned(
+              top: media.padding.top,
+              right: 4,
+              child: IconButton(
+                icon: FaIcon(
+                  FontAwesomeIcons.solidCirclePlay,
+                  size: 28,
+                  color: Colors.white.withValues(alpha: 0.95),
+                  shadows: const [
+                    Shadow(
+                      blurRadius: 12,
+                      color: Colors.black54,
                     ),
                   ],
                 ),
+                onPressed: () => _openVideo(context),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 }
 
-class _IntroVideoCard extends StatelessWidget {
-  const _IntroVideoCard({
-    required this.videoReady,
-    required this.initFailed,
-    required this.controller,
-    required this.onTapPlay,
-  });
+class _CoachIntroVideoPage extends StatefulWidget {
+  const _CoachIntroVideoPage({required this.videoUrl});
 
-  final bool videoReady;
-  final bool initFailed;
-  final VideoPlayerController? controller;
-  final VoidCallback onTapPlay;
+  final String videoUrl;
+
+  static Route<void> fadeRoute({required String videoUrl}) {
+    return PageRouteBuilder<void>(
+      opaque: true,
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          _CoachIntroVideoPage(videoUrl: videoUrl),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOut,
+            reverseCurve: Curves.easeIn,
+          ),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 280),
+      reverseTransitionDuration: const Duration(milliseconds: 220),
+    );
+  }
+
+  @override
+  State<_CoachIntroVideoPage> createState() => _CoachIntroVideoPageState();
+}
+
+class _CoachIntroVideoPageState extends State<_CoachIntroVideoPage> {
+  VideoPlayerController? _controller;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final c = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      await c.initialize();
+      if (!mounted) {
+        await c.dispose();
+        return;
+      }
+      c.setLooping(true);
+      await c.play();
+      setState(() => _controller = c);
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final media = MediaQuery.of(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: initFailed ? null : onTapPlay,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          height: 200,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color:
-                (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (videoReady && controller != null)
-                  FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: controller!.value.size.width,
-                      height: controller!.value.size.height,
-                      child: VideoPlayer(controller!),
-                    ),
-                  )
-                else
-                  ColoredBox(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    child: Center(
-                      child: initFailed
-                          ? Text(
-                              'Video unavailable',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Colors.white.withValues(
-                                      alpha: 0.95,
-                                    ),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            )
-                          : Icon(
-                              Icons.play_circle_fill_rounded,
-                              size: 56,
-                              color: Colors.white.withValues(alpha: 0.9),
-                            ),
-                    ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (_failed)
+            const Center(
+              child: Text(
+                'Video unavailable',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          else if (_controller != null && _controller!.value.isInitialized)
+            Center(
+              child: AspectRatio(
+                aspectRatio: _controller!.value.aspectRatio,
+                child: VideoPlayer(_controller!),
+              ),
+            )
+          else
+            const Center(
+              child: SizedBox(
+                width: 36,
+                height: 36,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white54,
+                ),
+              ),
+            ),
+          Positioned(
+            top: media.padding.top,
+            left: 4,
+            child: IconButton(
+              icon: FaIcon(
+                FontAwesomeIcons.solidCircleXmark,
+                size: 28,
+                color: Colors.white.withValues(alpha: 0.95),
+                shadows: const [
+                  Shadow(
+                    blurRadius: 12,
+                    color: Colors.black54,
                   ),
-                if (videoReady &&
-                    controller != null &&
-                    !controller!.value.isPlaying)
-                  Center(
-                    child: Icon(
-                      Icons.play_circle_fill_rounded,
-                      size: 56,
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
-                  ),
-              ],
+                ],
+              ),
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

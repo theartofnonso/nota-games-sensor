@@ -8,9 +8,13 @@ import 'package:trainware/utils/dummy_mode_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/utils/coach_access_utils.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
-  const SupabaseAuthScreen({super.key});
+  const SupabaseAuthScreen({super.key, this.onDiscoverCoaches});
+
+  /// Client app: returns to pre-auth coach discovery (e.g. after opening Sign in from welcome).
+  final VoidCallback? onDiscoverCoaches;
 
   @override
   State<SupabaseAuthScreen> createState() => _SupabaseAuthScreenState();
@@ -204,6 +208,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.extension<TRKRColors>()!;
     final isDarkMode = theme.brightness == Brightness.dark;
 
     return PopScope(
@@ -271,27 +276,41 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          TextButton(
-                            onPressed: _resetForm,
-                            child: Text(
-                              'Use different email',
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontSize: 14,
-                              ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: OpacityButtonWidgetTwo(
+                              label: 'Use different email',
+                              onPressed: _resetForm,
+                              showArrowRight: false,
+                              outlineColor: colors.borderLight,
                             ),
                           ),
-                          TextButton(
-                            onPressed: _isLoading ? null : _sendOTP,
-                            child: Text(
-                              'Resend code',
-                              style: TextStyle(
-                                color: theme.colorScheme.primary.withValues(
-                                  alpha: 0.7,
-                                ),
-                                fontSize: 14,
-                              ),
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: OpacityButtonWidgetTwo(
+                              label: 'Resend code',
+                              onPressed: _isLoading ? null : _sendOTP,
+                              showArrowRight: false,
+                              outlineColor: colors.borderLight,
+                            ),
+                          ),
+                        ],
+                        if (AppConfig.isClient &&
+                            widget.onDiscoverCoaches != null) ...[
+                          const SizedBox(height: 28),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: OpacityButtonWidgetTwo(
+                              label: 'Discover coaches',
+                              onPressed: widget.onDiscoverCoaches,
+                              buttonColor: colors.vibrantAccent,
+                              showArrowRight: false,
+                              outlineColor: colors.borderLight,
                             ),
                           ),
                         ],
@@ -370,6 +389,10 @@ class _ModernEmailInput extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: colors.vibrantAccent,
                   borderRadius: BorderRadius.circular(50),
+                  border: Border.all(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    width: 1,
+                  ),
                 ),
                 child:
                     isLoading
@@ -466,6 +489,10 @@ class _ModernOTPInput extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: colors.vibrantAccent,
                   borderRadius: BorderRadius.circular(50),
+                  border: Border.all(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    width: 1,
+                  ),
                 ),
                 child:
                     isLoading

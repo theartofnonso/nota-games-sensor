@@ -14,6 +14,10 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
   /// When set, the trailing arrow uses this color instead of the themed default.
   final Color? trailingIconColor;
 
+  /// When set, draws a rounded border (e.g. [TRKRColors.borderLight]) like auth / onboarding pills.
+  final Color? outlineColor;
+  final double outlineWidth;
+
   const OpacityButtonWidgetTwo({
     super.key,
     this.onPressed,
@@ -26,6 +30,8 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
     this.solidBackground = false,
     this.padding,
     this.trailingIconColor,
+    this.outlineColor,
+    this.outlineWidth = 1,
   });
 
   Color _themeForegroundColor({required bool isDarkMode}) {
@@ -61,7 +67,10 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
           shape: WidgetStateProperty.all(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(100),
-              side: BorderSide.none,
+              side:
+                  outlineColor != null
+                      ? BorderSide(color: outlineColor!, width: outlineWidth)
+                      : BorderSide.none,
             ),
           ),
           overlayColor: WidgetStateProperty.resolveWith<Color?>(

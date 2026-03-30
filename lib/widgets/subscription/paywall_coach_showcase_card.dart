@@ -14,6 +14,7 @@ class PaywallCoachShowcaseCard extends StatelessWidget {
     required this.coach,
     this.height = 520,
     this.useHero = true,
+    this.bottomAccessory,
   });
 
   final CoachDto? coach;
@@ -21,6 +22,9 @@ class PaywallCoachShowcaseCard extends StatelessWidget {
 
   /// When false, skips [Hero] (e.g. coach discovery → profile) to avoid tag collisions.
   final bool useHero;
+
+  /// Optional content below chips (e.g. intro video + CTA on full-screen onboarding).
+  final Widget? bottomAccessory;
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +112,13 @@ class PaywallCoachShowcaseCard extends StatelessWidget {
                   if (coach?.description?.trim().isNotEmpty == true)
                     const SizedBox(height: 12),
                   CoachProfileChips(coach: coach!),
+                ],
+                if (bottomAccessory != null) ...[
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                    child: bottomAccessory!,
+                  ),
                 ],
                 const SizedBox(height: 22),
               ],

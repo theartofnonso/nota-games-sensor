@@ -968,34 +968,41 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       );
     }
 
+    // Client: coach discovery anytime user is signed out (not only first launch),
+    // so Sign in → auth can return here via [SupabaseAuthScreen.onDiscoverCoaches].
+    if (!_accessController.isAuthenticated &&
+        AppConfig.isClient &&
+        _coachDiscoveryOpen) {
+      _prefetchedCoachesFuture ??=
+          SupabaseCoachesRepository().fetchCoaches();
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.dark,
+        theme: TRKRTheme.darkTheme,
+        darkTheme: TRKRTheme.darkTheme,
+        home: CoachDiscoveryScreen(
+          coachesFuture: _prefetchedCoachesFuture,
+          onBack: () => setState(() => _coachDiscoveryOpen = false),
+          onAcquisitionComplete: () {
+            SharedPrefs().firstLaunch = false;
+            setState(() {
+              _coachDiscoveryOpen = false;
+              _welcomeDismissed = true;
+            });
+          },
+          onNeedSignIn: () {
+            SharedPrefs().firstLaunch = false;
+            setState(() {
+              _coachDiscoveryOpen = false;
+              _welcomeDismissed = true;
+            });
+          },
+        ),
+      );
+    }
+
     // Welcome first: client can discover coaches pre-auth; coach uses single CTA.
     if (SharedPrefs().firstLaunch && !_welcomeDismissed) {
-      if (AppConfig.isClient && _coachDiscoveryOpen) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          themeMode: ThemeMode.dark,
-          theme: TRKRTheme.darkTheme,
-          darkTheme: TRKRTheme.darkTheme,
-          home: CoachDiscoveryScreen(
-            coachesFuture: _prefetchedCoachesFuture,
-            onBack: () => setState(() => _coachDiscoveryOpen = false),
-            onAcquisitionComplete: () {
-              SharedPrefs().firstLaunch = false;
-              setState(() {
-                _coachDiscoveryOpen = false;
-                _welcomeDismissed = true;
-              });
-            },
-            onNeedSignIn: () {
-              SharedPrefs().firstLaunch = false;
-              setState(() {
-                _coachDiscoveryOpen = false;
-                _welcomeDismissed = true;
-              });
-            },
-          ),
-        );
-      }
       return WelcomeScreen(
         onPressed: AppConfig.isCoach
             ? () {
@@ -1025,7 +1032,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         themeMode: ThemeMode.dark,
         theme: TRKRTheme.darkTheme,
         darkTheme: TRKRTheme.darkTheme,
-        home: const SupabaseAuthScreen(),
+        home: SupabaseAuthScreen(
+          onDiscoverCoaches: AppConfig.isClient
+              ? () => setState(() => _coachDiscoveryOpen = true)
+              : null,
+        ),
       );
     }
 

@@ -109,6 +109,8 @@ class _CoachDiscoveryScreenState extends State<CoachDiscoveryScreen> {
                                 },
                                 buttonColor:
                                     Theme.of(context).colors.vibrantAccent,
+                                outlineColor:
+                                    Theme.of(context).colors.borderLight,
                                 showArrowRight: false,
                               ),
                             ],
@@ -141,12 +143,10 @@ class _CoachDiscoveryScreenState extends State<CoachDiscoveryScreen> {
                           coach: coach,
                           onTap: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => CoachProfileOnboardingScreen(
-                                  coach: coach,
-                                  onSignupSuccess: widget.onAcquisitionComplete,
-                                  onEmailAlreadyExists: widget.onNeedSignIn,
-                                ),
+                              CoachProfileOnboardingScreen.fadeRoute(
+                                coach: coach,
+                                onSignupSuccess: widget.onAcquisitionComplete,
+                                onEmailAlreadyExists: widget.onNeedSignIn,
                               ),
                             );
                           },

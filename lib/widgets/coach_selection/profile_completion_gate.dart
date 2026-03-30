@@ -2,25 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/services/account_profile_service.dart';
+import 'package:trainware/services/notathletes_user_deletion_service.dart';
 import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/urls.dart';
+import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/utils/theme/theme.dart';
-import 'package:trainware/utils/uri_utils.dart';
 import 'package:trainware/widgets/backgrounds/trkr_loading_screen.dart';
 import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
-import 'package:trainware/widgets/settings/logout_section.dart';
+import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 
-/// Wraps the main app for client users. Expects an existing row in [public.clients]
-/// (created on the website). If the signed-in user has no client row, shows a
-/// blocking bottom sheet that deep-links to the web and offers sign-out.
+/// Wraps the main app for client users. Expects a row in [public.clients]. If the
+/// signed-in user has no client row (e.g. signed in with OTP before training with
+/// a coach), shows a blocking sheet: remove the orphan auth user via the same
+/// backend as account deletion, sign out, then return them to the pre-auth welcome
+/// flow (Discover coaches).
 class ProfileCompletionGate extends StatefulWidget {
   final Widget child;
 
-  const ProfileCompletionGate({
-    super.key,
-    required this.child,
-  });
+  const ProfileCompletionGate({super.key, required this.child});
 
   @override
   State<ProfileCompletionGate> createState() => _ProfileCompletionGateState();
@@ -61,7 +60,7 @@ class _ProfileCompletionGateState extends State<ProfileCompletionGate> {
       return;
     }
 
-    setState(() => _phase = _ProfileGatePhase.webSignupRequired);
+    setState(() => _phase = _ProfileGatePhase.noClientProfile);
   }
 
   @override
@@ -77,109 +76,146 @@ class _ProfileCompletionGateState extends State<ProfileCompletionGate> {
         );
       case _ProfileGatePhase.ready:
         return widget.child;
-      case _ProfileGatePhase.webSignupRequired:
+      case _ProfileGatePhase.noClientProfile:
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           themeMode: ThemeMode.dark,
           theme: TRKRTheme.darkTheme,
           darkTheme: TRKRTheme.darkTheme,
-          home: const _WebClientSignupRequiredScreen(),
+          home: const _NoClientProfileScreen(),
         );
     }
   }
 }
 
-enum _ProfileGatePhase { checking, ready, webSignupRequired }
+enum _ProfileGatePhase { checking, ready, noClientProfile }
 
-class _WebClientSignupRequiredScreen extends StatefulWidget {
-  const _WebClientSignupRequiredScreen();
+class _NoClientProfileScreen extends StatefulWidget {
+  const _NoClientProfileScreen();
 
   @override
-  State<_WebClientSignupRequiredScreen> createState() =>
-      _WebClientSignupRequiredScreenState();
+  State<_NoClientProfileScreen> createState() => _NoClientProfileScreenState();
 }
 
-class _WebClientSignupRequiredScreenState
-    extends State<_WebClientSignupRequiredScreen> {
+class _NoClientProfileScreenState extends State<_NoClientProfileScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showWebSignupSheet());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showSheet());
   }
 
-  Future<void> _showWebSignupSheet() async {
+  Future<void> _showSheet() async {
     if (!mounted) return;
     final rootContext = context;
     await showAppActionBottomSheet<void>(
       context: rootContext,
       useRootNavigator: true,
       isDismissible: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Finish signing up on the web',
-              style: Theme.of(rootContext).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Mobile sign-in is for members who already have an account. '
-              'Go to notathletes.com to subscribe, choose your coach, and create your profile. '
-              'Then return here and sign in with the same email.',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 15,
-                height: 1.35,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => openUrl(url: trackrWebUrl, context: rootContext),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(rootContext)
-                        .extension<TRKRColors>()
-                        ?.vibrantAccent ??
-                    Colors.green,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text('Open notathletes.com'),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () async {
-                final nav = Navigator.of(rootContext, rootNavigator: true);
-                if (nav.canPop()) {
-                  nav.pop();
-                }
-                await performLogout();
-              },
-              child: Text(
-                'Sign out',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: _NoClientProfileSheet(rootContext: rootContext),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      child: const TRKRLoadingScreen(),
+    return PopScope(canPop: false, child: const TRKRLoadingScreen());
+  }
+}
+
+class _NoClientProfileSheet extends StatefulWidget {
+  const _NoClientProfileSheet({required this.rootContext});
+
+  final BuildContext rootContext;
+
+  @override
+  State<_NoClientProfileSheet> createState() => _NoClientProfileSheetState();
+}
+
+class _NoClientProfileSheetState extends State<_NoClientProfileSheet> {
+  bool _submitting = false;
+
+  static const _defaultError =
+      'Something went wrong. Please try again or contact support at notathletes.com.';
+
+  static const _description =
+      'We don’t have a client profile for this account yet. '
+      'Members get started by choosing a coach in the app.\n\n'
+      'We’ll remove this sign-in so you can start fresh. Tap below to find a coach.';
+
+  Future<void> _onFindCoach() async {
+    setState(() => _submitting = true);
+    final outcome = await deleteAccountAndSignOut(
+      afterBackendDelete: () async {
+        if (!widget.rootContext.mounted) return;
+        final nav = Navigator.of(widget.rootContext, rootNavigator: true);
+        if (nav.canPop()) {
+          nav.pop();
+        }
+      },
+    );
+    if (!mounted) return;
+
+    setState(() => _submitting = false);
+
+    if (!outcome.ok) {
+      if (!context.mounted) return;
+      await showErrorBottomSheet(
+        context: context,
+        title: 'Could not reset',
+        message: outcome.errorMessage ?? _defaultError,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colors;
+
+    // Same layout as [showBottomSheetWithSingleAction] (dialog_utils.dart).
+    return Padding(
+      padding: const EdgeInsets.all(26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'You’re new here',
+            style: theme.textTheme.titleLarge,
+            textAlign: TextAlign.start,
+          ),
+          Text(
+            _description,
+            style: theme.textTheme.titleSmall,
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child:
+                _submitting
+                    ? SizedBox(
+                      height: 48,
+                      child: Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colors.vibrantAccent,
+                          ),
+                        ),
+                      ),
+                    )
+                    : OpacityButtonWidgetTwo(
+                      label: 'Find a coach',
+                      onPressed: _onFindCoach,
+                      buttonColor: colors.vibrantAccent,
+                      outlineColor: colors.borderLight,
+                      showArrowRight: false,
+                    ),
+          ),
+        ],
+      ),
     );
   }
 }

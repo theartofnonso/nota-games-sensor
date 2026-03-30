@@ -127,6 +127,7 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
               width: double.infinity,
               child: OpacityButtonWidgetTwo(
                 buttonColor: Theme.of(ctx).colors.vibrantAccent,
+                outlineColor: Theme.of(ctx).colors.borderLight,
                 label: primaryButtonLabel,
                 onPressed: () {
                   final name = nameController.text.trim();
@@ -245,6 +246,7 @@ Future<String?> showSingleTextAreaBottomSheet({
                 width: double.infinity,
                 child: OpacityButtonWidgetTwo(
                   buttonColor: Theme.of(ctx).colors.vibrantAccent,
+                  outlineColor: Theme.of(ctx).colors.borderLight,
                   label: primaryButtonLabel,
                   onPressed: () {
                     result = controller.text.trim();

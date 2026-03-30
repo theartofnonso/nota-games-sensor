@@ -1,17 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../app_flavor.dart';
-import '../../services/chat_bootstrap_service.dart';
-import '../../services/revenue_cat_bootstrap.dart';
-import '../../shared_prefs.dart';
-import '../../utils/notathletes_auth_headers.dart';
+import '../../services/notathletes_user_deletion_service.dart';
 import '../../utils/dialog_utils.dart';
-import '../../urls.dart';
 import '../bottom_sheets/app_bottom_sheet.dart';
 import '../buttons/opacity_button_widget_two.dart';
 
@@ -121,81 +111,21 @@ Future<void> requestAccountDeletion(
   final confirmed = await _showDeleteAccountConfirmSheet(context);
   if (confirmed != true) return;
 
-  final userId = Supabase.instance.client.auth.currentUser?.id;
-  if (userId == null) return;
-
   const defaultErrorMessage =
       'Something went wrong. Please try again or contact support at notathletes.com.';
 
   setLoading(true);
-
-  // 1. Agora
-  try {
-    final agoraUri = Uri.parse(agoraBaseUrl).resolve(agoraUserDeletePath);
-    final agoraResponse = await http.post(
-      agoraUri,
-      headers: notathletesAuthHeaders(),
-      body: jsonEncode({'userId': userId}),
-    );
-    if (agoraResponse.statusCode != 200 && agoraResponse.statusCode != 204) {
-      if (!context.mounted) return;
-      setLoading(false);
-      showErrorBottomSheet(
-        context: context,
-        title: 'Could not delete account',
-        message: _errorMessageFromBody(agoraResponse.body) ?? defaultErrorMessage,
-      );
-      return;
-    }
-  } catch (_) {
-    if (!context.mounted) return;
-    setLoading(false);
-    showErrorBottomSheet(
-      context: context,
-      title: 'Could not delete account',
-      message: defaultErrorMessage,
-    );
-    return;
-  }
-
-  // 2. Supabase
-  try {
-    final uri = Uri.parse(apiNotathletesBaseUrl).resolve(accountDeletionPath);
-    final response = await http.post(
-      uri,
-      headers: notathletesAuthHeaders(),
-      body: jsonEncode({'userId': userId}),
-    );
-    if (!context.mounted) return;
-    setLoading(false);
-    if (response.statusCode != 200 && response.statusCode != 204) {
-      showErrorBottomSheet(
-        context: context,
-        title: 'Could not delete account',
-        message: _errorMessageFromBody(response.body) ?? defaultErrorMessage,
-      );
-      return;
-    }
-  } catch (_) {
-    if (!context.mounted) return;
-    setLoading(false);
-    showErrorBottomSheet(
-      context: context,
-      title: 'Could not delete account',
-      message: defaultErrorMessage,
-    );
-    return;
-  }
-
-  // 3. Sign out (clear unread + Agora session, then Supabase)
+  final outcome = await deleteAccountAndSignOut();
   if (!context.mounted) return;
   setLoading(false);
-  if (AppConfig.isClient) {
-    SharedPrefs().markClientPreAuthLandingPending();
+  if (!outcome.ok) {
+    showErrorBottomSheet(
+      context: context,
+      title: 'Could not delete account',
+      message: outcome.errorMessage ?? defaultErrorMessage,
+    );
+    return;
   }
-  await ChatBootstrapService.logoutAgoraChat();
-  await RevenueCatBootstrap.logOutIfClient();
-  await Supabase.instance.client.auth.signOut();
 }
 
 Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
@@ -263,13 +193,3 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
   );
 }
 
-String? _errorMessageFromBody(String body) {
-  if (body.isEmpty) return null;
-  try {
-    final decoded = jsonDecode(body) as Map<String, dynamic>?;
-    final err = decoded?['error'] ?? decoded?['message'];
-    return err?.toString();
-  } catch (_) {
-    return null;
-  }
-}
