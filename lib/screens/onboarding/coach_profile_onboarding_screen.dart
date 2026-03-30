@@ -91,7 +91,6 @@ class CoachProfileOnboardingScreen extends StatelessWidget {
                   label: 'Train with ${c.name}',
                   onPressed: () => _openTrainSheet(context),
                   buttonColor: Theme.of(context).colors.vibrantAccent,
-                  outlineColor: Theme.of(context).colors.borderLight,
                   showArrowRight: false,
                 ),
                 SizedBox(height: media.padding.bottom + 8),

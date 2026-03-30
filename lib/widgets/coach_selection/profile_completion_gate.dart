@@ -210,7 +210,6 @@ class _NoClientProfileSheetState extends State<_NoClientProfileSheet> {
                       label: 'Find a coach',
                       onPressed: _onFindCoach,
                       buttonColor: colors.vibrantAccent,
-                      outlineColor: colors.borderLight,
                       showArrowRight: false,
                     ),
           ),

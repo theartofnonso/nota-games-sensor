@@ -6,7 +6,6 @@ import 'package:trainware/widgets/timers/datetime_range_picker.dart';
 
 import '../colors.dart';
 import '../dtos/appsync/exercise_dto.dart';
-import 'theme/color_extensions.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
 import '../widgets/timers/time_picker.dart';
 
@@ -160,7 +159,6 @@ Future<void> showBottomSheetWithSingleAction(
                   buttonColor: isDestructive
                       ? Colors.red
                       : (actionColor ?? vibrantGreen),
-                  outlineColor: Theme.of(context).colors.borderLight,
                   showArrowRight: false),
             ),
           ],

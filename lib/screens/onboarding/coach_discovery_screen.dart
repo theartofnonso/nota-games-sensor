@@ -109,8 +109,6 @@ class _CoachDiscoveryScreenState extends State<CoachDiscoveryScreen> {
                                 },
                                 buttonColor:
                                     Theme.of(context).colors.vibrantAccent,
-                                outlineColor:
-                                    Theme.of(context).colors.borderLight,
                                 showArrowRight: false,
                               ),
                             ],

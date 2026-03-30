@@ -130,7 +130,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                           : "Start Training",
                                   onPressed: widget.onPressed,
                                   buttonColor: colors.vibrantAccent,
-                                  outlineColor: colors.borderLight,
                                 ),
                               ),
                             ] else ...[
@@ -141,7 +140,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   label: 'Discover Coaches',
                                   onPressed: widget.onDiscoverCoaches,
                                   buttonColor: colors.vibrantAccent,
-                                  outlineColor: colors.borderLight,
                                 ),
                               ),
                               const SizedBox(height: 14),
@@ -153,7 +151,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   onPressed: widget.onSignIn,
                                   buttonColor: colors.vibrantAccent,
                                   solidBackground: true,
-                                  outlineColor: colors.borderLight,
                                 ),
                               ),
                             ],
