@@ -49,8 +49,7 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
     builder: (ctx) {
       final isDark = Theme.of(ctx).brightness == Brightness.dark;
 
-      final secondIsPrimaryStyle =
-          notesFieldRequired && isEmailSecondField;
+      final secondIsPrimaryStyle = notesFieldRequired && isEmailSecondField;
 
       return Padding(
         padding: const EdgeInsets.only(
@@ -67,18 +66,18 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
           children: [
             Text(
               title,
-              style: Theme.of(ctx)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                ctx,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             Text(
               description,
               style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color:
-                        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
-                  ),
+                color: (isDark ? Colors.white : Colors.black).withValues(
+                  alpha: 0.6,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -110,15 +109,17 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
               ),
               keyboardType: notesFieldKeyboardType,
               autocorrect: isEmailSecondField ? false : true,
-              textCapitalization: isEmailSecondField
-                  ? TextCapitalization.none
-                  : TextCapitalization.sentences,
+              textCapitalization:
+                  isEmailSecondField
+                      ? TextCapitalization.none
+                      : TextCapitalization.sentences,
               maxLines: secondFieldMaxLines(),
               style: TextStyle(
                 fontWeight: FontWeight.w400,
-                color: secondIsPrimaryStyle
-                    ? (isDark ? Colors.white : Colors.black)
-                    : (isDark ? Colors.white70 : Colors.black87),
+                color:
+                    secondIsPrimaryStyle
+                        ? (isDark ? Colors.white : Colors.black)
+                        : (isDark ? Colors.white70 : Colors.black87),
                 fontSize: 14,
               ),
             ),
@@ -210,18 +211,18 @@ Future<String?> showSingleTextAreaBottomSheet({
             children: [
               Text(
                 title,
-                style: Theme.of(ctx)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(
+                  ctx,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Text(
                 description,
                 style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                      color: (isDark ? Colors.white : Colors.black)
-                          .withValues(alpha: 0.6),
-                    ),
+                  color: (isDark ? Colors.white : Colors.black).withValues(
+                    alpha: 0.6,
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -235,9 +236,7 @@ Future<String?> showSingleTextAreaBottomSheet({
                   focusedBorder: InputBorder.none,
                   alignLabelWithHint: true,
                 ),
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black,
-                ),
+                style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: 24),
@@ -261,6 +260,3 @@ Future<String?> showSingleTextAreaBottomSheet({
 
   return result;
 }
-
-
-

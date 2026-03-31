@@ -8,7 +8,10 @@ import 'package:trainware/utils/general_utils.dart';
 /// Handles both simple and draggable scrollable sheets with consistent styling
 class AppBottomSheet extends StatelessWidget {
   final Widget Function(
-      BuildContext context, ScrollController? scrollController)? builder;
+    BuildContext context,
+    ScrollController? scrollController,
+  )?
+  builder;
   final Widget? child;
   final bool isDraggable;
   final bool isDismissible;
@@ -29,19 +32,24 @@ class AppBottomSheet extends StatelessWidget {
     this.maxChildSize = 0.9,
     this.useBlurredTransparentBackground = true,
     this.blurSigma = 16,
-  }) : assert(builder != null || child != null,
-            'Either builder or child must be provided');
+  }) : assert(
+         builder != null || child != null,
+         'Either builder or child must be provided',
+       );
 
   @override
   Widget build(BuildContext context) {
     final decoration = BoxDecoration(
-        color: useBlurredTransparentBackground
-            ? Colors.white.withValues(alpha: 0.05)
-            : const Color(0xFF1A1F2E),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        gradient: useBlurredTransparentBackground
-            ? null
-            : themeGradient(context: context));
+      color:
+          useBlurredTransparentBackground
+              ? Colors.white.withValues(alpha: 0.05)
+              : const Color(0xFF1A1F2E),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      gradient:
+          useBlurredTransparentBackground
+              ? null
+              : themeGradient(context: context),
+    );
 
     Widget wrapWithBlur({required Widget child}) {
       if (!useBlurredTransparentBackground) return child;
@@ -75,9 +83,10 @@ class AppBottomSheet extends StatelessWidget {
                 child: SafeArea(
                   top: true,
                   bottom: false,
-                  child: builder != null
-                      ? builder!(context, scrollController)
-                      : child!,
+                  child:
+                      builder != null
+                          ? builder!(context, scrollController)
+                          : child!,
                 ),
               ),
             ),
@@ -103,7 +112,7 @@ class AppBottomSheet extends StatelessWidget {
 Future<T?> showAppBottomSheet<T>({
   required BuildContext context,
   Widget Function(BuildContext context, ScrollController? scrollController)?
-      builder,
+  builder,
   Widget? child,
   bool isDraggable = true,
   bool isDismissible = true,
@@ -117,8 +126,10 @@ Future<T?> showAppBottomSheet<T>({
   Future<bool> Function()? onBarrierTap,
   bool? enableDrag,
 }) {
-  assert(builder != null || child != null,
-      'Either builder or child must be provided');
+  assert(
+    builder != null || child != null,
+    'Either builder or child must be provided',
+  );
 
   return AppBottomSheetVisibility.instance.track(
     showModalBottomSheet<T>(
@@ -160,14 +171,15 @@ Future<T?> showAppBottomSheet<T>({
           final kb = MediaQuery.viewInsetsOf(context).bottom;
           sheet = Padding(
             padding: EdgeInsets.only(bottom: kb),
-            child: isDraggable
-                ? sheet
-                : Align(
-                    alignment: Alignment.bottomCenter,
-                    widthFactor: 1.0,
-                    heightFactor: 1.0,
-                    child: sheet,
-                  ),
+            child:
+                isDraggable
+                    ? sheet
+                    : Align(
+                      alignment: Alignment.bottomCenter,
+                      widthFactor: 1.0,
+                      heightFactor: 1.0,
+                      child: sheet,
+                    ),
           );
         }
 
@@ -201,7 +213,7 @@ Future<T?> showAppBottomSheet<T>({
 Future<T?> showAppActionBottomSheet<T>({
   required BuildContext context,
   Widget Function(BuildContext context, ScrollController? scrollController)?
-      builder,
+  builder,
   Widget? child,
   bool isScrollControlled = true,
   bool isDismissible = true,

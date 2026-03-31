@@ -9,11 +9,12 @@ import 'package:trainware/utils/notathletes_auth_headers.dart';
 /// Returns true if the client has a row in the clients table (returning user).
 Future<bool> clientProfileExists(String userId) async {
   try {
-    final row = await Supabase.instance.client
-        .from('clients')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
+    final row =
+        await Supabase.instance.client
+            .from('clients')
+            .select('id')
+            .eq('id', userId)
+            .maybeSingle();
     return row != null;
   } catch (_) {
     return false;
@@ -29,14 +30,13 @@ Future<bool> createAccountProfile({
 }) async {
   try {
     final uri = Uri.parse(apiNotathletesBaseUrl).resolve(accountProfilePath);
-    final response = await http.post(
-      uri,
-      headers: notathletesAuthHeaders(),
-      body: jsonEncode({
-        'user_id': userId,
-        'name': name.trim(),
-      }),
-    ).timeout(const Duration(seconds: 15));
+    final response = await http
+        .post(
+          uri,
+          headers: notathletesAuthHeaders(),
+          body: jsonEncode({'user_id': userId, 'name': name.trim()}),
+        )
+        .timeout(const Duration(seconds: 15));
     return (response.statusCode >= 200 && response.statusCode < 300) ||
         response.statusCode == 409; // profile already exists (race, retry)
   } catch (_) {
@@ -61,11 +61,9 @@ Future<bool> updateAccountProfile({
       // No updatable fields
       return false;
     }
-    final response = await http.patch(
-      uri,
-      headers: notathletesAuthHeaders(),
-      body: jsonEncode(body),
-    ).timeout(const Duration(seconds: 15));
+    final response = await http
+        .patch(uri, headers: notathletesAuthHeaders(), body: jsonEncode(body))
+        .timeout(const Duration(seconds: 15));
     return response.statusCode >= 200 && response.statusCode < 300;
   } catch (_) {
     return false;

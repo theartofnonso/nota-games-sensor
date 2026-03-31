@@ -989,6 +989,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               _coachDiscoveryOpen = false;
               _welcomeDismissed = true;
             });
+            // Auth listener may have refreshed before coach_clients was committed; fetch again.
+            unawaited(AssignedCoachService.instance.refreshFromRemote());
           },
           onNeedSignIn: () {
             SharedPrefs().firstLaunch = false;

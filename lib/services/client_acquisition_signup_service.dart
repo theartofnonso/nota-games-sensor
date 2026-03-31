@@ -32,7 +32,8 @@ enum ClientAcquisitionSignupResult {
 /// { "success": true, "refreshToken": "<supabase_refresh_jwt>" }
 /// ```
 /// The app reads **`refreshToken`** first, then `refresh_token`, and nested `session` / `data` (see [_parseRefreshToken]).
-/// If `success` is true but no refresh token is present → [ClientAcquisitionSignupResult.successSignInRequired].
+/// If `success` is true but no refresh token is present → [ClientAcquisitionSignupResult.successSignInRequired]
+/// (unexpected if the API always returns `refreshToken`).
 ///
 /// **Failure (200 with success false or 4xx/5xx)**
 /// ```json
