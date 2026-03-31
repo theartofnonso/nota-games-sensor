@@ -15,30 +15,29 @@ import '../widgets/subscription/custom_subscription_paywall.dart';
 import 'revenue_cat_bootstrap.dart';
 import 'revenuecat_subscription_helpers.dart';
 
-final _subscriptionLogger = getLogger(className: 'ClientSubscriptionService');
+final _log = getLogger(className: 'ClientSubscriptionService');
 
+/// Client subscription gate: caches whether RevenueCat reports active **app_access**
+/// and **coach_access** ([hasCoachLedSubscription]).
 class ClientSubscriptionService {
   ClientSubscriptionService._();
-  static final ClientSubscriptionService instance =
-      ClientSubscriptionService._();
+  static final ClientSubscriptionService instance = ClientSubscriptionService._();
 
-  /// Bumps when [hasAccess] may have changed (UI: nav, home card, router redirect).
+  /// Notifies listeners when [hasAccess] may have changed.
   final ValueNotifier<int> accessRevision = ValueNotifier<int>(0);
 
-  void _bumpAccessRevision() {
-    accessRevision.value++;
-  }
-
-  /// In-memory cache of subscription status. Null = not yet checked.
-  /// True only when **app_access** and **coach_access** are both active.
   bool? _cachedAccess;
-
-  /// Shared future for in-flight refresh. Prevents duplicate fetches when
-  /// app-load refresh and first gate check overlap.
   Future<void>? _refreshInProgress;
 
-  /// Loads subscription access from RevenueCat ([Purchases.getCustomerInfo])
-  /// and updates in-memory cache (requires **app_access** + **coach_access**).
+  void _bump() => accessRevision.value++;
+
+  /// Apply SDK [CustomerInfo] directly (e.g. from [Purchases.purchase]) before cache catches up.
+  void applyCustomerInfo(CustomerInfo info) {
+    if (!AppConfig.isClient) return;
+    _cachedAccess = RevenueCatSubscriptionHelpers.hasCoachLedSubscription(info);
+    _bump();
+  }
+
   Future<void> refreshSubscriptionStatus() async {
     if (!AppConfig.isClient) return;
 
@@ -46,14 +45,11 @@ class ClientSubscriptionService {
     if (user == null || user.id.trim().isEmpty) {
       _cachedAccess = null;
       _refreshInProgress = null;
-      _bumpAccessRevision();
+      _bump();
       return;
     }
 
-    if (_refreshInProgress != null) {
-      await _refreshInProgress;
-      return;
-    }
+    if (_refreshInProgress != null) await _refreshInProgress;
 
     final future = syncAccessFromRevenueCat().then((_) {});
     _refreshInProgress = future;
@@ -64,51 +60,37 @@ class ClientSubscriptionService {
     }
   }
 
-  /// Syncs [Purchases] customer info into the service cache.
-  /// Client access requires **app_access** and **coach_access** (see `subscription_catalog.dart`).
   Future<bool> syncAccessFromRevenueCat() async {
     if (!RevenueCatBootstrap.isConfigured) {
       _cachedAccess = false;
-      _bumpAccessRevision();
+      _bump();
       return false;
     }
     try {
       final info = await Purchases.getCustomerInfo();
-      final access =
-          RevenueCatSubscriptionHelpers.hasCoachLedSubscription(info);
+      final access = RevenueCatSubscriptionHelpers.hasCoachLedSubscription(info);
       _cachedAccess = access;
-      _bumpAccessRevision();
+      _bump();
       return access;
     } catch (e, st) {
-      _subscriptionLogger.w(
-        'RevenueCat getCustomerInfo failed',
-        error: e,
-        stackTrace: st,
-      );
+      _log.w('RevenueCat getCustomerInfo failed', error: e, stackTrace: st);
       _cachedAccess = false;
-      _bumpAccessRevision();
+      _bump();
       return false;
     }
   }
 
-  /// Clears cached status (e.g. on logout).
   void clearCachedAccess() {
     _cachedAccess = null;
     _refreshInProgress = null;
-    _bumpAccessRevision();
+    _bump();
   }
 
-  /// Whether the client has active coach-led subscription (both entitlements).
   bool get hasAccess => _cachedAccess == true;
 
-  /// Same as [hasAccess] for clients (cache is only true when **coach_access** is active).
-  bool get hasCoachAccess => hasAccess;
-
-  /// Whether the cache has been populated (by startup or a prior refresh).
   bool get isCachePopulated => _cachedAccess != null;
 
-  /// Checks cached subscription status only. No refresh/API calls at gate points.
-  /// Cache is populated at app launch (splash screen).
+  /// Uses cache only; if not subscribed, shows snackbar and paywall (no refresh here).
   Future<bool> ensureAccess({
     required BuildContext context,
     required String blockedMessage,
@@ -117,36 +99,41 @@ class ClientSubscriptionService {
 
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.id.trim().isEmpty) return false;
-
     if (_cachedAccess == true) return true;
-
-    // Cached false or null: show paywall (no refresh - cache set at splash)
     if (!context.mounted) return false;
+
     showSnackbar(context: context, message: blockedMessage);
     await showPaywall(context: context);
     return false;
   }
 
-  /// Called by paywall when purchase/restore succeeds or when user dismisses as subscribed.
-  ///
-  /// When [notifyCoach] is true (new purchase or restore), posts to
-  /// [notifyClientAssignedPath] so the coach can be notified.
-  Future<void> onPaywallSuccess({bool notifyCoach = false}) async {
+  /// After purchase / restore / “Done” on paywall. [freshCustomerInfo] avoids stale reads.
+  Future<void> onPaywallSuccess({
+    bool notifyCoach = false,
+    CustomerInfo? freshCustomerInfo,
+  }) async {
+    if (freshCustomerInfo != null) applyCustomerInfo(freshCustomerInfo);
+    await _syncPurchasesBestEffort();
     await refreshSubscriptionStatus();
     if (notifyCoach && AppConfig.isClient) {
       unawaited(_notifyCoachClientSubscribed());
     }
   }
 
-  /// POST [fcmNotathletesBaseUrl]/[notifyClientAssignedPath] with Supabase JWT.
+  Future<void> _syncPurchasesBestEffort() async {
+    if (!RevenueCatBootstrap.isConfigured) return;
+    try {
+      await Purchases.syncPurchases();
+    } catch (e, st) {
+      _log.w('RevenueCat syncPurchases failed', error: e, stackTrace: st);
+    }
+  }
+
   Future<void> _notifyCoachClientSubscribed() async {
     if (!AppConfig.isClient) return;
-    final auth = Supabase.instance.client.auth;
-    final session = auth.currentSession;
-    final user = auth.currentUser;
-    if (session == null || user == null) return;
-    final userId = user.id.trim();
-    final token = session.accessToken.trim();
+    final session = Supabase.instance.client.auth.currentSession;
+    final userId = session?.user.id.trim() ?? '';
+    final token = session?.accessToken.trim() ?? '';
     if (userId.isEmpty || token.isEmpty) return;
 
     final uri = Uri.parse(fcmNotathletesBaseUrl).resolve(notifyClientAssignedPath);
@@ -162,23 +149,16 @@ class ClientSubscriptionService {
           )
           .timeout(const Duration(seconds: 15));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        _subscriptionLogger.w(
+        _log.w(
           'notify-client-assigned HTTP ${response.statusCode}: ${response.body}',
         );
       }
     } catch (e, st) {
-      _subscriptionLogger.w(
-        'notify-client-assigned failed',
-        error: e,
-        stackTrace: st,
-      );
+      _log.w('notify-client-assigned failed', error: e, stackTrace: st);
     }
   }
 
-  /// Pushes the paywall as a **full-screen** route (fade), not a bottom sheet.
-  ///
-  /// Pass [assignedCoach] when already loaded (e.g. from [ClientSubscribePromptCard])
-  /// so the UI can render immediately.
+  /// Full-screen paywall route. [assignedCoach] skips refetch when already known.
   Future<void> showPaywall({
     required BuildContext context,
     CoachDto? assignedCoach,
@@ -237,7 +217,7 @@ class ClientSubscriptionService {
     );
   }
 
-  /// Presents the paywall when coach-led subscription (both entitlements) is not active.
+  /// Fetches customer info; shows paywall if coach-led entitlements are not active.
   Future<void> presentPaywallIfAppAccessMissing({
     required BuildContext context,
   }) async {
@@ -248,12 +228,7 @@ class ClientSubscriptionService {
       if (RevenueCatSubscriptionHelpers.hasCoachLedSubscription(info)) return;
       await showPaywall(context: context);
     } catch (e, st) {
-      _subscriptionLogger.w(
-        'presentPaywallIfAppAccessMissing failed',
-        error: e,
-        stackTrace: st,
-      );
+      _log.w('presentPaywallIfAppAccessMissing failed', error: e, stackTrace: st);
     }
   }
-
 }

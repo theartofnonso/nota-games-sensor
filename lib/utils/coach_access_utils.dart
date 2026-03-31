@@ -2,21 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../utils/theme/color_extensions.dart';
+import 'founder_coach_email.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
 
-/// Checks if an email exists in the coaches table.
+/// True when [email] matches a row in [public.coaches] and either `active` is true
+/// or the email is [isFounderCoachEmail] (`@ware.health`) so hidden coaches can sign in.
 Future<bool> checkCoachAccess(String email) async {
   try {
     final normalized = email.trim().toLowerCase();
     final record =
         await Supabase.instance.client
             .from('coaches')
-            .select('email, name')
+            .select('email, name, active')
             .eq('email', normalized)
-            .eq('active', true)
             .maybeSingle();
-    return record != null;
+    if (record == null) return false;
+    final active = record['active'] as bool? ?? false;
+    if (active) return true;
+    return isFounderCoachEmail(normalized);
   } catch (_) {
     return false;
   }

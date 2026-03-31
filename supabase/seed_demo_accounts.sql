@@ -17,6 +17,9 @@
 -- Schema note: workout_sessions.template_id is NOT NULL (migrations).
 -- session_exercises.template_exercise_id links to template_exercises for the
 -- same behavior as logs created in the app (e.g. coach instruction video path).
+--
+-- Time data: everything is anchored to when you run this script (current_date / now()).
+-- Workout and nutrition rows use per-day timestamps so lists and history look realistic.
 -- =============================================================================
 
 DO $$
@@ -39,8 +42,13 @@ DECLARE
   v_se_id uuid;
   i int;
   log_date date;
+  -- ~60-day workout history ending today, one session every 2 days (30 logs).
   start_date date := current_date - 60;
   end_date date := current_date;
+  session_end_ts timestamptz;
+  breakfast_ts timestamptz;
+  lunch_ts timestamptz;
+  dinner_ts timestamptz;
 BEGIN
   SELECT id INTO coach_uuid FROM auth.users WHERE lower(email) = lower('coach@ware.health') LIMIT 1;
   SELECT id INTO client_uuid FROM auth.users WHERE lower(email) = lower('client@ware.health') LIMIT 1;
@@ -107,9 +115,10 @@ BEGIN
     name = EXCLUDED.name,
     active = true;
 
-  INSERT INTO public.clients (id, email, name, is_active)
-  VALUES (client_uuid, 'client@ware.health', 'Demo Client', true)
-  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name, is_active = true;
+  -- public.clients: id, email, name only (no is_active — see migrations).
+  INSERT INTO public.clients (id, email, name)
+  VALUES (client_uuid, 'client@ware.health', 'Demo Client')
+  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name;
 
   INSERT INTO public.coach_clients (coach_id, client_id)
   VALUES (coach_uuid, client_uuid)
@@ -171,11 +180,12 @@ BEGIN
   SET target_reps = EXCLUDED.target_reps,
       target_weight = EXCLUDED.target_weight;
 
-  -- Workout sessions (~60 days, every 2 days) with coach_note on recent logs
+  -- Workout sessions (~60 days, every 2 days) with coach_note on the most recent sessions
   FOR i IN 1..30 LOOP
     log_date := start_date + (i * 2);
     EXIT WHEN log_date > end_date;
     log_id := gen_random_uuid();
+    session_end_ts := (log_date + time '10:15')::timestamptz;
 
     INSERT INTO public.workout_sessions (id, user_id, template_id, name, notes, coach_note, start_time, end_time, created_at, updated_at)
     VALUES (
@@ -185,15 +195,15 @@ BEGIN
       CASE WHEN i % 2 = 0 THEN 'Upper Body' ELSE 'Lower Body' END,
       '',
       CASE
-        WHEN i >= 28 THEN 'Great consistency this week. Try adding one more set on bench next session.'
-        WHEN i >= 27 THEN 'Solid lower body work. Squat depth looked good.'
-        WHEN i >= 26 THEN 'Nice progress on rows. Keep it up!'
+        WHEN log_date >= current_date - 2 THEN 'Great consistency this week. Try adding one more set on bench next session.'
+        WHEN log_date >= current_date - 4 THEN 'Solid lower body work. Squat depth looked good.'
+        WHEN log_date >= current_date - 6 THEN 'Nice progress on rows. Keep it up!'
         ELSE NULL
       END,
       (log_date + time '09:00')::timestamptz,
-      (log_date + time '10:15')::timestamptz,
-      now(),
-      now()
+      session_end_ts,
+      session_end_ts,
+      session_end_ts
     )
     ON CONFLICT (id) DO NOTHING;
 
@@ -242,14 +252,18 @@ BEGIN
     fats_g = EXCLUDED.fats_g,
     updated_at = now();
 
+  -- Nutrition: last 46 days through today (3 meals/day), timestamps match each log
   FOR i IN 0..45 LOOP
     log_date := (current_date - 45) + i;
     EXIT WHEN log_date > end_date;
+    breakfast_ts := (log_date + time '08:30')::timestamptz;
+    lunch_ts := (log_date + time '13:00')::timestamptz;
+    dinner_ts := (log_date + time '19:00')::timestamptz;
     INSERT INTO public.nutrition_logs (id, user_id, food_name, protein_g, carbs_g, fats_g, logged_at, created_at, updated_at)
     VALUES
-      (gen_random_uuid(), client_uuid, 'Breakfast - Oatmeal & Eggs', 25, 45, 12, (log_date + time '08:30')::timestamptz, now(), now()),
-      (gen_random_uuid(), client_uuid, 'Lunch - Chicken Salad', 35, 20, 15, (log_date + time '13:00')::timestamptz, now(), now()),
-      (gen_random_uuid(), client_uuid, 'Dinner - Salmon & Rice', 40, 60, 18, (log_date + time '19:00')::timestamptz, now(), now());
+      (gen_random_uuid(), client_uuid, 'Breakfast - Oatmeal & Eggs', 25, 45, 12, breakfast_ts, breakfast_ts, breakfast_ts),
+      (gen_random_uuid(), client_uuid, 'Lunch - Chicken Salad', 35, 20, 15, lunch_ts, lunch_ts, lunch_ts),
+      (gen_random_uuid(), client_uuid, 'Dinner - Salmon & Rice', 40, 60, 18, dinner_ts, dinner_ts, dinner_ts);
   END LOOP;
 
   RAISE NOTICE 'Demo seed completed. coach=%, client=%', coach_uuid, client_uuid;

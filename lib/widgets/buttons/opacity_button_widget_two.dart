@@ -13,6 +13,8 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   /// When set, the trailing arrow uses this color instead of the themed default.
   final Color? trailingIconColor;
+  /// Shows a small progress indicator and disables the button.
+  final bool isLoading;
 
   const OpacityButtonWidgetTwo({
     super.key,
@@ -26,6 +28,7 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
     this.solidBackground = false,
     this.padding,
     this.trailingIconColor,
+    this.isLoading = false,
   });
 
   Color _themeForegroundColor({required bool isDarkMode}) {
@@ -71,8 +74,8 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
             },
           ),
         ),
-        onPressed: onPressed,
-        onLongPress: onLongPress,
+        onPressed: isLoading ? null : onPressed,
+        onLongPress: isLoading ? null : onLongPress,
         child: Container(
           padding: padding ??
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -82,6 +85,17 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
                 : MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.max,
             children: [
+              if (isLoading) ...[
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: _themeForegroundColor(isDarkMode: isDarkMode),
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 child: Text(
                   label,
@@ -94,7 +108,7 @@ class OpacityButtonWidgetTwo extends StatelessWidget {
                           ),
                 ),
               ),
-              if (showArrowRight)
+              if (showArrowRight && !isLoading)
                 FaIcon(
                   FontAwesomeIcons.arrowRight,
                   size: 12,

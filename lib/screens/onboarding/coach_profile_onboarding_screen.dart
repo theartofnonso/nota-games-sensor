@@ -8,7 +8,7 @@ import 'package:trainware/widgets/subscription/paywall_coach_showcase_card.dart'
 import 'package:video_player/video_player.dart';
 
 /// Pre-auth coach detail: full-bleed hero + bio + chips; optional intro video via top-right play.
-class CoachProfileOnboardingScreen extends StatelessWidget {
+class CoachProfileOnboardingScreen extends StatefulWidget {
   const CoachProfileOnboardingScreen({
     super.key,
     required this.coach,
@@ -49,17 +49,31 @@ class CoachProfileOnboardingScreen extends StatelessWidget {
     );
   }
 
-  void _openTrainSheet(BuildContext context) {
-    showTrainWithCoachSheet(
-      context: context,
-      coach: coach,
-      onRequireSignIn: () => onEmailAlreadyExists?.call(),
-      onSuccess: () => onSignupSuccess?.call(),
-    );
+  @override
+  State<CoachProfileOnboardingScreen> createState() =>
+      _CoachProfileOnboardingScreenState();
+}
+
+class _CoachProfileOnboardingScreenState
+    extends State<CoachProfileOnboardingScreen> {
+  bool _trainSheetBusy = false;
+
+  Future<void> _openTrainSheet(BuildContext context) async {
+    setState(() => _trainSheetBusy = true);
+    try {
+      await showTrainWithCoachSheet(
+        context: context,
+        coach: widget.coach,
+        onRequireSignIn: () => widget.onEmailAlreadyExists?.call(),
+        onSuccess: () => widget.onSignupSuccess?.call(),
+      );
+    } finally {
+      if (mounted) setState(() => _trainSheetBusy = false);
+    }
   }
 
   void _openVideo(BuildContext context) {
-    final url = coach.profileVideoUrl?.trim();
+    final url = widget.coach.profileVideoUrl?.trim();
     if (url == null || url.isEmpty) return;
     Navigator.of(context).push<void>(
       _CoachIntroVideoPage.fadeRoute(videoUrl: url),
@@ -68,7 +82,7 @@ class CoachProfileOnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = coach;
+    final c = widget.coach;
     final media = MediaQuery.of(context);
     final h = media.size.height;
     final hasVideo =
@@ -89,6 +103,7 @@ class CoachProfileOnboardingScreen extends StatelessWidget {
               children: [
                 OpacityButtonWidgetTwo(
                   label: 'Train with ${c.name}',
+                  isLoading: _trainSheetBusy,
                   onPressed: () => _openTrainSheet(context),
                   buttonColor: Theme.of(context).colors.vibrantAccent,
                   showArrowRight: false,

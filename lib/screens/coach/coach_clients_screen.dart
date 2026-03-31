@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +15,6 @@ import 'package:trainware/services/coach_clients_service.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/widgets/navigation/app_floating_navigation_bar.dart';
 import 'package:trainware/widgets/search_bar.dart';
-import 'package:trainware/widgets/empty_states/list_empty_state.dart';
 import 'package:trainware/widgets/badges/unread_badge.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 
@@ -257,9 +257,10 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                         Expanded(
                           child:
                               clients.isEmpty
-                                  ? const ListEmptyState(
-                                    message:
-                                        'No clients found yet. Once clients join, they’ll appear here.',
+                                  ? _CoachClientsEmptyState(
+                                    isSearchEmpty:
+                                        _searchQuery.isNotEmpty &&
+                                        service.clients.isNotEmpty,
                                   )
                                   : RefreshIndicator(
                                     onRefresh: _refreshClientsAndUnread,
@@ -436,6 +437,71 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
               },
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Circle icon + title + body (matches coach feedback feed & nutrition log empty states).
+class _CoachClientsEmptyState extends StatelessWidget {
+  const _CoachClientsEmptyState({required this.isSearchEmpty});
+
+  final bool isSearchEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final muted =
+        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.45);
+
+    final title =
+        isSearchEmpty ? 'No matching clients' : 'No clients yet';
+    final body =
+        isSearchEmpty
+            ? 'Try a different name in the search box.'
+            : 'Once clients join and are linked to you, they’ll appear here.';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: (isDark ? Colors.white : Colors.black).withValues(
+                  alpha: 0.05,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: FaIcon(
+                FontAwesomeIcons.users,
+                size: 48,
+                color: muted,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              body,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: muted,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

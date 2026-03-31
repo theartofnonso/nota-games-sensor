@@ -9,6 +9,7 @@ import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/utils/coach_access_utils.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
+import 'package:trainware/widgets/onboarding/or_separator.dart';
 
 class SupabaseAuthScreen extends StatefulWidget {
   const SupabaseAuthScreen({super.key, this.onDiscoverCoaches});
@@ -299,7 +300,13 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                         ],
                         if (AppConfig.isClient &&
                             widget.onDiscoverCoaches != null) ...[
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 16),
+                          OrSeparator(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
                             height: 50,

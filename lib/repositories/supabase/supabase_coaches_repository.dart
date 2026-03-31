@@ -6,7 +6,6 @@ import '../../dtos/coach_dto.dart';
 import '../../logger.dart';
 import '../../services/notathletes_coach_profile_api.dart';
 import '../../urls.dart';
-import '../../utils/dummy_mode_utils.dart';
 import '../../utils/notathletes_auth_headers.dart';
 
 /// Coach **list and detail** come from Not Athletes
@@ -17,18 +16,9 @@ class SupabaseCoachesRepository {
   final _logger = getLogger(className: 'SupabaseCoachesRepository');
 
   /// Public coach profiles from Not Athletes API, ordered by name.
-  /// The demo coach ([coachDemoEmail]) is never returned (client acquisition).
   Future<List<CoachDto>> fetchCoaches() async {
     try {
       var coaches = await fetchCoachProfilesListFromNotathletesApi();
-      coaches =
-          coaches
-              .where(
-                (c) =>
-                    (c.email?.toLowerCase().trim() ?? '') !=
-                    coachDemoEmail.toLowerCase(),
-              )
-              .toList();
       for (final c in coaches) {
         _logMappedCoach(c);
       }

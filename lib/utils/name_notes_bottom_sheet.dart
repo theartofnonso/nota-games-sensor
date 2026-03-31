@@ -5,6 +5,9 @@ import 'dialog_utils.dart';
 import '../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
 
+/// Dismisses the name/notes sheet. Pass [value] to return it from [showNameNotesBottomSheet].
+typedef NameNotesPopSheet = void Function({({String name, String notes})? value});
+
 /// Shared bottom sheet for capturing a name + second field (default: optional notes).
 ///
 /// Use [notesFieldKeyboardType], [notesFieldRequired], and related params to reuse the
@@ -28,11 +31,18 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
   int? notesFieldMaxLines,
   bool notesFieldRequired = false,
   String notesFieldInvalidMessage = 'Please enter a valid email',
+  /// When set, Continue validates then awaits this. Call [NameNotesPopSheet] to close
+  /// the sheet (optionally with a return value). Shows a loading state on the button.
+  Future<void> Function(
+    ({String name, String notes}) data,
+    NameNotesPopSheet popSheet,
+  )? onPrimaryAsync,
 }) async {
   final nameController = TextEditingController(text: initialName);
   final notesController = TextEditingController(text: initialNotes);
 
   ({String name, String notes})? result;
+  var primarySubmitting = false;
 
   final isEmailSecondField =
       notesFieldKeyboardType == TextInputType.emailAddress;
@@ -45,22 +55,35 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
     return 1;
   }
 
+  bool validateAndMaybeSnack(BuildContext ctx) {
+    final name = nameController.text.trim();
+    final notes = notesController.text.trim();
+
+    if (name.isEmpty) {
+      showSnackbar(context: ctx, message: emptyNameMessage);
+      return false;
+    }
+
+    if (notesFieldRequired) {
+      if (notes.isEmpty ||
+          (isEmailSecondField && !notes.contains('@'))) {
+        showSnackbar(
+          context: ctx,
+          message: notesFieldInvalidMessage,
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   final sheetContent = Builder(
     builder: (ctx) {
       final isDark = Theme.of(ctx).brightness == Brightness.dark;
-
       final secondIsPrimaryStyle = notesFieldRequired && isEmailSecondField;
 
-      return Padding(
-        padding: const EdgeInsets.only(
-          left: 26,
-          right: 26,
-          top: 26,
-          bottom: 26,
-        ),
-        // No [SingleChildScrollView] here: it expands to the modal max height and makes
-        // the frosted sheet look full-screen (other input sheets use a plain [Column]).
-        child: Column(
+      Widget fieldColumn({required bool fieldsLocked}) {
+        return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -91,6 +114,7 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
               ),
               keyboardType: TextInputType.text,
               textCapitalization: TextCapitalization.words,
+              readOnly: fieldsLocked,
               style: TextStyle(
                 fontWeight: FontWeight.w400,
                 color: isDark ? Colors.white : Colors.black,
@@ -114,6 +138,7 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
                       ? TextCapitalization.none
                       : TextCapitalization.sentences,
               maxLines: secondFieldMaxLines(),
+              readOnly: fieldsLocked,
               style: TextStyle(
                 fontWeight: FontWeight.w400,
                 color:
@@ -123,39 +148,94 @@ Future<({String name, String notes})?> showNameNotesBottomSheet({
                 fontSize: 14,
               ),
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: OpacityButtonWidgetTwo(
-                buttonColor: Theme.of(ctx).colors.vibrantAccent,
-                label: primaryButtonLabel,
-                onPressed: () {
-                  final name = nameController.text.trim();
-                  final notes = notesController.text.trim();
-
-                  if (name.isEmpty) {
-                    showSnackbar(context: ctx, message: emptyNameMessage);
-                    return;
-                  }
-
-                  if (notesFieldRequired) {
-                    if (notes.isEmpty ||
-                        (isEmailSecondField && !notes.contains('@'))) {
-                      showSnackbar(
-                        context: ctx,
-                        message: notesFieldInvalidMessage,
-                      );
-                      return;
-                    }
-                  }
-
-                  result = (name: name, notes: notes);
-                  Navigator.of(ctx).pop();
-                },
-              ),
-            ),
           ],
-        ),
+        );
+      }
+
+      const outerPadding = EdgeInsets.only(
+        left: 26,
+        right: 26,
+        top: 26,
+        bottom: 26,
+      );
+
+      if (onPrimaryAsync == null) {
+        return Padding(
+          padding: outerPadding,
+          // No [SingleChildScrollView] here: it expands to the modal max height and makes
+          // the frosted sheet look full-screen (other input sheets use a plain [Column]).
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              fieldColumn(fieldsLocked: false),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OpacityButtonWidgetTwo(
+                  buttonColor: Theme.of(ctx).colors.vibrantAccent,
+                  label: primaryButtonLabel,
+                  onPressed: () {
+                    if (!validateAndMaybeSnack(ctx)) return;
+                    final name = nameController.text.trim();
+                    final notes = notesController.text.trim();
+                    result = (name: name, notes: notes);
+                    Navigator.of(ctx).pop();
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return StatefulBuilder(
+        builder: (modalCtx, setModalState) {
+          return Padding(
+            padding: outerPadding,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AbsorbPointer(
+                  absorbing: primarySubmitting,
+                  child: fieldColumn(fieldsLocked: primarySubmitting),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: OpacityButtonWidgetTwo(
+                    buttonColor: Theme.of(ctx).colors.vibrantAccent,
+                    label: primaryButtonLabel,
+                    isLoading: primarySubmitting,
+                    onPressed: () async {
+                      if (!validateAndMaybeSnack(modalCtx)) return;
+                      final name = nameController.text.trim();
+                      final notes = notesController.text.trim();
+                      final data = (name: name, notes: notes);
+
+                      primarySubmitting = true;
+                      setModalState(() {});
+
+                      void popSheet({({String name, String notes})? value}) {
+                        if (!modalCtx.mounted) return;
+                        result = value;
+                        Navigator.of(modalCtx).pop();
+                      }
+
+                      try {
+                        await onPrimaryAsync(data, popSheet);
+                      } finally {
+                        primarySubmitting = false;
+                        if (modalCtx.mounted) setModalState(() {});
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       );
     },
   );

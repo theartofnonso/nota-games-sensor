@@ -5,11 +5,18 @@ import '../logger.dart';
 import 'revenue_cat_bootstrap.dart';
 import 'revenuecat_subscription_helpers.dart';
 
-/// Result of a store purchase initiated from the custom paywall.
-enum SubscriptionPurchaseOutcome {
-  success,
-  userCancelled,
-  failed,
+enum SubscriptionPurchaseOutcome { success, userCancelled, failed }
+
+/// [customerInfo] is present on [SubscriptionPurchaseOutcome.success] when the SDK supplied it.
+class SubscriptionPurchaseResult {
+  const SubscriptionPurchaseResult(this.outcome, [this.customerInfo]);
+
+  final SubscriptionPurchaseOutcome outcome;
+  final CustomerInfo? customerInfo;
+
+  static const failed = SubscriptionPurchaseResult(SubscriptionPurchaseOutcome.failed);
+  static const userCancelled =
+      SubscriptionPurchaseResult(SubscriptionPurchaseOutcome.userCancelled);
 }
 
 int _comparePackages(Package a, Package b) {
@@ -24,14 +31,12 @@ int _comparePackages(Package a, Package b) {
     PackageType.custom,
     PackageType.unknown,
   ];
-  final ia = order.indexOf(a.packageType);
-  final ib = order.indexOf(b.packageType);
-  final c = ia.compareTo(ib);
+  final c = order.indexOf(a.packageType).compareTo(order.indexOf(b.packageType));
   if (c != 0) return c;
   return a.storeProduct.identifier.compareTo(b.storeProduct.identifier);
 }
 
-/// Loads offerings and runs purchases via RevenueCat (all product data from the dashboard).
+/// RevenueCat offerings and purchase / restore for the custom paywall.
 class SubscriptionPurchaseService {
   SubscriptionPurchaseService._();
   static final SubscriptionPurchaseService instance =
@@ -39,7 +44,6 @@ class SubscriptionPurchaseService {
 
   final _logger = getLogger(className: 'SubscriptionPurchaseService');
 
-  /// Packages from the current (or first) offering — titles, prices, etc. from [Package.storeProduct].
   Future<List<Package>> loadOfferedPackages() async {
     if (!RevenueCatBootstrap.isConfigured) {
       _logger.w('RevenueCat not configured; cannot load offerings.');
@@ -61,40 +65,52 @@ class SubscriptionPurchaseService {
     }
   }
 
-  Future<SubscriptionPurchaseOutcome> purchasePackage(Package package) async {
-    if (!RevenueCatBootstrap.isConfigured) {
-      return SubscriptionPurchaseOutcome.failed;
-    }
+  Future<SubscriptionPurchaseResult> purchasePackage(Package package) async {
+    if (!RevenueCatBootstrap.isConfigured) return SubscriptionPurchaseResult.failed;
     try {
-      await Purchases.purchase(PurchaseParams.package(package));
-      return SubscriptionPurchaseOutcome.success;
+      final result = await Purchases.purchase(PurchaseParams.package(package));
+      return SubscriptionPurchaseResult(
+        SubscriptionPurchaseOutcome.success,
+        result.customerInfo,
+      );
     } on PlatformException catch (e) {
-      final code = PurchasesErrorHelper.getErrorCode(e);
-      if (code == PurchasesErrorCode.purchaseCancelledError) {
-        return SubscriptionPurchaseOutcome.userCancelled;
-      }
-      if (code == PurchasesErrorCode.productAlreadyPurchasedError) {
-        final ok = await restorePurchases();
-        return ok
-            ? SubscriptionPurchaseOutcome.success
-            : SubscriptionPurchaseOutcome.failed;
-      }
-      _logger.w('Purchase failed: $e');
-      return SubscriptionPurchaseOutcome.failed;
+      return _mapPurchasePlatformException(e);
     } catch (e, st) {
       _logger.e('Purchase failed', error: e, stackTrace: st);
-      return SubscriptionPurchaseOutcome.failed;
+      return SubscriptionPurchaseResult.failed;
     }
   }
 
-  Future<bool> restorePurchases() async {
-    if (!RevenueCatBootstrap.isConfigured) return false;
+  Future<SubscriptionPurchaseResult> _mapPurchasePlatformException(
+    PlatformException e,
+  ) async {
+    final code = PurchasesErrorHelper.getErrorCode(e);
+    if (code == PurchasesErrorCode.purchaseCancelledError) {
+      return SubscriptionPurchaseResult.userCancelled;
+    }
+    if (code == PurchasesErrorCode.productAlreadyPurchasedError) {
+      final info = await restoreCoachLedPurchases();
+      if (info == null) return SubscriptionPurchaseResult.failed;
+      return SubscriptionPurchaseResult(
+        SubscriptionPurchaseOutcome.success,
+        info,
+      );
+    }
+    _logger.w('Purchase failed: $e');
+    return SubscriptionPurchaseResult.failed;
+  }
+
+  /// Returns [CustomerInfo] only when coach-led entitlements are active after restore.
+  Future<CustomerInfo?> restoreCoachLedPurchases() async {
+    if (!RevenueCatBootstrap.isConfigured) return null;
     try {
       final info = await Purchases.restorePurchases();
-      return RevenueCatSubscriptionHelpers.hasAppAccess(info);
+      return RevenueCatSubscriptionHelpers.hasCoachLedSubscription(info)
+          ? info
+          : null;
     } catch (e, st) {
-      _logger.w('restorePurchases failed', error: e, stackTrace: st);
-      return false;
+      _logger.w('restoreCoachLedPurchases failed', error: e, stackTrace: st);
+      return null;
     }
   }
 }
