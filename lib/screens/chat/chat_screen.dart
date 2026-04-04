@@ -260,7 +260,9 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
         profile: ChatUIKitProfile.contact(id: peerAgora, nickname: peerName),
         backgroundWidget: trainwareChatBackground(context),
         bubbleBuilder: trainwareChatBubbleBuilder,
+        showMessageItemAvatar: (_) => false,
         appBarModel: ChatUIKitAppBarModel(
+          leadingActions: const <ChatUIKitAppBarAction>[],
           showBackButton: !widget.embeddedInShell,
           backgroundColor: Colors.transparent,
           bottomLine: false,

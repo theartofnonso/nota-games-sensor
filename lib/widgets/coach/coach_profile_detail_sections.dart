@@ -67,11 +67,10 @@ class CoachProfileDetailSections extends StatelessWidget {
     final c = coach!;
     final hasAbout = c.description?.trim().isNotEmpty == true;
     final hasExp = c.experienceDisplayLine != null;
-    final hasQual = c.qualifications?.trim().isNotEmpty == true;
     final hasSpec = c.specialties?.trim().isNotEmpty == true;
     final hasHobbies = c.interestsHobbies?.trim().isNotEmpty == true;
 
-    if (!hasAbout && !hasExp && !hasQual && !hasSpec && !hasHobbies) {
+    if (!hasAbout && !hasExp && !hasSpec && !hasHobbies) {
       final name = c.name.trim().isEmpty ? 'Your coach' : c.name.trim();
       return Text(
         '$name is your assigned trainer. Their full profile will appear here '
@@ -94,12 +93,6 @@ class CoachProfileDetailSections extends StatelessWidget {
         _section(
           title: 'Experience',
           body: c.experienceDisplayLine,
-          titleStyle: titleStyle,
-          bodyStyle: bodyStyle,
-        ),
-        _section(
-          title: 'Qualifications',
-          body: c.qualifications?.trim(),
           titleStyle: titleStyle,
           bodyStyle: bodyStyle,
         ),

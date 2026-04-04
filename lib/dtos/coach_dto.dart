@@ -16,7 +16,6 @@ class CoachDto {
   /// Pure numeric strings get `"<n> years of experience"` in [experienceDisplayLine];
   /// any other wording is shown verbatim.
   final String? yearsExperienceText;
-  final String? qualifications;
   final String? specialties;
   final String? interestsHobbies;
 
@@ -29,7 +28,6 @@ class CoachDto {
     this.email,
     this.yearsExperience,
     this.yearsExperienceText,
-    this.qualifications,
     this.specialties,
     this.interestsHobbies,
   });
@@ -103,7 +101,6 @@ class CoachDto {
       email: _optString(json['email']),
       yearsExperience: yearsExperience,
       yearsExperienceText: yearsExperienceText,
-      qualifications: _optString(json['qualifications']),
       specialties: _optString(json['specialties']),
       interestsHobbies: _optString(
         json['interests_hobbies'] ?? json['interestsHobbies'],

@@ -6,7 +6,6 @@ import '../utils/general_utils.dart';
 import '../utils/theme/color_extensions.dart';
 import '../utils/theme/theme.dart';
 import '../widgets/buttons/opacity_button_widget_two.dart';
-import '../widgets/onboarding/or_separator.dart';
 
 class WelcomeScreen extends StatefulWidget {
   static const routeName = '/welcome_screen';

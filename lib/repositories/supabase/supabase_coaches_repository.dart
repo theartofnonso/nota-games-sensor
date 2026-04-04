@@ -64,7 +64,6 @@ class SupabaseCoachesRepository {
         'yearsExperience': coach.yearsExperience,
         'yearsExperienceText': coach.yearsExperienceText,
         'experienceDisplayLine': coach.experienceDisplayLine,
-        'qualifications': clip(coach.qualifications),
         'specialties': clip(coach.specialties),
         'interestsHobbies': clip(coach.interestsHobbies),
       };

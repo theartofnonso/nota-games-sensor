@@ -110,8 +110,8 @@ class _CoachChipScrollRow extends StatelessWidget {
   }
 }
 
-/// Qualifications, specialties, and hobbies as separate full-width horizontal chip rows
-/// (no section labels). Order: qualifications → specialties → hobbies & interests (last).
+/// Specialties and hobbies as separate full-width horizontal chip rows
+/// (no section labels). Order: specialties → hobbies & interests (last).
 class CoachProfileChips extends StatelessWidget {
   const CoachProfileChips({
     super.key,
@@ -135,17 +135,15 @@ class CoachProfileChips extends StatelessWidget {
 
   static bool hasChipsFor(CoachDto? coach) {
     if (coach == null) return false;
-    return splitCoachProfileListField(coach.qualifications).isNotEmpty ||
-        splitCoachProfileListField(coach.specialties).isNotEmpty ||
+    return splitCoachProfileListField(coach.specialties).isNotEmpty ||
         splitCoachProfileListField(coach.interestsHobbies).isNotEmpty;
   }
 
   @override
   Widget build(BuildContext context) {
-    final qual = splitCoachProfileListField(coach.qualifications);
     final spec = splitCoachProfileListField(coach.specialties);
     final hobby = splitCoachProfileListField(coach.interestsHobbies);
-    if (qual.isEmpty && spec.isEmpty && hobby.isEmpty) {
+    if (spec.isEmpty && hobby.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -168,18 +166,7 @@ class CoachProfileChips extends StatelessWidget {
     final padEnd = horizontalContentPaddingEnd ?? horizontalContentPadding;
 
     final planes = <Widget>[];
-    if (qual.isNotEmpty) {
-      planes.add(
-        _CoachChipScrollRow(
-          items: qual,
-          chipTextStyle: chipTextStyle,
-          paddingStart: padStart,
-          paddingEnd: padEnd,
-        ),
-      );
-    }
     if (spec.isNotEmpty) {
-      if (planes.isNotEmpty) planes.add(const SizedBox(height: 4));
       planes.add(
         _CoachChipScrollRow(
           items: spec,
