@@ -33,9 +33,9 @@ class TrainingPredictionService {
   static const Duration _historyWindow = Duration(days: 30);
   static const int _weekdayThreshold = 3; // At least 3 sessions per weekday
 
-  /// Normalize to local time. Logs from Supabase/API are often UTC; reminder times
-  /// must be derived from the user's local time (when they actually trained).
-  static DateTime _toLocal(DateTime d) => d.isUtc ? d.toLocal() : d;
+  /// Local wall clock for the user's device. Always go via UTC so instants are
+  /// unambiguous after [parseWorkoutSessionInstant] / API parsing.
+  static DateTime _toLocal(DateTime d) => d.toUtc().toLocal();
 
   /// Get predicted training dates by projecting weekdays that have 3+ sessions
   /// in the last 30 days. Includes today if it matches a likely training weekday.
@@ -124,9 +124,17 @@ class TrainingPredictionService {
       final local = _toLocal(log.startTime);
       final logDate = DateTime(local.year, local.month, local.day);
       return local.weekday == weekday && !logDate.isBefore(cutoff);
-    }).toList();
+    }).toList()
+      ..sort((a, b) {
+        final utcA = a.startTime.toUtc();
+        final utcB = b.startTime.toUtc();
+        final c = utcA.compareTo(utcB);
+        if (c != 0) return c;
+        return a.id.compareTo(b.id);
+      });
 
-    // Count distinct dates (same as _getLikelyTrainingWeekdays logic)
+    // Count distinct dates (same as _getLikelyTrainingWeekdays logic).
+    // Per day, keep the earliest session (deterministic after sort).
     final Set<DateTime> seenDates = <DateTime>{};
     final distinctSessions = <RoutineLogDto>[];
 

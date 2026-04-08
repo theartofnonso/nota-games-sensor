@@ -13,6 +13,7 @@ import 'package:trainware/enums/exercise_type_enums.dart';
 
 import '../../logger.dart';
 import '../../utils/routine_session_template_utils.dart';
+import '../../utils/workout_session_time_utils.dart';
 
 class SupabaseRoutineLogRepository {
   final logger = getLogger(className: "SupabaseRoutineLogRepository");
@@ -101,7 +102,8 @@ class SupabaseRoutineLogRepository {
             .map(
               (row) => _convertSessionExerciseRow(
                 sessionId: sessionId,
-                sessionStartTime: DateTime.parse(map['start_time'] as String),
+                sessionStartTime:
+                    parseWorkoutSessionInstant(map['start_time'] as String),
                 row: row,
               ),
             )
@@ -112,8 +114,8 @@ class SupabaseRoutineLogRepository {
       templateId: (map['template_id'] as String?) ?? '',
       name: map['name'] as String? ?? '',
       exerciseLogs: exerciseLogs,
-      startTime: DateTime.parse(map['start_time'] as String),
-      endTime: DateTime.parse(map['end_time'] as String),
+      startTime: parseWorkoutSessionInstant(map['start_time'] as String),
+      endTime: parseWorkoutSessionInstant(map['end_time'] as String),
       coachNote: map['coach_note'] as String?,
     );
   }

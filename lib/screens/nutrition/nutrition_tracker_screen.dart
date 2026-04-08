@@ -297,6 +297,9 @@ Future<void> showNutritionTemplateSheet(BuildContext context) async {
 }
 
 class NutritionTrackerScreen extends StatefulWidget {
+  /// Deep link / push route (local notification nudges).
+  static const routeName = '/nutrition-tracker';
+
   const NutritionTrackerScreen({super.key});
 
   @override
