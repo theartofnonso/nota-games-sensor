@@ -4,6 +4,7 @@ import '../../dtos/coach_dto.dart';
 import '../../utils/general_utils.dart';
 import '../coach/coach_paywall_hero_tag.dart';
 import '../coach/coach_profile_chips.dart';
+import '../coach/coach_profile_photo_backplate.dart';
 
 /// Large coach visual for the subscription paywall: full-bleed photo, bottom
 /// scrim tinted with [paywallCoachHeroScrimGradient] to match the paywall
@@ -146,40 +147,45 @@ class _CoachBackdropImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = coach?.profileImageUrl?.trim();
     if (url != null && url.isNotEmpty) {
-      return Image.network(
-        url,
-        fit: BoxFit.cover,
-        alignment: Alignment.topCenter,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (_, _, _) => _blankBackdrop(),
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return ColoredBox(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? themeGradient(context: context)
-                    .colors
-                    .last
-                    .withValues(alpha: 0.88)
-                : Colors.white.withValues(alpha: 0.9),
-            child: const Center(
-              child: SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white54,
+      return CoachProfilePhotoBackplate.behind(
+        context,
+        Image.network(
+          url,
+          fit: BoxFit.cover,
+          alignment: Alignment.topCenter,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (ctx, _, _) => _blankBackdrop(ctx),
+          loadingBuilder: (ctx, child, progress) {
+            if (progress == null) return child;
+            final dark = Theme.of(ctx).brightness == Brightness.dark;
+            return ColoredBox(
+              color: dark
+                  ? themeGradient(context: ctx)
+                      .colors
+                      .last
+                      .withValues(alpha: 0.88)
+                  : CoachProfilePhotoBackplate.plateColor(ctx)
+                      .withValues(alpha: 0.92),
+              child: Center(
+                child: SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: dark ? Colors.white54 : Colors.black26,
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
     }
-    return _blankBackdrop();
+    return _blankBackdrop(context);
   }
 
-  Widget _blankBackdrop() {
-    return const ColoredBox(color: Colors.transparent);
+  Widget _blankBackdrop(BuildContext context) {
+    return ColoredBox(color: CoachProfilePhotoBackplate.plateColor(context));
   }
 }
