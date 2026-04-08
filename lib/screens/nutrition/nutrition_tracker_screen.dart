@@ -17,6 +17,7 @@ import 'package:trainware/widgets/nutrition/calorie_tracking_card.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/widgets/loading/coach_loading_overlay.dart';
 import 'package:trainware/services/nutrition_estimate_service.dart';
+import 'package:trainware/widgets/empty_states/illustrated_empty_state.dart';
 
 /// Shows the create/edit nutrition template bottom sheet. Used from Settings
 /// (coach, no client logs) and from NutritionTrackerScreen app bar.
@@ -403,7 +404,13 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (sortedLogs.isEmpty) const _NutritionLogsEmptyState()
+                  if (sortedLogs.isEmpty)
+                    IllustratedEmptyState(
+                      icon: FontAwesomeIcons.bowlFood,
+                      title: 'No nutrition logs yet',
+                      body:
+                          'Tap + to log a meal or snack. Your entries and macros will show up here.',
+                    )
                   else
                     ...logEntries.map((entry) {
                       if (entry.isWeekDivider) {
@@ -918,64 +925,6 @@ class _NutritionTrackerScreenState extends State<NutritionTrackerScreen> {
 
 /// Empty log list: same for coach and client; matches [CoachFeedbackFeedScreen]
 /// / [RoutinesShellPage] (circle icon, title, body).
-class _NutritionLogsEmptyState extends StatelessWidget {
-  const _NutritionLogsEmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final muted =
-        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.45);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: (isDark ? Colors.white : Colors.black)
-                      .withValues(alpha: 0.05),
-                  shape: BoxShape.circle,
-                ),
-                child: FaIcon(
-                  FontAwesomeIcons.bowlFood,
-                  size: 48,
-                  color: muted,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'No nutrition logs yet',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Tap + to log a meal or snack. Your entries and macros will show up here.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: muted,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Button that calls the nutrition API with the meal description and logs the result.
 class _LogMealButton extends StatefulWidget {
   final TextEditingController mealController;

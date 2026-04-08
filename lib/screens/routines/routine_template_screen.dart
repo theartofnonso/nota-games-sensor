@@ -38,7 +38,7 @@ import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/routine/preview/exercise_log_listview.dart';
-import '../../widgets/empty_states/list_empty_state.dart';
+import '../../widgets/empty_states/illustrated_empty_state.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 
 enum _OriginalNewValues {
@@ -365,11 +365,14 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                     )
                   else
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10.0, vertical: 40.0),
-                      child: const ListEmptyState(
-                        message:
-                            "It might feel quiet now, but tap the + button to add exercises to this workout.",
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: IllustratedEmptyState(
+                        outerVerticalPadding: 24,
+                        icon: FontAwesomeIcons.personWalking,
+                        title: 'No exercises in this workout yet',
+                        body: AppPrivileges.canCreateManageRoutines
+                            ? 'Tap + to add exercises from the library.'
+                            : 'Your coach will add exercises to this session.',
                       ),
                     ),
                 ],

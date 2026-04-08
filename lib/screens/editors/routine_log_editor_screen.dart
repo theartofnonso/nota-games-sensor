@@ -26,8 +26,7 @@ import '../../utils/general_utils.dart';
 import '../../utils/notifications_utils.dart';
 import '../../utils/routine_session_template_utils.dart';
 import '../../extensions/duration_extension.dart';
-import '../../utils/lottie_exercise_registry.dart';
-import '../../widgets/empty_states/list_empty_state.dart';
+import '../../widgets/empty_states/illustrated_empty_state.dart';
 
 class RoutineLogEditorScreen extends StatefulWidget {
   static const routeName = '/routine-log-editor';
@@ -50,8 +49,7 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
   final ValueNotifier<Duration> _elapsedNotifier =
       ValueNotifier<Duration>(Duration.zero);
   Duration? _averageSessionDuration;
-  final Future<String?> _emptyStateLottieFuture =
-      LottieExerciseRegistry.randomLottie();
+
   void _selectExercisesInLibrary() async {
     final controller =
         Provider.of<ExerciseLogController>(context, listen: false);
@@ -386,11 +384,17 @@ class _RoutineLogEditorScreenState extends State<RoutineLogEditorScreen>
                       const SizedBox(height: 16),
                       Expanded(
                           child: exerciseLogs.isEmpty
-                            ? ListEmptyState(
-                                message: AppPrivileges.canCreateManageRoutines
-                                    ? 'No exercises yet.\nTap + to add exercises and start logging.'
-                                    : 'No exercises yet.\nStart logging from your assigned workout.',
-                                lottieFuture: _emptyStateLottieFuture,
+                            ? IllustratedEmptyState(
+                                outerVerticalPadding: 16,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
+                                icon: FontAwesomeIcons.personWalking,
+                                title: 'No exercises yet',
+                                body: AppPrivileges.canCreateManageRoutines
+                                    ? 'Tap + to add exercises and start logging.'
+                                    : 'Start from your assigned workout or wait for your coach to set exercises.',
                               )
                             : AppConfig.isClient
                                 ? ListView.builder(

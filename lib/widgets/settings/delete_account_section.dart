@@ -64,6 +64,34 @@ const String _deleteAccountConfirmationPhrase = 'Delete my account';
 /// Matches [confirmLogoutBottomSheet] and other action sheets (padding + type scale).
 const EdgeInsets _deleteSheetPadding = EdgeInsets.all(26);
 
+String _deleteAccountSubscriptionReminder(BuildContext context) {
+  switch (Theme.of(context).platform) {
+    case TargetPlatform.iOS:
+      return 'If you subscribe in the App Store, deleting your account does not '
+          'cancel your subscription or stop renewal. To avoid further charges, '
+          'open Settings → Apple ID → Subscriptions, find this app, and cancel there.';
+    case TargetPlatform.android:
+      return 'If you subscribe on Google Play, deleting your account does not '
+          'cancel your subscription. Open the Play Store → profile menu → '
+          'Payments & subscriptions to cancel.';
+    default:
+      return 'If you subscribe through the App Store or Google Play, deleting '
+          'your account does not cancel billing. Cancel the subscription in '
+          'your device’s store settings.';
+  }
+}
+
+String _deleteAccountSubscriptionReminderShort(BuildContext context) {
+  switch (Theme.of(context).platform) {
+    case TargetPlatform.iOS:
+      return 'Reminder: cancel any App Store subscription in Settings → Subscriptions.';
+    case TargetPlatform.android:
+      return 'Reminder: cancel any Play Store subscription in Payments & subscriptions.';
+    default:
+      return 'Reminder: cancel store subscriptions separately if you are subscribed.';
+  }
+}
+
 /// Runs the full account deletion flow: two confirmation sheets, then
 /// Agora → Supabase delete → sign out. Calls [setLoading] with
 /// true/false so the parent can show a loading overlay.
@@ -88,6 +116,12 @@ Future<void> requestAccountDeletion(
           const SizedBox(height: 8),
           Text(
             'Your account and all associated data (workouts, plans, nutrition logs) will be permanently deleted. This cannot be undone.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _deleteAccountSubscriptionReminder(context),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
             textAlign: TextAlign.start,
           ),
@@ -172,6 +206,18 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                 ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _deleteAccountSubscriptionReminderShort(context),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      height: 1.35,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.72),
+                    ),
+                textAlign: TextAlign.start,
               ),
               const SizedBox(height: 24),
               SizedBox(

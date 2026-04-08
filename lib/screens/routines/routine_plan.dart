@@ -27,7 +27,7 @@ import '../../widgets/bottom_sheets/app_bottom_sheet.dart';
 import '../../widgets/calendar/calendar.dart';
 import '../../widgets/chip_one.dart';
 import '../../dtos/appsync/routine_log_dto.dart';
-import '../../widgets/empty_states/list_empty_state.dart';
+import '../../widgets/empty_states/illustrated_empty_state.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/navigation/app_floating_navigation_bar.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
@@ -219,11 +219,13 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                             mainAxisSpacing: 10.0,
                             crossAxisSpacing: 10.0,
                             children: children)
-                        : Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 50.0),
-                            child: const ListEmptyState(
-                                message:
-                                    "It might feel quiet now, but your workout templates will soon appear here."),
+                        : IllustratedEmptyState(
+                            outerVerticalPadding: 24,
+                            icon: FontAwesomeIcons.clipboardList,
+                            title: 'No workout templates yet',
+                            body: AppPrivileges.canCreateManageRoutines
+                                ? 'Use the menu (⋯) to add a workout template to this plan.'
+                                : 'When your coach adds workouts to this plan, they’ll appear here.',
                           ),
                     SizedBox(height: bottomNavPad),
                   ]),
