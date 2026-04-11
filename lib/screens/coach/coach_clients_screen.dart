@@ -141,6 +141,32 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     }).toList();
   }
 
+  Future<void> _openClientExperience({
+    required BuildContext itemContext,
+    required CoachClientDto client,
+    required SupabaseExerciseAndRoutineController routineController,
+    required NutritionLogController nutritionController,
+  }) async {
+    showCoachLoadingOverlay(itemContext);
+    try {
+      await routineController.loadClientData(
+        clientId: client.clientId,
+        clientName: client.clientName ?? '',
+      );
+      await nutritionController.loadClientData(clientId: client.clientId);
+    } finally {
+      if (itemContext.mounted) {
+        hideCoachLoadingOverlay(itemContext);
+      }
+    }
+    if (!mounted || !context.mounted) return;
+    if (widget.navigateToOverviewOnSelect) {
+      context.go('/');
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
   Future<void> _retryLoadClients() async {
     if (_isRefreshing) return;
     _isRefreshing = true;
@@ -217,6 +243,10 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
               }
 
               final clients = _filterClients(service.clients);
+              final subscribed =
+                  clients.where((c) => c.subscriptionActive).toList();
+              final notSubscribed =
+                  clients.where((c) => !c.subscriptionActive).toList();
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -264,167 +294,61 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                   )
                                   : RefreshIndicator(
                                     onRefresh: _refreshClientsAndUnread,
-                                    child: ListView.separated(
-                                      itemCount: clients.length,
-                                      separatorBuilder:
-                                          (_, __) => const SizedBox(height: 12),
-                                      itemBuilder: (context, index) {
-                                        final client = clients[index];
-                                        final unreadCount =
-                                            _unreadByClientId[client
-                                                .clientId] ??
-                                            0;
-                                        final joinedLabel = DateFormat(
-                                          'MMM yyyy',
-                                        ).format(client.createdAt.toLocal());
-                                        return InkWell(
-                                          borderRadius: BorderRadius.circular(
-                                            18,
+                                    child: ListView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      padding: EdgeInsets.zero,
+                                      children: [
+                                        if (subscribed.isNotEmpty &&
+                                            notSubscribed.isNotEmpty)
+                                          _CoachClientsSectionHeader(
+                                            title: 'Subscribed',
                                           ),
-                                          onTap: () async {
-                                            final itemContext = context;
-                                            showCoachLoadingOverlay(
-                                              itemContext,
-                                            );
-                                            try {
-                                              await routineController
-                                                  .loadClientData(
-                                                    clientId: client.clientId,
-                                                    clientName:
-                                                        client.clientName ?? '',
-                                                  );
-                                              await nutritionController
-                                                  .loadClientData(
-                                                    clientId: client.clientId,
-                                                  );
-                                            } finally {
-                                              if (itemContext.mounted) {
-                                                hideCoachLoadingOverlay(
-                                                  itemContext,
-                                                );
-                                              }
-                                            }
-                                            if (!mounted || !context.mounted) {
-                                              return;
-                                            }
-                                            if (widget
-                                                .navigateToOverviewOnSelect) {
-                                              context.go('/');
-                                            } else {
-                                              Navigator.of(context).pop();
-                                            }
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 14,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withValues(
-                                                alpha: 0.06,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(18),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Container(
-                                                  width: 42,
-                                                  height: 42,
-                                                  alignment: Alignment.center,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white
-                                                        .withValues(
-                                                          alpha: 0.08,
-                                                        ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          14,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    client.initials,
-                                                    style: theme
-                                                        .textTheme
-                                                        .titleSmall
-                                                        ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w700,
-                                                          color:
-                                                              isDarkMode
-                                                                  ? Colors.white
-                                                                  : Colors
-                                                                      .black,
-                                                        ),
-                                                  ),
+                                        ...subscribed.map(
+                                          (client) => _CoachClientTile(
+                                            client: client,
+                                            theme: theme,
+                                            isDarkMode: isDarkMode,
+                                            unreadCount:
+                                                _unreadByClientId[client
+                                                    .clientId] ??
+                                                0,
+                                            onTap: () {
+                                              unawaited(
+                                                _openClientExperience(
+                                                  itemContext: context,
+                                                  client: client,
+                                                  routineController:
+                                                      routineController,
+                                                  nutritionController:
+                                                      nutritionController,
                                                 ),
-                                                const SizedBox(width: 14),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        client.clientName ?? '',
-                                                        style: theme
-                                                            .textTheme
-                                                            .titleMedium
-                                                            ?.copyWith(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                            ),
-                                                      ),
-                                                      const SizedBox(height: 6),
-                                                      Text(
-                                                        'Client since $joinedLabel',
-                                                        style: theme
-                                                            .textTheme
-                                                            .bodySmall
-                                                            ?.copyWith(
-                                                              color: Colors
-                                                                  .white
-                                                                  .withValues(
-                                                                    alpha: 0.6,
-                                                                  ),
-                                                            ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    if (unreadCount > 0) ...[
-                                                      UnreadBadge(
-                                                        count: unreadCount,
-                                                        fontSize: 11,
-                                                        padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 8,
-                                                              vertical: 4,
-                                                            ),
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                    ],
-                                                    Icon(
-                                                      Icons
-                                                          .chevron_right_rounded,
-                                                      color: Colors.white
-                                                          .withValues(
-                                                            alpha: 0.7,
-                                                          ),
-                                                      size: 22,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        if (notSubscribed.isNotEmpty) ...[
+                                          if (subscribed.isNotEmpty)
+                                            const SizedBox(height: 20),
+                                          _CoachClientsSectionHeader(
+                                            title: 'Inactive subscription',
+                                            subtitle:
+                                                'Their program isn’t available until they have an active subscription.',
+                                          ),
+                                          ...notSubscribed.map(
+                                            (client) => _CoachClientTile(
+                                              client: client,
+                                              theme: theme,
+                                              isDarkMode: isDarkMode,
+                                              unreadCount:
+                                                  _unreadByClientId[client
+                                                      .clientId] ??
+                                                  0,
+                                              onTap: null,
                                             ),
                                           ),
-                                        );
-                                      },
+                                        ],
+                                      ],
                                     ),
                                   ),
                         ),
@@ -438,6 +362,161 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CoachClientsSectionHeader extends StatelessWidget {
+  const _CoachClientsSectionHeader({
+    required this.title,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = Colors.white.withValues(alpha: 0.65);
+    return Padding(
+      padding: EdgeInsets.only(bottom: subtitle != null ? 10 : 8, top: 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+              color: Colors.white.withValues(alpha: 0.92),
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: muted,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CoachClientTile extends StatelessWidget {
+  const _CoachClientTile({
+    required this.client,
+    required this.theme,
+    required this.isDarkMode,
+    required this.unreadCount,
+    this.onTap,
+  });
+
+  final CoachClientDto client;
+  final ThemeData theme;
+  final bool isDarkMode;
+  final int unreadCount;
+  final VoidCallback? onTap;
+
+  bool get _enabled => onTap != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final joinedLabel = DateFormat(
+      'MMM yyyy',
+    ).format(client.createdAt.toLocal());
+    final showUnread = unreadCount > 0 && _enabled;
+
+    final card = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  client.initials,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      client.clientName ?? '',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Client since $joinedLabel',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (showUnread) ...[
+                    UnreadBadge(
+                      count: unreadCount,
+                      fontSize: 11,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.white.withValues(
+                      alpha: _enabled ? 0.7 : 0.35,
+                    ),
+                    size: 22,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Opacity(
+        opacity: _enabled ? 1.0 : 0.48,
+        child: card,
       ),
     );
   }

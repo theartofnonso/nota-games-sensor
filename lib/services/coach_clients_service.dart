@@ -46,7 +46,7 @@ class CoachClientsService extends ChangeNotifier {
       final response = await Supabase.instance.client
           .from('coach_clients')
           .select(
-            'id, coach_id, client_id, created_at, clients(id, email, name, created_at)',
+            'id, coach_id, client_id, created_at, clients(id, email, name, created_at, subscription_active)',
           )
           .eq('coach_id', coachId)
           .order('created_at', ascending: false);
