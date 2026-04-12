@@ -19,6 +19,7 @@ import '../../utils/general_utils.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 import '../../utils/routine_editors_utils.dart';
 import '../../widgets/buttons/opacity_button_widget_two.dart';
+import '../../widgets/empty_states/illustrated_empty_state.dart';
 import '../../widgets/routine/editors/exercise_log_list_item.dart';
 
 class RoutineTemplateEditorScreen extends StatefulWidget {
@@ -334,17 +335,17 @@ class _RoutineTemplateEditorScreenState
                             const SizedBox(height: 8),
                             Expanded(
                               child: exerciseTemplates.isEmpty
-                                  ? Center(
-                                      child: Text(
-                                        'No exercises in this workout yet.\nTap + to add exercises.',
-                                        textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: Colors.white70,
-                                            ),
+                                  ? IllustratedEmptyState(
+                                      outerVerticalPadding: 16,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 16,
                                       ),
+                                      icon: FontAwesomeIcons.personWalking,
+                                      title: 'No exercises in this workout yet',
+                                      body: AppPrivileges.canCreateManageRoutines
+                                          ? 'Tap + to add exercises from the library.'
+                                          : 'Your coach can add exercises to this template.',
                                     )
                                   : ReorderableListView.builder(
                                       padding: const EdgeInsets.only(

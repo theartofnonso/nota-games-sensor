@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../app_flavor.dart';
 import '../../repositories/supabase/supabase_coaches_repository.dart';
+import '../../widgets/coach/coach_profile_photo_backplate.dart';
 
 /// Full-screen UI while the caller waits for [sendIncomingCallNotification] /
 /// setup. Matches [IncomingCallScreen] visuals: callee photo or blurred scrim,
@@ -92,16 +93,33 @@ class _OutgoingCallScreenState extends State<OutgoingCallScreen> {
           children: [
             if (photoUrl != null)
               Positioned.fill(
-                child: Image.network(
-                  photoUrl,
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                  errorBuilder: (_, __, ___) =>
-                      const ColoredBox(color: Colors.black87),
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const ColoredBox(color: Colors.black87);
-                  },
+                child: CoachProfilePhotoBackplate.behind(
+                  context,
+                  Image.network(
+                    photoUrl,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    errorBuilder: (_, __, ___) => ColoredBox(
+                      color: CoachProfilePhotoBackplate.plateColor(context),
+                    ),
+                    loadingBuilder: (ctx, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return ColoredBox(
+                        color: CoachProfilePhotoBackplate.plateColor(ctx)
+                            .withValues(alpha: 0.92),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.black26,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               )
             else

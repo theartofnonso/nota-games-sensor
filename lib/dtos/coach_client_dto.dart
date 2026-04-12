@@ -1,5 +1,7 @@
 /// DTO matching [coach_clients] schema: id, coach_id, client_id, created_at.
 /// [clientName] and [clientEmail] come from the joined [clients] table for display.
+/// [subscriptionActive] mirrors [clients.subscription_active] (RevenueCat webhook).
+/// When the joined [clients] row is missing or the value is absent, this is [false].
 class CoachClientDto {
   final String id;
   final String coachId;
@@ -9,6 +11,7 @@ class CoachClientDto {
   final String? clientEmail;
   final String? coachName;
   final String? coachEmail;
+  final bool subscriptionActive;
 
   const CoachClientDto({
     required this.id,
@@ -19,6 +22,7 @@ class CoachClientDto {
     this.clientEmail,
     this.coachName,
     this.coachEmail,
+    this.subscriptionActive = false,
   });
 
   factory CoachClientDto.fromJson(
@@ -34,6 +38,9 @@ class CoachClientDto {
     } else {
       createdAt = DateTime.now();
     }
+    final rawSub = clientsRow?['subscription_active'];
+    final subscriptionActive = rawSub is bool ? rawSub : false;
+
     return CoachClientDto(
       id: coachClientsRow['id'] as String? ?? '',
       coachId: coachClientsRow['coach_id'] as String? ?? '',
@@ -41,6 +48,7 @@ class CoachClientDto {
       createdAt: createdAt,
       clientName: clientsRow?['name'] as String?,
       clientEmail: clientsRow?['email'] as String?,
+      subscriptionActive: subscriptionActive,
     );
   }
 

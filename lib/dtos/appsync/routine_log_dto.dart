@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:trainware/dtos/set_dtos/weight_and_reps_dto.dart';
+import 'package:trainware/utils/workout_session_time_utils.dart';
 import 'package:trainware/enums/exercise_type_enums.dart';
 
 import '../exercise_log_dto.dart';
@@ -47,8 +48,9 @@ class RoutineLogDto {
     final id = json["id"] as String? ?? "";
     final templateId = json["templateId"] as String? ?? "";
     final name = json["name"] as String;
-    final startTime = DateTime.parse(json["startTime"] as String);
-    final endTime = DateTime.parse(json["endTime"] as String);
+    final startTime =
+        parseWorkoutSessionInstant(json["startTime"] as String);
+    final endTime = parseWorkoutSessionInstant(json["endTime"] as String);
     final coachNote = json["coach_note"] as String?;
 
     final exerciseLogJsons = json["exercises"] as List;

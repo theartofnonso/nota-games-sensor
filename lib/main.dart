@@ -12,7 +12,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
@@ -37,6 +36,7 @@ import 'package:trainware/screens/onboarding/coach_discovery_screen.dart';
 import 'package:trainware/screens/welcome_screen.dart';
 import 'package:trainware/screens/coach/coach_clients_screen.dart';
 import 'package:trainware/screens/preferences/account_settings_screen.dart';
+import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
 import 'package:trainware/screens/preferences/settings_screen.dart';
 import 'package:trainware/screens/routines/routine_plan.dart';
 import 'package:trainware/screens/routines/routine_template_screen.dart';
@@ -57,6 +57,7 @@ import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
+import 'package:trainware/utils/notifications_utils.dart';
 import 'package:trainware/widgets/backgrounds/splash_screen.dart';
 import 'package:trainware/widgets/coach_selection/profile_completion_gate.dart';
 import 'package:trainware/widgets/navigation/main_shell_scaffold.dart';
@@ -127,6 +128,16 @@ void _processPendingNotification() {
       _processCoachViewLog(context, logId);
     } else {
       _processClientViewLog(context, logId);
+    }
+    return;
+  }
+
+  if (type == nutritionNudgeNotificationPayloadType) {
+    _pendingNotificationPayload = null;
+    _notificationRetryCount = 0;
+    final ctx = rootNavigatorKey.currentContext;
+    if (ctx != null && ctx.mounted) {
+      ctx.push(NutritionTrackerScreen.routeName);
     }
     return;
   }
@@ -219,6 +230,8 @@ Future<void> mainCommon(AppFlavor flavor) async {
   logger.i("Application starting...");
 
   WidgetsFlutterBinding.ensureInitialized();
+
+  await ensureLocalTimezoneConfigured();
 
   // Initialize Firebase with flavor-specific options
   final firebaseOptions = flavor == AppFlavor.coach
@@ -314,9 +327,6 @@ Future<void> mainCommon(AppFlavor flavor) async {
       _processPendingNotification();
     }
   });
-
-  tz.initializeTimeZones();
-  await configureLocalTimezone();
 
   void runAppWithProviders() {
     runApp(MultiProvider(providers: [
@@ -637,6 +647,26 @@ GoRouter _createRouter(
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
+        path: NutritionTrackerScreen.routeName,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const NutritionTrackerScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              final tween = Tween<Offset>(
+                begin: const Offset(0, 1),
+                end: Offset.zero,
+              ).chain(CurveTween(curve: Curves.easeOutCubic));
+              return SlideTransition(
+                position: animation.drive(tween),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+      GoRoute(
         path: ChatScreen.routeName,
         pageBuilder: (context, state) {
           if (!AppConfig.isCoach && !AppPrivileges.isProWithCoach) {
@@ -864,6 +894,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     if (!isAuthenticated && _lastAuthenticated) {
       // Covers session expiry / remote sign-out (not only in-app performLogout).
+      unawaited(cancelAllTrainingRelatedLocalNotifications());
       unawaited(ChatBootstrapService.logoutAgoraChat());
       unawaited(RevenueCatBootstrap.logOutIfClient());
       _startupComplete = false;

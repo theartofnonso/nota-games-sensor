@@ -164,9 +164,12 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
       await _planRepository.loadPlans();
       await _logRepository.loadLogs();
 
-      // Schedule training reminders based on historic log data
+      // Schedule training + nutrition nudges from historic log data (client only)
       if (logs.isNotEmpty) {
         await schedulePreferredTrainingReminders(logs: logs);
+        await scheduleTrainingNutritionNudges(logs: logs);
+      } else {
+        await cancelTrainingNutritionNudges();
       }
 
       notifyListeners();
@@ -620,6 +623,9 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
 
       if (logs.isNotEmpty) {
         await schedulePreferredTrainingReminders(logs: logs);
+        await scheduleTrainingNutritionNudges(logs: logs);
+      } else {
+        await cancelTrainingNutritionNudges();
       }
       return updatedLog;
     } catch (e) {

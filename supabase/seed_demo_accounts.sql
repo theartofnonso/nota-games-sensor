@@ -115,7 +115,7 @@ BEGIN
     name = EXCLUDED.name,
     active = true;
 
-  -- public.clients: id, email, name only (no is_active — see migrations).
+  -- public.clients: subscription_active defaults false (see migrations).
   INSERT INTO public.clients (id, email, name)
   VALUES (client_uuid, 'client@ware.health', 'Demo Client')
   ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name;

@@ -6,6 +6,7 @@ import 'package:trainware/screens/onboarding/coach_profile_onboarding_screen.dar
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
+import 'package:trainware/widgets/coach/coach_profile_photo_backplate.dart';
 
 /// Pre-auth grid of coaches (photo + name). Client acquisition flow.
 class CoachDiscoveryScreen extends StatefulWidget {
@@ -236,30 +237,37 @@ class _CoachGridTile extends StatelessWidget {
   Widget _gridCoachPhoto(CoachDto coach, BuildContext context) {
     final url = coach.profileImageUrl?.trim();
     if (url != null && url.isNotEmpty) {
-      return Image.network(
-        url,
-        fit: BoxFit.cover,
-        alignment: Alignment.topCenter,
-        errorBuilder: (_, _, _) => _blankCoachPhotoPlaceholder(),
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return ColoredBox(
-            color: Colors.black.withValues(alpha: 0.2),
-            child: const Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
+      return CoachProfilePhotoBackplate.behind(
+        context,
+        Image.network(
+          url,
+          fit: BoxFit.cover,
+          alignment: Alignment.topCenter,
+          errorBuilder: (ctx, _, _) => _blankCoachPhotoPlaceholder(ctx),
+          loadingBuilder: (ctx, child, progress) {
+            if (progress == null) return child;
+            return ColoredBox(
+              color: CoachProfilePhotoBackplate.plateColor(ctx)
+                  .withValues(alpha: 0.92),
+              child: const Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.black26,
+                  ),
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
     }
-    return _blankCoachPhotoPlaceholder();
+    return _blankCoachPhotoPlaceholder(context);
   }
 
-  Widget _blankCoachPhotoPlaceholder() {
-    return const ColoredBox(color: Colors.transparent);
+  Widget _blankCoachPhotoPlaceholder(BuildContext context) {
+    return ColoredBox(color: CoachProfilePhotoBackplate.plateColor(context));
   }
 }

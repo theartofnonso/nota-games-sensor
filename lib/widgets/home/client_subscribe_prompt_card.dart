@@ -3,6 +3,7 @@ import 'package:trainware/dtos/coach_dto.dart';
 import 'package:trainware/services/assigned_coach_service.dart';
 import 'package:trainware/widgets/coach/coach_paywall_hero_tag.dart';
 import 'package:trainware/widgets/coach/coach_profile_chips.dart';
+import 'package:trainware/widgets/coach/coach_profile_photo_backplate.dart';
 
 /// Full-bleed coach photo card for clients who need to subscribe. The **whole card**
 /// pulses gently (zoom + opacity, like calendar predicted days); tap opens paywall.
@@ -262,34 +263,38 @@ class _CoachCardImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = coach?.profileImageUrl?.trim();
     if (url != null && url.isNotEmpty) {
-      return Image.network(
-        url,
-        fit: BoxFit.cover,
-        alignment: Alignment.topCenter,
-        width: double.infinity,
-        errorBuilder: (_, _, _) => _noPhotoPlaceholder(),
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return ColoredBox(
-            color: Colors.black.withValues(alpha: 0.75),
-            child: const Center(
-              child: SizedBox(
-                width: 26,
-                height: 26,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white54,
+      return CoachProfilePhotoBackplate.behind(
+        context,
+        Image.network(
+          url,
+          fit: BoxFit.cover,
+          alignment: Alignment.topCenter,
+          width: double.infinity,
+          errorBuilder: (ctx, _, _) => _noPhotoPlaceholder(ctx),
+          loadingBuilder: (ctx, child, progress) {
+            if (progress == null) return child;
+            return ColoredBox(
+              color: CoachProfilePhotoBackplate.plateColor(ctx)
+                  .withValues(alpha: 0.92),
+              child: const Center(
+                child: SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.black26,
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
     }
-    return _noPhotoPlaceholder();
+    return _noPhotoPlaceholder(context);
   }
 
-  Widget _noPhotoPlaceholder() {
-    return const ColoredBox(color: Colors.black);
+  Widget _noPhotoPlaceholder(BuildContext context) {
+    return ColoredBox(color: CoachProfilePhotoBackplate.plateColor(context));
   }
 }
