@@ -156,12 +156,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _NutritionSection(),
                   _SpacerIfNutritionVisible(),
                   SizedBox(height: _sectionSpacing),
-                  _NotificationsPermissionSection(
-                    enabled: _notificationPermissionGranted,
-                    requesting: _requestingNotificationPermission,
-                    onRequest: _requestNotificationPermissionFromSettings,
-                  ),
-                  SizedBox(height: _sectionSpacing),
+                  if (!_notificationPermissionGranted) ...[
+                    _NotificationsPermissionSection(
+                      requesting: _requestingNotificationPermission,
+                      onRequest: _requestNotificationPermissionFromSettings,
+                    ),
+                    SizedBox(height: _sectionSpacing),
+                  ],
                   _buildDebugInfoSection(isDarkMode),
                   SizedBox(height: _sectionSpacing),
                   SizedBox(
@@ -1780,22 +1781,15 @@ class _SpacerIfNutritionVisible extends StatelessWidget {
 
 class _NotificationsPermissionSection extends StatelessWidget {
   const _NotificationsPermissionSection({
-    required this.enabled,
     required this.requesting,
     required this.onRequest,
   });
 
-  final bool enabled;
   final bool requesting;
   final VoidCallback onRequest;
 
   @override
   Widget build(BuildContext context) {
-    final statusText = enabled
-        ? 'Enabled. You will receive app notifications on this device.'
-        : 'Disabled. Enable notifications to receive updates and reminders.';
-    final cta = enabled ? 'Enabled' : 'Enable notifications';
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10.0),
       child: FrostedCard(
@@ -1815,7 +1809,7 @@ class _NotificationsPermissionSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              statusText,
+              'Turn on notifications so you never miss messages, reminders, and important updates.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.82),
                     height: 1.4,
@@ -1825,8 +1819,8 @@ class _NotificationsPermissionSection extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OpacityButtonWidgetTwo(
-                onPressed: enabled || requesting ? null : onRequest,
-                label: requesting ? 'Requesting...' : cta,
+                onPressed: requesting ? null : onRequest,
+                label: requesting ? 'Requesting...' : 'Enable notifications',
               ),
             ),
           ],

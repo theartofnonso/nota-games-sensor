@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'user_device_token_service.dart';
 
@@ -23,6 +24,13 @@ Future<bool> isNotificationPermissionGranted() async {
 /// Request notification permission. Show a bottom sheet with explanation first;
 /// the CTA in that sheet should call this.
 Future<void> requestNotificationPermission() async {
+  if (Platform.isAndroid) {
+    final plugin = FlutterLocalNotificationsPlugin();
+    await plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+  }
   await FirebaseMessaging.instance.requestPermission();
 }
 
