@@ -633,9 +633,6 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                       onTap: () async {
                         Navigator.of(context).pop();
                         await _navigateToRoutineTemplateEditor();
-                        if (mounted) {
-                          _showMenuBottomSheet(planDto: planDto);
-                        }
                       },
                     ),
                   if (canEditTemplate)

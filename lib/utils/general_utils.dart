@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:trainware/enums/height_unit.dart';
@@ -98,34 +96,6 @@ Future<NotificationsEnabledOptions> checkIosNotificationPermission() async {
           isProvisionalEnabled: false,
           isCriticalEnabled: false,
           isProvidesAppNotificationSettingsEnabled: false);
-}
-
-Future<bool> requestNotificationPermission() async {
-  return Platform.isIOS
-      ? _requestIosNotificationPermission()
-      : _requestAndroidNotificationPermission();
-}
-
-Future<bool> _requestIosNotificationPermission() async {
-  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  return await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          ) ??
-      false;
-}
-
-Future<bool> _requestAndroidNotificationPermission() async {
-  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  return await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission() ??
-      false;
 }
 
 /// Higher values now get a "better" color (green)

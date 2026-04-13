@@ -373,23 +373,24 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                         Navigator.of(context).pop();
                         _showCreateWorkoutBottomSheet(plan: plan);
                       }),
-                  ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: const FaIcon(
-                        FontAwesomeIcons.penToSquare,
-                        size: 18,
-                      ),
-                      horizontalTitleGap: 10,
-                      title: Text("Edit",
-                          style: Theme.of(context).textTheme.bodyLarge),
-                      onTap: () async {
-                        Navigator.of(context).pop();
-                        await _navigateToRoutinePlanEditor();
-                        if (mounted) {
-                          _showMenuBottomSheet();
-                        }
-                      }),
+                  if (AppConfig.isCoach)
+                    ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: const FaIcon(
+                          FontAwesomeIcons.penToSquare,
+                          size: 18,
+                        ),
+                        horizontalTitleGap: 10,
+                        title: Text("Edit",
+                            style: Theme.of(context).textTheme.bodyLarge),
+                        onTap: () async {
+                          Navigator.of(context).pop();
+                          await _navigateToRoutinePlanEditor();
+                          if (mounted) {
+                            _showMenuBottomSheet();
+                          }
+                        }),
                 ] else
                   ListTile(
                     dense: true,

@@ -55,6 +55,14 @@ Future<RoutineTemplateDto?> navigateToRoutineTemplateEditor(
 
 Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
     {required BuildContext context, RoutinePlanArguments? arguments}) async {
+  if (!AppConfig.isCoach) {
+    showSnackbar(
+      context: context,
+      message: 'Only coaches can edit routine plan details.',
+    );
+    return null;
+  }
+
   final initialPlan = arguments?.plan;
   final isEditing = initialPlan != null && initialPlan.id.isNotEmpty;
 

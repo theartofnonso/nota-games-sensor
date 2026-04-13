@@ -1,14 +1,10 @@
 import 'package:agora_chat_uikit/chat_uikit.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/repositories/supabase/supabase_coaches_repository.dart';
 import 'package:trainware/services/fcm_push_service.dart';
 import 'package:trainware/utils/dialog_utils.dart';
-import 'package:trainware/utils/theme/color_extensions.dart';
-import 'package:trainware/widgets/bottom_sheets/app_bottom_sheet.dart';
-import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 
 import '../video/outgoing_call_screen.dart';
 import '../video/video_call_screen.dart';
@@ -52,98 +48,12 @@ class ChatVideoLauncher {
     required String clientName,
   }) async {
     if (!AppConfig.supportsChatAndVideoCalls) return;
-    final cameraGranted = await Permission.camera.isGranted;
-    final micGranted = await Permission.microphone.isGranted;
-    if (!context.mounted) return;
-    if (cameraGranted && micGranted) {
-      await _pushVideoCallScreen(
-        context,
-        coachId: coachId,
-        coachName: coachName,
-        clientUserId: clientUserId,
-        clientName: clientName,
-      );
-      return;
-    }
-    if (!context.mounted) return;
-    await _presentVideoCallPermissionSheet(
+    await _pushVideoCallScreen(
       context,
       coachId: coachId,
       coachName: coachName,
       clientUserId: clientUserId,
       clientName: clientName,
-    );
-  }
-
-  static Future<void> _presentVideoCallPermissionSheet(
-    BuildContext sheetContext, {
-    required String coachId,
-    required String coachName,
-    required String clientUserId,
-    required String clientName,
-  }) async {
-    await showAppActionBottomSheet<void>(
-      context: sheetContext,
-      isDismissible: true,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Camera and microphone access',
-              style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Allow access to your camera and microphone to make video calls with your coach or client.',
-              style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(sheetContext)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.8),
-                  ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: OpacityButtonWidgetTwo(
-                label: 'Allow',
-                buttonColor: Theme.of(sheetContext).colors.vibrantAccent,
-                onPressed: () async {
-                  final statuses = await [
-                    Permission.camera,
-                    Permission.microphone,
-                  ].request();
-                  if (!sheetContext.mounted) return;
-                  Navigator.of(sheetContext).pop();
-                  if (statuses[Permission.camera] == PermissionStatus.granted &&
-                      statuses[Permission.microphone] ==
-                          PermissionStatus.granted) {
-                    await _pushVideoCallScreen(
-                      sheetContext,
-                      coachId: coachId,
-                      coachName: coachName,
-                      clientUserId: clientUserId,
-                      clientName: clientName,
-                    );
-                  } else {
-                    if (!sheetContext.mounted) return;
-                    showErrorBottomSheet(
-                      context: sheetContext,
-                      message:
-                          'Camera and microphone access is required for video calls.',
-                    );
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

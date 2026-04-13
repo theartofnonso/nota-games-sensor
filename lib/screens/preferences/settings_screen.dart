@@ -11,6 +11,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/services/push_token_service.dart'
+    as push_permission_service;
 import 'package:trainware/controllers/nutrition_log_controller.dart';
 import 'package:trainware/dtos/nutrition/nutrition_log_dto.dart';
 import 'package:trainware/screens/nutrition/nutrition_tracker_screen.dart';
@@ -18,7 +20,6 @@ import 'package:trainware/app_flavor.dart';
 import 'package:trainware/colors.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/utils/notifications_utils.dart';
 import 'package:trainware/utils/app_privileges.dart';
 
 import '../../controllers/supabase_exercise_and_routine_controller.dart';
@@ -52,6 +53,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen>
     with WidgetsBindingObserver {
   bool _loading = false;
+  bool _notificationPermissionGranted = false;
+  bool _requestingNotificationPermission = false;
 
   String _environment = "";
   String _bundleId = "";
@@ -153,6 +156,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _NutritionSection(),
                   _SpacerIfNutritionVisible(),
                   SizedBox(height: _sectionSpacing),
+                  _NotificationsPermissionSection(
+                    enabled: _notificationPermissionGranted,
+                    requesting: _requestingNotificationPermission,
+                    onRequest: _requestNotificationPermissionFromSettings,
+                  ),
+                  SizedBox(height: _sectionSpacing),
                   _buildDebugInfoSection(isDarkMode),
                   SizedBox(height: _sectionSpacing),
                   SizedBox(
@@ -246,6 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   void initState() {
     super.initState();
     _getAppVersion();
+    unawaited(_refreshNotificationPermissionStatus());
     _hasCachedSession = SharedPrefs().routineLog.isNotEmpty;
     SharedPrefs().routineLogRevision.addListener(_checkCachedSession);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -253,6 +263,28 @@ class _SettingsScreenState extends State<SettingsScreen>
       _nutritionInitialized = true;
       context.read<NutritionLogController>().initialize();
     });
+  }
+
+  Future<void> _refreshNotificationPermissionStatus() async {
+    final granted =
+        await push_permission_service.isNotificationPermissionGranted();
+    if (!mounted) return;
+    setState(() {
+      _notificationPermissionGranted = granted;
+    });
+  }
+
+  Future<void> _requestNotificationPermissionFromSettings() async {
+    if (_requestingNotificationPermission) return;
+    setState(() => _requestingNotificationPermission = true);
+    try {
+      await push_permission_service.requestNotificationPermission();
+      await _refreshNotificationPermissionStatus();
+    } finally {
+      if (mounted) {
+        setState(() => _requestingNotificationPermission = false);
+      }
+    }
   }
 
   @override
@@ -1277,7 +1309,7 @@ class _YearTrainingStats {
     final daysAhead = endOfYear.difference(todayStart).inDays;
     int predictedRemaining = 0;
     if (daysAhead > 0 && logs.isNotEmpty) {
-      final predictedSet = getPredictedTrainingDates(
+      final predictedSet = TrainingPredictionService.getPredictedTrainingDates(
         historicDateTimes: logs.map((log) => log.startTime).toList(),
         daysAhead: daysAhead,
       );
@@ -1342,7 +1374,7 @@ class _YearHoursStats {
       final daysAhead = endOfYear.difference(todayStart).inDays;
 
       if (daysAhead > 0) {
-        final predictedSet = getPredictedTrainingDates(
+        final predictedSet = TrainingPredictionService.getPredictedTrainingDates(
           historicDateTimes: logs.map((log) => log.startTime).toList(),
           daysAhead: daysAhead,
         );
@@ -1742,6 +1774,64 @@ class _SpacerIfNutritionVisible extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _NotificationsPermissionSection extends StatelessWidget {
+  const _NotificationsPermissionSection({
+    required this.enabled,
+    required this.requesting,
+    required this.onRequest,
+  });
+
+  final bool enabled;
+  final bool requesting;
+  final VoidCallback onRequest;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusText = enabled
+        ? 'Enabled. You will receive app notifications on this device.'
+        : 'Disabled. Enable notifications to receive updates and reminders.';
+    final cta = enabled ? 'Enabled' : 'Enable notifications';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+      child: FrostedCard(
+        gradientColors: const [
+          Color(0x1A60A5FA),
+          Color(0x3360A5FA),
+        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Notifications',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              statusText,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    height: 1.4,
+                  ),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: OpacityButtonWidgetTwo(
+                onPressed: enabled || requesting ? null : onRequest,
+                label: requesting ? 'Requesting...' : cta,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
