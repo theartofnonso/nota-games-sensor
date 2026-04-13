@@ -28,7 +28,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "xyz.usetracker.tracker_app"
+    namespace "com.notathletes"
     compileSdk flutter.compileSdkVersion
     ndkVersion "25.1.8937393"
 
@@ -47,8 +47,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "xyz.usetracker.tracker_app"
+        // Matches iOS bundle IDs: com.notathletes.client / .coach / .client.unlisted / .coach.unlisted
+        applicationId "com.notathletes.client"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion 26
@@ -62,13 +62,22 @@ android {
     productFlavors {
         coach {
             dimension "app"
-            applicationIdSuffix ".coach"
+            applicationId "com.notathletes.coach"
             resValue "string", "app_name", "Not Athletes Coach"
         }
         client {
             dimension "app"
-            applicationIdSuffix ".client"
             resValue "string", "app_name", "Not Athletes Train"
+        }
+        clientUnlisted {
+            dimension "app"
+            applicationId "com.notathletes.client.unlisted"
+            resValue "string", "app_name", "Trainware"
+        }
+        coachUnlisted {
+            dimension "app"
+            applicationId "com.notathletes.coach.unlisted"
+            resValue "string", "app_name", "Trainware Coach"
         }
     }
 

@@ -19,7 +19,7 @@ class RevenueCatBootstrap {
   static bool get isConfigured => _configured;
 
   static Future<void> configureForClient() async {
-    if (!AppConfig.isClient || _configured) return;
+    if (!AppConfig.isRetailClient || _configured) return;
 
     final apiKey = _resolveApiKey();
     if (apiKey.isEmpty) {
@@ -44,7 +44,7 @@ class RevenueCatBootstrap {
 
   /// Call when the Supabase session becomes available (e.g. after sign-in).
   static Future<void> logInUser(String appUserId) async {
-    if (!AppConfig.isClient || !_configured || appUserId.isEmpty) return;
+    if (!AppConfig.isRetailClient || !_configured || appUserId.isEmpty) return;
     try {
       await Purchases.logIn(appUserId);
     } catch (e, st) {
@@ -54,7 +54,7 @@ class RevenueCatBootstrap {
 
   /// Call before or after Supabase sign-out; errors are ignored.
   static Future<void> logOutIfClient() async {
-    if (!AppConfig.isClient || !_configured) return;
+    if (!AppConfig.isRetailClient || !_configured) return;
     try {
       await Purchases.logOut();
     } on PlatformException catch (e) {

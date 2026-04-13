@@ -14,8 +14,11 @@ class AppPrivileges {
   static bool get isCoach => AppConfig.isCoach;
 
   /// Client with an active coach-led subscription (not the coach app).
+  /// Unlisted client builds bypass the paywall and always count as pro.
   static bool get isProWithCoach =>
-      !isCoach && ClientSubscriptionService.instance.hasAccess;
+      !isCoach &&
+      (AppConfig.isUnlistedClient ||
+          ClientSubscriptionService.instance.hasAccess);
 
   /// Client or coach who can create and manage workout templates/plans.
   static bool get canCreateManageRoutines => isCoach || isProWithCoach;

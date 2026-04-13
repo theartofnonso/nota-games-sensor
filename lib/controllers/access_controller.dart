@@ -81,11 +81,11 @@ class ClientOverrideController extends ChangeNotifier {
         _isAuthenticated = session != null;
         _userId = session?.user.id;
         if (_isAuthenticated && _userId != null && _userId!.isNotEmpty) {
-          if (AppConfig.isClient) {
+          if (AppConfig.isRetailClient) {
             await RevenueCatBootstrap.logInUser(_userId!);
           }
         } else {
-          if (AppConfig.isClient) {
+          if (AppConfig.isRetailClient) {
             await RevenueCatBootstrap.logOutIfClient();
           }
           _selectedClientId = null;
@@ -97,7 +97,7 @@ class ClientOverrideController extends ChangeNotifier {
         notifyListeners();
       },
       onError: (_) async {
-        if (AppConfig.isClient) {
+        if (AppConfig.isRetailClient) {
           await RevenueCatBootstrap.logOutIfClient();
         }
         _isAuthenticated = false;

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/nutrition_log_controller.dart';
@@ -49,9 +48,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final uid = context.read<ClientOverrideController>().userId;
-      unawaited(
-        CoachClientsService.instance.loadClients(coachAuthUserId: uid),
-      );
+      unawaited(CoachClientsService.instance.loadClients(coachAuthUserId: uid));
     });
   }
 
@@ -202,140 +199,111 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
             padding: EdgeInsets.only(bottom: navBarBottomInset),
             child: Builder(
               builder: (context) {
-              final theme = Theme.of(context);
-              final service = CoachClientsService.instance;
+                final theme = Theme.of(context);
+                final service = CoachClientsService.instance;
 
-              if (_isRefreshing && service.clients.isEmpty) {
-                return const Center(child: CoachLoadingIndicator());
-              }
-              if (service.loadError != null && service.clients.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                if (_isRefreshing && service.clients.isEmpty) {
+                  return const Center(child: CoachLoadingIndicator());
+                }
+                if (service.loadError != null && service.clients.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Failed to load clients.',
+                            style: theme.textTheme.bodyMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          TextButton.icon(
+                            onPressed:
+                                _isRefreshing
+                                    ? null
+                                    : () => _retryLoadClients(),
+                            icon:
+                                _isRefreshing
+                                    ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                    : const Icon(Icons.refresh),
+                            label: Text(_isRefreshing ? 'Retrying…' : 'Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final clients = _filterClients(service.clients);
+                final subscribed =
+                    clients.where((c) => c.subscriptionActive).toList();
+                final notSubscribed =
+                    clients.where((c) => !c.subscriptionActive).toList();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 6),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Failed to load clients.',
-                          style: theme.textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
+                          'Clients',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        TextButton.icon(
-                          onPressed:
-                              _isRefreshing ? null : () => _retryLoadClients(),
-                          icon:
-                              _isRefreshing
-                                  ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                  : const Icon(Icons.refresh),
-                          label: Text(_isRefreshing ? 'Retrying…' : 'Retry'),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Select a client to view their training experience.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                );
-              }
-
-              final clients = _filterClients(service.clients);
-              final subscribed =
-                  clients.where((c) => c.subscriptionActive).toList();
-              final notSubscribed =
-                  clients.where((c) => !c.subscriptionActive).toList();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 6),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Clients',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.2,
-                        ),
+                    const SizedBox(height: 20),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 0),
+                      child: CSearchBar(
+                        hintText: 'Search clients',
+                        onChanged: _updateSearch,
+                        onClear: _clearSearch,
+                        controller: _searchController,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Select a client to view their training experience.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 0),
-                    child: CSearchBar(
-                      hintText: 'Search clients',
-                      onChanged: _updateSearch,
-                      onClear: _clearSearch,
-                      controller: _searchController,
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child:
-                              clients.isEmpty
-                                  ? _CoachClientsEmptyState(
-                                    isSearchEmpty:
-                                        _searchQuery.isNotEmpty &&
-                                        service.clients.isNotEmpty,
-                                  )
-                                  : RefreshIndicator(
-                                    onRefresh: _refreshClientsAndUnread,
-                                    child: ListView(
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      padding: EdgeInsets.zero,
-                                      children: [
-                                        if (subscribed.isNotEmpty &&
-                                            notSubscribed.isNotEmpty)
-                                          _CoachClientsSectionHeader(
-                                            title: 'Subscribed',
-                                          ),
-                                        ...subscribed.map(
-                                          (client) => _CoachClientTile(
-                                            client: client,
-                                            theme: theme,
-                                            isDarkMode: isDarkMode,
-                                            unreadCount:
-                                                _unreadByClientId[client
-                                                    .clientId] ??
-                                                0,
-                                            onTap: () {
-                                              unawaited(
-                                                _openClientExperience(
-                                                  itemContext: context,
-                                                  client: client,
-                                                  routineController:
-                                                      routineController,
-                                                  nutritionController:
-                                                      nutritionController,
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                        if (notSubscribed.isNotEmpty) ...[
-                                          if (subscribed.isNotEmpty)
-                                            const SizedBox(height: 20),
-                                          _CoachClientsSectionHeader(
-                                            title: 'Inactive subscription',
-                                            subtitle:
-                                                'Their program isn’t available until they have an active subscription.',
-                                          ),
-                                          ...notSubscribed.map(
+                    const SizedBox(height: 18),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child:
+                                clients.isEmpty
+                                    ? _CoachClientsEmptyState(
+                                      isSearchEmpty:
+                                          _searchQuery.isNotEmpty &&
+                                          service.clients.isNotEmpty,
+                                    )
+                                    : RefreshIndicator(
+                                      onRefresh: _refreshClientsAndUnread,
+                                      child: ListView(
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
+                                        padding: EdgeInsets.zero,
+                                        children: [
+                                          if (subscribed.isNotEmpty &&
+                                              notSubscribed.isNotEmpty)
+                                            _CoachClientsSectionHeader(
+                                              title: 'Subscribed',
+                                            ),
+                                          ...subscribed.map(
                                             (client) => _CoachClientTile(
                                               client: client,
                                               theme: theme,
@@ -344,20 +312,51 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
                                                   _unreadByClientId[client
                                                       .clientId] ??
                                                   0,
-                                              onTap: null,
+                                              onTap: () {
+                                                unawaited(
+                                                  _openClientExperience(
+                                                    itemContext: context,
+                                                    client: client,
+                                                    routineController:
+                                                        routineController,
+                                                    nutritionController:
+                                                        nutritionController,
+                                                  ),
+                                                );
+                                              },
                                             ),
                                           ),
+                                          if (notSubscribed.isNotEmpty) ...[
+                                            if (subscribed.isNotEmpty)
+                                              const SizedBox(height: 20),
+                                            _CoachClientsSectionHeader(
+                                              title: 'Inactive subscription',
+                                              subtitle:
+                                                  'Their program isn’t available until they have an active subscription.',
+                                            ),
+                                            ...notSubscribed.map(
+                                              (client) => _CoachClientTile(
+                                                client: client,
+                                                theme: theme,
+                                                isDarkMode: isDarkMode,
+                                                unreadCount:
+                                                    _unreadByClientId[client
+                                                        .clientId] ??
+                                                    0,
+                                                onTap: null,
+                                              ),
+                                            ),
+                                          ],
                                         ],
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              );
+                  ],
+                );
               },
             ),
           ),
@@ -368,10 +367,7 @@ class _CoachClientsScreenState extends State<CoachClientsScreen>
 }
 
 class _CoachClientsSectionHeader extends StatelessWidget {
-  const _CoachClientsSectionHeader({
-    required this.title,
-    this.subtitle,
-  });
+  const _CoachClientsSectionHeader({required this.title, this.subtitle});
 
   final String title;
   final String? subtitle;
@@ -428,9 +424,6 @@ class _CoachClientTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final joinedLabel = DateFormat(
-      'MMM yyyy',
-    ).format(client.createdAt.toLocal());
     final showUnread = unreadCount > 0 && _enabled;
 
     final card = Material(
@@ -473,13 +466,6 @@ class _CoachClientTile extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Client since $joinedLabel',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.6),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -514,10 +500,7 @@ class _CoachClientTile extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Opacity(
-        opacity: _enabled ? 1.0 : 0.48,
-        child: card,
-      ),
+      child: Opacity(opacity: _enabled ? 1.0 : 0.48, child: card),
     );
   }
 }
@@ -532,11 +515,11 @@ class _CoachClientsEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final muted =
-        (isDark ? Colors.white : Colors.black).withValues(alpha: 0.45);
+    final muted = (isDark ? Colors.white : Colors.black).withValues(
+      alpha: 0.45,
+    );
 
-    final title =
-        isSearchEmpty ? 'No matching clients' : 'No clients yet';
+    final title = isSearchEmpty ? 'No matching clients' : 'No clients yet';
     final body =
         isSearchEmpty
             ? 'Try a different name in the search box.'
@@ -556,11 +539,7 @@ class _CoachClientsEmptyState extends StatelessWidget {
                 ),
                 shape: BoxShape.circle,
               ),
-              child: FaIcon(
-                FontAwesomeIcons.users,
-                size: 48,
-                color: muted,
-              ),
+              child: FaIcon(FontAwesomeIcons.users, size: 48, color: muted),
             ),
             const SizedBox(height: 24),
             Text(

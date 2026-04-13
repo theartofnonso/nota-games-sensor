@@ -5,6 +5,7 @@ import 'dart:io' show Platform;
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
@@ -54,6 +55,7 @@ import 'package:trainware/services/assigned_coach_service.dart';
 import 'package:trainware/services/client_subscription_service.dart';
 import 'package:trainware/services/revenue_cat_bootstrap.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
+import 'package:trainware/services/unlisted_client_bootstrap_service.dart';
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -66,7 +68,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:agora_chat_uikit/chat_uikit.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'firebase_options_coach.dart' as coach_options;
+import 'firebase_options_coach_unlisted.dart' as coach_unlisted_options;
 import 'firebase_options_client.dart' as client_options;
+import 'firebase_options_client_unlisted.dart' as client_unlisted_options;
 
 import 'dtos/appsync/routine_plan_dto.dart';
 import 'dtos/viewmodels/routine_log_arguments.dart';
@@ -109,6 +113,13 @@ void _processPendingNotification() {
 
   final payload = _pendingNotificationPayload!;
   final type = payload['type'] as String?;
+
+  if (!AppConfig.supportsChatAndVideoCalls &&
+      (type == 'chat' || type == 'incoming_call')) {
+    _pendingNotificationPayload = null;
+    _notificationRetryCount = 0;
+    return;
+  }
 
   if (type == 'chat') {
     _pendingNotificationPayload = null;
@@ -233,28 +244,34 @@ Future<void> mainCommon(AppFlavor flavor) async {
 
   await ensureLocalTimezoneConfigured();
 
-  // Initialize Firebase with flavor-specific options
-  final firebaseOptions = flavor == AppFlavor.coach
-      ? coach_options.DefaultFirebaseOptions.currentPlatform
-      : client_options.DefaultFirebaseOptions.currentPlatform;
+  // Initialize Firebase: retail vs unlisted iOS apps (see ios/Runner/GoogleService-Info-*.plist).
+  final firebaseOptions = switch (flavor) {
+    AppFlavor.coach => coach_options.DefaultFirebaseOptions.currentPlatform,
+    AppFlavor.coachUnlisted =>
+      coach_unlisted_options.DefaultFirebaseOptions.currentPlatform,
+    AppFlavor.client => client_options.DefaultFirebaseOptions.currentPlatform,
+    AppFlavor.clientUnlisted =>
+      client_unlisted_options.DefaultFirebaseOptions.currentPlatform,
+  };
   await Firebase.initializeApp(
     options: firebaseOptions,
   );
 
-  // Initialize Agora Chat SDK
-  final chatOptions = ChatOptions(
-    appKey: ChatConfig.agoraAppKey,
-    autoLogin: false,
-  );
-  if (Platform.isAndroid) {
-    chatOptions.enableFCM("160658273085");
-  } else if (Platform.isIOS) {
-    chatOptions.enableAPNs(ChatConfig.apnsCertName);
-    logger.d(
-        'APNs cert name for push: "${ChatConfig.apnsCertName}" (must match Agora Console Push Certificate)');
+  if (AppConfig.supportsChatAndVideoCalls) {
+    final chatOptions = ChatOptions(
+      appKey: ChatConfig.agoraAppKey,
+      autoLogin: false,
+    );
+    if (Platform.isAndroid) {
+      chatOptions.enableFCM("160658273085");
+    } else if (Platform.isIOS) {
+      chatOptions.enableAPNs(ChatConfig.apnsCertName);
+      logger.d(
+          'APNs cert name for push: "${ChatConfig.apnsCertName}" (must match Agora Console Push Certificate)');
+    }
+    await ChatUIKit.instance.init(options: chatOptions);
+    applyTrainwareChatUIKitTheme();
   }
-  await ChatUIKit.instance.init(options: chatOptions);
-  applyTrainwareChatUIKitTheme();
 
   await SharedPrefs().init();
 
@@ -266,7 +283,9 @@ Future<void> mainCommon(AppFlavor flavor) async {
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
 
-  await RevenueCatBootstrap.configureForClient();
+  if (flavor == AppFlavor.client) {
+    await RevenueCatBootstrap.configureForClient();
+  }
 
   const DarwinInitializationSettings iOSInitializationSettingsDarwin =
       DarwinInitializationSettings(
@@ -318,6 +337,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
 
   // FCM: app in foreground, incoming call data message
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    if (!AppConfig.supportsChatAndVideoCalls) return;
     final data = message.data;
     if (data.isEmpty) return;
     final type = data['type'] as String?;
@@ -669,6 +689,16 @@ GoRouter _createRouter(
       GoRoute(
         path: ChatScreen.routeName,
         pageBuilder: (context, state) {
+          if (!AppConfig.supportsChatAndVideoCalls) {
+            return CustomTransitionPage(
+              key: state.pageKey,
+              child: const Home(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+            );
+          }
           if (!AppConfig.isCoach && !AppPrivileges.isProWithCoach) {
             return CustomTransitionPage(
               key: state.pageKey,
@@ -754,8 +784,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (Platform.isIOS) {
       _initDeepLinks();
     }
-    // Warm up chat when already authenticated at startup (listener may have fired before we attached)
-    if (_accessController.isAuthenticated && _accessController.userId != null) {
+    if (AppConfig.supportsChatAndVideoCalls &&
+        _accessController.isAuthenticated &&
+        _accessController.userId != null) {
       unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
           _accessController.userId));
     }
@@ -768,7 +799,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       DeviceOrientation.portraitUp,
     ]);
     WidgetsBinding.instance.addObserver(this);
-    if (AppConfig.isClient && SharedPrefs().firstLaunch) {
+    if (AppConfig.isRetailClient && SharedPrefs().firstLaunch) {
       _prefetchedCoachesFuture = SupabaseCoachesRepository().fetchCoaches();
     }
   }
@@ -791,6 +822,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _logoutAgoraForBackground() async {
+    if (!AppConfig.supportsChatAndVideoCalls) return;
     if (_agoraLifecycleTransitionInFlight) return;
     if (ChatClient.getInstance.currentUserId == null) return;
     _agoraLifecycleTransitionInFlight = true;
@@ -808,6 +840,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _restoreAgoraOnResume() async {
+    if (!AppConfig.supportsChatAndVideoCalls) return;
     if (!_accessController.isAuthenticated ||
         _accessController.userId == null) {
       return;
@@ -844,7 +877,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     unawaited(
       AppStartupService.instance
-          .runStartupTasks(controller: controller, userId: userId)
+          .runStartupTasks(
+            controller: controller,
+            userId: userId,
+            accessController: _accessController,
+          )
           .then((_) {
         if (mounted) {
           _startupComplete = true;
@@ -867,11 +904,26 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     final shouldRebuild =
         isAuthenticated != _lastAuthenticated || isCoach != _lastCoach;
 
+    // If startup was previously marked complete in signed-out state, reopen it on
+    // sign-in so authenticated startup tasks (including unlisted bootstrap) run.
+    if (isAuthenticated && !_lastAuthenticated) {
+      _startupComplete = false;
+      _startupTasksStarted = false;
+    }
+
     _runStartupTasksIfReady();
 
     if (isAuthenticated && !_lastAuthenticated && AppConfig.isClient) {
       unawaited(ClientSubscriptionService.instance.refreshSubscriptionStatus());
-      unawaited(AssignedCoachService.instance.refreshFromRemote());
+      if (AppConfig.isUnlistedClient) {
+        // Direct call right after sign-in to keep unlisted journey explicit/simple.
+        unawaited(UnlistedClientBootstrapService.run());
+      }
+      // Unlisted: [AppStartupService] runs unlisted bootstrap then refresh in order—
+      // avoid a parallel refresh here (would only show coach-profiles without signup in logs).
+      if (!AppConfig.isUnlistedClient) {
+        unawaited(AssignedCoachService.instance.refreshFromRemote());
+      }
     }
 
     if (isAuthenticated && !_lastAuthenticated) {
@@ -895,13 +947,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (!isAuthenticated && _lastAuthenticated) {
       // Covers session expiry / remote sign-out (not only in-app performLogout).
       unawaited(cancelAllTrainingRelatedLocalNotifications());
-      unawaited(ChatBootstrapService.logoutAgoraChat());
+      if (AppConfig.supportsChatAndVideoCalls) {
+        unawaited(ChatBootstrapService.logoutAgoraChat());
+      }
       unawaited(RevenueCatBootstrap.logOutIfClient());
       _startupComplete = false;
       _startupTasksStarted = false;
       AppStartupService.instance.reset();
       SharedPrefs().profileSetupComplete = false;
-      if (AppConfig.isClient &&
+      if (AppConfig.isRetailClient &&
           SharedPrefs().takeClientPreAuthLandingPending()) {
         SharedPrefs().firstLaunch = true;
         _welcomeDismissed = false;
@@ -951,6 +1005,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       return;
     }
     if (path == '/incoming-call') {
+      if (!AppConfig.supportsChatAndVideoCalls) return;
       if (!_accessController.isAuthenticated) return;
       final callerId = uri.queryParameters['callerId'];
       final channelName = uri.queryParameters['channelName'];
@@ -1002,7 +1057,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // Client: coach discovery anytime user is signed out (not only first launch),
     // so Sign in → auth can return here via [SupabaseAuthScreen.onDiscoverCoaches].
     if (!_accessController.isAuthenticated &&
-        AppConfig.isClient &&
+        AppConfig.isRetailClient &&
         _coachDiscoveryOpen) {
       _prefetchedCoachesFuture ??=
           SupabaseCoachesRepository().fetchCoaches();
@@ -1043,9 +1098,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 setState(() => _welcomeDismissed = true);
               }
             : null,
-        onDiscoverCoaches: AppConfig.isClient
+        onDiscoverCoaches: AppConfig.isRetailClient
             ? () => setState(() => _coachDiscoveryOpen = true)
             : null,
+        // Unlisted client: same dismiss as retail but no Discover Coaches button.
         onSignIn: AppConfig.isClient
             ? () {
                 SharedPrefs().firstLaunch = false;
@@ -1066,7 +1122,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         theme: TRKRTheme.darkTheme,
         darkTheme: TRKRTheme.darkTheme,
         home: SupabaseAuthScreen(
-          onDiscoverCoaches: AppConfig.isClient
+          onDiscoverCoaches: AppConfig.isRetailClient
               ? () => setState(() => _coachDiscoveryOpen = true)
               : null,
         ),
@@ -1074,6 +1130,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
 
     // Show main app if authenticated
+    final useChatKit = AppConfig.supportsChatAndVideoCalls;
     return ProfileCompletionGate(
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
@@ -1081,11 +1138,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         theme: TRKRTheme.darkTheme,
         darkTheme: TRKRTheme.darkTheme,
         routerConfig: _router,
-        supportedLocales: ChatUIKitLocalizations().supportedLocales,
-        localizationsDelegates:
-            ChatUIKitLocalizations().localizationsDelegates,
-        localeResolutionCallback:
-            ChatUIKitLocalizations().localeResolutionCallback,
+        supportedLocales: useChatKit
+            ? ChatUIKitLocalizations().supportedLocales
+            : const [Locale('en')],
+        localizationsDelegates: useChatKit
+            ? ChatUIKitLocalizations().localizationsDelegates
+            : const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+        localeResolutionCallback: useChatKit
+            ? ChatUIKitLocalizations().localeResolutionCallback
+            : (locale, supported) => locale ?? const Locale('en'),
       ),
     );
   }

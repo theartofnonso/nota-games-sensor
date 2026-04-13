@@ -1,0 +1,4 @@
+#include "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug-coach-unlisted.xcconfig"
+#include "Flutter/Debug.xcconfig"
+APP_DISPLAY_NAME=Trainware Coach
+FLUTTER_TARGET=lib/main_coach_unlisted.dart

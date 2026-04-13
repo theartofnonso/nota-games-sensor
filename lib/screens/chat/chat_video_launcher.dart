@@ -51,6 +51,7 @@ class ChatVideoLauncher {
     required String clientUserId,
     required String clientName,
   }) async {
+    if (!AppConfig.supportsChatAndVideoCalls) return;
     final cameraGranted = await Permission.camera.isGranted;
     final micGranted = await Permission.microphone.isGranted;
     if (!context.mounted) return;

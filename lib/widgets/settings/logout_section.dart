@@ -124,7 +124,9 @@ Future<void> performLogout() async {
   if (AppConfig.isClient) {
     SharedPrefs().markClientPreAuthLandingPending();
   }
-  await ChatBootstrapService.logoutAgoraChat();
+  if (AppConfig.supportsChatAndVideoCalls) {
+    await ChatBootstrapService.logoutAgoraChat();
+  }
   await RevenueCatBootstrap.logOutIfClient();
   await Supabase.instance.client.auth.signOut();
 }

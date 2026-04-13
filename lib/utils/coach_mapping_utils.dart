@@ -2,6 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Reads [coach_clients] for `client_id` → returns `coach_id`.
 ///
+/// Unlisted clients get `clients` + `coach_clients` via **`POST /unlisted-client-bootstrap`** at startup.
+///
 /// Coach display data comes from **GET /coach-profiles/:id** ([fetchAssignedCoachProfile]),
 /// not from Supabase `coaches`. [coachName] is left empty here.
 Future<Map<String, String>?> fetchCoachForClient(String clientId) async {

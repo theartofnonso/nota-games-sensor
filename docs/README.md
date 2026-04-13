@@ -7,7 +7,7 @@ Key documentation for the Trackr / Not Athletes project.
 | Doc | Purpose |
 |-----|---------|
 | [IOS_IAP_SETUP.md](./IOS_IAP_SETUP.md) | iOS In-App Purchase setup (App Store Connect, Xcode) |
-| [APP_STORE_DESCRIPTION.md](./APP_STORE_DESCRIPTION.md) | App Store listing copy (client app) |
+| [STORE_LISTING_DESCRIPTIONS_ALL_FLAVORS.txt](./STORE_LISTING_DESCRIPTIONS_ALL_FLAVORS.txt) | Store listing copy (all flavors: retail client/coach, unlisted client/coach) |
 | [APP_REVIEW.md](./APP_REVIEW.md) | Demo account setup for App Store review |
 | [DEEP_LINKS_IOS.md](./DEEP_LINKS_IOS.md) | Universal Links / AASA setup (external) |
 

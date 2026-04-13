@@ -6,10 +6,8 @@ import 'coach_mapping_utils.dart';
 
 /// Assigned coach profile for the signed-in client.
 ///
-/// 1. Reads **`coach_id` from `coach_clients`** for the signed-in Supabase user.
-/// 2. Calls Not Athletes **GET /coach-profiles/:id** using that `coach_id` in the
-///    URL path. If the JSON body omits `id`, parsing falls back to that same id.
-/// 3. Parses the body with [CoachDto.fromJson].
+/// Uses [fetchCoachForClient] (unlisted clients get a fixed coach id; see there), then
+/// Not Athletes **GET /coach-profiles/:id** and [CoachDto.fromJson].
 Future<CoachDto?> fetchAssignedCoachProfile() async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return null;

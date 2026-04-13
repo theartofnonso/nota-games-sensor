@@ -44,6 +44,10 @@ class _ProfileCompletionGateState extends State<ProfileCompletionGate> {
       if (mounted) setState(() => _phase = _ProfileGatePhase.ready);
       return;
     }
+    if (AppConfig.isUnlistedClient) {
+      if (mounted) setState(() => _phase = _ProfileGatePhase.ready);
+      return;
+    }
 
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {

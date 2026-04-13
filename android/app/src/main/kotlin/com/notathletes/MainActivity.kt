@@ -1,4 +1,4 @@
-package xyz.usetracker.tracker_app
+package com.notathletes
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

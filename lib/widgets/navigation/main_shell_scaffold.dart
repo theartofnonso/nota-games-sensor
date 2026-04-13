@@ -39,13 +39,14 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
       !AppConfig.isClient || AppPrivileges.isProWithCoach;
 
   bool get _chatInNavBar =>
-      AppConfig.isCoach || (AppConfig.isClient && _clientFullAccess);
+      AppConfig.supportsChatAndVideoCalls &&
+      (AppConfig.isCoach || (AppConfig.isClient && _clientFullAccess));
 
   bool get _feedbackInNavBar => AppConfig.isClient && _clientFullAccess;
 
   int get _settingsNavIndex {
-    if (AppConfig.isCoach) return 4;
-    if (_clientFullAccess) return 4;
+    if (AppConfig.isCoach) return _chatInNavBar ? 4 : 3;
+    if (_clientFullAccess) return _chatInNavBar ? 4 : 3;
     return 1;
   }
 
@@ -76,11 +77,13 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _accessController = context.read<ClientOverrideController>();
-    _attachChatListeners();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await _bootstrapChatContext();
-    });
+    if (AppConfig.supportsChatAndVideoCalls) {
+      _attachChatListeners();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await _bootstrapChatContext();
+      });
+    }
   }
 
   void _attachChatListeners() {
@@ -152,16 +155,18 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    if (AppConfig.isCoach) {
-      ChatUnreadCountsService().totalUnreadCount.removeListener(
-        _handleChatUnreadChange,
-      );
-      ChatUnreadCountsService().unreadByClientId.removeListener(
-        _handleChatUnreadChange,
-      );
-      _accessController?.removeListener(_handleChatUnreadChange);
-    } else {
-      ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
+    if (AppConfig.supportsChatAndVideoCalls) {
+      if (AppConfig.isCoach) {
+        ChatUnreadCountsService().totalUnreadCount.removeListener(
+          _handleChatUnreadChange,
+        );
+        ChatUnreadCountsService().unreadByClientId.removeListener(
+          _handleChatUnreadChange,
+        );
+        _accessController?.removeListener(_handleChatUnreadChange);
+      } else {
+        ChatUnreadService().unreadCount.removeListener(_handleChatUnreadChange);
+      }
     }
     _accessController = null;
     super.dispose();
@@ -169,6 +174,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!AppConfig.supportsChatAndVideoCalls) return;
     if (state == AppLifecycleState.resumed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (AppConfig.isCoach) {
@@ -204,7 +210,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
     } else if (!AppConfig.isCoach &&
         _clientFullAccess &&
         path == CoachFeedbackFeedScreen.routeName) {
-      next = 3;
+      next = _chatInNavBar ? 3 : 2;
     } else if (path == AccountSettingsScreen.routeName) {
       next = _settingsNavIndex;
     } else {
@@ -260,7 +266,9 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
           navigateToPrimaryRoutinePlan(context: context);
           break;
         case 3:
-          _openChatOverlay();
+          if (_chatInNavBar) {
+            _openChatOverlay();
+          }
           break;
       }
       if (index == 0 || index == 1 || index == 2) {
@@ -289,19 +297,33 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
       return;
     }
 
-    switch (index) {
-      case 0:
-        router.go('/');
-        break;
-      case 1:
-        navigateToPrimaryRoutinePlan(context: context);
-        break;
-      case 2:
-        _openChatOverlay();
-        break;
-      case 3:
-        navigateToCoachFeedbackFeed(context: context);
-        break;
+    if (_chatInNavBar) {
+      switch (index) {
+        case 0:
+          router.go('/');
+          break;
+        case 1:
+          navigateToPrimaryRoutinePlan(context: context);
+          break;
+        case 2:
+          _openChatOverlay();
+          break;
+        case 3:
+          navigateToCoachFeedbackFeed(context: context);
+          break;
+      }
+    } else {
+      switch (index) {
+        case 0:
+          router.go('/');
+          break;
+        case 1:
+          navigateToPrimaryRoutinePlan(context: context);
+          break;
+        case 2:
+          navigateToCoachFeedbackFeed(context: context);
+          break;
+      }
     }
     if (index == 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

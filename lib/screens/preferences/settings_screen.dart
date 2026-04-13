@@ -134,10 +134,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                     listenable:
                         ClientSubscriptionService.instance.accessRevision,
                     builder: (context, _) {
-                      // Clients without subscription: hide (subscribe UX only).
-                      // Subscribed clients and coach app: show progress carousel.
+                      // Retail clients without subscription: hide (subscribe UX only).
+                      // Unlisted clients skip RevenueCat; always show carousel.
                       final hideTrainingInsightsCarousel =
-                          AppConfig.isClient &&
+                          AppConfig.isRetailClient &&
                               !ClientSubscriptionService.instance.hasAccess;
                       if (hideTrainingInsightsCarousel) {
                         return const SizedBox.shrink();
@@ -1607,7 +1607,8 @@ class _NutritionSection extends StatelessWidget {
       listenable: ClientSubscriptionService.instance.accessRevision,
       builder: (context, _) {
         final showSubscribe =
-            AppConfig.isClient && !ClientSubscriptionService.instance.hasAccess;
+            AppConfig.isRetailClient &&
+                !ClientSubscriptionService.instance.hasAccess;
 
         return Consumer<NutritionLogController>(
           builder: (context, nutritionController, _) {
@@ -1728,7 +1729,8 @@ class _SpacerIfNutritionVisible extends StatelessWidget {
       listenable: ClientSubscriptionService.instance.accessRevision,
       builder: (context, _) {
         final showSubscribe =
-            AppConfig.isClient && !ClientSubscriptionService.instance.hasAccess;
+            AppConfig.isRetailClient &&
+                !ClientSubscriptionService.instance.hasAccess;
         return Consumer<NutritionLogController>(
           builder: (context, controller, _) {
             final hasContent = AppPrivileges.isCoach ||
