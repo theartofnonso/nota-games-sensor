@@ -5,7 +5,7 @@ plugins {
     // END: FlutterFire Configuration
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
-    id "org.jetbrains.kotlin.android" version "1.9.23"
+    id "org.jetbrains.kotlin.android" version "2.1.0"
     id 'kotlin-parcelize'
 }
 
@@ -30,7 +30,7 @@ if (flutterVersionName == null) {
 android {
     namespace "com.notathletes"
     compileSdk flutter.compileSdkVersion
-    ndkVersion "25.1.8937393"
+    ndkVersion "28.2.13676358"
 
     compileOptions {
         coreLibraryDesugaringEnabled true
@@ -86,6 +86,7 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

@@ -269,6 +269,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   Future<void> _refreshNotificationPermissionStatus() async {
     final granted =
         await push_permission_service.isNotificationPermissionGranted();
+    if (granted) {
+      await push_permission_service.ensureFcmTokenSyncedToBackend();
+    }
     if (!mounted) return;
     setState(() {
       _notificationPermissionGranted = granted;

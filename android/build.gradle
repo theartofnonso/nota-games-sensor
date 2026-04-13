@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.9.23'
+    ext.kotlin_version = '2.1.0'
 }
 allprojects {
     repositories {
@@ -11,6 +11,31 @@ allprojects {
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+// AGP 8+ requires `namespace` on every Android library; some older plugins only
+// declare `package` in AndroidManifest.xml (e.g. flutter_native_timezone).
+subprojects { subproject ->
+    subproject.afterEvaluate { project ->
+        if (!project.plugins.hasPlugin('com.android.library')) {
+            return
+        }
+        def android = project.extensions.findByName('android')
+        if (android == null) {
+            return
+        }
+        def existing = android.namespace
+        if (existing != null && existing.toString().trim()) {
+            return
+        }
+        def manifestFile = project.file('src/main/AndroidManifest.xml')
+        if (manifestFile.exists()) {
+            def m = new groovy.xml.XmlSlurper().parse(manifestFile)
+            def pkg = m.@package?.toString()?.trim()
+            if (pkg) {
+                android.namespace = pkg
+            }
+        }
+    }
 }
 subprojects {
     project.evaluationDependsOn(':app')

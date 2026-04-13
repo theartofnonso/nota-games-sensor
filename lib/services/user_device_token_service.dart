@@ -9,7 +9,7 @@ import 'package:uuid/uuid.dart';
 const String _deviceIdKey = 'user_device_token_device_id';
 
 /// Syncs FCM device tokens to Supabase for backend push notifications (SendLoop/FCM).
-/// Called from [push_token_service] alongside Agora token setup and refresh.
+/// Called from [ensureFcmTokenSyncedToBackend] and [setupPushToken] refresh paths.
 ///
 /// Maps user_id → device tokens so the backend can deliver push notifications
 /// across all of a user's devices.

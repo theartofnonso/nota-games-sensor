@@ -56,6 +56,8 @@ import 'package:trainware/services/client_subscription_service.dart';
 import 'package:trainware/services/revenue_cat_bootstrap.dart';
 import 'package:trainware/services/chat_bootstrap_service.dart';
 import 'package:trainware/services/unlisted_client_bootstrap_service.dart';
+import 'package:trainware/services/push_token_service.dart'
+    as push_permission_service;
 import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/utils/route_observer.dart';
 import 'package:trainware/utils/timezone_utils.dart';
@@ -793,6 +795,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _processPendingNotification();
       _runStartupTasksIfReady();
+      // [initState] seeds [_lastAuthenticated] from the restored session, so the
+      // sign-in transition in [_handleAccessChanged] never runs on cold start — without
+      // this, backend FCM registration may never run (unlisted has no Agora path).
+      if (_accessController.isAuthenticated) {
+        unawaited(push_permission_service.ensureFcmTokenSyncedToBackend());
+      }
     });
     // Set preferred orientation once at startup
     SystemChrome.setPreferredOrientations([
@@ -818,6 +826,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     if (state == AppLifecycleState.resumed) {
       unawaited(_restoreAgoraOnResume());
+      if (_accessController.isAuthenticated) {
+        unawaited(push_permission_service.ensureFcmTokenSyncedToBackend());
+      }
     }
   }
 
@@ -927,6 +938,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
 
     if (isAuthenticated && !_lastAuthenticated) {
+      unawaited(push_permission_service.ensureFcmTokenSyncedToBackend());
       // [GoRouter] is long-lived; location survives logout while [MyApp] stays alive.
       // Clear shell routes (e.g. /account-settings) so sign-in lands on home, not the
       // screen where the user logged out.
