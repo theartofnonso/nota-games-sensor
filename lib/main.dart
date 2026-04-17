@@ -437,6 +437,11 @@ GoRouter _createRouter(
         return accessController.hasSelectedClient ? '/' : '/coach';
       }
 
+      // Coach flavors always start on the client picker on app launch.
+      if (loc == '/') {
+        return '/coach';
+      }
+
       // Coach: routine plan / template detail need a selected client; otherwise
       // send them to the client picker (do not redirect to home when client is selected).
       if ((loc == kShellRoutinesPath || isShellRoutineTemplatePath(loc)) &&
