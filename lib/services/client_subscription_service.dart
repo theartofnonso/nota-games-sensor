@@ -33,13 +33,19 @@ class ClientSubscriptionService {
 
   /// Apply SDK [CustomerInfo] directly (e.g. from [Purchases.purchase]) before cache catches up.
   void applyCustomerInfo(CustomerInfo info) {
-    if (!AppConfig.isClient) return;
+    if (!AppConfig.isRetailClient) return;
     _cachedAccess = RevenueCatSubscriptionHelpers.hasCoachLedSubscription(info);
     _bump();
   }
 
   Future<void> refreshSubscriptionStatus() async {
     if (!AppConfig.isClient) return;
+    if (AppConfig.isUnlistedClient) {
+      _cachedAccess = true;
+      _refreshInProgress = null;
+      _bump();
+      return;
+    }
 
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.id.trim().isEmpty) {
@@ -61,6 +67,11 @@ class ClientSubscriptionService {
   }
 
   Future<bool> syncAccessFromRevenueCat() async {
+    if (AppConfig.isUnlistedClient) {
+      _cachedAccess = true;
+      _bump();
+      return true;
+    }
     if (!RevenueCatBootstrap.isConfigured) {
       _cachedAccess = false;
       _bump();
@@ -96,6 +107,7 @@ class ClientSubscriptionService {
     required String blockedMessage,
   }) async {
     if (!AppConfig.isClient) return true;
+    if (AppConfig.isUnlistedClient) return true;
 
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.id.trim().isEmpty) return false;
@@ -115,7 +127,7 @@ class ClientSubscriptionService {
     if (freshCustomerInfo != null) applyCustomerInfo(freshCustomerInfo);
     await _syncPurchasesBestEffort();
     await refreshSubscriptionStatus();
-    if (notifyCoach && AppConfig.isClient) {
+    if (notifyCoach && AppConfig.isRetailClient) {
       unawaited(_notifyCoachClientSubscribed());
     }
   }
@@ -163,6 +175,7 @@ class ClientSubscriptionService {
     required BuildContext context,
     CoachDto? assignedCoach,
   }) async {
+    if (AppConfig.isUnlistedClient) return;
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.id.trim().isEmpty) {
       showErrorBottomSheet(
@@ -221,6 +234,7 @@ class ClientSubscriptionService {
   Future<void> presentPaywallIfAppAccessMissing({
     required BuildContext context,
   }) async {
+    if (AppConfig.isUnlistedClient) return;
     if (!RevenueCatBootstrap.isConfigured) return;
     try {
       final info = await Purchases.getCustomerInfo();

@@ -4,10 +4,30 @@ import 'dart:io' show Platform;
 import 'package:agora_chat_sdk/agora_chat_sdk.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'user_device_token_service.dart';
 
 bool _tokenRefreshListenerAdded = false;
+
+// ---------------------------------------------------------------------------
+// Backend push (all flavors) — single entry point
+// ---------------------------------------------------------------------------
+
+/// Syncs the device FCM token to Supabase `user_device_tokens` when the user
+/// has granted notification permission, and attaches a token-refresh listener.
+///
+/// This is the **only** path the app should use for “our” push delivery (SendLoop,
+/// nutrition nudges, etc.). It does **not** depend on Agora, chat, or flavor.
+///
+/// Call when the user is signed in: cold start, sign-in, app resume, and after
+/// the user enables notifications in Settings.
+Future<void> ensureFcmTokenSyncedToBackend() async {
+  final granted = await isNotificationPermissionGranted();
+  if (!granted) return;
+  await syncFcmTokenToSupabase();
+  _listenForTokenRefresh();
+}
 
 // ---------------------------------------------------------------------------
 // Permission (both platforms)
@@ -23,14 +43,24 @@ Future<bool> isNotificationPermissionGranted() async {
 /// Request notification permission. Show a bottom sheet with explanation first;
 /// the CTA in that sheet should call this.
 Future<void> requestNotificationPermission() async {
+  if (Platform.isAndroid) {
+    final plugin = FlutterLocalNotificationsPlugin();
+    await plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+  }
   await FirebaseMessaging.instance.requestPermission();
 }
 
 // ---------------------------------------------------------------------------
-// Token setup: call after user has logged in to Agora Chat.
+// Agora Chat push (retail only) — after [ChatClient] login
 // ---------------------------------------------------------------------------
 
-/// Register push token with Agora. Call only after [ChatClient] login.
+/// Uploads the platform push token to **Agora** for chat notifications.
+/// Call only after [ChatClient] login. Still updates Supabase via the shared
+/// refresh listener / internal calls — backend FCM registration is owned by
+/// [ensureFcmTokenSyncedToBackend].
 ///
 /// **Android:** Get FCM token → upload to Agora → listen for token refresh.
 /// **iOS:** Get APNs token via Firebase → upload to Agora → listen for refresh.
@@ -116,16 +146,16 @@ void _listenForTokenRefresh() {
 
   FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
     debugPrint('[Push] Token refreshed');
-    if (ChatClient.getInstance.currentUserId == null) return;
-
-    if (Platform.isAndroid) {
-      await _uploadFCMTokenToAgora(newToken);
-    } else if (Platform.isIOS) {
-      // On iOS, onTokenRefresh gives the FCM token, not APNs.
-      // Re-fetch APNs token and upload.
-      final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-      if (apnsToken != null) {
-        await _uploadAPNSTokenToAgora(apnsToken);
+    if (ChatClient.getInstance.currentUserId != null) {
+      if (Platform.isAndroid) {
+        await _uploadFCMTokenToAgora(newToken);
+      } else if (Platform.isIOS) {
+        // On iOS, onTokenRefresh gives the FCM token, not APNs.
+        // Re-fetch APNs token and upload.
+        final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+        if (apnsToken != null) {
+          await _uploadAPNSTokenToAgora(apnsToken);
+        }
       }
     }
     unawaited(syncFcmTokenToSupabase());

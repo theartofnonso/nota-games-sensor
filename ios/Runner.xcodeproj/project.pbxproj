@@ -89,7 +89,26 @@
 		F3EF76AF2F22A71000B45C86 /* Release-coach.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Release-coach.xcconfig"; sourceTree = "<group>"; };
 		F3EF76B02F22A71F00B45C86 /* Profile-client.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Profile-client.xcconfig"; sourceTree = "<group>"; };
 		F3EF76B12F22A73200B45C86 /* Profile-coach.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Profile-coach.xcconfig"; sourceTree = "<group>"; };
+		F5D100012F22A4C600B45C86 /* Debug-client-unlisted.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Debug-client-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D100022F22A4C600B45C86 /* Release-client-unlisted.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Release-client-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D100032F22A4C600B45C86 /* Profile-client-unlisted.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Profile-client-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D100112F22A4C600B45C86 /* Debug-coach-unlisted.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Debug-coach-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D100122F22A4C600B45C86 /* Release-coach-unlisted.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Release-coach-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D100132F22A4C600B45C86 /* Profile-coach-unlisted.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Profile-coach-unlisted.xcconfig"; sourceTree = "<group>"; };
 		F5B95BB518AFD2AA2C990D3D /* Pods-Runner.debug-coach.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-coach.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-coach.xcconfig"; sourceTree = "<group>"; };
+
+		F5D200012F22A4C600B45C86 /* Pods-Runner.debug-client-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-client-unlisted.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-client-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200022F22A4C600B45C86 /* Pods-Runner.release-client-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-client-unlisted.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-client-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200032F22A4C600B45C86 /* Pods-Runner.profile-client-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile-client-unlisted.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile-client-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200112F22A4C600B45C86 /* Pods-Runner.debug-coach-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug-coach-unlisted.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug-coach-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200122F22A4C600B45C86 /* Pods-Runner.release-coach-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-coach-unlisted.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-coach-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200132F22A4C600B45C86 /* Pods-Runner.profile-coach-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile-coach-unlisted.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile-coach-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200212F22A4C600B45C86 /* Pods-RunnerTests.debug-client-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-client-unlisted.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-client-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200222F22A4C600B45C86 /* Pods-RunnerTests.release-client-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release-client-unlisted.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release-client-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200232F22A4C600B45C86 /* Pods-RunnerTests.profile-client-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile-client-unlisted.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile-client-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200312F22A4C600B45C86 /* Pods-RunnerTests.debug-coach-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-coach-unlisted.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-coach-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200322F22A4C600B45C86 /* Pods-RunnerTests.release-coach-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release-coach-unlisted.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release-coach-unlisted.xcconfig"; sourceTree = "<group>"; };
+		F5D200332F22A4C600B45C86 /* Pods-RunnerTests.profile-coach-unlisted.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile-coach-unlisted.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile-coach-unlisted.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -141,6 +160,18 @@
 				20877CEC5945AC9EB014EF0D /* Pods-RunnerTests.release-coach.xcconfig */,
 				2B28D9D68C70CBD2202A494E /* Pods-RunnerTests.profile-client.xcconfig */,
 				C70AC4083BCD9CF3C3F76502 /* Pods-RunnerTests.profile-coach.xcconfig */,
+				F5D200012F22A4C600B45C86 /* Pods-Runner.debug-client-unlisted.xcconfig */,
+				F5D200022F22A4C600B45C86 /* Pods-Runner.release-client-unlisted.xcconfig */,
+				F5D200032F22A4C600B45C86 /* Pods-Runner.profile-client-unlisted.xcconfig */,
+				F5D200112F22A4C600B45C86 /* Pods-Runner.debug-coach-unlisted.xcconfig */,
+				F5D200122F22A4C600B45C86 /* Pods-Runner.release-coach-unlisted.xcconfig */,
+				F5D200132F22A4C600B45C86 /* Pods-Runner.profile-coach-unlisted.xcconfig */,
+				F5D200212F22A4C600B45C86 /* Pods-RunnerTests.debug-client-unlisted.xcconfig */,
+				F5D200222F22A4C600B45C86 /* Pods-RunnerTests.release-client-unlisted.xcconfig */,
+				F5D200232F22A4C600B45C86 /* Pods-RunnerTests.profile-client-unlisted.xcconfig */,
+				F5D200312F22A4C600B45C86 /* Pods-RunnerTests.debug-coach-unlisted.xcconfig */,
+				F5D200322F22A4C600B45C86 /* Pods-RunnerTests.release-coach-unlisted.xcconfig */,
+				F5D200332F22A4C600B45C86 /* Pods-RunnerTests.profile-coach-unlisted.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -171,6 +202,12 @@
 				F3EF76AF2F22A71000B45C86 /* Release-coach.xcconfig */,
 				F3EF76B02F22A71F00B45C86 /* Profile-client.xcconfig */,
 				F3EF76B12F22A73200B45C86 /* Profile-coach.xcconfig */,
+				F5D100012F22A4C600B45C86 /* Debug-client-unlisted.xcconfig */,
+				F5D100022F22A4C600B45C86 /* Release-client-unlisted.xcconfig */,
+				F5D100032F22A4C600B45C86 /* Profile-client-unlisted.xcconfig */,
+				F5D100112F22A4C600B45C86 /* Debug-coach-unlisted.xcconfig */,
+				F5D100122F22A4C600B45C86 /* Release-coach-unlisted.xcconfig */,
+				F5D100132F22A4C600B45C86 /* Profile-coach-unlisted.xcconfig */,
 				D317E22CC9D96C8D5D55DB4E /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
@@ -386,7 +423,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ \"$CONFIGURATION\" == *\"coach\"* ]]; then cp \"${SRCROOT}/Runner/GoogleService-Info-coach.plist\" \"${SRCROOT}/Runner/GoogleService-Info.plist\" && echo \"Copied GoogleService-Info-coach.plist for configuration: $CONFIGURATION\"; elif [[ \"$CONFIGURATION\" == *\"client\"* ]]; then cp \"${SRCROOT}/Runner/GoogleService-Info-client.plist\" \"${SRCROOT}/Runner/GoogleService-Info.plist\" && echo \"Copied GoogleService-Info-client.plist for configuration: $CONFIGURATION\"; else cp \"${SRCROOT}/Runner/GoogleService-Info-client.plist\" \"${SRCROOT}/Runner/GoogleService-Info.plist\" && echo \"Copied GoogleService-Info-client.plist (default) for configuration: $CONFIGURATION\"; fi\n";
+			shellScript = "set -e\nCOACH_UNLISTED=\"${SRCROOT}/Runner/GoogleService-Info-coach-unlisted.plist\"\nCLIENT_UNLISTED=\"${SRCROOT}/Runner/GoogleService-Info-client-unlisted.plist\"\nCOACH_RETAIL=\"${SRCROOT}/Runner/GoogleService-Info-coach.plist\"\nCLIENT_RETAIL=\"${SRCROOT}/Runner/GoogleService-Info-client.plist\"\nDEST=\"${SRCROOT}/Runner/GoogleService-Info.plist\"\nif [[ \"$CONFIGURATION\" == *\"coach-unlisted\"* ]]; then\n  if [[ -f \"$COACH_UNLISTED\" ]]; then cp \"$COACH_UNLISTED\" \"$DEST\"; echo \"Copied GoogleService-Info-coach-unlisted.plist\"; else cp \"$COACH_RETAIL\" \"$DEST\"; echo \"Fallback: GoogleService-Info-coach.plist (add $COACH_UNLISTED)\"; fi\nelif [[ \"$CONFIGURATION\" == *\"client-unlisted\"* ]]; then\n  if [[ -f \"$CLIENT_UNLISTED\" ]]; then cp \"$CLIENT_UNLISTED\" \"$DEST\"; echo \"Copied GoogleService-Info-client-unlisted.plist\"; else cp \"$CLIENT_RETAIL\" \"$DEST\"; echo \"Fallback: GoogleService-Info-client.plist (add $CLIENT_UNLISTED)\"; fi\nelif [[ \"$CONFIGURATION\" == *\"coach\"* ]]; then cp \"$COACH_RETAIL\" \"$DEST\"; echo \"Copied GoogleService-Info-coach.plist\"\nelif [[ \"$CONFIGURATION\" == *\"client\"* ]]; then cp \"$CLIENT_RETAIL\" \"$DEST\"; echo \"Copied GoogleService-Info-client.plist\"\nelse cp \"$CLIENT_RETAIL\" \"$DEST\"; echo \"Copied GoogleService-Info-client.plist (default)\"\nfi\n";
 		};
 		CF94837A5AEE824857FB7CEF /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -569,7 +606,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes;
+				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes.client;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -760,7 +797,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes;
+				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes.client;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -793,7 +830,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes;
+				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes.client;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1420,6 +1457,627 @@
 			};
 			name = "Release-client";
 		};
+
+		F5D110012F22A4C600B45C86 /* Debug-client-unlisted */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-client-unlisted";
+		};
+		F5D110022F22A4C600B45C86 /* Debug-client-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D100012F22A4C600B45C86 /* Debug-client-unlisted.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/RunnerDebug.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = ZDC88H7BFT;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes.client.unlisted;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = "Debug-client-unlisted";
+		};
+		F5D110032F22A4C600B45C86 /* Debug-client-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D200212F22A4C600B45C86 /* Pods-RunnerTests.debug-client-unlisted.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.trackerApp.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
+			};
+			name = "Debug-client-unlisted";
+		};
+
+		F5D110112F22A4C600B45C86 /* Release-client-unlisted */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = "Release-client-unlisted";
+		};
+		F5D110122F22A4C600B45C86 /* Release-client-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D100022F22A4C600B45C86 /* Release-client-unlisted.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = ZDC88H7BFT;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes.client.unlisted;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = "Release-client-unlisted";
+		};
+		F5D110132F22A4C600B45C86 /* Release-client-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D200222F22A4C600B45C86 /* Pods-RunnerTests.release-client-unlisted.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.trackerApp.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
+			};
+			name = "Release-client-unlisted";
+		};
+
+		F5D110212F22A4C600B45C86 /* Profile-client-unlisted */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = "Profile-client-unlisted";
+		};
+		F5D110222F22A4C600B45C86 /* Profile-client-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D100032F22A4C600B45C86 /* Profile-client-unlisted.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = ZDC88H7BFT;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes.client.unlisted;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = "Profile-client-unlisted";
+		};
+		F5D110232F22A4C600B45C86 /* Profile-client-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D200232F22A4C600B45C86 /* Pods-RunnerTests.profile-client-unlisted.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.trackerApp.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
+			};
+			name = "Profile-client-unlisted";
+		};
+
+		F5D120012F22A4C600B45C86 /* Debug-coach-unlisted */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = "Debug-coach-unlisted";
+		};
+		F5D120022F22A4C600B45C86 /* Debug-coach-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D100112F22A4C600B45C86 /* Debug-coach-unlisted.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconCoach;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/RunnerDebug-coach.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = ZDC88H7BFT;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes.coach.unlisted;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = "Debug-coach-unlisted";
+		};
+		F5D120032F22A4C600B45C86 /* Debug-coach-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D200312F22A4C600B45C86 /* Pods-RunnerTests.debug-coach-unlisted.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.trackerApp.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
+			};
+			name = "Debug-coach-unlisted";
+		};
+
+		F5D120112F22A4C600B45C86 /* Release-coach-unlisted */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = "Release-coach-unlisted";
+		};
+		F5D120122F22A4C600B45C86 /* Release-coach-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D100122F22A4C600B45C86 /* Release-coach-unlisted.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconCoach;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease-coach.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = ZDC88H7BFT;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes.coach.unlisted;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = "Release-coach-unlisted";
+		};
+		F5D120132F22A4C600B45C86 /* Release-coach-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D200322F22A4C600B45C86 /* Pods-RunnerTests.release-coach-unlisted.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.trackerApp.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
+			};
+			name = "Release-coach-unlisted";
+		};
+
+		F5D120212F22A4C600B45C86 /* Profile-coach-unlisted */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = "Profile-coach-unlisted";
+		};
+		F5D120222F22A4C600B45C86 /* Profile-coach-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D100132F22A4C600B45C86 /* Profile-coach-unlisted.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconCoach;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease-coach.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = ZDC88H7BFT;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = Runner/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.notathletes.coach.unlisted;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = "Profile-coach-unlisted";
+		};
+		F5D120232F22A4C600B45C86 /* Profile-coach-unlisted */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F5D200332F22A4C600B45C86 /* Pods-RunnerTests.profile-coach-unlisted.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.trackerApp.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
+			};
+			name = "Profile-coach-unlisted";
+		};
+
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1429,12 +2087,18 @@
 				331C8088294A63A400263BE5 /* Debug */,
 				F3EF769F2F22A4C600B45C86 /* Debug-client */,
 				F3EF769C2F22A4BB00B45C86 /* Debug-coach */,
+				F5D110032F22A4C600B45C86 /* Debug-client-unlisted */,
+				F5D120032F22A4C600B45C86 /* Debug-coach-unlisted */,
 				331C8089294A63A400263BE5 /* Release */,
 				F3EF76AB2F22A55300B45C86 /* Release-client */,
 				F3EF76A82F22A54500B45C86 /* Release-coach */,
+				F5D110132F22A4C600B45C86 /* Release-client-unlisted */,
+				F5D120132F22A4C600B45C86 /* Release-coach-unlisted */,
 				331C808A294A63A400263BE5 /* Profile */,
 				F3EF76A52F22A4E800B45C86 /* Profile-client */,
 				F3EF76A22F22A4D100B45C86 /* Profile-coach */,
+				F5D110232F22A4C600B45C86 /* Profile-client-unlisted */,
+				F5D120232F22A4C600B45C86 /* Profile-coach-unlisted */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1445,12 +2109,18 @@
 				97C147031CF9000F007C117D /* Debug */,
 				F3EF769D2F22A4C600B45C86 /* Debug-client */,
 				F3EF769A2F22A4BB00B45C86 /* Debug-coach */,
+				F5D110012F22A4C600B45C86 /* Debug-client-unlisted */,
+				F5D120012F22A4C600B45C86 /* Debug-coach-unlisted */,
 				97C147041CF9000F007C117D /* Release */,
 				F3EF76A92F22A55300B45C86 /* Release-client */,
 				F3EF76A62F22A54500B45C86 /* Release-coach */,
+				F5D110112F22A4C600B45C86 /* Release-client-unlisted */,
+				F5D120112F22A4C600B45C86 /* Release-coach-unlisted */,
 				249021D3217E4FDB00AE95B9 /* Profile */,
 				F3EF76A32F22A4E800B45C86 /* Profile-client */,
 				F3EF76A02F22A4D100B45C86 /* Profile-coach */,
+				F5D110212F22A4C600B45C86 /* Profile-client-unlisted */,
+				F5D120212F22A4C600B45C86 /* Profile-coach-unlisted */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1461,12 +2131,18 @@
 				97C147061CF9000F007C117D /* Debug */,
 				F3EF769E2F22A4C600B45C86 /* Debug-client */,
 				F3EF769B2F22A4BB00B45C86 /* Debug-coach */,
+				F5D110022F22A4C600B45C86 /* Debug-client-unlisted */,
+				F5D120022F22A4C600B45C86 /* Debug-coach-unlisted */,
 				97C147071CF9000F007C117D /* Release */,
 				F3EF76AA2F22A55300B45C86 /* Release-client */,
 				F3EF76A72F22A54500B45C86 /* Release-coach */,
+				F5D110122F22A4C600B45C86 /* Release-client-unlisted */,
+				F5D120122F22A4C600B45C86 /* Release-coach-unlisted */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
 				F3EF76A42F22A4E800B45C86 /* Profile-client */,
 				F3EF76A12F22A4D100B45C86 /* Profile-coach */,
+				F5D110222F22A4C600B45C86 /* Profile-client-unlisted */,
+				F5D120222F22A4C600B45C86 /* Profile-coach-unlisted */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

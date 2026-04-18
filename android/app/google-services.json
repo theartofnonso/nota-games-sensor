@@ -9,7 +9,64 @@
       "client_info": {
         "mobilesdk_app_id": "1:160658273085:android:d376149a02d1f1786d0b54",
         "android_client_info": {
-          "package_name": "xyz.usetracker.tracker_app"
+          "package_name": "com.notathletes.client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0rrC-YRxrJbSBvrKje8-5Ue3m9fcwRcg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:160658273085:android:d376149a02d1f1786d0b54",
+        "android_client_info": {
+          "package_name": "com.notathletes.coach"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0rrC-YRxrJbSBvrKje8-5Ue3m9fcwRcg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:160658273085:android:d376149a02d1f1786d0b54",
+        "android_client_info": {
+          "package_name": "com.notathletes.client.unlisted"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0rrC-YRxrJbSBvrKje8-5Ue3m9fcwRcg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:160658273085:android:d376149a02d1f1786d0b54",
+        "android_client_info": {
+          "package_name": "com.notathletes.coach.unlisted"
         }
       },
       "oauth_client": [],

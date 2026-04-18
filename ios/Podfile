@@ -9,12 +9,18 @@ project 'Runner', {
   'Debug' => :debug,
   'Debug-coach' => :debug,
   'Debug-client' => :debug,
+  'Debug-client-unlisted' => :debug,
+  'Debug-coach-unlisted' => :debug,
   'Profile' => :release,
   'Profile-coach' => :release,
   'Profile-client' => :release,
+  'Profile-client-unlisted' => :release,
+  'Profile-coach-unlisted' => :release,
   'Release' => :release,
   'Release-coach' => :release,
   'Release-client' => :release,
+  'Release-client-unlisted' => :release,
+  'Release-coach-unlisted' => :release,
 }
 
 def flutter_root

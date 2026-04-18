@@ -32,6 +32,8 @@ const accountDeletionPath = '/account/delete';
 const accountProfilePath = '/account/profile';
 /// POST body `{ fullName, email, coachId }` — see [ClientAcquisitionSignupService].
 const clientCoachSignupPath = '/client-coach-signup';
+/// POST body for authenticated unlisted client bootstrap (create/ensure client row + assignment).
+const unlistedClientBootstrapPath = '/unlisted-client-bootstrap';
 const coachClientsPath = '/coach-clients';
 
 /// GET /coach-profiles — list coach profiles; GET /coach-profiles/:id — one profile.

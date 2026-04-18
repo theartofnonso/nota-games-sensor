@@ -5,8 +5,8 @@ import '../app_flavor.dart';
 import '../dtos/coach_client_dto.dart';
 import 'chat_unread_counts_service.dart';
 
-/// Loads and caches coach clients. Used at startup (splash) so the coach
-/// client list is ready before the first screen.
+/// Loads and caches coach clients for **every** coach flavor (`coach` and
+/// `coachUnlisted`). Used at startup (splash) so the list is ready before `/coach`.
 ///
 /// Extends [ChangeNotifier] so [CoachClientsScreen] rebuilds when a load
 /// finishes (the service can update after the first frame).
@@ -29,7 +29,7 @@ class CoachClientsService extends ChangeNotifier {
   /// from [ClientOverrideController]) so this matches startup auth state even
   /// if [SupabaseClient.auth.currentUser] lags briefly after session restore.
   Future<void> loadClients({String? coachAuthUserId}) async {
-    if (!AppConfig.isCoach) return;
+    if (!AppConfig.loadsCoachClientRoster) return;
 
     _loadError = null;
     final coachId = (coachAuthUserId != null && coachAuthUserId.isNotEmpty)

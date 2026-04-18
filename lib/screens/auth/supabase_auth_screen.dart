@@ -298,7 +298,7 @@ class _SupabaseAuthScreenState extends State<SupabaseAuthScreen> {
                             ),
                           ),
                         ],
-                        if (AppConfig.isClient &&
+                        if (AppConfig.isRetailClient &&
                             widget.onDiscoverCoaches != null) ...[
                           const SizedBox(height: 16),
                           OrSeparator(

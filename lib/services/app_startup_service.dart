@@ -6,6 +6,7 @@ import 'assigned_coach_service.dart';
 import 'chat_bootstrap_service.dart';
 import 'client_subscription_service.dart';
 import 'coach_clients_service.dart';
+import 'unlisted_client_bootstrap_service.dart';
 
 /// Runs blocking activities at app startup. Use with [SplashScreen] - show
 /// splash until startup tasks complete.
@@ -22,18 +23,29 @@ class AppStartupService {
   }) async {
     final tasks = <Future<void>>[
       controller.initialize(),
-      ChatBootstrapService.ensureAgoraAndPushSetup(userId),
+      if (AppConfig.supportsChatAndVideoCalls)
+        ChatBootstrapService.ensureAgoraAndPushSetup(userId),
     ];
     if (AppConfig.isClient) {
       tasks.add(ClientSubscriptionService.instance.refreshSubscriptionStatus());
-      tasks.add(AssignedCoachService.instance.refreshFromRemote());
+      if (AppConfig.isUnlistedClient) {
+        tasks.add(_ensureUnlistedCoachInDbThenRefreshAssignedCoach());
+      } else {
+        tasks.add(AssignedCoachService.instance.refreshFromRemote());
+      }
     }
-    if (AppConfig.isCoach) {
+    if (AppConfig.loadsCoachClientRoster) {
       tasks.add(
         CoachClientsService.instance.loadClients(coachAuthUserId: userId),
       );
     }
     await Future.wait(tasks);
+  }
+
+  Future<void> _ensureUnlistedCoachInDbThenRefreshAssignedCoach() async {
+    await UnlistedClientBootstrapService.run();
+    // Unlisted client flow is fixed-coach and does not need coach profile payload.
+    // Avoid GET /coach-profiles/:id for this flavor.
   }
 
   /// Resets state (e.g. on logout). Call when user logs out.

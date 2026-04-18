@@ -117,22 +117,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               ),
                             ),
                             const SizedBox(height: 60),
-                            if (isCoach ||
-                                widget.onDiscoverCoaches == null ||
-                                widget.onSignIn == null) ...[
+                            if (isCoach) ...[
                               SizedBox(
                                 width: double.infinity,
                                 height: 50,
                                 child: OpacityButtonWidgetTwo(
-                                  label:
-                                      isCoach
-                                          ? "Start Coaching"
-                                          : "Start Training",
+                                  label: 'Start Coaching',
                                   onPressed: widget.onPressed,
                                   buttonColor: colors.vibrantAccent,
                                 ),
                               ),
-                            ] else ...[
+                            ] else if (widget.onDiscoverCoaches != null &&
+                                widget.onSignIn != null) ...[
                               SizedBox(
                                 width: double.infinity,
                                 height: 50,
@@ -151,6 +147,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   onPressed: widget.onSignIn,
                                   buttonColor: colors.vibrantAccent,
                                   solidBackground: true,
+                                ),
+                              ),
+                            ] else if (widget.onSignIn != null) ...[
+                              // Unlisted client: no coach discovery; go straight to sign-in.
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: OpacityButtonWidgetTwo(
+                                  label: 'Sign In',
+                                  onPressed: widget.onSignIn,
+                                  buttonColor: colors.vibrantAccent,
+                                ),
+                              ),
+                            ] else ...[
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: OpacityButtonWidgetTwo(
+                                  label: 'Start Training',
+                                  onPressed: widget.onPressed,
+                                  buttonColor: colors.vibrantAccent,
                                 ),
                               ),
                             ],

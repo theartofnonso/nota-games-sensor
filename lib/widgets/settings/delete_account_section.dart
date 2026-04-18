@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../app_flavor.dart';
 import '../../services/notathletes_user_deletion_service.dart';
 import '../../utils/dialog_utils.dart';
 import '../bottom_sheets/app_bottom_sheet.dart';
@@ -64,7 +65,8 @@ const String _deleteAccountConfirmationPhrase = 'Delete my account';
 /// Matches [confirmLogoutBottomSheet] and other action sheets (padding + type scale).
 const EdgeInsets _deleteSheetPadding = EdgeInsets.all(26);
 
-String _deleteAccountSubscriptionReminder(BuildContext context) {
+String? _deleteAccountSubscriptionReminder(BuildContext context) {
+  if (AppConfig.isUnlistedClient) return null;
   switch (Theme.of(context).platform) {
     case TargetPlatform.iOS:
       return 'If you subscribe in the App Store, deleting your account does not '
@@ -81,7 +83,8 @@ String _deleteAccountSubscriptionReminder(BuildContext context) {
   }
 }
 
-String _deleteAccountSubscriptionReminderShort(BuildContext context) {
+String? _deleteAccountSubscriptionReminderShort(BuildContext context) {
+  if (AppConfig.isUnlistedClient) return null;
   switch (Theme.of(context).platform) {
     case TargetPlatform.iOS:
       return 'Reminder: cancel any App Store subscription in Settings → Subscriptions.';
@@ -99,6 +102,7 @@ Future<void> requestAccountDeletion(
   BuildContext context, {
   required void Function(bool) setLoading,
 }) async {
+  final subscriptionReminder = _deleteAccountSubscriptionReminder(context);
   final proceeded = await showAppActionBottomSheet<bool>(
     context: context,
     isDismissible: true,
@@ -119,12 +123,14 @@ Future<void> requestAccountDeletion(
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
             textAlign: TextAlign.start,
           ),
-          const SizedBox(height: 12),
-          Text(
-            _deleteAccountSubscriptionReminder(context),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
-            textAlign: TextAlign.start,
-          ),
+          if (subscriptionReminder != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              subscriptionReminder,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
+              textAlign: TextAlign.start,
+            ),
+          ],
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -172,6 +178,8 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
     child: StatefulBuilder(
       builder: (context, setSheetState) {
         final matches = typed.trim() == _deleteAccountConfirmationPhrase;
+        final subscriptionReminder =
+            _deleteAccountSubscriptionReminderShort(context);
         return Padding(
           padding: _deleteSheetPadding,
           child: Column(
@@ -207,18 +215,20 @@ Future<bool?> _showDeleteAccountConfirmSheet(BuildContext context) async {
                   focusedBorder: InputBorder.none,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                _deleteAccountSubscriptionReminderShort(context),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      height: 1.35,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.72),
-                    ),
-                textAlign: TextAlign.start,
-              ),
+              if (subscriptionReminder != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  subscriptionReminder,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        height: 1.35,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.72),
+                      ),
+                  textAlign: TextAlign.start,
+                ),
+              ],
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,

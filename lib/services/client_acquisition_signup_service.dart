@@ -46,6 +46,8 @@ enum ClientAcquisitionSignupResult {
 /// **409** or `success: false` message implying duplicate email → [emailAlreadyExists].
 ///
 /// **Orphans:** Backend should use a transaction / compensation for Auth + `clients` + `coach_clients`.
+///
+/// No `Authorization` header (retail and unlisted client-coach-signup use the same anonymous POST).
 Future<ClientAcquisitionSignupResult> signupWithCoach({
   required String email,
   required String fullName,
@@ -66,10 +68,6 @@ Future<ClientAcquisitionSignupResult> signupWithCoach({
         )
         .timeout(const Duration(seconds: 30));
 
-    if (response.statusCode == 409) {
-      return ClientAcquisitionSignupResult.emailAlreadyExists;
-    }
-
     Map<String, dynamic>? map;
     try {
       final decoded = jsonDecode(response.body);
@@ -77,6 +75,20 @@ Future<ClientAcquisitionSignupResult> signupWithCoach({
         map = Map<String, dynamic>.from(decoded);
       }
     } catch (_) {}
+
+    if (response.statusCode == 409) {
+      // Some backends use 409 for idempotent "already linked" with success payload.
+      if (map != null && map['success'] == true) {
+        final refresh = _parseRefreshToken(map);
+        if (refresh != null && refresh.isNotEmpty) {
+          await Supabase.instance.client.auth.setSession(refresh);
+          return ClientAcquisitionSignupResult.success;
+        }
+        return ClientAcquisitionSignupResult.successSignInRequired;
+      }
+      _log.w('client-coach-signup HTTP 409: ${response.body}');
+      return ClientAcquisitionSignupResult.emailAlreadyExists;
+    }
 
     // 400/422: validation (e.g. missing fullName, bad email, bad coachId, invalid coach).
     // Same shape as your API: { "success": false, "message": "..." }.

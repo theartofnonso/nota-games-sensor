@@ -55,6 +55,14 @@ Future<RoutineTemplateDto?> navigateToRoutineTemplateEditor(
 
 Future<RoutinePlanDto?> navigateToRoutinePlanEditor(
     {required BuildContext context, RoutinePlanArguments? arguments}) async {
+  if (!AppConfig.isCoach) {
+    showSnackbar(
+      context: context,
+      message: 'Only coaches can edit routine plan details.',
+    );
+    return null;
+  }
+
   final initialPlan = arguments?.plan;
   final isEditing = initialPlan != null && initialPlan.id.isNotEmpty;
 
@@ -221,6 +229,7 @@ Future<void> navigateToSettings({required BuildContext context}) async {
 Future<void> navigateToChat({
   required BuildContext context,
 }) async {
+  if (!AppConfig.supportsChatAndVideoCalls) return;
   final accessController = context.read<ClientOverrideController>();
 
   if (!AppConfig.isCoach && !AppPrivileges.isProWithCoach) {
@@ -412,6 +421,7 @@ void navigateToIncomingCall({
   required String channelName,
   String? callerImageUrl,
 }) {
+  if (!AppConfig.supportsChatAndVideoCalls) return;
   Navigator.of(context).push(
     PageRouteBuilder(
       fullscreenDialog: true,
