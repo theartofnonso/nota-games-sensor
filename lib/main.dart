@@ -437,8 +437,9 @@ GoRouter _createRouter(
         return accessController.hasSelectedClient ? '/' : '/coach';
       }
 
-      // Coach flavors always start on the client picker on app launch.
-      if (loc == '/') {
+      // Coach: shell home at `/` is only valid with a selected client; otherwise
+      // send them to the picker (including cold start when `initialLocation` is `/`).
+      if (loc == '/' && !accessController.hasSelectedClient) {
         return '/coach';
       }
 
@@ -896,7 +897,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           .runStartupTasks(
             controller: controller,
             userId: userId,
-            accessController: _accessController,
           )
           .then((_) {
         if (mounted) {

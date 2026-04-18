@@ -3,7 +3,7 @@ enum AppFlavor {
   client,
   /// Internal / unlisted build: same as [client] but no IAP or subscription gate.
   clientUnlisted,
-  /// Internal / unlisted build: same as [coach] but no IAP; auto-selects a client.
+  /// Internal / unlisted build: same as [coach] but no IAP; client list on launch.
   coachUnlisted,
 }
 
@@ -12,9 +12,13 @@ class AppConfig {
 
   static AppFlavor get flavor => _flavor;
 
-  /// True for both store and unlisted coach builds.
-  static bool get isCoach =>
+  /// Store coach and unlisted coach: both load [CoachClientsService] and `/coach`.
+  /// Keep roster behavior identical across coach flavors.
+  static bool get loadsCoachClientRoster =>
       _flavor == AppFlavor.coach || _flavor == AppFlavor.coachUnlisted;
+
+  /// True for both store and unlisted coach builds.
+  static bool get isCoach => loadsCoachClientRoster;
 
   /// True for both store and unlisted client builds.
   static bool get isClient =>
