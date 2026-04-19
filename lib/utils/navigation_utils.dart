@@ -229,7 +229,7 @@ Future<void> navigateToSettings({required BuildContext context}) async {
 Future<void> navigateToChat({
   required BuildContext context,
 }) async {
-  if (!AppConfig.supportsChatAndVideoCalls) return;
+  if (!AppConfig.supportsAgoraChat) return;
   final accessController = context.read<ClientOverrideController>();
 
   if (!AppConfig.isCoach && !AppPrivileges.isProWithCoach) {
@@ -421,7 +421,7 @@ void navigateToIncomingCall({
   required String channelName,
   String? callerImageUrl,
 }) {
-  if (!AppConfig.supportsChatAndVideoCalls) return;
+  if (!AppConfig.supportsVideoCalls) return;
   Navigator.of(context).push(
     PageRouteBuilder(
       fullscreenDialog: true,

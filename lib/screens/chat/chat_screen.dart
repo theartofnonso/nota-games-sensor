@@ -214,12 +214,13 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               ? SystemUiOverlayStyle.light
               : SystemUiOverlayStyle.dark,
           trailingActions: [
-            ChatVideoLauncher.videoCallAppBarAction(
-              coachId: widget.coachId,
-              coachName: widget.coachName,
-              clientUserId: widget.clientUserId,
-              clientName: widget.clientName,
-            ),
+            if (AppConfig.supportsVideoCalls)
+              ChatVideoLauncher.videoCallAppBarAction(
+                coachId: widget.coachId,
+                coachName: widget.coachName,
+                clientUserId: widget.clientUserId,
+                clientName: widget.clientName,
+              ),
           ],
         ),
       ),

@@ -116,8 +116,12 @@ void _processPendingNotification() {
   final payload = _pendingNotificationPayload!;
   final type = payload['type'] as String?;
 
-  if (!AppConfig.supportsChatAndVideoCalls &&
-      (type == 'chat' || type == 'incoming_call')) {
+  if (!AppConfig.supportsAgoraChat && type == 'chat') {
+    _pendingNotificationPayload = null;
+    _notificationRetryCount = 0;
+    return;
+  }
+  if (!AppConfig.supportsVideoCalls && type == 'incoming_call') {
     _pendingNotificationPayload = null;
     _notificationRetryCount = 0;
     return;
@@ -259,7 +263,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
     options: firebaseOptions,
   );
 
-  if (AppConfig.supportsChatAndVideoCalls) {
+  if (AppConfig.supportsAgoraChat) {
     final chatOptions = ChatOptions(
       appKey: ChatConfig.agoraAppKey,
       autoLogin: false,
@@ -339,7 +343,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
 
   // FCM: app in foreground, incoming call data message
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    if (!AppConfig.supportsChatAndVideoCalls) return;
+    if (!AppConfig.supportsVideoCalls) return;
     final data = message.data;
     if (data.isEmpty) return;
     final type = data['type'] as String?;
@@ -697,7 +701,7 @@ GoRouter _createRouter(
       GoRoute(
         path: ChatScreen.routeName,
         pageBuilder: (context, state) {
-          if (!AppConfig.supportsChatAndVideoCalls) {
+          if (!AppConfig.supportsAgoraChat) {
             return CustomTransitionPage(
               key: state.pageKey,
               child: const Home(),
@@ -792,7 +796,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (Platform.isIOS) {
       _initDeepLinks();
     }
-    if (AppConfig.supportsChatAndVideoCalls &&
+    if (AppConfig.supportsAgoraChat &&
         _accessController.isAuthenticated &&
         _accessController.userId != null) {
       unawaited(ChatBootstrapService.ensureAgoraAndPushSetup(
@@ -839,7 +843,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _logoutAgoraForBackground() async {
-    if (!AppConfig.supportsChatAndVideoCalls) return;
+    if (!AppConfig.supportsAgoraChat) return;
     if (_agoraLifecycleTransitionInFlight) return;
     if (ChatClient.getInstance.currentUserId == null) return;
     _agoraLifecycleTransitionInFlight = true;
@@ -857,7 +861,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _restoreAgoraOnResume() async {
-    if (!AppConfig.supportsChatAndVideoCalls) return;
+    if (!AppConfig.supportsAgoraChat) return;
     if (!_accessController.isAuthenticated ||
         _accessController.userId == null) {
       return;
@@ -964,7 +968,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (!isAuthenticated && _lastAuthenticated) {
       // Covers session expiry / remote sign-out (not only in-app performLogout).
       unawaited(cancelAllTrainingRelatedLocalNotifications());
-      if (AppConfig.supportsChatAndVideoCalls) {
+      if (AppConfig.supportsAgoraChat) {
         unawaited(ChatBootstrapService.logoutAgoraChat());
       }
       unawaited(RevenueCatBootstrap.logOutIfClient());
@@ -1022,7 +1026,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       return;
     }
     if (path == '/incoming-call') {
-      if (!AppConfig.supportsChatAndVideoCalls) return;
+      if (!AppConfig.supportsVideoCalls) return;
       if (!_accessController.isAuthenticated) return;
       final callerId = uri.queryParameters['callerId'];
       final channelName = uri.queryParameters['channelName'];
@@ -1147,7 +1151,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
 
     // Show main app if authenticated
-    final useChatKit = AppConfig.supportsChatAndVideoCalls;
+    final useChatKit = AppConfig.supportsAgoraChat;
     return ProfileCompletionGate(
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,

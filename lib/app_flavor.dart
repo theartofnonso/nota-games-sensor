@@ -39,8 +39,11 @@ class AppConfig {
 
   static bool get isUnlistedCoach => _flavor == AppFlavor.coachUnlisted;
 
-  /// Agora Chat + video calls (retail builds only; unlisted omits messaging/calls UI).
-  static bool get supportsChatAndVideoCalls => !isUnlistedDistribution;
+  /// Agora Chat UI Kit (1:1 messaging). Enabled for retail and unlisted builds.
+  static bool get supportsAgoraChat => true;
+
+  /// Agora RTC voice/video and incoming-call UX. Disabled for unlisted (chat-only).
+  static bool get supportsVideoCalls => !isUnlistedDistribution;
 
   static void setFlavor(AppFlavor flavor) {
     _flavor = flavor;

@@ -47,7 +47,7 @@ class ChatVideoLauncher {
     required String clientUserId,
     required String clientName,
   }) async {
-    if (!AppConfig.supportsChatAndVideoCalls) return;
+    if (!AppConfig.supportsVideoCalls) return;
     await _pushVideoCallScreen(
       context,
       coachId: coachId,

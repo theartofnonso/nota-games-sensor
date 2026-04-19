@@ -39,7 +39,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
       !AppConfig.isClient || AppPrivileges.isProWithCoach;
 
   bool get _chatInNavBar =>
-      AppConfig.supportsChatAndVideoCalls &&
+      AppConfig.supportsAgoraChat &&
       (AppConfig.isCoach || (AppConfig.isClient && _clientFullAccess));
 
   bool get _feedbackInNavBar => AppConfig.isClient && _clientFullAccess;
@@ -77,7 +77,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _accessController = context.read<ClientOverrideController>();
-    if (AppConfig.supportsChatAndVideoCalls) {
+    if (AppConfig.supportsAgoraChat) {
       _attachChatListeners();
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
@@ -155,7 +155,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    if (AppConfig.supportsChatAndVideoCalls) {
+    if (AppConfig.supportsAgoraChat) {
       if (AppConfig.isCoach) {
         ChatUnreadCountsService().totalUnreadCount.removeListener(
           _handleChatUnreadChange,
@@ -174,7 +174,7 @@ class _MainShellScaffoldState extends State<MainShellScaffold>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!AppConfig.supportsChatAndVideoCalls) return;
+    if (!AppConfig.supportsAgoraChat) return;
     if (state == AppLifecycleState.resumed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (AppConfig.isCoach) {

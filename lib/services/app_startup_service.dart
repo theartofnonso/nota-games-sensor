@@ -23,7 +23,7 @@ class AppStartupService {
   }) async {
     final tasks = <Future<void>>[
       controller.initialize(),
-      if (AppConfig.supportsChatAndVideoCalls)
+      if (AppConfig.supportsAgoraChat)
         ChatBootstrapService.ensureAgoraAndPushSetup(userId),
     ];
     if (AppConfig.isClient) {
