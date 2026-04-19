@@ -203,7 +203,7 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                           label:
                               '${routineTemplates.length} ${pluralize(word: "Session", count: routineTemplates.length)}',
                           child: CustomIcon(FontAwesomeIcons.hashtag,
-                              color: Theme.of(context).colorScheme.secondary)),
+                              color: const Color(0xFF3B82F6))),
                     ]),
                     Calendar(
                       onSelectDate: (date) =>

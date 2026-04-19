@@ -854,8 +854,19 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }) async {
     if (orderedTemplateIds.isEmpty) return;
 
+    if (!AppConfig.isCoach) {
+      errorMessage = 'Only coaches can reorder workouts in a plan.';
+      logger.w('reorderWorkoutsInPlan: ignored (not a coach flavor)');
+      notifyListeners();
+      return;
+    }
+
     final plan = planWhere(id: planId);
-    if (!AppPrivileges.isProWithCoach && (plan?.isSystemPlan ?? false)) {
+    // Match [saveTemplate]: coach-with-selected-client skips the system-plan gate;
+    // [isProWithCoach] is false on the coach app, so never use it alone for coaches.
+    if (!accessController.hasSelectedClient &&
+        !AppPrivileges.isProWithCoach &&
+        (plan?.isSystemPlan ?? false)) {
       errorMessage = 'Cannot reorder workouts in this plan.';
       logger.w('reorderWorkoutsInPlan blocked for system plan $planId');
       notifyListeners();

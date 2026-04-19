@@ -327,7 +327,9 @@ class _RoutineTemplateEditorScreenState
                                         size: 22,
                                         color: Colors.white,
                                       ),
-                                      tooltip: 'Add exercises',
+                                      tooltip: exerciseTemplates.isNotEmpty
+                                          ? 'Manage exercises'
+                                          : 'Add exercises',
                                     ),
                                 ],
                               ),

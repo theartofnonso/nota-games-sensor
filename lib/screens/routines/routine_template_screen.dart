@@ -292,9 +292,7 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                                 label:
                                     "$totalSets ${pluralize(word: "Set", count: totalSets)}",
                                 child: CustomIcon(FontAwesomeIcons.hashtag,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .secondary)),
+                                    color: const Color(0xFF3B82F6))),
                           ],
                         ),
                         Calendar(
@@ -628,7 +626,10 @@ class _RoutineTemplateScreenState extends State<RoutineTemplateScreen> {
                         size: 22,
                       ),
                       horizontalTitleGap: 10,
-                      title: Text("Add exercises",
+                      title: Text(
+                          (template?.exerciseTemplates.isNotEmpty ?? false)
+                              ? "Manage exercises"
+                              : "Add exercises",
                           style: Theme.of(context).textTheme.bodyLarge),
                       onTap: () async {
                         Navigator.of(context).pop();

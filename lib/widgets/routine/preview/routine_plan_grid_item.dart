@@ -123,8 +123,7 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
                               children: [
                                 CustomIcon(
                                   FontAwesomeIcons.hashtag,
-                                  color:
-                                      Theme.of(context).colorScheme.secondary,
+                                  color: const Color(0xFF3B82F6),
                                   width: 20,
                                   height: 20,
                                   iconSize: 10.5,

@@ -96,7 +96,7 @@ class RoutineTemplateGridItemWidget extends StatelessWidget {
                       Wrap(children: [
                         CustomIcon(
                           FontAwesomeIcons.hashtag,
-                          color: Theme.of(context).colors.vibrantAccent,
+                          color: const Color(0xFF3B82F6),
                           width: 20,
                           height: 20,
                           iconSize: 10.5,
