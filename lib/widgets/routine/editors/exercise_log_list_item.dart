@@ -5,7 +5,10 @@ import 'package:trainware/dtos/exercise_log_dto.dart';
 import 'package:trainware/utils/lottie_exercise_registry.dart';
 import 'package:trainware/utils/string_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
+import 'package:trainware/utils/navigation_utils.dart';
 import 'package:trainware/widgets/list_tile.dart';
+import 'package:trainware/widgets/routine/exercise_alternative_card.dart';
+import 'package:trainware/widgets/routine/exercise_alternatives_horizontal_list.dart';
 
 class ExerciseLogListItem extends StatelessWidget {
   final ExerciseLogDto exerciseLogDto;
@@ -50,6 +53,7 @@ class ExerciseLogListItem extends StatelessWidget {
                 height: 1.2,
               ),
         ),
+        isThreeLine: exerciseLogDto.alternatives.isNotEmpty,
         subtitle: _buildSubtitle(
           context: context,
           progressText: progressText,
@@ -64,15 +68,48 @@ class ExerciseLogListItem extends StatelessWidget {
     required String progressText,
     required bool isCompleted,
   }) {
-    // Ensure the subtitle only wraps its intrinsic width (doesn't stretch)
-    return Align(
-      alignment: Alignment.centerLeft,
-      widthFactor: 1.0,
-      child: _buildProgressPill(
-        context: context,
-        progressText: progressText,
-        isCompleted: isCompleted,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          widthFactor: 1.0,
+          child: _buildProgressPill(
+            context: context,
+            progressText: progressText,
+            isCompleted: isCompleted,
+          ),
+        ),
+        if (exerciseLogDto.alternatives.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const stripSize = 52.0;
+              const gap = 6.0;
+              final w = constraints.maxWidth;
+              final vw = MediaQuery.sizeOf(context).width;
+              return ExerciseAlternativesHorizontalList(
+                widthOverride: (w.isFinite && w > 0) ? w : vw,
+                itemSize: stripSize,
+                gap: gap,
+                itemCount: exerciseLogDto.alternatives.length,
+                itemBuilder: (context, index) {
+                  final alt = exerciseLogDto.alternatives[index];
+                  return ExerciseAlternativeCard(
+                    exercise: alt,
+                    dimension: stripSize,
+                    onTap: () => navigateToExerciseHome(
+                      context: context,
+                      exercise: alt,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ],
     );
   }
 

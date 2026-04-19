@@ -26,7 +26,6 @@ import '../../../enums/routine_editor_type_enums.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/navigation_utils.dart';
 import '../../../utils/routine_editors_utils.dart';
-import '../../../widgets/list_tile.dart';
 import '../../bottom_sheets/app_bottom_sheet.dart';
 import '../../buttons/opacity_button_widget_two.dart';
 import '../../cards/frosted_card.dart';
@@ -35,6 +34,8 @@ import 'package:trainware/utils/theme/color_extensions.dart';
 import '../../empty_states/list_empty_state.dart';
 import '../../timers/duration_stopwatch_widget.dart';
 import 'package:trainware/widgets/routine/coach_instruction_video_section.dart';
+import 'package:trainware/widgets/routine/exercise_alternative_card.dart';
+import 'package:trainware/widgets/routine/exercise_alternatives_horizontal_list.dart';
 
 class ExerciseLogWidget extends StatefulWidget {
   final RoutineEditorMode editorType;
@@ -1217,22 +1218,20 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                                   ),
                                           ),
                                         )
-                                      : ListView.builder(
-                                          scrollDirection: Axis.horizontal,
-                                          padding: EdgeInsets.zero,
-                                          itemCount:
-                                              exerciseLog.alternatives.length +
-                                                  (canAddAlternatives ? 1 : 0),
+                                      : ExerciseAlternativesHorizontalList(
+                                          itemSize: 80,
+                                          gap: 8,
+                                          itemCount: exerciseLog
+                                                  .alternatives.length +
+                                              (canAddAlternatives ? 1 : 0),
                                           itemBuilder: (context, index) {
                                             if (canAddAlternatives &&
                                                 index == 0) {
-                                              // Add button as first item
-                                              return _AlternativeExerciseCard(
-                                                exercise:
-                                                    null, // null indicates add button
-                                                isFirst: true,
-                                                isLast: false,
-                                                onTap: _addAlternativesDirectly,
+                                              return ExerciseAlternativeCard(
+                                                exercise: null,
+                                                dimension: 80,
+                                                onTap:
+                                                    _addAlternativesDirectly,
                                               );
                                             }
                                             final alternativeIndex =
@@ -1240,15 +1239,11 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                                                     ? index - 1
                                                     : index;
                                             final alternative = exerciseLog
-                                                .alternatives[alternativeIndex];
-                                            return _AlternativeExerciseCard(
+                                                .alternatives[
+                                                    alternativeIndex];
+                                            return ExerciseAlternativeCard(
                                               exercise: alternative,
-                                              isFirst: !canAddAlternatives &&
-                                                  index == 0,
-                                              isLast: alternativeIndex ==
-                                                  exerciseLog
-                                                      .alternatives.length -
-                                                      1,
+                                              dimension: 80,
                                               onTap: () =>
                                                   _confirmReplaceWithAlternative(
                                                       alternative),
@@ -1659,196 +1654,39 @@ class _AlternativesManagementWidgetState
             ],
           ),
           const SizedBox(height: 16),
-          Expanded(
-            child: alternatives.isEmpty
-                ? ListEmptyState(
+          alternatives.isEmpty
+              ? const Expanded(
+                  child: ListEmptyState(
                     message:
                         "No alternative exercises added yet.\nTap the + button to add alternative exercises for this exercise",
-                  )
-                : ListView.separated(
-                    itemCount: alternatives.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final alternative = alternatives[index];
-                      return Dismissible(
-                        key: ValueKey(alternative.id),
-                        direction: DismissDirection.endToStart,
-                        confirmDismiss: (_) =>
-                            _confirmRemoveAlternative(alternative),
-                        onDismissed: (_) {
-                          _removeAlternative(alternative);
-                        },
-                        background: const SizedBox.shrink(),
-                        child: _AlternativeExerciseListItem(
-                          exercise: alternative,
-                        ),
-                      );
-                    },
                   ),
-          ),
+                )
+              : Expanded(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ExerciseAlternativesHorizontalList(
+                      itemSize: 80,
+                      gap: 8,
+                      itemCount: alternatives.length,
+                      itemBuilder: (context, index) {
+                        final alternative = alternatives[index];
+                        return ExerciseAlternativeCard(
+                          exercise: alternative,
+                          dimension: 80,
+                          onRemove: () async {
+                            if (!await _confirmRemoveAlternative(alternative)) {
+                              return;
+                            }
+                            _removeAlternative(alternative);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
         ],
       ),
     );
   }
 }
 
-class _AlternativeExerciseCard extends StatelessWidget {
-  final ExerciseDto? exercise; // null means it's the add button
-  final bool isFirst;
-  final bool isLast;
-  final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
-
-  const _AlternativeExerciseCard({
-    this.exercise,
-    this.isFirst = false,
-    this.isLast = false,
-    this.onTap,
-    this.onLongPress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Container(
-        width: 80,
-        height: 80,
-        margin: EdgeInsets.only(
-          left: isFirst ? 16 : 4,
-          right: isLast ? 16 : 4,
-        ),
-        decoration: exercise != null
-            ? BoxDecoration(
-                color: sapphireDark80,
-                borderRadius: BorderRadius.circular(12),
-              )
-            : null,
-        padding: const EdgeInsets.all(8),
-        child: Stack(
-          children: [
-            Center(
-              child: exercise == null
-                  ? // Add button
-                  const Center(
-                      child: FaIcon(
-                        FontAwesomeIcons.circlePlus,
-                        size: 24,
-                        color: Colors.white70,
-                      ),
-                    )
-                  : exercise!.isSystem
-                      ? FutureBuilder<String?>(
-                          future:
-                              LottieExerciseRegistry.lottieFor(exercise!.id),
-                          builder: (context, snapshot) {
-                            final asset = snapshot.data;
-                            if (asset != null) {
-                              return SizedBox(
-                                width: 56,
-                                height: 56,
-                                child: Lottie.asset(
-                                  asset,
-                                  fit: BoxFit.contain,
-                                  repeat: true,
-                                ),
-                              );
-                            }
-                            // System exercise without lottie - show truncated name
-                            return Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Text(
-                                exercise!.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: Colors.white70,
-                                      fontSize: 10,
-                                    ),
-                              ),
-                            );
-                          },
-                        )
-                      : // Custom exercise - show truncated name
-                      Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Text(
-                            exercise!.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.white70,
-                                      fontSize: 10,
-                                    ),
-                          ),
-                        ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AlternativeExerciseListItem extends StatelessWidget {
-  final ExerciseDto exercise;
-
-  const _AlternativeExerciseListItem({required this.exercise});
-
-  @override
-  Widget build(BuildContext context) {
-    final isSystem = exercise.isSystem;
-    const banColor = Color.fromRGBO(255, 255, 255, 0.4);
-
-    return ThemeListTile(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-        title: Text(
-          exercise.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                height: 1.2,
-              ),
-        ),
-        trailing: SizedBox(
-          width: 48,
-          height: 48,
-          child: isSystem
-              ? FutureBuilder<String?>(
-                  future: LottieExerciseRegistry.lottieFor(exercise.id),
-                  builder: (context, snapshot) {
-                    final asset = snapshot.data;
-                    if (asset != null) {
-                      return Lottie.asset(
-                        asset,
-                        height: 44,
-                        fit: BoxFit.contain,
-                        repeat: true,
-                      );
-                    }
-                    return const FaIcon(
-                      FontAwesomeIcons.ban,
-                      size: 26,
-                      color: banColor,
-                    );
-                  },
-                )
-              : const FaIcon(
-                  FontAwesomeIcons.ban,
-                  size: 26,
-                  color: banColor,
-                ),
-        ),
-      ),
-    );
-  }
-}

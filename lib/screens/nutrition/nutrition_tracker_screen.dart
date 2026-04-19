@@ -963,6 +963,7 @@ class _LogMealButtonState extends State<_LogMealButton> {
       return;
     }
 
+    FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
     final estimate = await estimateFromMealDescription(meal);
     if (!mounted) return;

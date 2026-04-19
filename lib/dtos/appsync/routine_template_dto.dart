@@ -11,6 +11,8 @@ class RoutineTemplateDto {
   final String? clientId;
   /// Owner user id. Coach-created templates have owner = coach; client-created have owner = client.
   final String? owner;
+  /// Display order within [planId]; lower values first. Null for legacy rows (tie-break elsewhere).
+  final int? planOrderIndex;
 
   RoutineTemplateDto({
     this.id = "",
@@ -20,6 +22,7 @@ class RoutineTemplateDto {
     required this.exerciseTemplates,
     this.clientId,
     this.owner,
+    this.planOrderIndex,
   });
 
   /// True when the template was created by the given user (they can edit/delete).
@@ -36,6 +39,7 @@ class RoutineTemplateDto {
           exerciseTemplates.map((exercise) => exercise.toJson()).toList(),
       'clientId': clientId,
       'owner': owner,
+      'planOrderIndex': planOrderIndex,
     };
   }
 
@@ -46,6 +50,7 @@ class RoutineTemplateDto {
     final notes = json["notes"] as String? ?? "";
     final clientId = json["clientId"] as String?;
     final owner = json["owner"] as String?;
+    final planOrderIndex = (json["planOrderIndex"] as num?)?.toInt();
 
     final rawExerciseTemplates = json["exercises"] as List;
     final exerciseTemplates = rawExerciseTemplates
@@ -64,6 +69,7 @@ class RoutineTemplateDto {
       exerciseTemplates: exerciseTemplates,
       clientId: clientId,
       owner: owner,
+      planOrderIndex: planOrderIndex,
     );
   }
 
@@ -87,6 +93,7 @@ class RoutineTemplateDto {
     List<ExerciseLogDto>? exerciseTemplates,
     String? clientId,
     String? owner,
+    int? planOrderIndex,
   }) {
     return RoutineTemplateDto(
       id: id ?? this.id,
@@ -98,6 +105,7 @@ class RoutineTemplateDto {
           : this.exerciseTemplates.map((e) => e.copyWith()).toList(),
       clientId: clientId ?? this.clientId,
       owner: owner ?? this.owner,
+      planOrderIndex: planOrderIndex ?? this.planOrderIndex,
     );
   }
 

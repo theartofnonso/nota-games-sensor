@@ -38,15 +38,17 @@ class SupabaseRoutineTemplateRepository {
       }
 
       final query = _client.from('routine_templates').select(
-            'id,planId,name,notes,clientId,owner,createdAt,updatedAt,template_exercises(id,template_id,exercise_id,order_index,super_set_group,notes,created_at,coach_instruction_video_path,template_sets(id,template_exercise_id,target_reps,target_weight,target_duration_seconds,order_index),exercises!template_exercises_exercise_id_fkey(id,name,type),exercise_alternatives(order_index,exercises(id,name,type)))',
+            'id,planId,name,notes,clientId,owner,planOrderIndex,createdAt,updatedAt,template_exercises(id,template_id,exercise_id,order_index,super_set_group,notes,created_at,coach_instruction_video_path,template_sets(id,template_exercise_id,target_reps,target_weight,target_duration_seconds,order_index),exercises!template_exercises_exercise_id_fkey(id,name,type),exercise_alternatives(order_index,exercises(id,name,type)))',
           );
       final response = requireOwnerAndClient
           ? await query
               .eq('owner', ownerId)
               .eq('clientId', clientId)
+              .order('planOrderIndex', ascending: true)
               .order('createdAt', ascending: true)
           : await query
               .or('owner.eq.$ownerId,clientId.eq.$clientId')
+              .order('planOrderIndex', ascending: true)
               .order('createdAt', ascending: true);
 
       final rawItems = response as List;
@@ -91,6 +93,7 @@ class SupabaseRoutineTemplateRepository {
       exerciseTemplates: exerciseTemplates,
       clientId: row['clientId'] as String?,
       owner: row['owner'] as String?,
+      planOrderIndex: (row['planOrderIndex'] as num?)?.toInt(),
     );
   }
 
@@ -172,6 +175,18 @@ class SupabaseRoutineTemplateRepository {
     required RoutineTemplateDto template,
     required String ownerId,
   }) async {
+    var planOrderIndex = template.planOrderIndex;
+    if (planOrderIndex == null && template.id.isNotEmpty) {
+      final existing = await _client
+          .from('routine_templates')
+          .select('planOrderIndex')
+          .eq('id', template.id)
+          .maybeSingle();
+      if (existing != null) {
+        planOrderIndex = (existing['planOrderIndex'] as num?)?.toInt();
+      }
+    }
+
     final now = DateTime.now().toUtc().toIso8601String();
     await _client.from('routine_templates').upsert({
       'id': template.id,
@@ -180,6 +195,7 @@ class SupabaseRoutineTemplateRepository {
       'notes': template.notes,
       'clientId': template.clientId,
       'owner': ownerId,
+      'planOrderIndex': planOrderIndex,
       'createdAt': now,
       'updatedAt': now,
     });
@@ -242,6 +258,20 @@ class SupabaseRoutineTemplateRepository {
         }
         await _client.from('exercise_alternatives').insert(altRows);
       }
+    }
+  }
+
+  /// Updates only `planOrderIndex` (and `updatedAt`) for each template row — avoids
+  /// re-inserting template_exercises like [upsertTemplate] does.
+  Future<void> updateTemplatesPlanOrder({
+    required List<String> templateIdsInOrder,
+  }) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    for (var i = 0; i < templateIdsInOrder.length; i++) {
+      await _client.from('routine_templates').update({
+        'planOrderIndex': i,
+        'updatedAt': now,
+      }).eq('id', templateIdsInOrder[i]);
     }
   }
 

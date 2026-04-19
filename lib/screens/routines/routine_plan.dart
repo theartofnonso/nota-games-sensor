@@ -31,6 +31,7 @@ import '../../widgets/empty_states/illustrated_empty_state.dart';
 import '../../widgets/icons/custom_icon.dart';
 import '../../widgets/navigation/app_floating_navigation_bar.dart';
 import '../../widgets/routine/preview/routine_template_grid_item.dart';
+import '../../widgets/routine/plan_workouts_reorder_sheet.dart';
 import '../../utils/name_notes_bottom_sheet.dart';
 
 class RoutinePlanScreen extends StatefulWidget {
@@ -95,9 +96,8 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
       });
     }
 
-    final routineTemplates = exerciseAndRoutineController.templates
-        .where((template) => template.planId == plan.id)
-        .toList();
+    final routineTemplates = exerciseAndRoutineController
+        .whereTemplatesForPlan(planId: plan.id);
 
     final logs = routineTemplates
         .expand((template) => exerciseAndRoutineController
@@ -348,6 +348,9 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
 
     if (plan == null) return;
 
+    final templatesInPlan =
+        exerciseAndRoutineController.whereTemplatesForPlan(planId: plan.id);
+
     showAppActionBottomSheet(
         context: context,
         child: Padding(
@@ -373,6 +376,25 @@ class _RoutinePlanScreenState extends State<RoutinePlanScreen> {
                         Navigator.of(context).pop();
                         _showCreateWorkoutBottomSheet(plan: plan);
                       }),
+                  if (AppConfig.isCoach && templatesInPlan.length >= 2)
+                    ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: const FaIcon(
+                          FontAwesomeIcons.arrowsUpDownLeftRight,
+                          size: 18,
+                        ),
+                        horizontalTitleGap: 10,
+                        title: Text("Reorder workouts",
+                            style: Theme.of(context).textTheme.bodyLarge),
+                        onTap: () async {
+                          Navigator.of(context).pop();
+                          await showPlanWorkoutsReorderSheet(
+                            context: context,
+                            plan: plan,
+                            initialOrder: templatesInPlan,
+                          );
+                        }),
                   if (AppConfig.isCoach)
                     ListTile(
                         dense: true,

@@ -25,9 +25,8 @@ class RoutinePlanGridItemWidget extends StatelessWidget {
         Provider.of<SupabaseExerciseAndRoutineController>(context,
             listen: false);
 
-    final routineTemplates = exerciseAndRoutineController.templates
-        .where((template) => template.planId == plan.id)
-        .toList();
+    final routineTemplates = exerciseAndRoutineController
+        .whereTemplatesForPlan(planId: plan.id);
 
     final exerciseTemplates = routineTemplates
         .expand((routineTemplate) => routineTemplate.exerciseTemplates);

@@ -8,6 +8,8 @@ import '../../../dtos/exercise_log_dto.dart';
 import '../../../utils/general_utils.dart';
 import '../../../utils/lottie_exercise_registry.dart';
 import '../../../utils/navigation_utils.dart';
+import '../exercise_alternative_card.dart';
+import '../exercise_alternatives_horizontal_list.dart';
 import 'set_headers/double_set_header.dart';
 import 'sets_listview.dart';
 
@@ -68,6 +70,25 @@ class _ExerciseLogWidgetState extends State<ExerciseLogWidget> {
                   .titleSmall
                   ?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center),
+          if (widget.exerciseLog.alternatives.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            ExerciseAlternativesHorizontalList(
+              itemSize: 56,
+              gap: 6,
+              itemCount: widget.exerciseLog.alternatives.length,
+              itemBuilder: (context, index) {
+                final alt = widget.exerciseLog.alternatives[index];
+                return ExerciseAlternativeCard(
+                  exercise: alt,
+                  dimension: 56,
+                  onTap: () => navigateToExerciseHome(
+                    context: context,
+                    exercise: alt,
+                  ),
+                );
+              },
+            ),
+          ],
           if (widget.exerciseLog.notes.isNotEmpty)
             Text(widget.exerciseLog.notes,
                 textAlign: TextAlign.center,

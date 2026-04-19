@@ -391,9 +391,20 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
           return null;
         }
         final id = templateDto.id.isEmpty ? const Uuid().v4() : templateDto.id;
+        var planOrder = templateDto.planOrderIndex;
+        if (templateDto.id.isEmpty && planOrder == null) {
+          final samePlan = _templatesForPlanOrderIndexing()
+              .where((t) => t.planId == templateDto.planId);
+          final ints =
+              samePlan.map((t) => t.planOrderIndex).whereType<int>().toList();
+          final maxIdx =
+              ints.isEmpty ? -1 : ints.reduce((a, b) => a > b ? a : b);
+          planOrder = maxIdx + 1;
+        }
         final templateWithId = templateDto.copyWith(
           id: id,
           clientId: accessController.selectedClientId,
+          planOrderIndex: planOrder,
         );
         await _templateRepository.upsertTemplate(
           template: templateWithId,
@@ -431,7 +442,18 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
         return null;
       }
       final id = templateDto.id.isEmpty ? const Uuid().v4() : templateDto.id;
-      final templateWithId = templateDto.copyWith(id: id);
+      var planOrder = templateDto.planOrderIndex;
+      if (templateDto.id.isEmpty && planOrder == null) {
+        final samePlan = _templatesForPlanOrderIndexing()
+            .where((t) => t.planId == templateDto.planId);
+        final ints =
+            samePlan.map((t) => t.planOrderIndex).whereType<int>().toList();
+        final maxIdx =
+            ints.isEmpty ? -1 : ints.reduce((a, b) => a > b ? a : b);
+        planOrder = maxIdx + 1;
+      }
+      final templateWithId =
+          templateDto.copyWith(id: id, planOrderIndex: planOrder);
       await _templateRepository.upsertTemplate(
         template: templateWithId,
         ownerId: userId,
@@ -800,7 +822,93 @@ class SupabaseExerciseAndRoutineController extends ChangeNotifier {
   }
 
   List<RoutineTemplateDto> whereTemplatesForPlan({required String planId}) {
-    return templates.where((template) => template.planId == planId).toList();
+    final list =
+        templates.where((template) => template.planId == planId).toList();
+    list.sort((a, b) {
+      final ao = a.planOrderIndex;
+      final bo = b.planOrderIndex;
+      if (ao != null && bo != null && ao != bo) return ao.compareTo(bo);
+      if (ao != null && bo == null) return -1;
+      if (ao == null && bo != null) return 1;
+      return a.id.compareTo(b.id);
+    });
+    return list;
+  }
+
+  List<RoutineTemplateDto> _templatesForPlanOrderIndexing() {
+    if (accessController.hasSelectedClient) {
+      return List<RoutineTemplateDto>.from(_overrideTemplates);
+    }
+    return List<RoutineTemplateDto>.from(_templateRepository.templates);
+  }
+
+  RoutineTemplateDto? _templateForReorderValidation(String id) {
+    return _templatesForPlanOrderIndexing()
+        .firstWhereOrNull((template) => template.id == id);
+  }
+
+  /// Persists coach-defined order of workouts (templates) within a plan.
+  Future<void> reorderWorkoutsInPlan({
+    required String planId,
+    required List<String> orderedTemplateIds,
+  }) async {
+    if (orderedTemplateIds.isEmpty) return;
+
+    final plan = planWhere(id: planId);
+    if (!AppPrivileges.isProWithCoach && (plan?.isSystemPlan ?? false)) {
+      errorMessage = 'Cannot reorder workouts in this plan.';
+      logger.w('reorderWorkoutsInPlan blocked for system plan $planId');
+      notifyListeners();
+      return;
+    }
+
+    final seen = <String>{};
+    for (final id in orderedTemplateIds) {
+      if (!seen.add(id)) {
+        errorMessage = 'Invalid workout order.';
+        notifyListeners();
+        return;
+      }
+      final t = _templateForReorderValidation(id);
+      if (t == null || t.planId != planId) {
+        errorMessage = 'Invalid workout order.';
+        notifyListeners();
+        return;
+      }
+    }
+
+    if (accessController.hasSelectedClient) {
+      isLoading = true;
+      try {
+        await _templateRepository.updateTemplatesPlanOrder(
+          templateIdsInOrder: orderedTemplateIds,
+        );
+        await _loadRemoteForClient(accessController.selectedClientId!);
+      } catch (e) {
+        errorMessage = 'Oops! Something went wrong. Please try again later.';
+        logger.e('Error reordering plan workouts (client mode)', error: e);
+      } finally {
+        isLoading = false;
+        errorMessage = '';
+        notifyListeners();
+      }
+      return;
+    }
+
+    isLoading = true;
+    try {
+      await _templateRepository.updateTemplatesPlanOrder(
+        templateIdsInOrder: orderedTemplateIds,
+      );
+      await _templateRepository.loadTemplates();
+    } catch (e) {
+      errorMessage = 'Oops! Something went wrong. Please try again later.';
+      logger.e('Error reordering plan workouts', error: e);
+    } finally {
+      isLoading = false;
+      errorMessage = '';
+      notifyListeners();
+    }
   }
 
   /// Query Helpers - Logs
