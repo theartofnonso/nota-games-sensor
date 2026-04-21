@@ -1,12 +1,17 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:trainware/services/notathletes_coach_profile_api.dart';
 
 /// Reads [coach_clients] for `client_id` → returns `coach_id`.
 ///
 /// Unlisted clients get `clients` + `coach_clients` via **`POST /unlisted-client-bootstrap`** at startup.
 ///
-/// Coach display data comes from **GET /coach-profiles/:id** ([fetchAssignedCoachProfile]),
-/// not from Supabase `coaches`. [coachName] is left empty here.
-Future<Map<String, String>?> fetchCoachForClient(String clientId) async {
+/// When [includeCoachName] is true, also resolves coach display name via
+/// **GET /coach-profiles/:id** so callers (like chat routing) can show
+/// "Coach <Name>" without a separate lookup.
+Future<Map<String, String>?> fetchCoachForClient(
+  String clientId, {
+  bool includeCoachName = true,
+}) async {
   try {
     final row = await Supabase.instance.client
         .from('coach_clients')
@@ -23,7 +28,16 @@ Future<Map<String, String>?> fetchCoachForClient(String clientId) async {
     };
     if (coachId == null || coachId.isEmpty) return null;
 
-    return {'coachId': coachId, 'coachName': ''};
+    var coachName = '';
+    if (includeCoachName) {
+      final profile = await fetchCoachProfileFromNotathletesApi(coachId);
+      final resolvedName = profile?.name.trim() ?? '';
+      if (resolvedName.isNotEmpty) {
+        coachName = resolvedName;
+      }
+    }
+
+    return {'coachId': coachId, 'coachName': coachName};
   } catch (_) {
     return null;
   }

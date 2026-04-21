@@ -19,7 +19,6 @@ done <<'EOF'
 client|client|lib/main_client.dart
 coach|coach|lib/main_coach.dart
 client-unlisted|clientUnlisted|lib/main_client_unlisted.dart
-coach-unlisted|coachUnlisted|lib/main_coach_unlisted.dart
 EOF
 
 echo "All release builds finished."

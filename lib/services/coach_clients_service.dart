@@ -5,8 +5,8 @@ import '../app_flavor.dart';
 import '../dtos/coach_client_dto.dart';
 import 'chat_unread_counts_service.dart';
 
-/// Loads and caches coach clients for **every** coach flavor (`coach` and
-/// `coachUnlisted`). Used at startup (splash) so the list is ready before `/coach`.
+/// Loads and caches coach clients for the coach flavor (`coach`).
+/// Used at startup (splash) so the list is ready before `/coach`.
 ///
 /// Extends [ChangeNotifier] so [CoachClientsScreen] rebuilds when a load
 /// finishes (the service can update after the first frame).

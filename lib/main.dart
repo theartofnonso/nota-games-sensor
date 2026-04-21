@@ -70,7 +70,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:agora_chat_uikit/chat_uikit.dart';
 import 'package:trainware/config/chat_config.dart';
 import 'firebase_options_coach.dart' as coach_options;
-import 'firebase_options_coach_unlisted.dart' as coach_unlisted_options;
 import 'firebase_options_client.dart' as client_options;
 import 'firebase_options_client_unlisted.dart' as client_unlisted_options;
 
@@ -253,8 +252,6 @@ Future<void> mainCommon(AppFlavor flavor) async {
   // Initialize Firebase: retail vs unlisted iOS apps (see ios/Runner/GoogleService-Info-*.plist).
   final firebaseOptions = switch (flavor) {
     AppFlavor.coach => coach_options.DefaultFirebaseOptions.currentPlatform,
-    AppFlavor.coachUnlisted =>
-      coach_unlisted_options.DefaultFirebaseOptions.currentPlatform,
     AppFlavor.client => client_options.DefaultFirebaseOptions.currentPlatform,
     AppFlavor.clientUnlisted =>
       client_unlisted_options.DefaultFirebaseOptions.currentPlatform,

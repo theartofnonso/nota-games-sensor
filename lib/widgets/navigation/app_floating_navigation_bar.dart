@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:trainware/colors.dart';
 
 /// One slot in [AppFloatingNavigationBar] (custom layout, not [NavigationBar]).
@@ -118,6 +119,12 @@ class _FloatingNavSlot extends StatelessWidget {
     required this.child,
   });
 
+  void _handleTap() {
+    // Intentionally strong feedback for primary navigation taps.
+    HapticFeedback.heavyImpact();
+    onTap();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -127,7 +134,7 @@ class _FloatingNavSlot extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
+          onTap: _handleTap,
           customBorder: const CircleBorder(),
           splashColor: selectorColor.withValues(alpha: 0.22),
           child: Padding(

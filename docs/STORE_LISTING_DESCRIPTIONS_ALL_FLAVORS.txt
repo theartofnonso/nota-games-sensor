@@ -68,14 +68,3 @@ If you received this app from your coach or team, sign in with the instructions 
 Privacy Policy: https://www.notathletes.com/privacy
 Terms of Use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 
---------------------------------------------------------------------------------
-Trainware Coach — unlisted / internal coach
-Bundle ID: com.notathletes.coach.unlisted
---------------------------------------------------------------------------------
-
-Internal coach build for trainers who work with clients on the Trainware client app. Manage your roster, programs, templates, client logs, and nutrition templates in one focused workspace.
-
-This distribution is for authorized coaches only. It does not include in-app purchases. In-app client messaging and video may be omitted in this build compared to the retail Not Athletes Coach app.
-
-Privacy Policy: https://www.notathletes.com/privacy
-Terms of Use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

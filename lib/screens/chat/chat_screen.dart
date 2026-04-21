@@ -56,7 +56,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       return n.isNotEmpty ? n : 'Client';
     }
     final n = widget.coachName.trim();
-    return n.isNotEmpty ? n : 'Coach';
+    return n.isNotEmpty ? 'Coach $n' : 'Coach';
   }
 
   @override

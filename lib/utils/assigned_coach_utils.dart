@@ -11,7 +11,7 @@ import 'coach_mapping_utils.dart';
 Future<CoachDto?> fetchAssignedCoachProfile() async {
   final user = Supabase.instance.client.auth.currentUser;
   if (user == null) return null;
-  final map = await fetchCoachForClient(user.id);
+  final map = await fetchCoachForClient(user.id, includeCoachName: false);
   if (map == null) return null;
   final coachId = map['coachId']?.trim();
   if (coachId == null || coachId.isEmpty) return null;

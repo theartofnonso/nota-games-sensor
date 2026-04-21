@@ -55,7 +55,7 @@ android {
     }
 
     defaultConfig {
-        // Matches iOS bundle IDs: com.notathletes.client / .coach / .client.unlisted / .coach.unlisted
+        // Matches iOS bundle IDs: com.notathletes.client / .coach / .client.unlisted
         applicationId "com.notathletes.client"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
@@ -81,11 +81,6 @@ android {
             dimension "app"
             applicationId "com.notathletes.client.unlisted"
             resValue "string", "app_name", "Trainware"
-        }
-        coachUnlisted {
-            dimension "app"
-            applicationId "com.notathletes.coach.unlisted"
-            resValue "string", "app_name", "Trainware Coach"
         }
     }
 

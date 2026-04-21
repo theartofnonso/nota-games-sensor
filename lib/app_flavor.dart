@@ -3,8 +3,6 @@ enum AppFlavor {
   client,
   /// Internal / unlisted build: same as [client] but no IAP or subscription gate.
   clientUnlisted,
-  /// Internal / unlisted build: same as [coach] but no IAP; client list on launch.
-  coachUnlisted,
 }
 
 class AppConfig {
@@ -12,12 +10,9 @@ class AppConfig {
 
   static AppFlavor get flavor => _flavor;
 
-  /// Store coach and unlisted coach: both load [CoachClientsService] and `/coach`.
-  /// Keep roster behavior identical across coach flavors.
-  static bool get loadsCoachClientRoster =>
-      _flavor == AppFlavor.coach || _flavor == AppFlavor.coachUnlisted;
+  /// Coach build loads [CoachClientsService] and `/coach`.
+  static bool get loadsCoachClientRoster => _flavor == AppFlavor.coach;
 
-  /// True for both store and unlisted coach builds.
   static bool get isCoach => loadsCoachClientRoster;
 
   /// True for both store and unlisted client builds.
@@ -31,13 +26,9 @@ class AppConfig {
   static bool get isRetailCoach => _flavor == AppFlavor.coach;
 
   /// Unlisted internal distribution (no IAP, no subscription gate).
-  static bool get isUnlistedDistribution =>
-      _flavor == AppFlavor.clientUnlisted ||
-      _flavor == AppFlavor.coachUnlisted;
+  static bool get isUnlistedDistribution => _flavor == AppFlavor.clientUnlisted;
 
   static bool get isUnlistedClient => _flavor == AppFlavor.clientUnlisted;
-
-  static bool get isUnlistedCoach => _flavor == AppFlavor.coachUnlisted;
 
   /// Agora Chat UI Kit (1:1 messaging). Enabled for retail and unlisted builds.
   static bool get supportsAgoraChat => true;
@@ -51,7 +42,6 @@ class AppConfig {
 
   static String get appName => switch (_flavor) {
         AppFlavor.coach => 'Not Athletes Coach',
-        AppFlavor.coachUnlisted => 'Trainware Coach',
         AppFlavor.clientUnlisted => 'Trainware',
         AppFlavor.client => 'Not Athletes Train',
       };
