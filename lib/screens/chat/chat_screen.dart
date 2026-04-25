@@ -99,14 +99,14 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       await ChatBootstrapService.ensureAgoraAndPushSetup(userId);
 
       if (!mounted) return;
-      if (ChatUIKit.instance.currentUserId == null ||
-          ChatUIKit.instance.currentUserId!.isEmpty) {
+      final selfAgora = toAgoraUsername(userId);
+      final sdkUser = ChatClient.getInstance.currentUserId?.trim() ?? '';
+      final uiUser = ChatUIKit.instance.currentUserId?.trim() ?? '';
+      if (sdkUser != selfAgora || uiUser != selfAgora) {
         throw Exception(
           'Could not connect to chat. Check your connection and try again.',
         );
       }
-
-      final selfAgora = toAgoraUsername(userId);
       final peerAgora = toAgoraUsername(_peerSupabaseId);
       final name = _peerDisplayName();
 

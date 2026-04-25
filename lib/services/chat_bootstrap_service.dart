@@ -80,8 +80,11 @@ class ChatBootstrapService {
   static Future<void> ensurePeerChatHistoryLoaded(String peerAgoraUserId) async {
     final peer = peerAgoraUserId.trim();
     if (peer.isEmpty) return;
-    final me = ChatUIKit.instance.currentUserId?.trim();
-    if (me == null || me.isEmpty) return;
+    final sdkMe = ChatClient.getInstance.currentUserId?.trim() ?? '';
+    final me = sdkMe.isNotEmpty
+        ? sdkMe
+        : (ChatUIKit.instance.currentUserId?.trim() ?? '');
+    if (me.isEmpty) return;
 
     try {
       final anyLocal = await ChatUIKit.instance.loadLocalMessages(
@@ -147,6 +150,34 @@ class ChatBootstrapService {
     try {
       await ChatClient.getInstance.logout(true);
     } catch (_) {}
+    try {
+      ChatUIKitContext.instance.currentUserId = null;
+    } catch (_) {}
+  }
+
+  /// After background [logout(false)], the native SDK can be logged out while
+  /// UIKit still holds a stale user id — that skips re-login and yields
+  /// `ChatError 201 Not login` when opening messages.
+  static void _clearStaleChatUIKitIfSdkLoggedOut() {
+    final sdk = ChatClient.getInstance.currentUserId?.trim() ?? '';
+    final ui = ChatUIKit.instance.currentUserId?.trim() ?? '';
+    if (sdk.isEmpty && ui.isNotEmpty) {
+      debugPrint(
+        '[ChatBootstrap] Clearing stale ChatUIKit user (SDK logged out, ui=$ui)',
+      );
+      try {
+        ChatUIKitContext.instance.currentUserId = null;
+      } catch (_) {}
+    }
+  }
+
+  static bool _sdkAndUiKitLoggedInAs(String agoraUserId) {
+    final sdk = ChatClient.getInstance.currentUserId?.trim() ?? '';
+    final ui = ChatUIKit.instance.currentUserId?.trim() ?? '';
+    return sdk.isNotEmpty &&
+        ui.isNotEmpty &&
+        sdk == agoraUserId &&
+        ui == agoraUserId;
   }
 
   /// Fetches an Agora Chat token for the given [supabaseUserId] (raw auth user id).
@@ -181,7 +212,9 @@ class ChatBootstrapService {
     if (supabaseUserId == null || supabaseUserId.isEmpty) return;
 
     final agoraUserId = toAgoraUsername(supabaseUserId);
-    if (ChatUIKit.instance.currentUserId == agoraUserId) {
+    _clearStaleChatUIKitIfSdkLoggedOut();
+
+    if (_sdkAndUiKitLoggedInAs(agoraUserId)) {
       debugPrint('[ChatBootstrap] Already logged in as $agoraUserId');
       agoraLoggedIn.value = true;
       return;
@@ -199,8 +232,13 @@ class ChatBootstrapService {
         userId: agoraUserId,
         token: token,
       );
-      if (ChatUIKit.instance.currentUserId != agoraUserId) {
-        debugPrint('[ChatBootstrap] Login verification failed');
+      final uiOk = ChatUIKit.instance.currentUserId?.trim() == agoraUserId;
+      final sdkOk = ChatClient.getInstance.currentUserId?.trim() == agoraUserId;
+      if (!uiOk || !sdkOk) {
+        debugPrint(
+          '[ChatBootstrap] Login verification failed '
+          '(uiOk=$uiOk sdkOk=$sdkOk expected=$agoraUserId)',
+        );
         agoraLoggedIn.value = false;
         return;
       }
