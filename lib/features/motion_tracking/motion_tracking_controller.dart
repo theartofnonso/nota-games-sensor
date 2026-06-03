@@ -11,9 +11,12 @@ import 'motion_publisher.dart';
 enum MotionTrackingStatus { idle, tracking, stopped }
 
 /// Tuning knobs for NOTA motion scoring — adjust without touching UI.
+///
+/// Uses [userAccelerometerEventStream] (linear acceleration, gravity removed).
+/// Values are in m/s²; magnitude ≈ 0 at rest.
 const double kMotionSmoothingAlpha = 0.15;
-const double kMotionScoreThreshold = 10.2;
-const double kMotionScoreMultiplier = 0.08;
+const double kMotionScoreThreshold = 0.3;
+const double kMotionScoreMultiplier = 0.4;
 const Duration kMotionSampleInterval = Duration(milliseconds: 50);
 
 class MotionTrackingController extends ChangeNotifier {
@@ -21,9 +24,12 @@ class MotionTrackingController extends ChangeNotifier {
 
   String? _playerId;
   MotionTrackingStatus _status = MotionTrackingStatus.idle;
-  StreamSubscription<AccelerometerEvent>? _subscription;
+  StreamSubscription<UserAccelerometerEvent>? _subscription;
   Timer? _sampleTimer;
-  AccelerometerEvent? _latestEvent;
+  bool _hasPendingSample = false;
+  double _pendingX = 0;
+  double _pendingY = 0;
+  double _pendingZ = 0;
   String? _sensorError;
 
   double _x = 0;
@@ -63,10 +69,17 @@ class MotionTrackingController extends ChangeNotifier {
     _sensorError = null;
 
     try {
-      _subscription = accelerometerEventStream().listen(
-        (event) => _latestEvent = event,
+      await _tearDownSensor();
+
+      _subscription = userAccelerometerEventStream().listen(
+        (event) {
+          _pendingX = event.x;
+          _pendingY = event.y;
+          _pendingZ = event.z;
+          _hasPendingSample = true;
+        },
         onError: (Object e) {
-          _sensorError = 'Accelerometer unavailable: $e';
+          _sensorError = 'Motion sensor unavailable: $e';
           stopTracking();
         },
       );
@@ -76,7 +89,7 @@ class MotionTrackingController extends ChangeNotifier {
       _status = MotionTrackingStatus.tracking;
       notifyListeners();
     } catch (e) {
-      _sensorError = 'Could not start accelerometer: $e';
+      _sensorError = 'Could not start motion sensor: $e';
       await _tearDownSensor();
       notifyListeners();
     }
@@ -113,7 +126,7 @@ class MotionTrackingController extends ChangeNotifier {
     _smoothedMagnitude = 0;
     _sessionScore = 0;
     _hasSmoothedSample = false;
-    _latestEvent = null;
+    _hasPendingSample = false;
   }
 
   Future<void> _tearDownSensor() async {
@@ -121,16 +134,15 @@ class MotionTrackingController extends ChangeNotifier {
     _subscription = null;
     _sampleTimer?.cancel();
     _sampleTimer = null;
-    _latestEvent = null;
+    _hasPendingSample = false;
   }
 
   void _onSampleTick() {
-    final event = _latestEvent;
-    if (event == null || _status != MotionTrackingStatus.tracking) return;
+    if (!_hasPendingSample || _status != MotionTrackingStatus.tracking) return;
 
-    _x = event.x;
-    _y = event.y;
-    _z = event.z;
+    _x = _pendingX;
+    _y = _pendingY;
+    _z = _pendingZ;
     _magnitude = _computeMagnitude(_x, _y, _z);
 
     if (!_hasSmoothedSample) {
