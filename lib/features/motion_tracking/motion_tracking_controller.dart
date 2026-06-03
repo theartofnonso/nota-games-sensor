@@ -14,10 +14,17 @@ enum MotionTrackingStatus { idle, tracking, stopped }
 ///
 /// Uses [userAccelerometerEventStream] (linear acceleration, gravity removed).
 /// Values are in m/s²; magnitude ≈ 0 at rest.
+///
+/// Score is integrated over time (not per raw tick) so totals stay comparable:
+/// `excess × kMotionScoreRate × dt` → ~2–6 points/s for typical phone movement.
 const double kMotionSmoothingAlpha = 0.15;
-const double kMotionScoreThreshold = 0.3;
-const double kMotionScoreMultiplier = 0.4;
+const double kMotionScoreThreshold = 0.4;
+/// Points gained per (m/s² above threshold) per second.
+const double kMotionScoreRate = 2.0;
 const Duration kMotionSampleInterval = Duration(milliseconds: 50);
+
+double get _kMotionSampleDtSeconds =>
+    kMotionSampleInterval.inMicroseconds / 1e6;
 
 class MotionTrackingController extends ChangeNotifier {
   MotionTrackingController();
@@ -153,9 +160,9 @@ class MotionTrackingController extends ChangeNotifier {
           (1 - kMotionSmoothingAlpha) * _smoothedMagnitude;
     }
 
-    if (_smoothedMagnitude > kMotionScoreThreshold) {
-      _sessionScore +=
-          (_smoothedMagnitude - kMotionScoreThreshold) * kMotionScoreMultiplier;
+    final excess = _smoothedMagnitude - kMotionScoreThreshold;
+    if (excess > 0) {
+      _sessionScore += excess * kMotionScoreRate * _kMotionSampleDtSeconds;
     }
 
     _publishCurrentSample(isTracking: true);
