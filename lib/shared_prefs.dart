@@ -94,4 +94,14 @@ class SharedPrefs {
     _routineLogRevision.value++;
   }
 
+  /// NOTA Games motion test — stable player/device id across launches.
+  final String _notaMotionPlayerIdKey = 'nota_motion_player_id';
+
+  String? get notaMotionPlayerId =>
+      _sharedPrefs?.getString(_notaMotionPlayerIdKey);
+
+  Future<void> setNotaMotionPlayerId(String value) async {
+    await _sharedPrefs?.setString(_notaMotionPlayerIdKey, value);
+  }
+
 }

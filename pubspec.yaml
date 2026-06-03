@@ -73,6 +73,7 @@ dependencies:
   flutter_ringtone_player: ^4.0.0
   audioplayers: ^6.1.0
   purchases_flutter: ^9.15.1
+  sensors_plus: ^6.1.1
 
 dependency_overrides:
   # agora_chat_uikit pins audioplayers 6.0.0; app uses ^6.1.0 — compatible.
