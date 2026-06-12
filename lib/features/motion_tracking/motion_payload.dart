@@ -1,60 +1,49 @@
-/// Serializable motion sample for real-time backend / dashboard subscribers.
-class MotionPayload {
-  const MotionPayload({
-    required this.playerId,
+/// Raw linear acceleration sample — matches [PlayerMotionBatch] schema items.
+class PlayerMotionSample {
+  const PlayerMotionSample({
     required this.timestamp,
-    required this.acceleration,
-    required this.session,
-  });
-
-  final String playerId;
-  final DateTime timestamp;
-  final MotionAccelerationPayload acceleration;
-  final MotionSessionPayload session;
-
-  Map<String, dynamic> toJson() => {
-        'playerId': playerId,
-        'timestamp': timestamp.toUtc().toIso8601String(),
-        'acceleration': acceleration.toJson(),
-        'session': session.toJson(),
-      };
-}
-
-class MotionAccelerationPayload {
-  const MotionAccelerationPayload({
     required this.x,
     required this.y,
     required this.z,
-    required this.magnitude,
-    required this.smoothedMagnitude,
   });
 
+  final int timestamp;
   final double x;
   final double y;
   final double z;
-  final double magnitude;
-  final double smoothedMagnitude;
 
   Map<String, dynamic> toJson() => {
+        'timestamp': timestamp,
         'x': x,
         'y': y,
         'z': z,
-        'magnitude': magnitude,
-        'smoothedMagnitude': smoothedMagnitude,
       };
 }
 
-class MotionSessionPayload {
-  const MotionSessionPayload({
-    required this.score,
-    required this.isTracking,
+/// Batched raw accelerometer data for backend publish (scoring is server-side).
+class PlayerMotionBatch {
+  const PlayerMotionBatch({
+    required this.playerId,
+    required this.playerName,
+    required this.batchStartedAt,
+    required this.batchEndedAt,
+    required this.sampleRateHz,
+    required this.samples,
   });
 
-  final double score;
-  final bool isTracking;
+  final String playerId;
+  final String playerName;
+  final int batchStartedAt;
+  final int batchEndedAt;
+  final double sampleRateHz;
+  final List<PlayerMotionSample> samples;
 
   Map<String, dynamic> toJson() => {
-        'score': score,
-        'isTracking': isTracking,
+        'playerId': playerId,
+        'playerName': playerName,
+        'batchStartedAt': batchStartedAt,
+        'batchEndedAt': batchEndedAt,
+        'sampleRateHz': sampleRateHz,
+        'samples': samples.map((s) => s.toJson()).toList(),
       };
 }

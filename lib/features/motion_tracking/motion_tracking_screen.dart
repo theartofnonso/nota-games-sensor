@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/colors.dart';
 import 'package:trainware/features/motion_tracking/motion_tracking_controller.dart';
-import 'package:trainware/utils/dialog_utils.dart';
 import 'package:trainware/utils/general_utils.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
-import 'package:trainware/widgets/buttons/opacity_button_widget_two.dart';
 
-/// NOTA Games phone motion test — accelerometer → player id → live metrics.
+/// NOTA Games player device — continuously samples motion and posts raw batches.
 class MotionTrackingScreen extends StatefulWidget {
   const MotionTrackingScreen({super.key});
 
@@ -15,20 +13,34 @@ class MotionTrackingScreen extends StatefulWidget {
   State<MotionTrackingScreen> createState() => _MotionTrackingScreenState();
 }
 
-class _MotionTrackingScreenState extends State<MotionTrackingScreen> {
+class _MotionTrackingScreenState extends State<MotionTrackingScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<MotionTrackingController>().initialize();
     });
   }
 
   @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final c = context.watch<MotionTrackingController>();
     final theme = Theme.of(context);
-    final showValues = c.status != MotionTrackingStatus.idle;
+    final accent = theme.colors.vibrantAccent;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -40,19 +52,27 @@ class _MotionTrackingScreenState extends State<MotionTrackingScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AppBar(
-                title: const Text('NOTA Games Motion Controller'),
+                title: const Text('NOTA Games'),
                 centerTitle: true,
                 backgroundColor: Colors.transparent,
                 surfaceTintColor: Colors.transparent,
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Player ${c.playerId}',
+                        c.playerName,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        c.playerId,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.onSurface.withValues(
@@ -63,8 +83,44 @@ class _MotionTrackingScreenState extends State<MotionTrackingScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 48),
+                      if (c.isRunning) ...[
+                        _RunningIndicator(
+                          controller: _pulseController,
+                          color: accent,
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Sending motion data',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.7,
+                            ),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ] else ...[
+                        Icon(
+                          Icons.sensors_off_outlined,
+                          size: 72,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.35,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Waiting for sensor…',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.55,
+                            ),
+                          ),
+                        ),
+                      ],
                       if (c.sensorError != null) ...[
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 32),
                         Text(
                           c.sensorError!,
                           textAlign: TextAlign.center,
@@ -73,40 +129,6 @@ class _MotionTrackingScreenState extends State<MotionTrackingScreen> {
                           ),
                         ),
                       ],
-                      Expanded(
-                        child: Column(
-                          children: [
-                            const Spacer(flex: 2),
-                            _CenterMetric(
-                              label: 'Session score',
-                              value:
-                                  showValues
-                                      ? c.sessionScore.toStringAsFixed(1)
-                                      : '—',
-                            ),
-                            const Spacer(flex: 3),
-                            _CenterMetric(
-                              label: 'Smoothed',
-                              value:
-                                  showValues
-                                      ? c.smoothedMagnitude.toStringAsFixed(2)
-                                      : '—',
-                            ),
-                            const Spacer(flex: 2),
-                          ],
-                        ),
-                      ),
-                      _MotionTrackingActions(
-                        isTracking: c.isTracking,
-                        onStartStop: () {
-                          if (c.isTracking) {
-                            _confirmStopTracking(context, c);
-                          } else {
-                            c.startTracking();
-                          }
-                        },
-                        onReset: () => _confirmReset(context, c),
-                      ),
                     ],
                   ),
                 ),
@@ -117,133 +139,62 @@ class _MotionTrackingScreenState extends State<MotionTrackingScreen> {
       ),
     );
   }
-
-  void _confirmStopTracking(
-    BuildContext context,
-    MotionTrackingController controller,
-  ) {
-    showBottomSheetWithSingleAction(
-      context: context,
-      title: 'Stop tracking?',
-      description:
-          'End this session. Your score and smoothed reading stay on screen until you reset.',
-      actionLabel: 'Stop Tracking',
-      isDestructive: true,
-      action: () {
-        Navigator.of(context).pop();
-        controller.stopTracking();
-      },
-    );
-  }
-
-  void _confirmReset(
-    BuildContext context,
-    MotionTrackingController controller,
-  ) {
-    showBottomSheetWithSingleAction(
-      context: context,
-      title: 'Reset session?',
-      description:
-          controller.isTracking
-              ? 'Stop tracking and clear your score and motion readings.'
-              : 'Clear your score and motion readings and return to a clean state.',
-      actionLabel: 'Reset',
-      actionColor: Colors.white,
-      action: () {
-        Navigator.of(context).pop();
-        controller.resetSession();
-      },
-    );
-  }
 }
 
-/// Bottom actions — same [OpacityButtonWidgetTwo] pattern as shell / settings.
-class _MotionTrackingActions extends StatelessWidget {
-  const _MotionTrackingActions({
-    required this.isTracking,
-    required this.onStartStop,
-    required this.onReset,
+class _RunningIndicator extends StatelessWidget {
+  const _RunningIndicator({
+    required this.controller,
+    required this.color,
   });
 
-  final bool isTracking;
-  final VoidCallback onStartStop;
-  final VoidCallback onReset;
+  final AnimationController controller;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colors;
-    final startStopColor = isTracking ? error : colors.vibrantAccent;
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(controller.value);
+        final outerScale = 1 + t * 0.18;
+        final innerOpacity = 0.45 + t * 0.55;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: SizedBox(
-            width: double.infinity,
-            child: OpacityButtonWidgetTwo(
-              onPressed: onStartStop,
-              label: isTracking ? 'Stop Tracking' : 'Start Tracking',
-              showArrowRight: false,
-              buttonColor: startStopColor,
-            ),
+        return SizedBox(
+          width: 120,
+          height: 120,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Transform.scale(
+                scale: outerScale,
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color.withValues(alpha: 0.12 + t * 0.1),
+                  ),
+                ),
+              ),
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.withValues(alpha: innerOpacity),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.35 * innerOpacity),
+                      blurRadius: 24,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: SizedBox(
-            width: double.infinity,
-            child: OpacityButtonWidgetTwo(
-              onPressed: onReset,
-              label: 'Reset',
-              showArrowRight: false,
-              buttonColor: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CenterMetric extends StatelessWidget {
-  const _CenterMetric({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: onSurface.withValues(alpha: 0.55),
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.4,
-          ),
-        ),
-        const SizedBox(height: 12),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            value,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.displayLarge?.copyWith(
-              fontSize: 80,
-              fontWeight: FontWeight.w900,
-              height: 0.95,
-              letterSpacing: -2,
-              color: onSurface,
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

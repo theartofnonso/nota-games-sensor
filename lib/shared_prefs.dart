@@ -96,12 +96,20 @@ class SharedPrefs {
 
   /// NOTA Games motion test — stable player/device id across launches.
   final String _notaMotionPlayerIdKey = 'nota_motion_player_id';
+  final String _notaMotionPlayerNameKey = 'nota_motion_player_name';
 
   String? get notaMotionPlayerId =>
       _sharedPrefs?.getString(_notaMotionPlayerIdKey);
 
   Future<void> setNotaMotionPlayerId(String value) async {
     await _sharedPrefs?.setString(_notaMotionPlayerIdKey, value);
+  }
+
+  String? get notaMotionPlayerName =>
+      _sharedPrefs?.getString(_notaMotionPlayerNameKey);
+
+  Future<void> setNotaMotionPlayerName(String value) async {
+    await _sharedPrefs?.setString(_notaMotionPlayerNameKey, value);
   }
 
 }

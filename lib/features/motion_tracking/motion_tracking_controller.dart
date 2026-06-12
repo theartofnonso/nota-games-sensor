@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -8,71 +7,45 @@ import 'motion_payload.dart';
 import 'motion_player_id_store.dart';
 import 'motion_publisher.dart';
 
-enum MotionTrackingStatus { idle, tracking, stopped }
-
-/// Tuning knobs for NOTA motion scoring — adjust without touching UI.
-///
-/// Uses [userAccelerometerEventStream] (linear acceleration, gravity removed).
-/// Values are in m/s²; magnitude ≈ 0 at rest.
-///
-/// Score is integrated over time (not per raw tick) so totals stay comparable:
-/// `excess × kMotionScoreRate × dt` → ~2–6 points/s for typical phone movement.
-const double kMotionSmoothingAlpha = 0.15;
-const double kMotionScoreThreshold = 0.4;
-/// Points gained per (m/s² above threshold) per second.
-const double kMotionScoreRate = 2.0;
+/// Device sample interval — 50 ms → 20 Hz batches per schema.
 const Duration kMotionSampleInterval = Duration(milliseconds: 50);
+const double kMotionSampleRateHz = 20;
 
-double get _kMotionSampleDtSeconds =>
-    kMotionSampleInterval.inMicroseconds / 1e6;
+/// How often raw samples are batched and posted to the backend.
+const Duration kMotionBatchInterval = Duration(seconds: 1);
 
 class MotionTrackingController extends ChangeNotifier {
   MotionTrackingController();
 
   String? _playerId;
-  MotionTrackingStatus _status = MotionTrackingStatus.idle;
+  String _playerName = 'Player';
   StreamSubscription<UserAccelerometerEvent>? _subscription;
   Timer? _sampleTimer;
+  Timer? _batchTimer;
   bool _hasPendingSample = false;
   double _pendingX = 0;
   double _pendingY = 0;
   double _pendingZ = 0;
   String? _sensorError;
+  bool _isRunning = false;
 
-  double _x = 0;
-  double _y = 0;
-  double _z = 0;
-  double _magnitude = 0;
-  double _smoothedMagnitude = 0;
-  double _sessionScore = 0;
-  bool _hasSmoothedSample = false;
+  final List<PlayerMotionSample> _batchSamples = [];
+  int? _batchStartedAtMs;
 
   String get playerId => _playerId ?? '…';
-  MotionTrackingStatus get status => _status;
+  String get playerName => _playerName;
   String? get sensorError => _sensorError;
-
-  double get x => _x;
-  double get y => _y;
-  double get z => _z;
-  double get magnitude => _magnitude;
-  double get smoothedMagnitude => _smoothedMagnitude;
-  double get sessionScore => _sessionScore;
-
-  bool get isTracking => _status == MotionTrackingStatus.tracking;
-
-  String get statusLabel => switch (_status) {
-        MotionTrackingStatus.idle => 'Idle',
-        MotionTrackingStatus.tracking => 'Tracking',
-        MotionTrackingStatus.stopped => 'Stopped',
-      };
+  bool get isRunning => _isRunning;
 
   Future<void> initialize() async {
     _playerId = await MotionPlayerIdStore.loadOrCreate();
+    _playerName = await MotionPlayerIdStore.loadOrCreateName();
     notifyListeners();
+    await _startSensor();
   }
 
-  Future<void> startTracking() async {
-    if (_status == MotionTrackingStatus.tracking) return;
+  Future<void> _startSensor() async {
+    if (_isRunning) return;
     _sensorError = null;
 
     try {
@@ -87,13 +60,20 @@ class MotionTrackingController extends ChangeNotifier {
         },
         onError: (Object e) {
           _sensorError = 'Motion sensor unavailable: $e';
-          stopTracking();
+          _stopSensor();
         },
       );
 
-      _sampleTimer = Timer.periodic(kMotionSampleInterval, (_) => _onSampleTick());
+      _sampleTimer = Timer.periodic(
+        kMotionSampleInterval,
+        (_) => _onSampleTick(),
+      );
+      _batchTimer = Timer.periodic(
+        kMotionBatchInterval,
+        (_) => _flushBatch(),
+      );
 
-      _status = MotionTrackingStatus.tracking;
+      _isRunning = true;
       notifyListeners();
     } catch (e) {
       _sensorError = 'Could not start motion sensor: $e';
@@ -102,38 +82,11 @@ class MotionTrackingController extends ChangeNotifier {
     }
   }
 
-  Future<void> stopTracking() async {
-    if (_status != MotionTrackingStatus.tracking) return;
-    await _tearDownSensor();
-    _status = MotionTrackingStatus.stopped;
-    _publishCurrentSample(isTracking: false);
+  void _stopSensor() {
+    _flushBatch();
+    _tearDownSensor();
+    _isRunning = false;
     notifyListeners();
-  }
-
-  /// Stops tracking (if active) and clears session metrics back to idle.
-  Future<void> resetSession() async {
-    if (_status == MotionTrackingStatus.tracking) {
-      await _tearDownSensor();
-    }
-    _clearSessionMetrics();
-    _status = MotionTrackingStatus.idle;
-    _sensorError = null;
-    final id = _playerId;
-    if (id != null) {
-      MotionPublisher.latestByPlayerId.remove(id);
-    }
-    notifyListeners();
-  }
-
-  void _clearSessionMetrics() {
-    _x = 0;
-    _y = 0;
-    _z = 0;
-    _magnitude = 0;
-    _smoothedMagnitude = 0;
-    _sessionScore = 0;
-    _hasSmoothedSample = false;
-    _hasPendingSample = false;
   }
 
   Future<void> _tearDownSensor() async {
@@ -141,66 +94,61 @@ class MotionTrackingController extends ChangeNotifier {
     _subscription = null;
     _sampleTimer?.cancel();
     _sampleTimer = null;
+    _batchTimer?.cancel();
+    _batchTimer = null;
     _hasPendingSample = false;
+    _batchSamples.clear();
+    _batchStartedAtMs = null;
   }
 
   void _onSampleTick() {
-    if (!_hasPendingSample || _status != MotionTrackingStatus.tracking) return;
+    if (!_hasPendingSample || !_isRunning) return;
 
-    _x = _pendingX;
-    _y = _pendingY;
-    _z = _pendingZ;
-    _magnitude = _computeMagnitude(_x, _y, _z);
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    _batchStartedAtMs ??= timestamp;
 
-    if (!_hasSmoothedSample) {
-      _smoothedMagnitude = _magnitude;
-      _hasSmoothedSample = true;
-    } else {
-      _smoothedMagnitude = kMotionSmoothingAlpha * _magnitude +
-          (1 - kMotionSmoothingAlpha) * _smoothedMagnitude;
-    }
-
-    final excess = _smoothedMagnitude - kMotionScoreThreshold;
-    if (excess > 0) {
-      _sessionScore += excess * kMotionScoreRate * _kMotionSampleDtSeconds;
-    }
-
-    _publishCurrentSample(isTracking: true);
-    notifyListeners();
-  }
-
-  static double _computeMagnitude(double x, double y, double z) {
-    return math.sqrt(x * x + y * y + z * z);
-  }
-
-  void _publishCurrentSample({required bool isTracking}) {
-    final id = _playerId;
-    if (id == null) return;
-
-    // Real-time backend hook — dashboard subscribers listen on the same channel.
-    MotionPublisher.publishMotionData(
-      MotionPayload(
-        playerId: id,
-        timestamp: DateTime.now(),
-        acceleration: MotionAccelerationPayload(
-          x: _x,
-          y: _y,
-          z: _z,
-          magnitude: _magnitude,
-          smoothedMagnitude: _smoothedMagnitude,
-        ),
-        session: MotionSessionPayload(
-          score: _sessionScore,
-          isTracking: isTracking,
-        ),
+    _batchSamples.add(
+      PlayerMotionSample(
+        timestamp: timestamp,
+        x: _pendingX,
+        y: _pendingY,
+        z: _pendingZ,
       ),
     );
   }
 
+  void _flushBatch() {
+    final id = _playerId;
+    if (id == null || _batchSamples.isEmpty) {
+      _batchSamples.clear();
+      _batchStartedAtMs = null;
+      return;
+    }
+
+    final batchStartedAt = _batchStartedAtMs ?? _batchSamples.first.timestamp;
+    final batchEndedAt = DateTime.now().millisecondsSinceEpoch;
+
+    MotionPublisher.publishMotionBatch(
+      PlayerMotionBatch(
+        playerId: id,
+        playerName: _playerName,
+        batchStartedAt: batchStartedAt,
+        batchEndedAt: batchEndedAt,
+        sampleRateHz: kMotionSampleRateHz,
+        samples: List<PlayerMotionSample>.from(_batchSamples),
+      ),
+    );
+
+    _batchSamples.clear();
+    _batchStartedAtMs = null;
+  }
+
   @override
   void dispose() {
+    _flushBatch();
     _subscription?.cancel();
     _sampleTimer?.cancel();
+    _batchTimer?.cancel();
     super.dispose();
   }
 }
