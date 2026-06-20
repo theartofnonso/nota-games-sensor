@@ -121,3 +121,7 @@ flutter:
       fonts:
         - asset: assets/fonts/GroutpixFlow-Regular.ttf
           weight: 400
+    - family: Foun
+      fonts:
+        - asset: assets/fonts/Foun.ttf
+          weight: 400

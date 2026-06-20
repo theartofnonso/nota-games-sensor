@@ -34,6 +34,22 @@ void main() {
       );
     });
 
+    test('parses json payload', () {
+      expect(
+        SessionJoinCodeParser.parse(
+          '{"sessionId":"$sessionId"}',
+        ),
+        sessionId,
+      );
+    });
+
+    test('finds uuid embedded in text', () {
+      expect(
+        SessionJoinCodeParser.parse('join:$sessionId:extra'),
+        sessionId,
+      );
+    });
+
     test('rejects garbage', () {
       expect(SessionJoinCodeParser.parse('hello'), isNull);
     });

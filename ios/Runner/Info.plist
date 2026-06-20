@@ -31,7 +31,7 @@
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Not Athletes uses Bluetooth for audio during video calls (e.g. headphones).</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Not Athletes needs camera access for video calls with your coach.</string>
+	<string>Not Athletes needs camera access for video calls and to scan NOTA session QR codes.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Not Athletes needs microphone access for video calls with your coach.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
