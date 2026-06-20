@@ -15,7 +15,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:trainware/app_flavor.dart';
 import 'package:trainware/config/nota_motion_mvp_config.dart';
-import 'package:trainware/features/motion_tracking/nota_motion_app.dart';
+import 'package:trainware/features/nota_games/nota_games_app.dart';
 import 'package:trainware/controllers/access_controller.dart';
 import 'package:trainware/controllers/exercise_log_controller.dart';
 import 'package:trainware/controllers/supabase_exercise_and_routine_controller.dart';
@@ -247,8 +247,7 @@ Future<void> mainCommon(AppFlavor flavor) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (NotaMotionMvpConfig.enabled) {
-    await SharedPrefs().init();
-    runApp(const NotaMotionApp());
+    runApp(const NotaGamesApp());
     return;
   }
 

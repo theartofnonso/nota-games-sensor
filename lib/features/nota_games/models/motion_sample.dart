@@ -1,6 +1,6 @@
-/// Raw linear acceleration sample — matches [PlayerMotionBatch] schema items.
-class PlayerMotionSample {
-  const PlayerMotionSample({
+/// Raw linear acceleration sample — matches PlayerMotionBatch schema items.
+class MotionSample {
+  const MotionSample({
     required this.timestamp,
     required this.x,
     required this.y,
@@ -20,9 +20,9 @@ class PlayerMotionSample {
       };
 }
 
-/// Batched raw accelerometer data for backend publish (scoring is server-side).
-class PlayerMotionBatch {
-  const PlayerMotionBatch({
+/// Batched raw accelerometer data for `POST /sessions/:id/motion`.
+class MotionBatch {
+  const MotionBatch({
     required this.playerId,
     required this.playerName,
     required this.batchStartedAt,
@@ -36,7 +36,7 @@ class PlayerMotionBatch {
   final int batchStartedAt;
   final int batchEndedAt;
   final double sampleRateHz;
-  final List<PlayerMotionSample> samples;
+  final List<MotionSample> samples;
 
   Map<String, dynamic> toJson() => {
         'playerId': playerId,
