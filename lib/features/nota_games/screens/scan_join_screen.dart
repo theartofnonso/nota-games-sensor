@@ -179,58 +179,50 @@ class _ScanJoinScreenState extends State<ScanJoinScreen> {
         );
       },
       overlayBuilder: (context, constraints) {
+        const scanSize = 240.0;
+        const borderRadius = 16.0;
+        final cutoutRect = Rect.fromCenter(
+          center: Offset(constraints.maxWidth / 2, constraints.maxHeight / 2),
+          width: scanSize,
+          height: scanSize,
+        );
+
         return Stack(
           fit: StackFit.expand,
           children: [
             IgnorePointer(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.45),
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.55),
-                        ],
+              child: CustomPaint(
+                painter: _ScanOverlayPainter(
+                  cutoutRect: cutoutRect,
+                  overlayColor: Colors.black.withValues(alpha: 0.75),
+                  borderRadius: borderRadius,
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fromRect(
+                      rect: cutoutRect,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white70, width: 2),
+                          borderRadius: BorderRadius.circular(borderRadius),
+                        ),
                       ),
                     ),
-                  ),
-                  SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        children: [
-                          const Spacer(),
-                          if (_error != null) ...[
-                            Text(
-                              _error!,
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.error,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          Center(
-                            child: Container(
-                              width: 240,
-                              height: 240,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.white70, width: 2),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
+                    if (_error != null)
+                      Positioned(
+                        left: 24,
+                        right: 24,
+                        bottom: constraints.maxHeight - cutoutRect.top + 16,
+                        child: Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.error,
                           ),
-                          const Spacer(flex: 2),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             _closeButton(),
@@ -238,5 +230,34 @@ class _ScanJoinScreenState extends State<ScanJoinScreen> {
         );
       },
     );
+  }
+}
+
+class _ScanOverlayPainter extends CustomPainter {
+  const _ScanOverlayPainter({
+    required this.cutoutRect,
+    required this.overlayColor,
+    required this.borderRadius,
+  });
+
+  final Rect cutoutRect;
+  final Color overlayColor;
+  final double borderRadius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final overlayPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final cutoutPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(cutoutRect, Radius.circular(borderRadius)));
+    final path = Path.combine(PathOperation.difference, overlayPath, cutoutPath);
+
+    canvas.drawPath(path, Paint()..color = overlayColor);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScanOverlayPainter oldDelegate) {
+    return oldDelegate.cutoutRect != cutoutRect ||
+        oldDelegate.overlayColor != overlayColor ||
+        oldDelegate.borderRadius != borderRadius;
   }
 }
