@@ -43,11 +43,16 @@ class NotaScreenScaffold extends StatelessWidget {
 
 /// Transparent app bar matching the NOTA gradient screens.
 PreferredSizeWidget notaAppBar({
+  required BuildContext context,
   String? title,
   List<Widget>? actions,
 }) {
+  final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
+        fontFamily: 'Foun',
+      );
+
   return AppBar(
-    title: title != null ? Text(title) : null,
+    title: title != null ? Text(title, style: titleStyle) : null,
     centerTitle: true,
     backgroundColor: Colors.transparent,
     surfaceTintColor: Colors.transparent,

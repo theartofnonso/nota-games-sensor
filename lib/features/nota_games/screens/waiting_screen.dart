@@ -3,54 +3,52 @@ import 'package:provider/provider.dart';
 import 'package:trainware/features/nota_games/managers/session_manager.dart';
 import 'package:trainware/features/nota_games/widgets/leave_session_button.dart';
 import 'package:trainware/features/nota_games/widgets/nota_screen_scaffold.dart';
+import 'package:trainware/features/nota_games/widgets/session_activity_panel.dart';
 
-class WaitingScreen extends StatelessWidget {
+class WaitingScreen extends StatefulWidget {
   const WaitingScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final session = context.watch<SessionManager>().session;
+  State<WaitingScreen> createState() => _WaitingScreenState();
+}
 
-    const subtitle = 'Waiting for the host to start…';
+class _WaitingScreenState extends State<WaitingScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = context.watch<SessionManager>().session;
 
     return NotaScreenScaffold(
       appBar: notaAppBar(
-        title: 'NOTA Games',
+        context: context,
+        title: 'Nota Games Sensor',
         actions: const [LeaveSessionButton()],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(
-            width: 48,
-            height: 48,
-            child: CircularProgressIndicator(strokeWidth: 3),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (session != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              session.playerName,
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              session.sessionId,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
-              ),
-            ),
-          ],
-        ],
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: SessionActivityPanel(
+          session: session,
+          motionActive: false,
+          dimmed: true,
+          pulseController: _pulseController,
+        ),
       ),
     );
   }

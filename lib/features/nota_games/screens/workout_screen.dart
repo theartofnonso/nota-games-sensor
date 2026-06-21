@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:trainware/colors.dart';
 import 'package:trainware/features/nota_games/managers/session_manager.dart';
 import 'package:trainware/features/nota_games/models/leaderboard_entry.dart';
 import 'package:trainware/features/nota_games/models/session_runtime_state.dart';
 import 'package:trainware/features/nota_games/services/leaderboard_service.dart';
 import 'package:trainware/features/nota_games/services/motion_service.dart';
 import 'package:trainware/features/nota_games/widgets/leave_session_button.dart';
-import 'package:trainware/features/nota_games/widgets/running_indicator.dart';
 import 'package:trainware/features/nota_games/widgets/nota_screen_scaffold.dart';
+import 'package:trainware/features/nota_games/widgets/session_activity_panel.dart';
 import 'package:trainware/utils/theme/color_extensions.dart';
 
 class WorkoutScreen extends StatefulWidget {
@@ -57,7 +56,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
 
     return NotaScreenScaffold(
       appBar: notaAppBar(
-        title: 'NOTA Games',
+        context: context,
+        title: 'Nota Games Sensor',
         actions: const [LeaveSessionButton()],
       ),
       body: Column(
@@ -70,68 +70,14 @@ class _WorkoutScreenState extends State<WorkoutScreen>
             ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                      if (session != null) ...[
-                        Text(
-                          session.playerName,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          session.playerId,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.4,
-                            ),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      if (phaseLabel != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          phaseLabel,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.65,
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 48),
-                      if (isCollecting)
-                        RunningIndicator(
-                          controller: _pulseController,
-                          color: accent,
-                        )
-                      else
-                        Icon(
-                          Icons.sensors_off_outlined,
-                          size: 72,
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.35,
-                          ),
-                        ),
-                      if (motion.sensorError != null) ...[
-                        const SizedBox(height: 32),
-                        Text(
-                          motion.sensorError!,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: error,
-                          ),
-                        ),
-                      ],
-                ],
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: SessionActivityPanel(
+                session: session,
+                motionActive: isCollecting,
+                pulseController: _pulseController,
+                accentColor: accent,
+                phaseLabel: phaseLabel,
+                sensorError: motion.sensorError,
               ),
             ),
           ),

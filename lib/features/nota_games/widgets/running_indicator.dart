@@ -6,10 +6,14 @@ class RunningIndicator extends StatelessWidget {
     super.key,
     required this.controller,
     required this.color,
+    this.dimmed = false,
   });
 
   final AnimationController controller;
   final Color color;
+
+  /// Muted pulse for pre-start / waiting states.
+  final bool dimmed;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +22,8 @@ class RunningIndicator extends StatelessWidget {
       builder: (context, child) {
         final t = Curves.easeInOut.transform(controller.value);
         final outerScale = 1 + t * 0.18;
-        final innerOpacity = 0.45 + t * 0.55;
+        final innerOpacity = dimmed ? 0.18 + t * 0.22 : 0.45 + t * 0.55;
+        final outerAlpha = dimmed ? 0.06 + t * 0.06 : 0.12 + t * 0.1;
 
         return SizedBox(
           width: 120,
@@ -33,7 +38,7 @@ class RunningIndicator extends StatelessWidget {
                   height: 96,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: color.withValues(alpha: 0.12 + t * 0.1),
+                    color: color.withValues(alpha: outerAlpha),
                   ),
                 ),
               ),
@@ -43,13 +48,15 @@ class RunningIndicator extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: color.withValues(alpha: innerOpacity),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.35 * innerOpacity),
-                      blurRadius: 24,
-                      spreadRadius: 2,
-                    ),
-                  ],
+                  boxShadow: dimmed
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.35 * innerOpacity),
+                            blurRadius: 24,
+                            spreadRadius: 2,
+                          ),
+                        ],
                 ),
               ),
             ],

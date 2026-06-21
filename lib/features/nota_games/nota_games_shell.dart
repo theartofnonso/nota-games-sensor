@@ -5,6 +5,7 @@ import 'package:trainware/features/nota_games/screens/join_session_screen.dart';
 import 'package:trainware/features/nota_games/screens/results_screen.dart';
 import 'package:trainware/features/nota_games/screens/waiting_screen.dart';
 import 'package:trainware/features/nota_games/screens/workout_screen.dart';
+import 'package:trainware/features/nota_games/widgets/confirm_leave_session.dart';
 
 /// Routes UI from [SessionManager] state — screens never start/stop motion.
 class NotaGamesShell extends StatelessWidget {
@@ -14,17 +15,23 @@ class NotaGamesShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final manager = context.watch<SessionManager>();
     final state = manager.runtimeState;
+    final guardBackNavigation =
+        manager.hasSession && !state.isSessionComplete;
 
+    Widget screen;
     if (!manager.hasSession) {
-      return const JoinSessionScreen();
+      screen = const JoinSessionScreen();
+    } else if (state.isSessionComplete) {
+      screen = const ResultsScreen();
+    } else if (state.isInSession) {
+      screen = const WorkoutScreen();
+    } else {
+      screen = const WaitingScreen();
     }
 
-    if (state.isSessionComplete) {
-      return const ResultsScreen();
-    }
-    if (state.isInSession) {
-      return const WorkoutScreen();
-    }
-    return const WaitingScreen();
+    return NotaSessionPopGuard(
+      guardActive: guardBackNavigation,
+      child: screen,
+    );
   }
 }
