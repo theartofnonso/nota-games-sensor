@@ -1,12 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../core/nota_games_config.dart';
 import '../models/connected_player.dart';
 import '../models/leaderboard_entry.dart';
-import '../models/session_status.dart';
+import '../models/session_runtime_state.dart';
 
 /// Owns `session:{id}:state` and `session:{id}:scores` realtime channels.
 ///
@@ -16,17 +14,14 @@ class RealtimeService {
   RealtimeChannel? _stateChannel;
   RealtimeChannel? _scoresChannel;
 
-  final _statusController = StreamController<SessionStatus>.broadcast();
+  final _stateController =
+      StreamController<SessionRuntimeState>.broadcast();
   final _leaderboardController =
       StreamController<List<LeaderboardEntry>>.broadcast();
   final _presenceController =
       StreamController<List<ConnectedPlayer>>.broadcast();
 
-  String? _sessionId;
-  bool _disconnected = false;
-  Timer? _stubActivateTimer;
-
-  Stream<SessionStatus> get statusStream => _statusController.stream;
+  Stream<SessionRuntimeState> get stateStream => _stateController.stream;
   Stream<List<LeaderboardEntry>> get leaderboardStream =>
       _leaderboardController.stream;
   Stream<List<ConnectedPlayer>> get presenceStream =>
@@ -34,34 +29,7 @@ class RealtimeService {
 
   Future<void> connect(String sessionId) async {
     await disconnect();
-    _sessionId = sessionId;
-    _disconnected = false;
 
-    if (NotaGamesConfig.useStubRealtime) {
-      _connectStub();
-      return;
-    }
-
-    await _connectSupabase(sessionId);
-  }
-
-  void _connectStub() {
-    _statusController.add(SessionStatus.waiting);
-
-    if (NotaGamesConfig.stubAutoActivateOnJoin) {
-      _stubActivateTimer = Timer(NotaGamesConfig.stubActivateDelay, () {
-        if (!_disconnected) {
-          _statusController.add(SessionStatus.active);
-        }
-      });
-    }
-
-    if (kDebugMode) {
-      debugPrint('NOTA stub realtime connected session=$_sessionId');
-    }
-  }
-
-  Future<void> _connectSupabase(String sessionId) async {
     final client = Supabase.instance.client;
 
     _stateChannel = client.channel('session:$sessionId:state');
@@ -71,10 +39,9 @@ class RealtimeService {
         .onBroadcast(
           event: 'session_state_change',
           callback: (payload) {
-            final status = payload['status'];
-            if (status is String) {
-              _statusController.add(SessionStatus.fromWire(status));
-            }
+            _stateController.add(
+              SessionRuntimeState.fromSessionStateChange(payload),
+            );
           },
         )
         .subscribe();
@@ -120,10 +87,6 @@ class RealtimeService {
   }
 
   Future<void> disconnect() async {
-    _disconnected = true;
-    _stubActivateTimer?.cancel();
-    _stubActivateTimer = null;
-
     if (_stateChannel != null) {
       await Supabase.instance.client.removeChannel(_stateChannel!);
       _stateChannel = null;
@@ -132,13 +95,11 @@ class RealtimeService {
       await Supabase.instance.client.removeChannel(_scoresChannel!);
       _scoresChannel = null;
     }
-
-    _sessionId = null;
   }
 
   void dispose() {
     disconnect();
-    _statusController.close();
+    _stateController.close();
     _leaderboardController.close();
     _presenceController.close();
   }

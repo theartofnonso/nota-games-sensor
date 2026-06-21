@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../models/player_session.dart';
-import '../models/session_status.dart';
+import '../models/session_runtime_state.dart';
 import '../services/leaderboard_service.dart';
 import '../services/motion_service.dart';
 import '../services/realtime_service.dart';
-import '../core/api_client.dart';
 import '../services/session_service.dart';
 
 /// Central state machine — the only place that decides when motion starts or stops.
@@ -27,12 +26,13 @@ class SessionManager extends ChangeNotifier {
   final MotionService _motionService;
   final LeaderboardService _leaderboardService;
 
-  SessionStatus _status = SessionStatus.waiting;
+  SessionRuntimeState _runtimeState = SessionRuntimeState.initial;
   PlayerSession? _session;
   String? _joinError;
-  StreamSubscription<SessionStatus>? _statusSub;
+  StreamSubscription<SessionRuntimeState>? _stateSub;
 
-  SessionStatus get status => _status;
+  SessionRuntimeState get runtimeState => _runtimeState;
+  bool get isMotionEligible => _runtimeState.isMotionEligible;
   PlayerSession? get session => _session;
   String? get joinError => _joinError;
   bool get hasSession => _session != null;
@@ -59,24 +59,24 @@ class SessionManager extends ChangeNotifier {
       await _realtimeService.connect(playerSession.sessionId);
       _leaderboardService.attach(_realtimeService);
 
-      await _statusSub?.cancel();
-      _statusSub = _realtimeService.statusStream.listen(
-        _onSessionStatus,
+      await _stateSub?.cancel();
+      _stateSub = _realtimeService.stateStream.listen(
+        _onSessionState,
         onError: (Object e) {
           if (kDebugMode) {
-            debugPrint('NOTA status stream error: $e');
+            debugPrint('NOTA state stream error: $e');
           }
         },
       );
 
-      _status = SessionStatus.waiting;
+      _runtimeState = SessionRuntimeState.initial;
       notifyListeners();
     } on SessionJoinForbiddenException {
-      _joinError = 'Could not join this session. Check the code and try again.';
+      _joinError = 'This session has already ended.';
       _session = null;
       notifyListeners();
-    } on SessionUnauthorizedException {
-      _joinError = 'Could not authenticate. Please restart the app.';
+    } on SessionNotFoundException {
+      _joinError = 'Session not found. Check the QR code and try again.';
       _session = null;
       notifyListeners();
     } on SessionServiceException catch (e) {
@@ -86,19 +86,15 @@ class SessionManager extends ChangeNotifier {
     }
   }
 
-  void _onSessionStatus(SessionStatus status) {
-    _status = status;
+  void _onSessionState(SessionRuntimeState state) {
+    _runtimeState = state;
 
-    switch (status) {
-      case SessionStatus.active:
-        unawaited(_motionService.start());
-      case SessionStatus.paused:
-      case SessionStatus.passBreak:
-        unawaited(_motionService.pause());
-      case SessionStatus.ended:
-        unawaited(_onSessionEnded());
-      case SessionStatus.waiting:
-        unawaited(_motionService.pause());
+    if (state.isSessionComplete) {
+      unawaited(_onSessionEnded());
+    } else if (state.isMotionEligible) {
+      unawaited(_motionService.start());
+    } else {
+      unawaited(_motionService.pause());
     }
 
     notifyListeners();
@@ -108,7 +104,7 @@ class SessionManager extends ChangeNotifier {
   Future<void> leaveSession() async {
     await _tearDownActiveSession();
     _session = null;
-    _status = SessionStatus.waiting;
+    _runtimeState = SessionRuntimeState.initial;
     _joinError = null;
     notifyListeners();
   }
@@ -119,20 +115,23 @@ class SessionManager extends ChangeNotifier {
 
   Future<void> _tearDownActiveSession() async {
     await _motionService.stop();
-    final sessionId = _session?.sessionId;
-    if (sessionId != null) {
-      await _sessionService.leave(sessionId);
+    final session = _session;
+    if (session != null) {
+      await _sessionService.leave(
+        session.sessionId,
+        playerId: session.playerId,
+      );
     }
     await _realtimeService.disconnect();
-    await _statusSub?.cancel();
-    _statusSub = null;
+    await _stateSub?.cancel();
+    _stateSub = null;
     _leaderboardService.detach();
   }
 
   /// Clears session state after the results screen (re-join flow).
   void resetAfterResults() {
     _session = null;
-    _status = SessionStatus.waiting;
+    _runtimeState = SessionRuntimeState.initial;
     _joinError = null;
     _leaderboardService.clear();
     notifyListeners();
@@ -140,7 +139,7 @@ class SessionManager extends ChangeNotifier {
 
   @override
   void dispose() {
-    _statusSub?.cancel();
+    _stateSub?.cancel();
     _realtimeService.dispose();
     _motionService.dispose();
     _leaderboardService.dispose();

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:trainware/colors.dart';
 import 'package:trainware/features/nota_games/managers/session_manager.dart';
 import 'package:trainware/features/nota_games/models/leaderboard_entry.dart';
-import 'package:trainware/features/nota_games/models/session_status.dart';
+import 'package:trainware/features/nota_games/models/session_runtime_state.dart';
 import 'package:trainware/features/nota_games/services/leaderboard_service.dart';
 import 'package:trainware/features/nota_games/services/motion_service.dart';
 import 'package:trainware/features/nota_games/widgets/leave_session_button.dart';
@@ -45,8 +45,15 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final motion = context.watch<MotionService>();
     final leaderboard = context.watch<LeaderboardService>();
     final session = sessionManager.session;
-    final status = sessionManager.status;
-    final isActive = status == SessionStatus.active;
+    final state = sessionManager.runtimeState;
+    final isCollecting = state.isMotionEligible && motion.isCollecting;
+    final phaseLabel = switch (state.phase) {
+      SessionPhase.work when state.isPaused => 'Paused',
+      SessionPhase.work => 'Work',
+      SessionPhase.rest => 'Rest',
+      SessionPhase.passBreak => 'Pass break',
+      _ => null,
+    };
 
     return NotaScreenScaffold(
       appBar: notaAppBar(
@@ -88,8 +95,20 @@ class _WorkoutScreenState extends State<WorkoutScreen>
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
+                      if (phaseLabel != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          phaseLabel,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.65,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 48),
-                      if (isActive && motion.isCollecting)
+                      if (isCollecting)
                         RunningIndicator(
                           controller: _pulseController,
                           color: accent,

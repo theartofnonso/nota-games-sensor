@@ -6,6 +6,7 @@ class PlayerSession {
     required this.sessionId,
     this.teamId,
     this.duoId,
+    this.isRejoin = false,
   });
 
   final String playerId;
@@ -13,6 +14,7 @@ class PlayerSession {
   final String sessionId;
   final String? teamId;
   final String? duoId;
+  final bool isRejoin;
 
   factory PlayerSession.fromJson(Map<String, dynamic> json) {
     return PlayerSession(
@@ -21,6 +23,7 @@ class PlayerSession {
       sessionId: json['sessionId'] as String,
       teamId: json['teamId'] as String?,
       duoId: json['duoId'] as String?,
+      isRejoin: json['isRejoin'] as bool? ?? false,
     );
   }
 }

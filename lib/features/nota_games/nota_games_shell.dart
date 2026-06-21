@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/features/nota_games/managers/session_manager.dart';
-import 'package:trainware/features/nota_games/models/session_status.dart';
 import 'package:trainware/features/nota_games/screens/join_session_screen.dart';
 import 'package:trainware/features/nota_games/screens/results_screen.dart';
 import 'package:trainware/features/nota_games/screens/waiting_screen.dart';
@@ -14,18 +13,18 @@ class NotaGamesShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final manager = context.watch<SessionManager>();
+    final state = manager.runtimeState;
 
     if (!manager.hasSession) {
       return const JoinSessionScreen();
     }
 
-    return switch (manager.status) {
-      SessionStatus.ended => const ResultsScreen(),
-      SessionStatus.active ||
-      SessionStatus.paused ||
-      SessionStatus.passBreak =>
-        const WorkoutScreen(),
-      SessionStatus.waiting => const WaitingScreen(),
-    };
+    if (state.isSessionComplete) {
+      return const ResultsScreen();
+    }
+    if (state.isInSession) {
+      return const WorkoutScreen();
+    }
+    return const WaitingScreen();
   }
 }

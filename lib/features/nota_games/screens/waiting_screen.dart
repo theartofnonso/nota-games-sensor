@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/features/nota_games/managers/session_manager.dart';
-import 'package:trainware/features/nota_games/models/session_status.dart';
 import 'package:trainware/features/nota_games/widgets/leave_session_button.dart';
 import 'package:trainware/features/nota_games/widgets/nota_screen_scaffold.dart';
 
@@ -12,13 +11,8 @@ class WaitingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final session = context.watch<SessionManager>().session;
-    final status = context.watch<SessionManager>().status;
 
-    final subtitle = switch (status) {
-      SessionStatus.paused => 'Session paused',
-      SessionStatus.passBreak => 'Pass break — get ready',
-      _ => 'Waiting for the host to start…',
-    };
+    const subtitle = 'Waiting for the host to start…';
 
     return NotaScreenScaffold(
       appBar: notaAppBar(

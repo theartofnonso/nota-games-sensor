@@ -7,7 +7,6 @@ import 'package:trainware/features/nota_games/managers/session_manager.dart';
 import 'package:trainware/features/nota_games/nota_games_shell.dart';
 import 'package:trainware/features/nota_games/services/leaderboard_service.dart';
 import 'package:trainware/features/nota_games/services/motion_service.dart';
-import 'package:trainware/features/nota_games/services/nota_auth_service.dart';
 import 'package:trainware/features/nota_games/services/realtime_service.dart';
 import 'package:trainware/features/nota_games/services/session_service.dart';
 import 'package:trainware/utils/theme/system_ui_overlay.dart';
@@ -41,8 +40,7 @@ class _NotaGamesAppState extends State<NotaGamesApp> {
 
         return MultiProvider(
           providers: [
-            Provider(create: (_) => NotaAuthService()),
-            Provider(create: (c) => NotaApiClient(authService: c.read())),
+            Provider(create: (_) => NotaApiClient()),
             Provider(create: (c) => SessionService(apiClient: c.read())),
             Provider(create: (_) => RealtimeService()),
             ChangeNotifierProvider(

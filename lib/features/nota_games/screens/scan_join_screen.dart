@@ -203,7 +203,10 @@ class _ScanJoinScreenState extends State<ScanJoinScreen> {
                       rect: cutoutRect,
                       child: Container(
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.white70, width: 2),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 1,
+                          ),
                           borderRadius: BorderRadius.circular(borderRadius),
                         ),
                       ),

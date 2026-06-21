@@ -3,59 +3,50 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'nota_games_config.dart';
-import '../services/nota_auth_service.dart';
 
-/// HTTP client for the NOTA game engine (`SERVER_URL`).
+/// HTTP client for the NOTA game engine ([NotaGamesConfig.serverUrl]).
 ///
-/// All requests include `Authorization: Bearer <supabase_access_token>` per
-/// backend handoff. Call [NotaGamesBootstrap.run] before first request.
+/// Player routes require no authentication. Call [NotaGamesBootstrap.run]
+/// before first request.
 class NotaApiClient {
-  NotaApiClient({NotaAuthService? authService})
-      : _authService = authService ?? NotaAuthService();
-
-  final NotaAuthService _authService;
+  NotaApiClient();
 
   Uri _uri(String path) {
     final base = NotaGamesConfig.serverUrl.replaceAll(RegExp(r'/+$'), '');
     return Uri.parse('$base$path');
   }
 
-  Future<Map<String, String>> _headers() async {
-    final headers = <String, String>{'Content-Type': 'application/json'};
-    final token = await _authService.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      headers['Authorization'] = 'Bearer $token';
-    }
-    return headers;
-  }
+  Map<String, String> get _headers => const {
+        'Content-Type': 'application/json',
+      };
 
   Future<http.Response> post(
     String path, {
     Map<String, dynamic> body = const {},
   }) async {
-    if (NotaGamesConfig.serverUrl.isEmpty) {
-      throw const NotaApiStubException();
-    }
     return http.post(
       _uri(path),
-      headers: await _headers(),
+      headers: _headers,
       body: jsonEncode(body),
     );
   }
 
-  Future<http.Response> delete(String path) async {
-    if (NotaGamesConfig.serverUrl.isEmpty) {
-      throw const NotaApiStubException();
-    }
-    return http.delete(_uri(path), headers: await _headers());
+  Future<http.Response> delete(
+    String path, {
+    Map<String, dynamic> body = const {},
+  }) async {
+    final request = http.Request('DELETE', _uri(path))
+      ..headers.addAll(_headers)
+      ..body = jsonEncode(body);
+    final streamed = await request.send();
+    return http.Response.fromStream(streamed);
   }
-}
 
-/// Thrown when [NotaGamesConfig.serverUrl] is empty (local stub mode).
-class NotaApiStubException implements Exception {
-  const NotaApiStubException();
-}
-
-class SessionUnauthorizedException implements Exception {
-  const SessionUnauthorizedException();
+  /// `GET /health` — confirms the game engine is reachable.
+  Future<bool> checkHealth() async {
+    final response = await http.get(_uri('/health'), headers: _headers);
+    if (response.statusCode != 200) return false;
+    final json = jsonDecode(response.body);
+    return json is Map && json['ok'] == true;
+  }
 }
