@@ -1,18 +1,18 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/connected_player.dart';
 import '../models/leaderboard_entry.dart';
+import '../models/player_session.dart';
 import '../models/session_runtime_state.dart';
 
-/// Owns `session:{id}:state` and `session:{id}:scores` realtime channels.
-///
-/// Subscribes to `session_state_change`, `leaderboard_update`, and
-/// `presence_update` per backend handoff.
+/// Owns `session:{id}:state`, `session:{id}:scores`, and `session:{id}:presence`.
 class RealtimeService {
   RealtimeChannel? _stateChannel;
   RealtimeChannel? _scoresChannel;
+  RealtimeChannel? _presenceChannel;
 
   final _stateController =
       StreamController<SessionRuntimeState>.broadcast();
@@ -27,13 +27,15 @@ class RealtimeService {
   Stream<List<ConnectedPlayer>> get presenceStream =>
       _presenceController.stream;
 
-  Future<void> connect(String sessionId) async {
+  Future<void> connect(PlayerSession session) async {
     await disconnect();
 
     final client = Supabase.instance.client;
+    final sessionId = session.sessionId;
 
     _stateChannel = client.channel('session:$sessionId:state');
     _scoresChannel = client.channel('session:$sessionId:scores');
+    _presenceChannel = client.channel('session:$sessionId:presence');
 
     _stateChannel!
         .onBroadcast(
@@ -66,6 +68,48 @@ class RealtimeService {
           },
         )
         .subscribe();
+
+    final presenceChannel = _presenceChannel!;
+    final presencePayload = <String, dynamic>{
+      'playerId': session.playerId,
+      'playerName': session.playerName,
+      'joinedAt': DateTime.now().millisecondsSinceEpoch,
+      if (session.teamId != null) 'teamId': session.teamId,
+      if (session.duoId != null) 'duoId': session.duoId,
+    };
+
+    final presenceReady = Completer<void>();
+    presenceChannel.subscribe((status, error) async {
+      if (error != null && kDebugMode) {
+        debugPrint('NOTA presence subscribe error: $error');
+      }
+      if (status == RealtimeSubscribeStatus.subscribed) {
+        try {
+          await presenceChannel.track(presencePayload);
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('NOTA presence track error: $e');
+          }
+        }
+        if (!presenceReady.isCompleted) {
+          presenceReady.complete();
+        }
+      } else if (status == RealtimeSubscribeStatus.channelError &&
+          !presenceReady.isCompleted) {
+        presenceReady.completeError(
+          error ?? StateError('presence channel error'),
+        );
+      }
+    });
+
+    await presenceReady.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        if (kDebugMode) {
+          debugPrint('NOTA presence subscribe timed out');
+        }
+      },
+    );
   }
 
   List<LeaderboardEntry>? _parseLeaderboard(Map<String, dynamic> payload) {
@@ -87,18 +131,31 @@ class RealtimeService {
   }
 
   Future<void> disconnect() async {
-    if (_stateChannel != null) {
-      await Supabase.instance.client.removeChannel(_stateChannel!);
-      _stateChannel = null;
+    final client = Supabase.instance.client;
+
+    if (_presenceChannel != null) {
+      try {
+        await _presenceChannel!.untrack();
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('NOTA presence untrack error: $e');
+        }
+      }
+      await client.removeChannel(_presenceChannel!);
+      _presenceChannel = null;
     }
     if (_scoresChannel != null) {
-      await Supabase.instance.client.removeChannel(_scoresChannel!);
+      await client.removeChannel(_scoresChannel!);
       _scoresChannel = null;
+    }
+    if (_stateChannel != null) {
+      await client.removeChannel(_stateChannel!);
+      _stateChannel = null;
     }
   }
 
   void dispose() {
-    disconnect();
+    unawaited(disconnect());
     _stateController.close();
     _leaderboardController.close();
     _presenceController.close();

@@ -30,6 +30,7 @@ class SessionManager extends ChangeNotifier {
   PlayerSession? _session;
   String? _joinError;
   StreamSubscription<SessionRuntimeState>? _stateSub;
+  bool _tearingDown = false;
 
   SessionRuntimeState get runtimeState => _runtimeState;
   bool get isMotionEligible => _runtimeState.isMotionEligible;
@@ -46,6 +47,7 @@ class SessionManager extends ChangeNotifier {
     required String playerName,
   }) async {
     _joinError = null;
+    _tearingDown = false;
     notifyListeners();
 
     try {
@@ -56,7 +58,7 @@ class SessionManager extends ChangeNotifier {
       _session = playerSession;
       _motionService.configure(playerSession);
 
-      await _realtimeService.connect(playerSession.sessionId);
+      await _realtimeService.connect(playerSession);
       _leaderboardService.attach(_realtimeService);
 
       await _stateSub?.cancel();
@@ -69,8 +71,12 @@ class SessionManager extends ChangeNotifier {
         },
       );
 
-      _runtimeState = SessionRuntimeState.initial;
-      notifyListeners();
+      if (playerSession.initialGameState != null) {
+        _applyRuntimeState(playerSession.initialGameState!);
+      } else {
+        _runtimeState = SessionRuntimeState.initial;
+        notifyListeners();
+      }
     } on SessionJoinForbiddenException {
       _joinError = 'This session has already ended.';
       _session = null;
@@ -87,11 +93,15 @@ class SessionManager extends ChangeNotifier {
   }
 
   void _onSessionState(SessionRuntimeState state) {
+    _applyRuntimeState(state);
+  }
+
+  void _applyRuntimeState(SessionRuntimeState state) {
     _runtimeState = state;
 
-    if (state.isSessionComplete) {
+    if (state.sessionEnded) {
       unawaited(_onSessionEnded());
-    } else if (state.isMotionEligible) {
+    } else if (state.sensorActive) {
       unawaited(_motionService.start());
     } else {
       unawaited(_motionService.pause());
@@ -110,22 +120,33 @@ class SessionManager extends ChangeNotifier {
   }
 
   Future<void> _onSessionEnded() async {
+    if (_tearingDown) return;
     await _tearDownActiveSession();
   }
 
   Future<void> _tearDownActiveSession() async {
+    if (_tearingDown) return;
+    _tearingDown = true;
+
     await _motionService.stop();
-    final session = _session;
-    if (session != null) {
-      await _sessionService.leave(
-        session.sessionId,
-        playerId: session.playerId,
-      );
-    }
     await _realtimeService.disconnect();
     await _stateSub?.cancel();
     _stateSub = null;
     _leaderboardService.detach();
+
+    final session = _session;
+    if (session != null) {
+      try {
+        await _sessionService.leave(
+          session.sessionId,
+          playerId: session.playerId,
+        );
+      } on SessionServiceException catch (e) {
+        if (kDebugMode) {
+          debugPrint('NOTA leave error: ${e.message}');
+        }
+      }
+    }
   }
 
   /// Clears session state after the results screen (re-join flow).
@@ -133,6 +154,7 @@ class SessionManager extends ChangeNotifier {
     _session = null;
     _runtimeState = SessionRuntimeState.initial;
     _joinError = null;
+    _tearingDown = false;
     _leaderboardService.clear();
     notifyListeners();
   }
