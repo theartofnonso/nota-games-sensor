@@ -24,6 +24,23 @@ void main() {
       expect(state.timeRemaining, 40);
     });
 
+    test('unwraps nested broadcast payload envelope', () {
+      final state = SessionRuntimeState.fromSessionStateChange({
+        'event': 'session_state_change',
+        'payload': {
+          'timestamp': 1,
+          'state': {
+            'sensorActive': true,
+            'sessionEnded': false,
+            'phase': 'work',
+          },
+        },
+      });
+
+      expect(state.sensorActive, isTrue);
+      expect(state.phase, SessionPhase.work);
+    });
+
     test('sessionEnded ends the session; sensorActive gates motion', () {
       const ended = SessionRuntimeState(sessionEnded: true);
       expect(ended.isSessionComplete, isTrue);

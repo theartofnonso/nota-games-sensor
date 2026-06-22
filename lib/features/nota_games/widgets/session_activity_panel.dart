@@ -8,20 +8,18 @@ class SessionActivityPanel extends StatelessWidget {
   const SessionActivityPanel({
     super.key,
     this.session,
-    required this.motionActive,
     this.dimmed = false,
     this.pulseController,
     this.accentColor,
-    this.phaseLabel,
     this.sensorError,
   });
 
   final PlayerSession? session;
-  final bool motionActive;
+
+  /// Gray pulse while waiting for the host to start.
   final bool dimmed;
   final AnimationController? pulseController;
   final Color? accentColor;
-  final String? phaseLabel;
   final String? sensorError;
 
   @override
@@ -37,18 +35,6 @@ class SessionActivityPanel extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (phaseLabel != null) ...[
-                    Text(
-                      phaseLabel!,
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.65,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
                   _buildIndicator(theme),
                   if (sensorError != null) ...[
                     const SizedBox(height: 24),
@@ -83,12 +69,6 @@ class SessionActivityPanel extends StatelessWidget {
   }
 
   Widget _buildIndicator(ThemeData theme) {
-    if (motionActive && pulseController != null && !dimmed) {
-      return RunningIndicator(
-        controller: pulseController!,
-        color: accentColor!,
-      );
-    }
     if (dimmed && pulseController != null) {
       return RunningIndicator(
         controller: pulseController!,
@@ -96,10 +76,12 @@ class SessionActivityPanel extends StatelessWidget {
         dimmed: true,
       );
     }
-    return Icon(
-      Icons.sensors_off_outlined,
-      size: 72,
-      color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
-    );
+    if (pulseController != null && accentColor != null) {
+      return RunningIndicator(
+        controller: pulseController!,
+        color: accentColor!,
+      );
+    }
+    return const SizedBox.shrink();
   }
 }

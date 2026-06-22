@@ -64,13 +64,49 @@ class SessionRuntimeState {
   factory SessionRuntimeState.fromSessionStateChange(
     Map<String, dynamic> payload,
   ) {
-    final rawState = payload['state'];
-    if (rawState is! Map) return SessionRuntimeState.initial;
+    final normalized = _normalizeEnvelope(payload);
 
-    return SessionRuntimeState.fromJson(
-      Map<String, dynamic>.from(rawState),
-      timestamp: payload['timestamp'] as int?,
-    );
+    final rawState = normalized['state'];
+    if (rawState is Map) {
+      return SessionRuntimeState.fromJson(
+        Map<String, dynamic>.from(rawState),
+        timestamp: _readTimestamp(normalized),
+      );
+    }
+
+    // Flat payload — state fields at the top level.
+    if (normalized.containsKey('sensorActive') ||
+        normalized.containsKey('sessionEnded') ||
+        normalized.containsKey('phase')) {
+      return SessionRuntimeState.fromJson(
+        normalized,
+        timestamp: _readTimestamp(normalized),
+      );
+    }
+
+    return SessionRuntimeState.initial;
+  }
+
+  /// Unwraps Supabase/JS broadcast envelopes and join `gameState` wrappers.
+  static Map<String, dynamic> _normalizeEnvelope(Map<String, dynamic> raw) {
+    final nestedPayload = raw['payload'];
+    if (nestedPayload is Map) {
+      return Map<String, dynamic>.from(nestedPayload);
+    }
+
+    final gameState = raw['gameState'];
+    if (gameState is Map) {
+      return _normalizeEnvelope(Map<String, dynamic>.from(gameState));
+    }
+
+    return raw;
+  }
+
+  static int? _readTimestamp(Map<String, dynamic> json) {
+    final value = json['timestamp'];
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return null;
   }
 
   factory SessionRuntimeState.fromJson(
@@ -89,7 +125,7 @@ class SessionRuntimeState {
       timeRemaining: json['timeRemaining'] as int?,
       completedIntervals: json['completedIntervals'] as int?,
       totalIntervals: json['totalIntervals'] as int?,
-      timestamp: timestamp ?? json['timestamp'] as int?,
+      timestamp: timestamp ?? _readTimestamp(json),
     );
   }
 }

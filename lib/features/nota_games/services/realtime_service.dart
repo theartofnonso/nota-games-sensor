@@ -33,26 +33,19 @@ class RealtimeService {
     final client = Supabase.instance.client;
     final sessionId = session.sessionId;
 
-    _stateChannel = client.channel('session:$sessionId:state');
-    _scoresChannel = client.channel('session:$sessionId:scores');
-    _presenceChannel = client.channel('session:$sessionId:presence');
-
-    _stateChannel!
+    _stateChannel = client
+        .channel('session:$sessionId:state')
         .onBroadcast(
           event: 'session_state_change',
-          callback: (payload) {
-            _stateController.add(
-              SessionRuntimeState.fromSessionStateChange(payload),
-            );
-          },
-        )
-        .subscribe();
+          callback: _onStateBroadcast,
+        );
 
-    _scoresChannel!
+    _scoresChannel = client
+        .channel('session:$sessionId:scores')
         .onBroadcast(
           event: 'leaderboard_update',
           callback: (payload) {
-            final entries = _parseLeaderboard(payload);
+            final entries = _parseLeaderboard(_unwrapPayload(payload));
             if (entries != null) {
               _leaderboardController.add(entries);
             }
@@ -61,14 +54,69 @@ class RealtimeService {
         .onBroadcast(
           event: 'presence_update',
           callback: (payload) {
-            final players = _parsePresence(payload);
+            final players = _parsePresence(_unwrapPayload(payload));
             if (players != null) {
               _presenceController.add(players);
             }
           },
-        )
-        .subscribe();
+        );
 
+    _presenceChannel = client.channel('session:$sessionId:presence');
+
+    await _waitForSubscribed(_stateChannel!, 'state');
+    await _waitForSubscribed(_scoresChannel!, 'scores');
+    await _trackPresence(session);
+  }
+
+  void _onStateBroadcast(Map<String, dynamic> payload) {
+    if (kDebugMode) {
+      debugPrint('NOTA session_state_change raw: $payload');
+    }
+    final state = SessionRuntimeState.fromSessionStateChange(payload);
+    if (kDebugMode) {
+      debugPrint(
+        'NOTA session_state_change parsed: sensorActive=${state.sensorActive} '
+        'sessionEnded=${state.sessionEnded} phase=${state.phase}',
+      );
+    }
+    _stateController.add(state);
+  }
+
+  Map<String, dynamic> _unwrapPayload(Map<String, dynamic> payload) {
+    final nested = payload['payload'];
+    if (nested is Map) {
+      return Map<String, dynamic>.from(nested);
+    }
+    return payload;
+  }
+
+  Future<void> _waitForSubscribed(
+    RealtimeChannel channel,
+    String label,
+  ) async {
+    final ready = Completer<void>();
+    channel.subscribe((status, error) {
+      if (kDebugMode) {
+        debugPrint('NOTA $label channel status: $status ${error ?? ''}');
+      }
+      if (status == RealtimeSubscribeStatus.subscribed) {
+        if (!ready.isCompleted) ready.complete();
+      } else if (status == RealtimeSubscribeStatus.channelError &&
+          !ready.isCompleted) {
+        ready.completeError(error ?? StateError('$label channel error'));
+      }
+    });
+
+    try {
+      await ready.future.timeout(const Duration(seconds: 10));
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('NOTA $label channel subscribe failed: $e');
+      }
+    }
+  }
+
+  Future<void> _trackPresence(PlayerSession session) async {
     final presenceChannel = _presenceChannel!;
     final presencePayload = <String, dynamic>{
       'playerId': session.playerId,
@@ -78,7 +126,7 @@ class RealtimeService {
       if (session.duoId != null) 'duoId': session.duoId,
     };
 
-    final presenceReady = Completer<void>();
+    final ready = Completer<void>();
     presenceChannel.subscribe((status, error) async {
       if (error != null && kDebugMode) {
         debugPrint('NOTA presence subscribe error: $error');
@@ -91,25 +139,22 @@ class RealtimeService {
             debugPrint('NOTA presence track error: $e');
           }
         }
-        if (!presenceReady.isCompleted) {
-          presenceReady.complete();
-        }
+        if (!ready.isCompleted) ready.complete();
       } else if (status == RealtimeSubscribeStatus.channelError &&
-          !presenceReady.isCompleted) {
-        presenceReady.completeError(
+          !ready.isCompleted) {
+        ready.completeError(
           error ?? StateError('presence channel error'),
         );
       }
     });
 
-    await presenceReady.future.timeout(
-      const Duration(seconds: 10),
-      onTimeout: () {
-        if (kDebugMode) {
-          debugPrint('NOTA presence subscribe timed out');
-        }
-      },
-    );
+    try {
+      await ready.future.timeout(const Duration(seconds: 10));
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('NOTA presence subscribe failed: $e');
+      }
+    }
   }
 
   List<LeaderboardEntry>? _parseLeaderboard(Map<String, dynamic> payload) {

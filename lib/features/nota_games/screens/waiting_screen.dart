@@ -45,7 +45,6 @@ class _WaitingScreenState extends State<WaitingScreen>
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         child: SessionActivityPanel(
           session: session,
-          motionActive: false,
           dimmed: true,
           pulseController: _pulseController,
         ),
