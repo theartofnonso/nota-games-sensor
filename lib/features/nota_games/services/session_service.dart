@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../core/api_client.dart';
+import '../core/nota_api_error.dart';
 import '../core/player_identity_store.dart';
 import '../models/motion_sample.dart';
 import '../models/player_session.dart';
@@ -18,7 +19,8 @@ class SessionService {
     required String playerName,
   }) async {
     await PlayerIdentityStore.savePlayerName(playerName);
-    final savedPlayerId = await PlayerIdentityStore.loadPlayerId();
+    final savedPlayerId =
+        await PlayerIdentityStore.loadPlayerIdForSession(sessionId);
 
     final body = <String, dynamic>{'playerName': playerName};
     if (savedPlayerId != null) {
@@ -33,8 +35,17 @@ class SessionService {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final session = PlayerSession.fromJson(json);
-      await PlayerIdentityStore.savePlayerId(session.playerId);
+      await PlayerIdentityStore.savePlayerSession(
+        sessionId: sessionId,
+        playerId: session.playerId,
+      );
       return session;
+    }
+    if (response.statusCode == 400) {
+      throw SessionServiceException(
+        parseNotaApiErrorMessage(response.body) ??
+            'Invalid join request. Check your name and try again.',
+      );
     }
     if (response.statusCode == 403) {
       throw const SessionJoinForbiddenException();
@@ -43,7 +54,8 @@ class SessionService {
       throw const SessionNotFoundException();
     }
     throw SessionServiceException(
-      'Join failed: HTTP ${response.statusCode}',
+      parseNotaApiErrorMessage(response.body) ??
+          'Join failed: HTTP ${response.statusCode}',
     );
   }
 
@@ -61,27 +73,28 @@ class SessionService {
     }
   }
 
-  /// `POST /sessions/:id/motion`
-  ///
-  /// Returns `true` when the batch was accepted (HTTP 202). On 502, returns
-  /// `false` so the caller can retry without discarding samples.
-  Future<bool> uploadMotion(String sessionId, MotionBatch batch) async {
+  /// `POST /sessions/:id/motion` — expects HTTP 202 on success.
+  Future<void> uploadMotion(String sessionId, MotionBatch batch) async {
     final response = await _apiClient.post(
       '/sessions/$sessionId/motion',
       body: batch.toJson(),
     );
 
     if (response.statusCode == 202) {
-      return true;
+      return;
     }
-    if (response.statusCode == 502) {
-      return false;
+    if (response.statusCode == 400) {
+      throw SessionServiceException(
+        parseNotaApiErrorMessage(response.body) ??
+            'Invalid motion batch.',
+      );
     }
     if (response.statusCode == 403) {
       throw const SessionJoinForbiddenException();
     }
     throw SessionServiceException(
-      'Motion upload failed: HTTP ${response.statusCode}',
+      parseNotaApiErrorMessage(response.body) ??
+          'Motion upload failed: HTTP ${response.statusCode}',
     );
   }
 }

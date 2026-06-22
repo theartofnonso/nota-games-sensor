@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:trainware/features/nota_games/core/player_identity_store.dart';
 import 'package:trainware/features/nota_games/managers/session_manager.dart';
 import 'package:trainware/features/nota_games/services/leaderboard_service.dart';
 import 'package:trainware/features/nota_games/widgets/nota_screen_scaffold.dart';
@@ -30,7 +31,7 @@ class ResultsScreen extends StatelessWidget {
           if (session != null) ...[
             const SizedBox(height: 8),
             Text(
-              session.playerName,
+              PlayerIdentityStore.displayName(session.playerName),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium,
             ),
@@ -54,7 +55,8 @@ class ResultsScreen extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final entry = entries[index];
                       return Text(
-                        '#${entry.rank}  ${entry.playerName}  '
+                        '#${entry.rank}  '
+                        '${PlayerIdentityStore.displayName(entry.playerName)}  '
                         '${entry.totalXp.toStringAsFixed(0)}',
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight:

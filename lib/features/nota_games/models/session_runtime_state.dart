@@ -8,7 +8,7 @@ enum SessionPhase {
   static SessionPhase? fromWire(String? value) => switch (value) {
         'work' => SessionPhase.work,
         'rest' => SessionPhase.rest,
-        'passBreak' || 'pass_break' => SessionPhase.passBreak,
+        'passBreak' => SessionPhase.passBreak,
         'complete' => SessionPhase.complete,
         _ => null,
       };

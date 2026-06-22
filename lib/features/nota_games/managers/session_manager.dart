@@ -58,6 +58,14 @@ class SessionManager extends ChangeNotifier {
       _session = playerSession;
       _motionService.configure(playerSession);
 
+      // Handoff: check join `gameState` before subscribing to Realtime.
+      if (playerSession.initialGameState != null) {
+        _applyRuntimeState(playerSession.initialGameState!);
+      } else {
+        _runtimeState = SessionRuntimeState.initial;
+        notifyListeners();
+      }
+
       await _stateSub?.cancel();
       _stateSub = _realtimeService.stateStream.listen(
         _onSessionState,
@@ -70,13 +78,6 @@ class SessionManager extends ChangeNotifier {
       _leaderboardService.attach(_realtimeService);
 
       await _realtimeService.connect(playerSession);
-
-      if (playerSession.initialGameState != null) {
-        _applyRuntimeState(playerSession.initialGameState!);
-      } else {
-        _runtimeState = SessionRuntimeState.initial;
-        notifyListeners();
-      }
     } on SessionJoinForbiddenException {
       _joinError = 'This session has already ended.';
       _session = null;

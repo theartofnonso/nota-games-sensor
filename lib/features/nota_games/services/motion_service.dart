@@ -162,16 +162,8 @@ class MotionService extends ChangeNotifier {
     try {
       while (_uploadQueue.isNotEmpty) {
         final batch = _uploadQueue.first;
-        final accepted = await _sessionService.uploadMotion(
-          session.sessionId,
-          batch,
-        );
-        if (accepted) {
-          _uploadQueue.removeFirst();
-        } else {
-          // 502 — keep batch at head of queue and retry later.
-          break;
-        }
+        await _sessionService.uploadMotion(session.sessionId, batch);
+        _uploadQueue.removeFirst();
       }
     } on SessionJoinForbiddenException {
       _uploadQueue.clear();

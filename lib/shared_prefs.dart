@@ -94,15 +94,23 @@ class SharedPrefs {
     _routineLogRevision.value++;
   }
 
-  /// NOTA Games motion test — stable player/device id across launches.
+  /// NOTA Games — player id scoped to the last joined session.
   final String _notaMotionPlayerIdKey = 'nota_motion_player_id';
+  final String _notaMotionSessionIdKey = 'nota_motion_session_id';
   final String _notaMotionPlayerNameKey = 'nota_motion_player_name';
 
   String? get notaMotionPlayerId =>
       _sharedPrefs?.getString(_notaMotionPlayerIdKey);
 
+  String? get notaMotionSessionId =>
+      _sharedPrefs?.getString(_notaMotionSessionIdKey);
+
   Future<void> setNotaMotionPlayerId(String value) async {
     await _sharedPrefs?.setString(_notaMotionPlayerIdKey, value);
+  }
+
+  Future<void> setNotaMotionSessionId(String value) async {
+    await _sharedPrefs?.setString(_notaMotionSessionIdKey, value);
   }
 
   String? get notaMotionPlayerName =>

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:trainware/features/nota_games/managers/session_manager.dart';
-import 'package:trainware/features/nota_games/models/leaderboard_entry.dart';
-import 'package:trainware/features/nota_games/services/leaderboard_service.dart';
 import 'package:trainware/features/nota_games/services/motion_service.dart';
 import 'package:trainware/features/nota_games/widgets/leave_session_button.dart';
 import 'package:trainware/features/nota_games/widgets/nota_screen_scaffold.dart';
@@ -41,8 +39,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final accent = theme.colors.vibrantAccent;
     final sessionManager = context.watch<SessionManager>();
     final motion = context.watch<MotionService>();
-    final leaderboard = context.watch<LeaderboardService>();
     final session = sessionManager.session;
+    final sensorActive = sessionManager.runtimeState.sensorActive;
 
     return NotaScreenScaffold(
       appBar: notaAppBar(
@@ -50,61 +48,16 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         title: 'Nota Games Sensor',
         actions: const [LeaveSessionButton()],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (leaderboard.entries.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _LeaderboardStrip(entries: leaderboard.entries),
-            ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: SessionActivityPanel(
-                session: session,
-                pulseController: _pulseController,
-                accentColor: accent,
-                sensorError: motion.sensorError,
-              ),
-            ),
-          ),
-        ],
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: SessionActivityPanel(
+          session: session,
+          pulseController: _pulseController,
+          accentColor: sensorActive ? accent : null,
+          dimmed: !sensorActive,
+          sensorError: motion.sensorError,
+        ),
       ),
-    );
-  }
-}
-
-class _LeaderboardStrip extends StatelessWidget {
-  const _LeaderboardStrip({required this.entries});
-
-  final List<LeaderboardEntry> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final top = entries.take(3).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Leaderboard',
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-          ),
-        ),
-        const SizedBox(height: 8),
-        ...top.map(
-          (e) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              '#${e.rank} ${e.playerName} — ${e.totalXp.toStringAsFixed(0)}',
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

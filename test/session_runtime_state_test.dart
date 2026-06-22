@@ -57,9 +57,9 @@ void main() {
       expect(active.isMotionEligible, isTrue);
     });
 
-    test('accepts pass_break wire value', () {
+    test('accepts passBreak wire value', () {
       final state = SessionRuntimeState.fromJson({
-        'phase': 'pass_break',
+        'phase': 'passBreak',
         'sensorActive': false,
       });
       expect(state.phase, SessionPhase.passBreak);

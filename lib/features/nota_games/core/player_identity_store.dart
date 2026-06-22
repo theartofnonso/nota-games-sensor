@@ -4,9 +4,12 @@ import 'package:trainware/shared_prefs.dart';
 abstract final class PlayerIdentityStore {
   static const defaultPlayerName = 'Player';
 
-  /// Returns a persisted player id, or null on first join (server assigns one).
-  static Future<String?> loadPlayerId() async {
+  /// Returns a persisted player id for [sessionId] rejoins, or null on first join.
+  static Future<String?> loadPlayerIdForSession(String sessionId) async {
     await SharedPrefs().init();
+    final savedSessionId = SharedPrefs().notaMotionSessionId;
+    if (savedSessionId != sessionId.trim()) return null;
+
     final existing = SharedPrefs().notaMotionPlayerId;
     if (existing != null && existing.trim().isNotEmpty) {
       return existing.trim();
@@ -15,9 +18,13 @@ abstract final class PlayerIdentityStore {
   }
 
   /// Persists the server-assigned `playerId` from `POST /sessions/:id/join`.
-  static Future<void> savePlayerId(String id) async {
+  static Future<void> savePlayerSession({
+    required String sessionId,
+    required String playerId,
+  }) async {
     await SharedPrefs().init();
-    await SharedPrefs().setNotaMotionPlayerId(id.trim());
+    await SharedPrefs().setNotaMotionSessionId(sessionId.trim());
+    await SharedPrefs().setNotaMotionPlayerId(playerId.trim());
   }
 
   static Future<String?> loadPlayerName() async {
@@ -39,5 +46,14 @@ abstract final class PlayerIdentityStore {
     if (saved != null) return saved;
     await savePlayerName(defaultPlayerName);
     return defaultPlayerName;
+  }
+
+  /// UI label — prepends "Player" without duplicating an existing prefix.
+  static String displayName(String playerName) {
+    final trimmed = playerName.trim();
+    if (trimmed.isEmpty) return defaultPlayerName;
+    const prefix = 'Player ';
+    if (trimmed.startsWith(prefix)) return trimmed;
+    return '$prefix$trimmed';
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trainware/colors.dart';
+import 'package:trainware/features/nota_games/core/player_identity_store.dart';
 import 'package:trainware/features/nota_games/models/player_session.dart';
 import 'package:trainware/features/nota_games/widgets/running_indicator.dart';
 
@@ -52,7 +53,7 @@ class SessionActivityPanel extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                session!.playerName,
+                PlayerIdentityStore.displayName(session!.playerName),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontFamily: 'Foun',
