@@ -7,7 +7,6 @@ class PlayerSession {
     required this.playerName,
     required this.sessionId,
     this.teamId,
-    this.duoId,
     this.isRejoin = false,
     this.initialGameState,
   });
@@ -16,7 +15,6 @@ class PlayerSession {
   final String playerName;
   final String sessionId;
   final String? teamId;
-  final String? duoId;
   final bool isRejoin;
 
   /// Current session state when joining mid-session (`gameState` from join response).
@@ -36,7 +34,6 @@ class PlayerSession {
       playerName: json['playerName'] as String,
       sessionId: json['sessionId'] as String,
       teamId: json['teamId'] as String?,
-      duoId: json['duoId'] as String?,
       isRejoin: json['isRejoin'] as bool? ?? false,
       initialGameState: initialGameState,
     );

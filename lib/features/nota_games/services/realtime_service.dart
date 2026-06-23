@@ -123,7 +123,6 @@ class RealtimeService {
       'playerName': session.playerName,
       'joinedAt': DateTime.now().millisecondsSinceEpoch,
       if (session.teamId != null) 'teamId': session.teamId,
-      if (session.duoId != null) 'duoId': session.duoId,
     };
 
     final ready = Completer<void>();
