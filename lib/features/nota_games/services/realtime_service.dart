@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/connected_player.dart';
-import '../models/leaderboard_entry.dart';
 import '../models/player_session.dart';
 import '../models/session_runtime_state.dart';
 
@@ -16,16 +14,8 @@ class RealtimeService {
 
   final _stateController =
       StreamController<SessionRuntimeState>.broadcast();
-  final _leaderboardController =
-      StreamController<List<LeaderboardEntry>>.broadcast();
-  final _presenceController =
-      StreamController<List<ConnectedPlayer>>.broadcast();
 
   Stream<SessionRuntimeState> get stateStream => _stateController.stream;
-  Stream<List<LeaderboardEntry>> get leaderboardStream =>
-      _leaderboardController.stream;
-  Stream<List<ConnectedPlayer>> get presenceStream =>
-      _presenceController.stream;
 
   Future<void> connect(PlayerSession session) async {
     await disconnect();
@@ -40,26 +30,11 @@ class RealtimeService {
           callback: _onStateBroadcast,
         );
 
+    // Scores channel — subscribed per handoff; scoreboard is handled by the web app.
     _scoresChannel = client
         .channel('session:$sessionId:scores')
-        .onBroadcast(
-          event: 'leaderboard_update',
-          callback: (payload) {
-            final entries = _parseLeaderboard(_unwrapPayload(payload));
-            if (entries != null) {
-              _leaderboardController.add(entries);
-            }
-          },
-        )
-        .onBroadcast(
-          event: 'presence_update',
-          callback: (payload) {
-            final players = _parsePresence(_unwrapPayload(payload));
-            if (players != null) {
-              _presenceController.add(players);
-            }
-          },
-        );
+        .onBroadcast(event: 'leaderboard_update', callback: (_) {})
+        .onBroadcast(event: 'presence_update', callback: (_) {});
 
     _presenceChannel = client.channel('session:$sessionId:presence');
 
@@ -80,14 +55,6 @@ class RealtimeService {
       );
     }
     _stateController.add(state);
-  }
-
-  Map<String, dynamic> _unwrapPayload(Map<String, dynamic> payload) {
-    final nested = payload['payload'];
-    if (nested is Map) {
-      return Map<String, dynamic>.from(nested);
-    }
-    return payload;
   }
 
   Future<void> _waitForSubscribed(
@@ -156,24 +123,6 @@ class RealtimeService {
     }
   }
 
-  List<LeaderboardEntry>? _parseLeaderboard(Map<String, dynamic> payload) {
-    final raw = payload['leaderboard'];
-    if (raw is! List) return null;
-    return raw
-        .whereType<Map>()
-        .map((e) => LeaderboardEntry.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
-  }
-
-  List<ConnectedPlayer>? _parsePresence(Map<String, dynamic> payload) {
-    final raw = payload['connectedPlayers'];
-    if (raw is! List) return null;
-    return raw
-        .whereType<Map>()
-        .map((e) => ConnectedPlayer.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
-  }
-
   Future<void> disconnect() async {
     final client = Supabase.instance.client;
 
@@ -201,7 +150,5 @@ class RealtimeService {
   void dispose() {
     unawaited(disconnect());
     _stateController.close();
-    _leaderboardController.close();
-    _presenceController.close();
   }
 }

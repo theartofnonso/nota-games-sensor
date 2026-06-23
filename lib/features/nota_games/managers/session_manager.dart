@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 
 import '../models/player_session.dart';
 import '../models/session_runtime_state.dart';
-import '../services/leaderboard_service.dart';
 import '../services/motion_service.dart';
 import '../services/realtime_service.dart';
 import '../services/session_service.dart';
@@ -15,16 +14,13 @@ class SessionManager extends ChangeNotifier {
     required SessionService sessionService,
     required RealtimeService realtimeService,
     required MotionService motionService,
-    required LeaderboardService leaderboardService,
   })  : _sessionService = sessionService,
         _realtimeService = realtimeService,
-        _motionService = motionService,
-        _leaderboardService = leaderboardService;
+        _motionService = motionService;
 
   final SessionService _sessionService;
   final RealtimeService _realtimeService;
   final MotionService _motionService;
-  final LeaderboardService _leaderboardService;
 
   SessionRuntimeState _runtimeState = SessionRuntimeState.initial;
   PlayerSession? _session;
@@ -39,7 +35,6 @@ class SessionManager extends ChangeNotifier {
   bool get hasSession => _session != null;
 
   MotionService get motionService => _motionService;
-  LeaderboardService get leaderboardService => _leaderboardService;
 
   /// `POST /sessions/:id/join` then connect realtime channels.
   Future<void> joinSession(
@@ -75,7 +70,6 @@ class SessionManager extends ChangeNotifier {
           }
         },
       );
-      _leaderboardService.attach(_realtimeService);
 
       await _realtimeService.connect(playerSession);
     } on SessionJoinForbiddenException {
@@ -114,15 +108,21 @@ class SessionManager extends ChangeNotifier {
   /// Player-initiated leave (`DELETE /sessions/:id/leave`).
   Future<void> leaveSession() async {
     await _tearDownActiveSession();
-    _session = null;
-    _runtimeState = SessionRuntimeState.initial;
-    _joinError = null;
-    notifyListeners();
+    _returnToJoinScreen();
   }
 
   Future<void> _onSessionEnded() async {
     if (_tearingDown) return;
     await _tearDownActiveSession();
+    _returnToJoinScreen();
+  }
+
+  void _returnToJoinScreen() {
+    _session = null;
+    _runtimeState = SessionRuntimeState.initial;
+    _joinError = null;
+    _tearingDown = false;
+    notifyListeners();
   }
 
   Future<void> _tearDownActiveSession() async {
@@ -133,7 +133,6 @@ class SessionManager extends ChangeNotifier {
     await _realtimeService.disconnect();
     await _stateSub?.cancel();
     _stateSub = null;
-    _leaderboardService.detach();
 
     final session = _session;
     if (session != null) {
@@ -150,22 +149,11 @@ class SessionManager extends ChangeNotifier {
     }
   }
 
-  /// Clears session state after the results screen (re-join flow).
-  void resetAfterResults() {
-    _session = null;
-    _runtimeState = SessionRuntimeState.initial;
-    _joinError = null;
-    _tearingDown = false;
-    _leaderboardService.clear();
-    notifyListeners();
-  }
-
   @override
   void dispose() {
     _stateSub?.cancel();
     _realtimeService.dispose();
     _motionService.dispose();
-    _leaderboardService.dispose();
     super.dispose();
   }
 }

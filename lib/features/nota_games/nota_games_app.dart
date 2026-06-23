@@ -5,7 +5,6 @@ import 'package:trainware/features/nota_games/core/api_client.dart';
 import 'package:trainware/features/nota_games/core/nota_games_bootstrap.dart';
 import 'package:trainware/features/nota_games/managers/session_manager.dart';
 import 'package:trainware/features/nota_games/nota_games_shell.dart';
-import 'package:trainware/features/nota_games/services/leaderboard_service.dart';
 import 'package:trainware/features/nota_games/services/motion_service.dart';
 import 'package:trainware/features/nota_games/services/realtime_service.dart';
 import 'package:trainware/features/nota_games/services/session_service.dart';
@@ -46,13 +45,11 @@ class _NotaGamesAppState extends State<NotaGamesApp> {
             ChangeNotifierProvider(
               create: (c) => MotionService(sessionService: c.read()),
             ),
-            ChangeNotifierProvider(create: (_) => LeaderboardService()),
             ChangeNotifierProvider(
               create: (c) => SessionManager(
                 sessionService: c.read<SessionService>(),
                 realtimeService: c.read<RealtimeService>(),
                 motionService: c.read<MotionService>(),
-                leaderboardService: c.read<LeaderboardService>(),
               ),
             ),
           ],
