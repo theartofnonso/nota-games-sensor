@@ -1,1 +1,0 @@
-enum RoutinePreviewType {log, template}

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trainware/utils/general_utils.dart';
+import 'package:gameware/utils/general_utils.dart';
 
 /// Full-bleed gradient shell for NOTA screens.
 ///

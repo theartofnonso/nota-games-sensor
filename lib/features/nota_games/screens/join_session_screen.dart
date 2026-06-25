@@ -1,13 +1,13 @@
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:trainware/colors.dart';
-import 'package:trainware/features/nota_games/core/nota_fade_route.dart';
-import 'package:trainware/features/nota_games/core/player_identity_store.dart';
-import 'package:trainware/features/nota_games/managers/session_manager.dart';
-import 'package:trainware/features/nota_games/screens/scan_join_screen.dart';
-import 'package:trainware/features/nota_games/widgets/nota_screen_scaffold.dart';
-import 'package:trainware/utils/theme/color_extensions.dart';
+import 'package:gameware/colors.dart';
+import 'package:gameware/features/nota_games/core/nota_fade_route.dart';
+import 'package:gameware/features/nota_games/core/player_identity_store.dart';
+import 'package:gameware/features/nota_games/managers/session_manager.dart';
+import 'package:gameware/features/nota_games/screens/scan_join_screen.dart';
+import 'package:gameware/features/nota_games/widgets/nota_screen_scaffold.dart';
+import 'package:gameware/utils/theme/color_extensions.dart';
 
 class JoinSessionScreen extends StatefulWidget {
   const JoinSessionScreen({super.key});

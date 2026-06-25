@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:trainware/features/nota_games/core/api_client.dart';
-import 'package:trainware/features/nota_games/core/nota_games_bootstrap.dart';
-import 'package:trainware/features/nota_games/managers/session_manager.dart';
-import 'package:trainware/features/nota_games/nota_games_shell.dart';
-import 'package:trainware/features/nota_games/services/motion_service.dart';
-import 'package:trainware/features/nota_games/services/realtime_service.dart';
-import 'package:trainware/features/nota_games/services/session_service.dart';
-import 'package:trainware/utils/theme/system_ui_overlay.dart';
-import 'package:trainware/utils/theme/theme.dart';
+import 'package:gameware/features/nota_games/core/api_client.dart';
+import 'package:gameware/features/nota_games/core/nota_games_bootstrap.dart';
+import 'package:gameware/features/nota_games/managers/session_manager.dart';
+import 'package:gameware/features/nota_games/nota_games_shell.dart';
+import 'package:gameware/features/nota_games/services/motion_service.dart';
+import 'package:gameware/features/nota_games/services/realtime_service.dart';
+import 'package:gameware/features/nota_games/services/session_service.dart';
+import 'package:gameware/utils/theme/system_ui_overlay.dart';
+import 'package:gameware/utils/theme/theme.dart';
 
 /// NOTA Games player shell — event-driven session flow.
 class NotaGamesApp extends StatefulWidget {

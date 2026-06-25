@@ -1,4 +1,4 @@
-import 'package:trainware/shared_prefs.dart';
+import 'package:gameware/shared_prefs.dart';
 
 /// Stable device/player identity for NOTA sessions (persisted via [SharedPrefs]).
 abstract final class PlayerIdentityStore {

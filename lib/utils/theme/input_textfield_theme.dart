@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trainware/colors.dart';
+import 'package:gameware/colors.dart';
 
 class TRKRInputTextFieldTheme {
   TRKRInputTextFieldTheme._();

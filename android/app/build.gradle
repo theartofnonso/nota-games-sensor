@@ -1,8 +1,5 @@
 plugins {
     id "com.android.application"
-    // START: FlutterFire Configuration
-    id 'com.google.gms.google-services'
-    // END: FlutterFire Configuration
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
     id "org.jetbrains.kotlin.android" version "2.1.0"
@@ -36,7 +33,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.notathletes"
+    namespace "com.gameware"
     compileSdk flutter.compileSdkVersion
     ndkVersion "28.2.13676358"
 
@@ -55,33 +52,12 @@ android {
     }
 
     defaultConfig {
-        // Matches iOS bundle IDs: com.notathletes.client / .coach / .client.unlisted
-        applicationId "com.notathletes.client"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
+        applicationId "com.gameware"
         minSdkVersion 26
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
-    }
-
-    flavorDimensions "app"
-    productFlavors {
-        coach {
-            dimension "app"
-            applicationId "com.notathletes.coach"
-            resValue "string", "app_name", "Not Athletes Coach"
-        }
-        client {
-            dimension "app"
-            resValue "string", "app_name", "Not Athletes Train"
-        }
-        clientUnlisted {
-            dimension "app"
-            applicationId "com.notathletes.client.unlisted"
-            resValue "string", "app_name", "Trainware"
-        }
     }
 
     signingConfigs {
@@ -106,6 +82,5 @@ flutter {
 }
 
 dependencies {
-    //classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23"
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 }

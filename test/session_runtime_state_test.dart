@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:trainware/features/nota_games/models/player_session.dart';
-import 'package:trainware/features/nota_games/models/session_runtime_state.dart';
+import 'package:gameware/features/nota_games/models/player_session.dart';
+import 'package:gameware/features/nota_games/models/session_runtime_state.dart';
 
 void main() {
   group('SessionRuntimeState', () {

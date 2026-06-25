@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:trainware/features/nota_games/managers/session_manager.dart';
-import 'package:trainware/features/nota_games/screens/join_session_screen.dart';
-import 'package:trainware/features/nota_games/screens/waiting_screen.dart';
-import 'package:trainware/features/nota_games/screens/workout_screen.dart';
-import 'package:trainware/features/nota_games/widgets/confirm_leave_session.dart';
+import 'package:gameware/features/nota_games/managers/session_manager.dart';
+import 'package:gameware/features/nota_games/screens/join_session_screen.dart';
+import 'package:gameware/features/nota_games/screens/waiting_screen.dart';
+import 'package:gameware/features/nota_games/screens/workout_screen.dart';
+import 'package:gameware/features/nota_games/widgets/confirm_leave_session.dart';
 
 /// Routes UI from [SessionManager] state — screens never start/stop motion.
 class NotaGamesShell extends StatelessWidget {

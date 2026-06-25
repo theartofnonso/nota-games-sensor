@@ -1,6 +1,0 @@
-flutter_launcher_icons:
-  android: "launcher_icon"
-  image_path_android: "images/logo_coach.png"
-  ios: true
-  image_path: "images/logo_coach.png"
-  remove_alpha_ios: true

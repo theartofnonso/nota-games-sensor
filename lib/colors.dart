@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 // ============================================================================
-// trainware THEME - Core Color Palette
+// gameware THEME - Core Color Palette
 // ============================================================================
 
 // Backgrounds

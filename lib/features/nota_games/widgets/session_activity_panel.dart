@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:trainware/colors.dart';
-import 'package:trainware/features/nota_games/core/player_identity_store.dart';
-import 'package:trainware/features/nota_games/models/player_session.dart';
-import 'package:trainware/features/nota_games/widgets/running_indicator.dart';
+import 'package:gameware/colors.dart';
+import 'package:gameware/features/nota_games/core/player_identity_store.dart';
+import 'package:gameware/features/nota_games/models/player_session.dart';
+import 'package:gameware/features/nota_games/widgets/running_indicator.dart';
 
 /// Shared in-session layout — centered motion indicator, player name at bottom.
 class SessionActivityPanel extends StatelessWidget {

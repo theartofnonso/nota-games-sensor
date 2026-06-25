@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:trainware/shared_prefs.dart';
-import 'package:trainware/supabase_config.dart';
+import 'package:gameware/shared_prefs.dart';
+import 'package:gameware/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'api_client.dart';

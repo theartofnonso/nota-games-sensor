@@ -7,17 +7,8 @@ ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
   'Debug' => :debug,
-  'Debug-coach' => :debug,
-  'Debug-client' => :debug,
-  'Debug-client-unlisted' => :debug,
   'Profile' => :release,
-  'Profile-coach' => :release,
-  'Profile-client' => :release,
-  'Profile-client-unlisted' => :release,
   'Release' => :release,
-  'Release-coach' => :release,
-  'Release-client' => :release,
-  'Release-client-unlisted' => :release,
 }
 
 def flutter_root
@@ -51,16 +42,12 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
-      
-      # REQUIRED: Enable permission_handler for iOS
-      # Without these flags, permission_handler will NOT request permissions
-      # This is required by permission_handler package documentation
+
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
         '$(inherited)',
         'PERMISSION_CAMERA=1',
-        'PERMISSION_MICROPHONE=1',
       ]
-      
+
       xcconfig_path = config.base_configuration_reference.real_path
       xcconfig = File.read(xcconfig_path)
       xcconfig_mod = xcconfig.gsub(/DT_TOOLCHAIN_DIR/, "TOOLCHAIN_DIR")

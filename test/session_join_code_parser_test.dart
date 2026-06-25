@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:trainware/features/nota_games/core/session_join_code_parser.dart';
+import 'package:gameware/features/nota_games/core/session_join_code_parser.dart';
 
 void main() {
   const sessionId = '550e8400-e29b-41d4-a716-446655440000';

@@ -1,4 +1,0 @@
-#include "Pods/Target Support Files/Pods-Runner/Pods-Runner.profile-coach.xcconfig"
-#include "Flutter/Release.xcconfig"
-APP_DISPLAY_NAME=Not Athletes Coach
-FLUTTER_TARGET=lib/main_coach.dart

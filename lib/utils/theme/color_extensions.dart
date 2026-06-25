@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Custom color extension for trainware theme
+/// Custom color extension for gameware theme
 /// Access via: Theme.of(context).extension TRKRColors borderLight
 class TRKRColors extends ThemeExtension<TRKRColors> {
   final Color containerBackground;

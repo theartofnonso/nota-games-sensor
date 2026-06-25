@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:trainware/features/nota_games/managers/session_manager.dart';
-import 'package:trainware/features/nota_games/services/motion_service.dart';
-import 'package:trainware/features/nota_games/widgets/leave_session_button.dart';
-import 'package:trainware/features/nota_games/widgets/nota_screen_scaffold.dart';
-import 'package:trainware/features/nota_games/widgets/session_activity_panel.dart';
-import 'package:trainware/utils/theme/color_extensions.dart';
+import 'package:gameware/features/nota_games/managers/session_manager.dart';
+import 'package:gameware/features/nota_games/services/motion_service.dart';
+import 'package:gameware/features/nota_games/widgets/leave_session_button.dart';
+import 'package:gameware/features/nota_games/widgets/nota_screen_scaffold.dart';
+import 'package:gameware/features/nota_games/widgets/session_activity_panel.dart';
+import 'package:gameware/utils/theme/color_extensions.dart';
 
 class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({super.key});

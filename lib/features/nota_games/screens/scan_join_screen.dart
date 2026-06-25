@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:trainware/features/nota_games/core/session_join_code_parser.dart';
+import 'package:gameware/features/nota_games/core/session_join_code_parser.dart';
 
 /// Full-screen QR scanner — reads session id from the controller display.
 class ScanJoinScreen extends StatefulWidget {

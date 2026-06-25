@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trainware/features/nota_games/widgets/confirm_leave_session.dart';
+import 'package:gameware/features/nota_games/widgets/confirm_leave_session.dart';
 
 /// App bar action — confirms then calls [SessionManager.leaveSession].
 class LeaveSessionButton extends StatelessWidget {
