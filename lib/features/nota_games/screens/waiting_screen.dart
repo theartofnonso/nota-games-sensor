@@ -47,6 +47,7 @@ class _WaitingScreenState extends State<WaitingScreen>
           session: session,
           dimmed: true,
           pulseController: _pulseController,
+          pulseColor: session?.pulseColor,
         ),
       ),
     );

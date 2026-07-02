@@ -54,6 +54,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
           session: session,
           pulseController: _pulseController,
           accentColor: sensorActive ? accent : null,
+          pulseColor: session?.pulseColor,
           dimmed: !sensorActive,
           sensorError: motion.sensorError,
         ),

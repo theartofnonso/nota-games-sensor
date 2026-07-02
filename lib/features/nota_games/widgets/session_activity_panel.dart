@@ -12,6 +12,7 @@ class SessionActivityPanel extends StatelessWidget {
     this.dimmed = false,
     this.pulseController,
     this.accentColor,
+    this.pulseColor,
     this.sensorError,
   });
 
@@ -21,6 +22,9 @@ class SessionActivityPanel extends StatelessWidget {
   final bool dimmed;
   final AnimationController? pulseController;
   final Color? accentColor;
+
+  /// Team pulse from the controller; overrides default gray/green when set.
+  final Color? pulseColor;
   final String? sensorError;
 
   @override
@@ -58,9 +62,10 @@ class SessionActivityPanel extends StatelessWidget {
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontFamily: 'Foun',
                   fontWeight: FontWeight.w700,
-                  color: dimmed
-                      ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  color:
+                      dimmed
+                          ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ),
@@ -70,19 +75,19 @@ class SessionActivityPanel extends StatelessWidget {
   }
 
   Widget _buildIndicator(ThemeData theme) {
-    if (dimmed && pulseController != null) {
-      return RunningIndicator(
-        controller: pulseController!,
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
-        dimmed: true,
-      );
-    }
-    if (pulseController != null && accentColor != null) {
-      return RunningIndicator(
-        controller: pulseController!,
-        color: accentColor!,
-      );
-    }
-    return const SizedBox.shrink();
+    final controller = pulseController;
+    if (controller == null) return const SizedBox.shrink();
+
+    final color = pulseColor ??
+        (dimmed
+            ? theme.colorScheme.onSurface.withValues(alpha: 0.35)
+            : accentColor);
+    if (color == null) return const SizedBox.shrink();
+
+    return RunningIndicator(
+      controller: controller,
+      color: color,
+      dimmed: dimmed,
+    );
   }
 }

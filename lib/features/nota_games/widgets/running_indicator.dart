@@ -48,15 +48,18 @@ class RunningIndicator extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: color.withValues(alpha: innerOpacity),
-                  boxShadow: dimmed
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: color.withValues(alpha: 0.35 * innerOpacity),
-                            blurRadius: 24,
-                            spreadRadius: 2,
-                          ),
-                        ],
+                  boxShadow:
+                      dimmed
+                          ? null
+                          : [
+                            BoxShadow(
+                              color: color.withValues(
+                                alpha: 0.35 * innerOpacity,
+                              ),
+                              blurRadius: 24,
+                              spreadRadius: 2,
+                            ),
+                          ],
                 ),
               ),
             ],
