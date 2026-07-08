@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/leaderboard_update.dart';
 import '../models/player_session.dart';
-import '../models/session_runtime_state.dart';
+import '../models/presence_update.dart';
+import '../models/session_state_change.dart';
 
 /// Owns `session:{id}:state`, `session:{id}:scores`, and `session:{id}:presence`.
 class RealtimeService {
@@ -13,9 +15,16 @@ class RealtimeService {
   RealtimeChannel? _presenceChannel;
 
   final _stateController =
-      StreamController<SessionRuntimeState>.broadcast();
+      StreamController<SessionStateChange>.broadcast();
+  final _leaderboardController =
+      StreamController<LeaderboardUpdate>.broadcast();
+  final _presenceController =
+      StreamController<PresenceUpdate>.broadcast();
 
-  Stream<SessionRuntimeState> get stateStream => _stateController.stream;
+  Stream<SessionStateChange> get stateStream => _stateController.stream;
+  Stream<LeaderboardUpdate> get leaderboardStream =>
+      _leaderboardController.stream;
+  Stream<PresenceUpdate> get presenceStream => _presenceController.stream;
 
   Future<void> connect(PlayerSession session) async {
     await disconnect();
@@ -30,34 +39,61 @@ class RealtimeService {
           callback: _onStateBroadcast,
         );
 
-    // Scores channel — subscribed per handoff; scoreboard is handled by the web app.
     _scoresChannel = client
         .channel('session:$sessionId:scores')
-        .onBroadcast(event: 'leaderboard_update', callback: (_) {})
-        .onBroadcast(event: 'presence_update', callback: (_) {});
+        .onBroadcast(
+          event: 'leaderboard_update',
+          callback: _onLeaderboardBroadcast,
+        )
+        .onBroadcast(
+          event: 'presence_update',
+          callback: _onPresenceBroadcast,
+        );
 
     _presenceChannel = client.channel('session:$sessionId:presence');
 
-    await _waitForSubscribed(_stateChannel!, 'state');
-    await _waitForSubscribed(_scoresChannel!, 'scores');
-    await _trackPresence(session);
+    await _subscribeChannel(_stateChannel!, 'state');
+    await _subscribeChannel(_scoresChannel!, 'scores');
+    await _subscribePresence(session);
   }
 
   void _onStateBroadcast(Map<String, dynamic> payload) {
     if (kDebugMode) {
       debugPrint('NOTA session_state_change raw: $payload');
     }
-    final state = SessionRuntimeState.fromSessionStateChange(payload);
+    final change = SessionStateChange.fromBroadcast(payload);
     if (kDebugMode) {
       debugPrint(
-        'NOTA session_state_change parsed: sensorActive=${state.sensorActive} '
-        'sessionEnded=${state.sessionEnded} phase=${state.phase}',
+        'NOTA session_state_change parsed: sensorActive=${change.sensorActive} '
+        'sessionEnded=${change.sessionEnded} phase=${change.phase}',
       );
     }
-    _stateController.add(state);
+    _stateController.add(change);
   }
 
-  Future<void> _waitForSubscribed(
+  void _onLeaderboardBroadcast(Map<String, dynamic> payload) {
+    try {
+      final update = LeaderboardUpdate.fromJson(payload);
+      _leaderboardController.add(update);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('NOTA leaderboard_update parse error: $e');
+      }
+    }
+  }
+
+  void _onPresenceBroadcast(Map<String, dynamic> payload) {
+    try {
+      final update = PresenceUpdate.fromJson(payload);
+      _presenceController.add(update);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('NOTA presence_update parse error: $e');
+      }
+    }
+  }
+
+  Future<void> _subscribeChannel(
     RealtimeChannel channel,
     String label,
   ) async {
@@ -83,13 +119,16 @@ class RealtimeService {
     }
   }
 
-  Future<void> _trackPresence(PlayerSession session) async {
+  Future<void> _subscribePresence(PlayerSession session) async {
     final presenceChannel = _presenceChannel!;
+    final team = session.team;
     final presencePayload = <String, dynamic>{
       'playerId': session.playerId,
       'playerName': session.playerName,
+      'teamId': team?.id,
+      'teamName': team?.name,
+      'teamColor': team?.color,
       'joinedAt': DateTime.now().millisecondsSinceEpoch,
-      if (session.teamId != null) 'teamId': session.teamId,
     };
 
     final ready = Completer<void>();
@@ -150,5 +189,7 @@ class RealtimeService {
   void dispose() {
     unawaited(disconnect());
     _stateController.close();
+    _leaderboardController.close();
+    _presenceController.close();
   }
 }

@@ -17,19 +17,16 @@ class SessionActivityPanel extends StatelessWidget {
   });
 
   final PlayerSession? session;
-
-  /// Gray pulse while waiting for the host to start.
   final bool dimmed;
   final AnimationController? pulseController;
   final Color? accentColor;
-
-  /// Team pulse from the controller; overrides default gray/green when set.
   final Color? pulseColor;
   final String? sensorError;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final team = session?.team;
 
     return SizedBox.expand(
       child: Column(
@@ -41,6 +38,19 @@ class SessionActivityPanel extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildIndicator(theme),
+                  if (team != null) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      team.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: pulseColor ??
+                            theme.colorScheme.onSurface.withValues(
+                              alpha: dimmed ? 0.35 : 0.7,
+                            ),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                   if (sensorError != null) ...[
                     const SizedBox(height: 24),
                     Text(
@@ -62,10 +72,9 @@ class SessionActivityPanel extends StatelessWidget {
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontFamily: 'Foun',
                   fontWeight: FontWeight.w700,
-                  color:
-                      dimmed
-                          ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: dimmed
+                      ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ),

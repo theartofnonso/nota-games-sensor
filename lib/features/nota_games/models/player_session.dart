@@ -1,56 +1,50 @@
 import 'package:flutter/material.dart';
 
-import 'session_runtime_state.dart';
-import 'team_color.dart';
+import 'session_state_change.dart';
+import 'team.dart';
 
 /// Returned by `POST /sessions/:id/join`.
 class PlayerSession {
   const PlayerSession({
+    required this.sessionId,
     required this.playerId,
     required this.playerName,
-    required this.sessionId,
-    this.teamId,
-    this.teamColor,
+    this.team,
     this.isRejoin = false,
-    this.initialGameState,
+    this.gameState,
   });
 
+  final String sessionId;
   final String playerId;
   final String playerName;
-  final String sessionId;
-  final String? teamId;
-
-  /// Team accent from the controller (`teamColor` on join). Falls back in [pulseColor].
-  final Color? teamColor;
+  final Team? team;
   final bool isRejoin;
 
   /// Current session state when joining mid-session (`gameState` from join response).
-  final SessionRuntimeState? initialGameState;
+  final SessionStateChange? gameState;
 
-  /// Pulse colour when assigned to a team; null when unassigned.
   Color? get pulseColor {
-    final id = teamId?.trim();
-    if (id == null || id.isEmpty) return null;
-    return teamColor ?? defaultTeamPulseColor;
+    final team = this.team;
+    if (team == null) return null;
+    return team.flutterColor ?? defaultTeamPulseColor;
   }
 
   factory PlayerSession.fromJson(Map<String, dynamic> json) {
-    SessionRuntimeState? initialGameState;
+    SessionStateChange? gameState;
     final rawGameState = json['gameState'];
     if (rawGameState is Map) {
-      initialGameState = SessionRuntimeState.fromSessionStateChange(
+      gameState = SessionStateChange.fromBroadcast(
         Map<String, dynamic>.from(rawGameState),
       );
     }
 
     return PlayerSession(
+      sessionId: json['sessionId'] as String,
       playerId: json['playerId'] as String,
       playerName: json['playerName'] as String,
-      sessionId: json['sessionId'] as String,
-      teamId: json['teamId'] as String?,
-      teamColor: readTeamColorFromJson(json),
+      team: Team.fromJson(json['team']),
       isRejoin: json['isRejoin'] as bool? ?? false,
-      initialGameState: initialGameState,
+      gameState: gameState,
     );
   }
 }

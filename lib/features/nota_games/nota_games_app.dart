@@ -5,6 +5,7 @@ import 'package:gameware/features/nota_games/core/api_client.dart';
 import 'package:gameware/features/nota_games/core/nota_games_bootstrap.dart';
 import 'package:gameware/features/nota_games/managers/session_manager.dart';
 import 'package:gameware/features/nota_games/nota_games_shell.dart';
+import 'package:gameware/features/nota_games/widgets/session_lifecycle_bridge.dart';
 import 'package:gameware/features/nota_games/services/motion_service.dart';
 import 'package:gameware/features/nota_games/services/realtime_service.dart';
 import 'package:gameware/features/nota_games/services/session_service.dart';
@@ -58,7 +59,9 @@ class _NotaGamesAppState extends State<NotaGamesApp> {
             themeMode: ThemeMode.dark,
             theme: TRKRTheme.darkTheme,
             darkTheme: TRKRTheme.darkTheme,
-            home: const NotaGamesShell(),
+            home: const SessionLifecycleBridge(
+              child: NotaGamesShell(),
+            ),
             builder: (context, child) {
               SystemChrome.setSystemUIOverlayStyle(trkrDarkSystemUiOverlay);
               return child ?? const SizedBox.shrink();

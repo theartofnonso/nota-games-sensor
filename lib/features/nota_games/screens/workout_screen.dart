@@ -40,7 +40,7 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final sessionManager = context.watch<SessionManager>();
     final motion = context.watch<MotionService>();
     final session = sessionManager.session;
-    final sensorActive = sessionManager.runtimeState.sensorActive;
+    final sensorActive = sessionManager.gameState.sensorActive;
 
     return NotaScreenScaffold(
       appBar: notaAppBar(

@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/leaderboard_update.dart';
 import '../models/player_session.dart';
-import '../models/session_runtime_state.dart';
+import '../models/session_state_change.dart';
 import '../services/motion_service.dart';
 import '../services/realtime_service.dart';
 import '../services/session_service.dart';
@@ -22,26 +23,34 @@ class SessionManager extends ChangeNotifier {
   final RealtimeService _realtimeService;
   final MotionService _motionService;
 
-  SessionRuntimeState _runtimeState = SessionRuntimeState.initial;
+  SessionStateChange _gameState = SessionStateChange.initial;
   PlayerSession? _session;
   String? _joinError;
-  StreamSubscription<SessionRuntimeState>? _stateSub;
+  LeaderboardUpdate? _finalLeaderboard;
+  bool _showResults = false;
+
+  StreamSubscription<SessionStateChange>? _stateSub;
+  StreamSubscription<LeaderboardUpdate>? _leaderboardSub;
   bool _tearingDown = false;
 
-  SessionRuntimeState get runtimeState => _runtimeState;
-  bool get isMotionEligible => _runtimeState.isMotionEligible;
+  SessionStateChange get gameState => _gameState;
   PlayerSession? get session => _session;
   String? get joinError => _joinError;
+  LeaderboardUpdate? get finalLeaderboard => _finalLeaderboard;
+
   bool get hasSession => _session != null;
+  bool get showResults => _showResults;
 
   MotionService get motionService => _motionService;
 
-  /// `POST /sessions/:id/join` then connect realtime channels.
+  /// `POST /sessions/:id/join` then subscribe to Realtime channels.
   Future<void> joinSession(
     String sessionId, {
     required String playerName,
   }) async {
     _joinError = null;
+    _finalLeaderboard = null;
+    _showResults = false;
     _tearingDown = false;
     notifyListeners();
 
@@ -54,20 +63,24 @@ class SessionManager extends ChangeNotifier {
       _motionService.configure(playerSession);
 
       // Handoff: check join `gameState` before subscribing to Realtime.
-      if (playerSession.initialGameState != null) {
-        _applyRuntimeState(playerSession.initialGameState!);
+      if (playerSession.gameState != null) {
+        _applyGameState(playerSession.gameState!);
       } else {
-        _runtimeState = SessionRuntimeState.initial;
+        _gameState = SessionStateChange.initial;
         notifyListeners();
       }
 
-      await _stateSub?.cancel();
+      await _cancelSubscriptions();
       _stateSub = _realtimeService.stateStream.listen(
         _onSessionState,
         onError: (Object e) {
-          if (kDebugMode) {
-            debugPrint('NOTA state stream error: $e');
-          }
+          if (kDebugMode) debugPrint('NOTA state stream error: $e');
+        },
+      );
+      _leaderboardSub = _realtimeService.leaderboardStream.listen(
+        (update) => _finalLeaderboard = update,
+        onError: (Object e) {
+          if (kDebugMode) debugPrint('NOTA leaderboard stream error: $e');
         },
       );
 
@@ -87,16 +100,16 @@ class SessionManager extends ChangeNotifier {
     }
   }
 
-  void _onSessionState(SessionRuntimeState state) {
-    _applyRuntimeState(state);
+  void _onSessionState(SessionStateChange change) {
+    _applyGameState(change);
   }
 
-  void _applyRuntimeState(SessionRuntimeState state) {
-    _runtimeState = state;
+  void _applyGameState(SessionStateChange change) {
+    _gameState = change;
 
-    if (state.sessionEnded) {
+    if (change.sessionEnded) {
       unawaited(_onSessionEnded());
-    } else if (state.sensorActive) {
+    } else if (change.sensorActive) {
       unawaited(_motionService.start());
     } else {
       unawaited(_motionService.pause());
@@ -111,16 +124,32 @@ class SessionManager extends ChangeNotifier {
     _returnToJoinScreen();
   }
 
+  /// Silent teardown when the app is closed — handoff: `/leave` on app exit.
+  Future<void> onAppExit() async {
+    if (_session == null || _tearingDown) return;
+    await _tearDownActiveSession();
+    _session = null;
+    _gameState = SessionStateChange.initial;
+  }
+
+  /// Handoff: `sessionEnded` → stop sending → `/leave` → show results.
   Future<void> _onSessionEnded() async {
     if (_tearingDown) return;
     await _tearDownActiveSession();
+    _showResults = true;
+    notifyListeners();
+  }
+
+  void dismissResults() {
     _returnToJoinScreen();
   }
 
   void _returnToJoinScreen() {
     _session = null;
-    _runtimeState = SessionRuntimeState.initial;
+    _gameState = SessionStateChange.initial;
     _joinError = null;
+    _finalLeaderboard = null;
+    _showResults = false;
     _tearingDown = false;
     notifyListeners();
   }
@@ -131,8 +160,7 @@ class SessionManager extends ChangeNotifier {
 
     await _motionService.stop();
     await _realtimeService.disconnect();
-    await _stateSub?.cancel();
-    _stateSub = null;
+    await _cancelSubscriptions();
 
     final session = _session;
     if (session != null) {
@@ -142,16 +170,24 @@ class SessionManager extends ChangeNotifier {
           playerId: session.playerId,
         );
       } on SessionServiceException catch (e) {
-        if (kDebugMode) {
-          debugPrint('NOTA leave error: ${e.message}');
-        }
+        if (kDebugMode) debugPrint('NOTA leave error: ${e.message}');
       }
     }
   }
 
+  Future<void> _cancelSubscriptions() async {
+    await _stateSub?.cancel();
+    _stateSub = null;
+    await _leaderboardSub?.cancel();
+    _leaderboardSub = null;
+  }
+
   @override
   void dispose() {
-    _stateSub?.cancel();
+    if (_session != null && !_tearingDown) {
+      unawaited(onAppExit());
+    }
+    unawaited(_cancelSubscriptions());
     _realtimeService.dispose();
     _motionService.dispose();
     super.dispose();

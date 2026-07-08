@@ -18,7 +18,7 @@ abstract final class NotaGamesBootstrap {
     final healthy = await NotaApiClient().checkHealth();
     if (!healthy && kDebugMode) {
       debugPrint(
-        'NOTA: game engine health check failed — verify nota_server_config.dart',
+        'NOTA: game engine health check failed — verify SERVER_URL dart-define',
       );
     }
   }

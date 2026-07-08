@@ -1,18 +1,15 @@
-import 'nota_server_config.dart';
+import 'app_env.dart';
 
 /// NOTA Games client configuration.
-///
-/// - [serverUrl] → [NotaServerConfig.serverUrl] (production game engine)
-/// - Supabase URL/key → [SupabaseConfig] (Realtime channels)
 abstract final class NotaGamesConfig {
   /// Game engine REST base URL (`SERVER_URL`).
-  static const String serverUrl = NotaServerConfig.serverUrl;
+  static const String serverUrl = AppEnv.serverUrl;
 
-  /// Device sample interval — 50 ms → 20 Hz per schema.
+  /// Device sample interval — 50 ms → 20 Hz per handoff.
   static const Duration motionSampleInterval = Duration(milliseconds: 50);
 
   static const double motionSampleRateHz = 20;
 
-  /// How often raw samples are batched and posted (`POST /sessions/:id/motion`).
+  /// Motion batch upload interval — every 5 seconds while `sensorActive`.
   static const Duration motionBatchInterval = Duration(seconds: 5);
 }

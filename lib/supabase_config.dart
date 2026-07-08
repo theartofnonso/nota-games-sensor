@@ -1,13 +1,7 @@
-import 'package:flutter/foundation.dart';
+import 'package:gameware/features/nota_games/core/app_env.dart';
 
-class SupabaseConfig {
-  // TODO: Replace with your actual Supabase project URL and anon key
-  // You can find these in your Supabase project settings at: https://app.supabase.com
-  static const String supabaseUrl = kDebugMode
-      ? 'https://psblxphtjqyymlexuydi.supabase.co'
-      : 'https://psblxphtjqyymlexuydi.supabase.co';
-
-  static const String supabaseAnonKey = kDebugMode
-      ? 'sb_publishable_NMZlMh-S8c1rfIaREy4evQ_48QlPsxR'
-      : 'sb_publishable_NMZlMh-S8c1rfIaREy4evQ_48QlPsxR';
+/// Supabase Realtime credentials (`SUPABASE_URL`, `SUPABASE_ANON_KEY`).
+abstract final class SupabaseConfig {
+  static const String supabaseUrl = AppEnv.supabaseUrl;
+  static const String supabaseAnonKey = AppEnv.supabaseAnonKey;
 }
