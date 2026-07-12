@@ -41,13 +41,6 @@ abstract final class PlayerIdentityStore {
     await SharedPrefs().setNotaMotionPlayerName(name.trim());
   }
 
-  static Future<String> loadOrCreatePlayerName() async {
-    final saved = await loadPlayerName();
-    if (saved != null) return saved;
-    await savePlayerName(defaultPlayerName);
-    return defaultPlayerName;
-  }
-
   /// UI label — prepends "Player" without duplicating an existing prefix.
   static String displayName(String playerName) {
     final trimmed = playerName.trim();

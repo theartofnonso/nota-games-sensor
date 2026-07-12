@@ -3,7 +3,6 @@ plugins {
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
     id "org.jetbrains.kotlin.android" version "2.1.0"
-    id 'kotlin-parcelize'
 }
 
 def localProperties = new Properties()
@@ -33,7 +32,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.gameware"
+    namespace "com.notathletes.client"
     compileSdk flutter.compileSdkVersion
     ndkVersion "28.2.13676358"
 
@@ -52,7 +51,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.gameware"
+        applicationId "com.notathletes.client"
         minSdkVersion 26
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()

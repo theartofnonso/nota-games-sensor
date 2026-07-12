@@ -1,4 +1,4 @@
-package com.gameware
+package com.notathletes.client
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
