@@ -8,7 +8,7 @@ Flutter player app for **NOTA Games** motion sessions.
 - Auto-assigned to Red or Blue team on join
 - Stream device motion data every 5 seconds while `sensorActive`
 - Sync session state via Supabase Realtime
-- Show results when the session ends
+- Return to the join screen when a session ends
 
 ## Environment
 

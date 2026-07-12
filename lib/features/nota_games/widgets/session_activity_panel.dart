@@ -26,7 +26,6 @@ class SessionActivityPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final team = session?.team;
 
     return SizedBox.expand(
       child: Column(
@@ -38,19 +37,6 @@ class SessionActivityPanel extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildIndicator(theme),
-                  if (team != null) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      team.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: pulseColor ??
-                            theme.colorScheme.onSurface.withValues(
-                              alpha: dimmed ? 0.35 : 0.7,
-                            ),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
                   if (sensorError != null) ...[
                     const SizedBox(height: 24),
                     Text(

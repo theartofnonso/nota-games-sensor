@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../models/leaderboard_update.dart';
 import '../models/player_session.dart';
 import '../models/session_state_change.dart';
 import '../services/motion_service.dart';
@@ -26,20 +25,15 @@ class SessionManager extends ChangeNotifier {
   SessionStateChange _gameState = SessionStateChange.initial;
   PlayerSession? _session;
   String? _joinError;
-  LeaderboardUpdate? _finalLeaderboard;
-  bool _showResults = false;
 
   StreamSubscription<SessionStateChange>? _stateSub;
-  StreamSubscription<LeaderboardUpdate>? _leaderboardSub;
   bool _tearingDown = false;
 
   SessionStateChange get gameState => _gameState;
   PlayerSession? get session => _session;
   String? get joinError => _joinError;
-  LeaderboardUpdate? get finalLeaderboard => _finalLeaderboard;
 
   bool get hasSession => _session != null;
-  bool get showResults => _showResults;
 
   MotionService get motionService => _motionService;
 
@@ -49,8 +43,6 @@ class SessionManager extends ChangeNotifier {
     required String playerName,
   }) async {
     _joinError = null;
-    _finalLeaderboard = null;
-    _showResults = false;
     _tearingDown = false;
     notifyListeners();
 
@@ -62,7 +54,6 @@ class SessionManager extends ChangeNotifier {
       _session = playerSession;
       _motionService.configure(playerSession);
 
-      // Handoff: check join `gameState` before subscribing to Realtime.
       if (playerSession.gameState != null) {
         _applyGameState(playerSession.gameState!);
       } else {
@@ -75,12 +66,6 @@ class SessionManager extends ChangeNotifier {
         _onSessionState,
         onError: (Object e) {
           if (kDebugMode) debugPrint('NOTA state stream error: $e');
-        },
-      );
-      _leaderboardSub = _realtimeService.leaderboardStream.listen(
-        (update) => _finalLeaderboard = update,
-        onError: (Object e) {
-          if (kDebugMode) debugPrint('NOTA leaderboard stream error: $e');
         },
       );
 
@@ -132,15 +117,9 @@ class SessionManager extends ChangeNotifier {
     _gameState = SessionStateChange.initial;
   }
 
-  /// Handoff: `sessionEnded` → stop sending → `/leave` → show results.
   Future<void> _onSessionEnded() async {
     if (_tearingDown) return;
     await _tearDownActiveSession();
-    _showResults = true;
-    notifyListeners();
-  }
-
-  void dismissResults() {
     _returnToJoinScreen();
   }
 
@@ -148,8 +127,6 @@ class SessionManager extends ChangeNotifier {
     _session = null;
     _gameState = SessionStateChange.initial;
     _joinError = null;
-    _finalLeaderboard = null;
-    _showResults = false;
     _tearingDown = false;
     notifyListeners();
   }
@@ -178,8 +155,6 @@ class SessionManager extends ChangeNotifier {
   Future<void> _cancelSubscriptions() async {
     await _stateSub?.cancel();
     _stateSub = null;
-    await _leaderboardSub?.cancel();
-    _leaderboardSub = null;
   }
 
   @override

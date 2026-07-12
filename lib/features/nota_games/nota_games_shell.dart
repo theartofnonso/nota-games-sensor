@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gameware/features/nota_games/managers/session_manager.dart';
 import 'package:gameware/features/nota_games/screens/join_session_screen.dart';
-import 'package:gameware/features/nota_games/screens/results_screen.dart';
 import 'package:gameware/features/nota_games/screens/waiting_screen.dart';
 import 'package:gameware/features/nota_games/screens/workout_screen.dart';
 import 'package:gameware/features/nota_games/widgets/confirm_leave_session.dart';
@@ -16,9 +15,7 @@ class NotaGamesShell extends StatelessWidget {
     final manager = context.watch<SessionManager>();
 
     Widget screen;
-    if (manager.showResults) {
-      screen = const ResultsScreen();
-    } else if (!manager.hasSession) {
+    if (!manager.hasSession) {
       screen = const JoinSessionScreen();
     } else if (manager.gameState.isInSession) {
       screen = const WorkoutScreen();
@@ -27,7 +24,7 @@ class NotaGamesShell extends StatelessWidget {
     }
 
     return NotaSessionPopGuard(
-      guardActive: manager.hasSession && !manager.showResults,
+      guardActive: manager.hasSession,
       child: screen,
     );
   }

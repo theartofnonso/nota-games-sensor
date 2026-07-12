@@ -5,6 +5,7 @@ import 'package:gameware/features/nota_games/services/motion_service.dart';
 import 'package:gameware/features/nota_games/widgets/leave_session_button.dart';
 import 'package:gameware/features/nota_games/widgets/nota_screen_scaffold.dart';
 import 'package:gameware/features/nota_games/widgets/session_activity_panel.dart';
+import 'package:gameware/features/nota_games/widgets/session_pulse_style.dart';
 import 'package:gameware/utils/theme/color_extensions.dart';
 
 class WorkoutScreen extends StatefulWidget {
@@ -40,7 +41,8 @@ class _WorkoutScreenState extends State<WorkoutScreen>
     final sessionManager = context.watch<SessionManager>();
     final motion = context.watch<MotionService>();
     final session = sessionManager.session;
-    final sensorActive = sessionManager.gameState.sensorActive;
+    final gameState = sessionManager.gameState;
+    final useTeamColor = useTeamPulseColor(gameState);
 
     return NotaScreenScaffold(
       appBar: notaAppBar(
@@ -53,9 +55,9 @@ class _WorkoutScreenState extends State<WorkoutScreen>
         child: SessionActivityPanel(
           session: session,
           pulseController: _pulseController,
-          accentColor: sensorActive ? accent : null,
-          pulseColor: session?.pulseColor,
-          dimmed: !sensorActive,
+          accentColor: useTeamColor ? accent : null,
+          pulseColor: useTeamColor ? session?.pulseColor : null,
+          dimmed: !useTeamColor,
           sensorError: motion.sensorError,
         ),
       ),
